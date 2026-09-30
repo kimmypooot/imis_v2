@@ -1,9 +1,9 @@
 # Architecture
 
 This document describes the technical foundation of the CSC RO VIII
-Next-Generation IMIS and distinguishes what is **IMPLEMENTED** (Phase 0)
-from what is **PLANNED** (future phases). It is not a description of
-business features that do not exist yet.
+Next-Generation IMIS and distinguishes what is **IMPLEMENTED** (Phase 0 —
+foundation, Phase 1 — authentication) from what is **PLANNED** (future
+phases). It is not a description of business features that do not exist yet.
 
 ## Overall Architecture
 
@@ -37,7 +37,13 @@ Browser  <-->  Vite-built Vue 3 SPA shell  <-->  Inertia  <-->  Laravel (routes,
 - `inertiajs/inertia-laravel` (server) + `@inertiajs/vue3` (client).
 - Root Blade template: `resources/views/app.blade.php`.
 - `HandleInertiaRequests` middleware controls shared props and asset
-  versioning; currently shares only Laravel's default error bag.
+  versioning; shares Laravel's default error bag plus a whitelisted
+  `auth.user` (`id`, `name`, `email` only — never the password hash or
+  remember token) so any page can read who is logged in without each
+  controller repeating it.
+- No Ziggy/route-helper package is installed; frontend links to backend
+  routes use plain path strings (e.g. `/login`) since the route set is
+  small and stable. Revisit if the route surface grows significantly.
 
 ### Tailwind CSS — IMPLEMENTED
 - Tailwind v4, configured CSS-first in `resources/css/app.css`.
@@ -60,6 +66,77 @@ Browser  <-->  Vite-built Vue 3 SPA shell  <-->  Inertia  <-->  Laravel (routes,
   Tailwind; `laravel-vite-plugin` wires asset paths into Blade and
   self-hosts fonts.
 
+## Authentication — IMPLEMENTED (Phase 1)
+
+Session-based authentication using Laravel's native `Auth`/`Password`
+facades and session guard. No third-party auth package (Breeze, Fortify,
+Jetstream) was installed — the flows are small enough to hand-roll directly
+against `App\Models\User`, which keeps the dependency count minimal and
+avoids pulling in scaffolding (e.g. registration) that isn't wanted yet.
+
+**Routes** (`routes/auth.php`, required from `routes/web.php`):
+
+| Method | URI                          | Name                   | Middleware      |
+|--------|------------------------------|-------------------------|------------------|
+| GET    | `/login`                    | `login`                 | `guest`          |
+| POST   | `/login`                    | —                        | `guest`          |
+| POST   | `/logout`                   | `logout`                 | `auth`           |
+| GET    | `/forgot-password`          | `password.request`       | `guest`          |
+| POST   | `/forgot-password`          | `password.email`         | `guest`, `throttle:6,1` |
+| GET    | `/reset-password/{token}`   | `password.reset`         | `guest`          |
+| POST   | `/reset-password`           | `password.store`         | `guest`          |
+| GET    | `/verify-email`             | `verification.notice`    | `auth`           |
+| POST   | `/email/verification-notification` | `verification.send` | `auth`, `throttle:6,1` |
+| GET    | `/verify-email/{id}/{hash}` | `verification.verify`    | `auth`, `signed`, `throttle:6,1` |
+| GET    | `/dashboard`                 | `dashboard`               | `auth`           |
+
+`/dashboard` is a deliberately minimal placeholder proving the middleware
+boundary works — it is **not** the future portal/admin dashboard.
+
+**Login** (`App\Http\Requests\Auth\LoginRequest`): looks up the user by
+email, checks the password with `Hash::check()`, and only then checks
+`status`. Wrong email/password and a correct-password-but-inactive account
+produce distinct messages (`auth.failed` vs. an explicit "account is
+inactive" message) per the product requirement, while password-reset
+requests deliberately give one identical message regardless of whether the
+account exists. Failed attempts (including inactive-account attempts) are
+rate-limited via `RateLimiter` at 5/minute per email+IP; on success the
+limiter is cleared and the session ID is regenerated
+(`$request->session()->regenerate()`).
+
+**Account status** (`App\Enums\UserStatus`: `Active` | `Inactive`, backed by
+a `users.status` enum column, default `active`): enforced only inside
+`LoginRequest::authenticate()` — there is no way to bypass it by hitting a
+route directly, since no route other than login creates a session.
+
+**Remember me**: uses Laravel's built-in `Auth::login($user, $remember)`
+recaller-cookie mechanism — no custom persistent-login code.
+
+**Password reset**: Laravel's `Password` broker (`password_reset_tokens`
+table, 60-minute expiry, 60-second throttle already configured in
+`config/auth.php`) — `PasswordResetLinkController` and
+`NewPasswordController`. Route names (`password.reset`,
+`verification.verify`) match what Laravel's built-in `ResetPassword` and
+`VerifyEmail` notifications expect by default, so no notification
+customization was needed.
+
+**Email verification**: `User` implements `MustVerifyEmail`; standard
+prompt/notification/verify controllers exist and are wired up, but
+`/dashboard` does **not** require the `verified` middleware yet — it's
+implemented and ready, just not enforced, so it can be turned on later
+(add `verified` to the `/dashboard` route middleware) without further
+plumbing. `MAIL_MAILER=log` locally, so verification/reset emails land in
+`storage/logs/laravel.log` rather than requiring real SMTP.
+
+**No self-registration**: there is intentionally no public "sign up" route
+in Phase 1. How accounts get created (admin-provisioned, RSU-provisioned,
+etc.) is a Phase 2+ decision tied to authorization/user management.
+
+**Password policy**: `AppServiceProvider::boot()` sets
+`Password::defaults()` to minimum 8 characters with letters and numbers,
+plus HaveIBeenPwned's `uncompromised()` check in production only (skipped
+locally to avoid a network call on every test run).
+
 ## Backend / Frontend Boundary — IMPLEMENTED
 
 - Controllers return `Inertia::render('PageName', [...])`; they never
@@ -77,7 +154,7 @@ Modules are intended to be introduced in this order, each depending on the
 ones before it:
 
 ```
-Authentication
+Authentication (IMPLEMENTED — Phase 1)
     -> Authorization (roles/permissions)
     -> Portal (public-facing shell)
     -> Regional Support Units
@@ -94,10 +171,6 @@ None of these exist yet. Phase 0 only ensures the project structure
 (`app/Actions`, `app/Policies`, `app/Services`, `resources/js/Composables`,
 etc.) can accommodate them without restructuring — those directories are
 created when the first module that needs them is built, not preemptively.
-
-### Future Authentication Architecture — PLANNED
-Laravel's session-based auth (or Sanctum, if API/mobile access is needed)
-guarding Inertia routes; login/registration pages under `AuthLayout`.
 
 ### Future Authorization Architecture — PLANNED
 Role/permission model via Laravel policies and gates, enforced both in

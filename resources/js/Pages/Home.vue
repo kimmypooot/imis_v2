@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from '@inertiajs/vue3';
 import PortalLayout from '../Layouts/PortalLayout.vue';
 import Button from '../Components/Button.vue';
 
@@ -15,8 +16,9 @@ defineProps({
         <h1 class="text-2xl font-semibold text-text">{{ appName }}</h1>
         <p class="mt-2 text-text-muted">{{ phase }}</p>
         <div class="mt-6 flex gap-3">
-            <Button variant="primary">Primary action</Button>
-            <Button variant="secondary">Secondary action</Button>
+            <Link href="/login">
+                <Button variant="primary">Sign in</Button>
+            </Link>
         </div>
     </div>
 </template>

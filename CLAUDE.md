@@ -13,3 +13,8 @@ Key conventions:
   under `@theme` — don't hard-code brand values in components.
 - Keep dependencies minimal; prefer what Laravel/Vue/Tailwind already
   provide before adding a package.
+
+Phase 1 (session-based authentication) is implemented — see
+`routes/auth.php` and `docs/architecture.md`. Don't re-scaffold login,
+password reset, or email verification; extend the existing controllers.
+Roles/permissions and self-registration are not implemented yet.
