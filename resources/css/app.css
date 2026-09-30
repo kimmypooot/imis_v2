@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/**
+ * Centralized design tokens for the CSC RO VIII IMIS.
+ * Change brand colors, typography, and radii here rather than
+ * hard-coding values inside individual components.
+ */
+@theme {
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* CSC brand identity */
+    --color-csc-blue: #2a338f;
+    --color-csc-blue-dark: #1f2670;
+    --color-csc-blue-light: #4b55b5;
+    --color-csc-red: #ec1c2d;
+    --color-csc-red-dark: #c11421;
+
+    /* Semantic surface / text tokens built on the brand palette */
+    --color-primary: var(--color-csc-blue);
+    --color-primary-hover: var(--color-csc-blue-dark);
+    --color-accent: var(--color-csc-red);
+    --color-accent-hover: var(--color-csc-red-dark);
+
+    --color-surface: #ffffff;
+    --color-surface-muted: #f5f6fa;
+    --color-border: #dfe1ea;
+    --color-text: #1c1e2a;
+    --color-text-muted: #5a5d70;
+    --color-focus-ring: var(--color-csc-blue);
+}
