@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
-import Button from '../../Components/Button.vue';
+import Button from '../../Components/UI/Button.vue';
+import Alert from '../../Components/Feedback/Alert.vue';
 
 defineOptions({ layout: AuthLayout });
 
@@ -31,9 +32,9 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
         clicking the link we sent you.
     </p>
 
-    <div v-if="verificationLinkSent" class="mb-4 rounded-md bg-surface-muted p-3 text-sm text-text" role="status">
+    <Alert v-if="verificationLinkSent" tone="success" class="mb-4">
         A new verification link has been sent to your email address.
-    </div>
+    </Alert>
 
     <form class="space-y-5" @submit.prevent="submit">
         <Button type="submit" class="w-full" :disabled="form.processing">

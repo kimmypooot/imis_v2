@@ -1,10 +1,10 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
-import TextInput from '../../Components/TextInput.vue';
-import PasswordInput from '../../Components/PasswordInput.vue';
-import InputError from '../../Components/InputError.vue';
-import Button from '../../Components/Button.vue';
+import TextInput from '../../Components/Forms/TextInput.vue';
+import PasswordInput from '../../Components/Forms/PasswordInput.vue';
+import InputError from '../../Components/Forms/InputError.vue';
+import Button from '../../Components/UI/Button.vue';
 
 defineOptions({ layout: AuthLayout });
 

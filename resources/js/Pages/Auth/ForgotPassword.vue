@@ -1,9 +1,10 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
-import TextInput from '../../Components/TextInput.vue';
-import InputError from '../../Components/InputError.vue';
-import Button from '../../Components/Button.vue';
+import TextInput from '../../Components/Forms/TextInput.vue';
+import InputError from '../../Components/Forms/InputError.vue';
+import Button from '../../Components/UI/Button.vue';
+import Alert from '../../Components/Feedback/Alert.vue';
 
 defineOptions({ layout: AuthLayout });
 
@@ -31,9 +32,7 @@ const submit = () => {
         Enter your email address and we'll send you a link to reset your password.
     </p>
 
-    <div v-if="status" class="mb-4 rounded-md bg-surface-muted p-3 text-sm text-text" role="status">
-        {{ status }}
-    </div>
+    <Alert v-if="status" tone="success" class="mb-4">{{ status }}</Alert>
 
     <form class="space-y-5" @submit.prevent="submit">
         <div>

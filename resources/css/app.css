@@ -31,4 +31,29 @@
     --color-text: #1c1e2a;
     --color-text-muted: #5a5d70;
     --color-focus-ring: var(--color-csc-blue);
+
+    /* Semantic feedback colors — used by Alert/Badge/status components so
+       every part of the UI agrees on what "success"/"danger"/etc. look
+       like, instead of each component picking its own shade. */
+    --color-success: #1a7f4b;
+    --color-success-bg: #eafaf1;
+    --color-success-border: #b7e5cc;
+
+    --color-warning: #92660a;
+    --color-warning-bg: #fdf5e2;
+    --color-warning-border: #f0dca3;
+
+    --color-danger: var(--color-csc-red);
+    --color-danger-bg: #fdecec;
+    --color-danger-border: #f6bfc3;
+
+    --color-info: var(--color-csc-blue);
+    --color-info-bg: #eaecfa;
+    --color-info-border: #c3c8ec;
+
+    /* Radius scale — cards, inputs, and buttons all read from this rather
+       than picking their own rounding. */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
 }

@@ -24,7 +24,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ]);
 
@@ -32,17 +32,17 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
-    public function test_user_cannot_authenticate_with_invalid_email(): void
+    public function test_user_cannot_authenticate_with_unknown_username(): void
     {
         User::factory()->create();
 
         $response = $this->from('/login')->post('/login', [
-            'email' => 'nobody@example.com',
+            'username' => 'nobody',
             'password' => 'password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('username');
     }
 
     public function test_user_cannot_authenticate_with_invalid_password(): void
@@ -50,20 +50,20 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->from('/login')->post('/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'wrong-password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('username');
     }
 
-    public function test_login_requires_email_and_password(): void
+    public function test_login_requires_username_and_password(): void
     {
         $response = $this->from('/login')->post('/login', []);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors(['email', 'password']);
+        $response->assertSessionHasErrors(['username', 'password']);
     }
 
     public function test_inactive_user_cannot_authenticate(): void
@@ -71,12 +71,12 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->inactive()->create();
 
         $response = $this->from('/login')->post('/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('username');
     }
 
     public function test_login_is_rate_limited_after_too_many_attempts(): void
@@ -85,20 +85,20 @@ class AuthenticationTest extends TestCase
 
         for ($i = 0; $i < 5; $i++) {
             $this->post('/login', [
-                'email' => $user->email,
+                'username' => $user->username,
                 'password' => 'wrong-password',
             ]);
         }
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('username');
 
-        RateLimiter::clear(Str::transliterate(Str::lower($user->email)).'|127.0.0.1');
+        RateLimiter::clear(Str::transliterate($user->username).'|127.0.0.1');
     }
 
     public function test_session_is_regenerated_after_successful_authentication(): void
@@ -109,7 +109,7 @@ class AuthenticationTest extends TestCase
         $originalSessionId = session()->getId();
 
         $this->post('/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ]);
 

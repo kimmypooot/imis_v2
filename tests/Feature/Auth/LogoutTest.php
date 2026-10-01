@@ -17,7 +17,7 @@ class LogoutTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('login'));
     }
 
     public function test_protected_route_is_inaccessible_after_logout(): void

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Cloudflare Turnstile "Security Check" on the login page. Off unless
+    // both keys are set, so local development and tests need no keys.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];
