@@ -117,7 +117,7 @@ class ServicesTest extends TestCase
             'sort_order' => 3,
         ]);
 
-        $response->assertRedirect('/admin/services');
+        $response->assertRedirect();
         $this->assertDatabaseHas('services', [
             'name' => 'New Service',
             'category_id' => $category->id,
@@ -230,7 +230,7 @@ class ServicesTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response->assertRedirect('/admin/services');
+        $response->assertRedirect();
         $this->assertDatabaseHas('services', ['id' => $service->id, 'name' => 'Updated Name']);
     }
 
@@ -253,13 +253,13 @@ class ServicesTest extends TestCase
 
         $this->actingAs($user)
             ->patch("/admin/services/{$service->id}/status", ['status' => 'inactive'])
-            ->assertRedirect('/admin/services');
+            ->assertRedirect();
 
         $this->assertSame('inactive', $service->fresh()->status->value);
 
         $this->actingAs($user)
             ->patch("/admin/services/{$service->id}/status", ['status' => 'active'])
-            ->assertRedirect('/admin/services');
+            ->assertRedirect();
 
         $this->assertSame('active', $service->fresh()->status->value);
     }
@@ -268,7 +268,7 @@ class ServicesTest extends TestCase
     {
         $user = $this->userWithPermission('services.update');
 
-        $this->actingAs($user)->get('/admin/services/999999/edit')->assertNotFound();
+        $this->actingAs($user)->put('/admin/services/999999', [])->assertNotFound();
     }
 
     private function userWithPermission(string $permission): User

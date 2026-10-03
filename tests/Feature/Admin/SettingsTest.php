@@ -63,7 +63,7 @@ class SettingsTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Admin/Settings/Index')
                 ->where('canUpdate', false)
-                ->has('groups', 3)
+                ->has('groups', 4)
                 ->where('groups.0.key', 'general')
                 ->where('groups.0.settings.0.key', 'organization_name')
                 ->where('groups.0.settings.0.editable', false));
@@ -463,7 +463,7 @@ class SettingsTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('portal.notice', 'System maintenance tonight.'));
 
         auth()->logout();
-        $this->get('/')->assertInertia(fn ($page) => $page->where('portal.notice', null));
+        $this->get('/login')->assertInertia(fn ($page) => $page->where('portal.notice', null));
     }
 
     public function test_portal_home_uses_announcement_limit_and_welcome_message(): void

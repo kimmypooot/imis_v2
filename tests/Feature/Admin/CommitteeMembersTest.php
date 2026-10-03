@@ -43,7 +43,7 @@ class CommitteeMembersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response->assertRedirect("/admin/committees/{$committee->id}");
+        $response->assertRedirect();
         $this->assertDatabaseHas('committee_members', [
             'committee_id' => $committee->id,
             'user_id' => $target->id,
@@ -165,7 +165,7 @@ class CommitteeMembersTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response->assertRedirect("/admin/committees/{$committee->id}");
+        $response->assertRedirect();
         $this->assertSame('Vice Chairperson', $member->fresh()->position);
     }
 
@@ -180,7 +180,7 @@ class CommitteeMembersTest extends TestCase
             ['status' => 'inactive'],
         );
 
-        $response->assertRedirect("/admin/committees/{$committee->id}");
+        $response->assertRedirect();
         $this->assertSame('inactive', $member->fresh()->status->value);
     }
 

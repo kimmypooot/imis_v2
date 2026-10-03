@@ -64,6 +64,24 @@ return [
             ]) : [],
         ],
 
+        // The legacy IMIS database the old PHP subsystems still read
+        // (config/legacy.php). Not strict: legacy rows use zero dates.
+        // Legacy DATETIMEs are Asia/Manila wall-clock time.
+        'legacy' => [
+            'driver' => env('LEGACY_DB_DRIVER', 'mysql'),
+            'host' => env('LEGACY_DB_HOST', '127.0.0.1'),
+            'port' => env('LEGACY_DB_PORT', '3306'),
+            'database' => env('LEGACY_DB_DATABASE', 'u390694310_cscro8'),
+            'username' => env('LEGACY_DB_USERNAME', 'root'),
+            'password' => env('LEGACY_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_general_ci',
+            'prefix' => '',
+            'strict' => false,
+            'timezone' => '+08:00',
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

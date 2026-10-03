@@ -7,17 +7,15 @@ use App\Models\Committee;
 use App\Models\OrganizationalUnit;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Admin\AdminDashboard;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Administration landing page. It only surfaces what already exists
- * (module shortcuts, real inactive-record counts, the signed-in admin's
- * own access context) — it does not manage anything itself. Future
- * modules (Announcements, Audit, ...) add their own entry to
- * `resources/js/Utils/navigation.js` without this controller needing to
- * know their business logic.
+ * The admin dashboard, laid out like the legacy IMIS admin home: welcome
+ * banner, metric cards, charts, and tables (AdminDashboard), plus real
+ * inactive-record counts. It manages nothing itself.
  */
 class AdminController extends Controller
 {
@@ -78,6 +76,8 @@ class AdminController extends Controller
 
         return Inertia::render('Admin/Index', [
             'attention' => $attention,
+            // The legacy admin dashboard (metric cards, charts, tables).
+            'dashboard' => fn () => (new AdminDashboard($user))->build(),
         ]);
     }
 }

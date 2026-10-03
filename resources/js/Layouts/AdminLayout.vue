@@ -6,7 +6,7 @@ import { adminNavItems } from '../Utils/navigation';
 </script>
 
 <template>
-    <AppShell :nav-items="adminNavItems">
+    <AppShell :nav-items="adminNavItems" variant="admin">
         <slot />
     </AppShell>
 </template>

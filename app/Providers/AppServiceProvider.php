@@ -8,13 +8,33 @@ use App\Models\Application;
 use App\Models\Changelog;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
+use App\Models\Employee;
+use App\Models\EmployeeAssignment;
+use App\Models\EmployeeDocument;
+use App\Models\FwaArrangement;
+use App\Models\FwaReport;
+use App\Models\Holiday;
+use App\Models\LeaveApplication;
+use App\Models\LeaveDesignation;
+use App\Models\LeaveLedgerEntry;
+use App\Models\LeaveMonetization;
+use App\Models\LeaveType;
 use App\Models\OrganizationalUnit;
+use App\Models\Pds\PdsLearningDevelopment;
+use App\Models\Pds\PdsSubmission;
 use App\Models\Permission;
+use App\Models\PlantillaAppointment;
+use App\Models\PlantillaItem;
+use App\Models\Position;
 use App\Models\Role;
+use App\Models\SalarySchedule;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
+use App\Policies\PdsLearningDevelopmentPolicy;
+use App\Policies\PdsSubmissionPolicy;
 use App\Support\Audit\AuthenticationAuditSubscriber;
+use App\Support\Legacy\LegacyBridge;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Cache;
@@ -45,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
         'roles.view', 'permissions.view', 'users.view', 'organizational_units.view', 'services.view',
         'applications.view', 'committees.view', 'announcements.view',
         'audit_logs.view', 'settings.view', 'changelogs.view',
+        'applications.manage_access', 'sessions.view', 'backups.create',
+        'employees.view', 'employees.view_unit', 'pds.view', 'pds.verify', 'employee_documents.view',
+        'ld.view', 'ld.manage', 'ld.approve', 'plantilla.view', 'plantilla.manage',
+        'service_records.view', 'leave.view', 'leave.manage',
     ];
 
     /**
@@ -73,6 +97,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureAuthorization();
         $this->configureAuditing();
+
+        // Mirror account and access changes to the legacy subsystems' database.
+        $this->app->make(LegacyBridge::class)->registerListeners();
     }
 
     /**
@@ -94,6 +121,23 @@ class AppServiceProvider extends ServiceProvider
             'announcement' => Announcement::class,
             'setting' => Setting::class,
             'changelog' => Changelog::class,
+            'employee' => Employee::class,
+            'employee_document' => EmployeeDocument::class,
+            'employee_assignment' => EmployeeAssignment::class,
+            'plantilla_item' => PlantillaItem::class,
+            'position' => Position::class,
+            'plantilla_appointment' => PlantillaAppointment::class,
+            'salary_schedule' => SalarySchedule::class,
+            'leave_type' => LeaveType::class,
+            'holiday' => Holiday::class,
+            'leave_ledger_entry' => LeaveLedgerEntry::class,
+            'leave_application' => LeaveApplication::class,
+            'leave_designation' => LeaveDesignation::class,
+            'leave_monetization' => LeaveMonetization::class,
+            'fwa_arrangement' => FwaArrangement::class,
+            'fwa_report' => FwaReport::class,
+            'ld_record' => PdsLearningDevelopment::class,
+            'pds_submission' => PdsSubmission::class,
         ]);
 
         Event::subscribe(AuthenticationAuditSubscriber::class);
@@ -110,6 +154,10 @@ class AppServiceProvider extends ServiceProvider
     private function configureAuthorization(): void
     {
         Gate::before(fn (User $user) => $user->hasRole(RoleName::SuperAdmin) ? true : null);
+
+        // Models under App\Models\Pds sit outside policy auto-discovery.
+        Gate::policy(PdsSubmission::class, PdsSubmissionPolicy::class);
+        Gate::policy(PdsLearningDevelopment::class, PdsLearningDevelopmentPolicy::class);
 
         Gate::define(
             'access-admin',

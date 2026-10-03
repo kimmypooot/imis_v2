@@ -86,18 +86,25 @@ php artisan tinker --execute="App\Models\User::factory()->create(['email' => 'yo
 
 The factory default password is `password`.
 
-Seed the demo data (development only — creates the `super-admin` role, a
-small permission set, grants the seeded `test@example.com` user the
-`super-admin` role, and populates the portal directory with clearly
-demo-labeled organizational units in a small two-level hierarchy (an RSU
-with two field offices, purely to demonstrate the mechanism), demo
-services, and the real, documented CSC RO VIII application names with no
-URL configured — see
-[`docs/architecture.md`](docs/architecture.md#imis-portal-foundation--dashboard--implemented-phase-4)):
+Seed the reference data (the `super-admin` role and permission set,
+default settings, and the 15 real CSC RO VIII offices). No demo records
+or test accounts are seeded:
 
 ```bash
 php artisan db:seed
 ```
+
+Then import the legacy IMIS data: accounts (with their existing
+passwords), systems and roles, system access, dashboard committees,
+announcements, release notes, and sign-in/launch history. See
+[`docs/architecture.md`](docs/architecture.md#legacy-data-import--implemented).
+
+```bash
+php artisan imis:import-legacy ../old-imis/db_imis.sql
+```
+
+The dump holds real staff data. Never commit it or copy it into this
+repository.
 
 ## 7. Development Commands
 
@@ -166,9 +173,17 @@ for the full route table and design decisions. Key points:
   signed verify link) but **not currently enforced** — `/dashboard` only
   requires `auth`, not `verified`. Add the `verified` middleware to that
   route in `routes/web.php` when this should be required.
-- **Rate limiting**: login attempts are limited to 5 per minute per
-  email+IP; the forgot-password and verification-resend endpoints are
-  limited to 6 per minute per IP.
+- **Rate limiting**: 5 failed sign-ins per username+IP lock that pair out
+  for 15 minutes (as in the legacy IMIS); the forgot-password and
+  verification-resend endpoints are limited to 6 per minute per IP.
+- **Session limits** (legacy IMIS): a sign-in ends after
+  `SESSION_LIFETIME` minutes idle (default 120) or `SESSION_ABSOLUTE_LIFETIME`
+  minutes in total (default 480), with a browser warning
+  `SESSION_IDLE_WARNING` minutes before (default 5). "Remember me"
+  sign-ins are exempt. Expired sign-ins are closed in the login history
+  by `imis:expire-sessions`, which the scheduler runs every five minutes,
+  so production needs the usual cron entry:
+  `* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1`.
 
 ## 11. Authorization
 
@@ -189,8 +204,7 @@ for the full data model, route table, and security design. Key points:
   `$user->hasRole(...)` and their `any`/`all` variants are all available;
   policies (`app/Policies`) and route middleware (`role:`, `permission:`)
   both use them.
-- `/authorization-demo` (after logging in as the seeded super-admin test
-  user) shows your roles, permissions, and example checks. `/roles` and
+- `/authorization-demo` (as a Super Administrator) shows your roles, permissions, and example checks. `/roles` and
   `/permissions` are minimal admin screens to prove role/permission
   management works — not the future user-administration module.
 - Frontend `can()`/`hasRole()` helpers (`resources/js/Composables/useAuthorization.js`)
@@ -216,8 +230,8 @@ for the full breakdown. Key points:
 - **Application shell** (`Layouts/AppShell.vue`): responsive sidebar (drawer
   on mobile, persistent on desktop), header, user menu. `PortalLayout` and
   `AdminLayout` are both thin wrappers around it with their own nav config
-  (`resources/js/Utils/navigation.js`); `Home` uses the separate, simpler
-  `PublicLayout` since it's unauthenticated.
+  (`resources/js/Utils/navigation.js`). There is no public landing page:
+  `/` goes to the login screen.
 - **Authorization-aware navigation**: nav items declare an optional
   `permission`; `SidebarNav` hides ones the user lacks using the Phase 2
   `useAuthorization()` composable. This is UX only — the route itself is
@@ -241,8 +255,8 @@ for the full breakdown. Key points:
   `/applications/{id}`), `/services` (+ `/services/{id}`),
   `/organizational-units` (+ `/organizational-units/{id}`), `/search`,
   `/admin` (landing page, requires an admin-qualifying permission). `/`
-  redirects an authenticated user to `/dashboard`; a guest still sees the
-  public `Home` page — one authenticated entry point, not two.
+  redirects an authenticated user to `/dashboard` and a guest to `/login`
+  (no public landing page).
 - **Directory models**: `App\Models\{Application,Service,
   OrganizationalUnit}`. Every listing/detail query goes through
   `HasPortalVisibility` (`status` must be `active`, `visibility` must be
@@ -254,10 +268,9 @@ for the full breakdown. Key points:
   own internal detail page; only that page exposes the real external
   `url` as a plain link (`target="_blank" rel="noopener noreferrer"`, no
   server-side redirect route, so there's no open-redirect surface). A
-  `null` url renders "not yet configured" rather than a fabricated link —
-  see the seeder notes in `PortalDemoSeeder` for why the six seeded
-  applications (OTRS, ORS/HRMPSB Connect, PROCTAD, CSE/COMEXAMS, Examinee
-  Number Lookup, C-ERIS) have no URL yet.
+  `null` url renders "not yet configured" rather than a fabricated link.
+  Imported systems carry their legacy launch paths, made absolute against
+  the legacy host (`--legacy-url`).
 - **Search**: `/search?q=...` — plain `LIKE` queries across all three
   models (visibility-scoped, 10 results per category), no search engine
   dependency.
@@ -267,10 +280,9 @@ for the full breakdown. Key points:
   `organizational_units.view`. It gates the Administration nav entry,
   `/admin`, and `administrative`-visibility directory entries — never a
   hardcoded email or user ID.
-- **No fake data**: seeded organizational units and services are
-  explicitly demo-labeled placeholders (no real CSC RO VIII unit/service
-  names are documented anywhere in this project to seed instead); the
-  dashboard shows real (possibly empty) query results, never invented
+- **No fake data**: only the real CSC RO VIII offices are seeded; systems,
+  accounts and access come from the legacy import, and services are
+  created by administrators. The dashboard shows real (possibly empty) query results, never invented
   statistics or charts.
 
 ### Organizational structure (Phase 5)
@@ -383,7 +395,7 @@ resources/
             Errors/        403.vue, Show.vue (404/419/429/500/503)
             Portal/         Dashboard.vue, Search.vue, Applications/,
                           Services/, OrganizationalUnits/
-        Layouts/          PublicLayout, AuthLayout, AppShell, PortalLayout,
+        Layouts/          AuthLayout, AppShell, PortalLayout,
                           AdminLayout
         Components/
             UI/            Button, Card, Badge, EmptyState, Spinner, Icon,
@@ -410,8 +422,8 @@ database/
                           applications, services, service_categories,
                           framework tables, plus Phase 5/6 migrations
                           extending organizational_units and services
-    seeders/               RolePermissionSeeder, PortalDemoSeeder
-                          (dev/test data)
+    seeders/               RolePermissionSeeder, SettingSeeder,
+                          RegionalOfficeSeeder
 docs/
     architecture.md        Architecture decisions and future plans
 ```

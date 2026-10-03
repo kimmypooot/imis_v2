@@ -6,61 +6,42 @@
 
         <title inertia>{{ config('app.name', 'CSC RO VIII IMIS') }}</title>
 
+        {{-- The legacy IMIS icons (old-imis assets/img). --}}
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" href="/favicon.png" type="image/png">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @inertiaHead
 
-        {{-- Boot preloader (the legacy IMIS loading screen). app.css is
-             render-blocking above, so the brand tokens are available here.
-             Removed by app.js as soon as the first page renders. --}}
+        {{-- The preloader's look lives in app.css (.imis-preloader), which is
+             render-blocking above. This only adds the fade-out. --}}
         <style>
-            #boot-preloader {
-                position: fixed;
-                inset: 0;
-                z-index: 100;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 1.5rem;
-                background: var(--color-csc-blue);
-                color: #fff;
-                font-family: var(--font-sans);
-                transition: opacity 0.4s ease;
-            }
-            #boot-preloader.is-hidden { opacity: 0; pointer-events: none; }
-            #boot-preloader::before {
-                content: '';
-                position: absolute;
-                inset: 0 0 auto;
-                height: 4px;
-                background: var(--color-csc-red);
-            }
-            #boot-preloader .disc {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 5rem;
-                height: 5rem;
-                border-radius: 9999px;
-                background: #fff;
-                box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-csc-red) 35%, transparent);
-            }
-            #boot-preloader .disc img { height: 3.25rem; width: auto; }
-            #boot-preloader .label { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.75; }
-            @media (prefers-reduced-motion: no-preference) {
-                #boot-preloader .disc { animation: boot-breathe 1.6s ease-in-out infinite; }
-            }
-            @keyframes boot-breathe { 50% { transform: scale(1.06); } }
+            #boot-preloader { transition: opacity 0.6s ease, visibility 0.6s ease; }
+            #boot-preloader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
         </style>
     </head>
     <body class="font-sans antialiased">
-        <div id="boot-preloader" role="status" aria-live="polite">
-            <div class="disc" aria-hidden="true">
-                <img src="/images/brand/csc-logo.png" alt="">
+        {{-- Boot preloader: the legacy IMIS loading screen. Removed by app.js
+             once the first page renders. --}}
+        <div id="boot-preloader" class="imis-preloader" role="status" aria-live="polite" aria-busy="true" aria-label="IMIS is loading. Please wait.">
+            <div class="imis-preloader__accent" aria-hidden="true"></div>
+            <div class="imis-preloader__logo-wrap" aria-hidden="true">
+                <img src="/images/brand/CSC-IMIS.png" class="imis-preloader__logo" alt="" draggable="false">
             </div>
-            <span class="label">Civil Service Commission &middot; Regional Office VIII</span>
-            <span class="label">Loading&hellip;</span>
+            <div aria-hidden="true">
+                <span class="imis-preloader__agency-main">Civil Service Commission</span>
+                <span class="imis-preloader__agency-sub">Regional Office VIII</span>
+            </div>
+            <div class="imis-preloader__divider" aria-hidden="true"></div>
+            <p class="imis-preloader__label" aria-hidden="true">
+                <span>Loading</span>
+                <span class="imis-preloader__dots"><span></span><span></span><span></span></span>
+            </p>
+            <div class="imis-preloader__bar-wrap" aria-hidden="true">
+                <div class="imis-preloader__bar"></div>
+            </div>
         </div>
         @inertia
     </body>

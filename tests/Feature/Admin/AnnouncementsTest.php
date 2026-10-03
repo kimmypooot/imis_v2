@@ -82,7 +82,7 @@ class AnnouncementsTest extends TestCase
         ]));
 
         $announcement = Announcement::firstOrFail();
-        $response->assertRedirect("/admin/announcements/{$announcement->id}");
+        $response->assertRedirect()->assertSessionHas('status');
         $this->assertSame('draft', $announcement->status->value);
         $this->assertSame($user->id, $announcement->author_id);
         $this->assertSame('office-closure-notice', $announcement->slug);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -69,28 +70,7 @@ class UsernameLoginTest extends TestCase
         }
 
         $this->get('/login')->assertInertia(fn (Assert $page) => $page
-            ->where('lockoutSeconds', fn ($seconds) => $seconds > 0 && $seconds <= 60));
-    }
-
-    // ── Administrator login toggle ───────────────────────────────────
-
-    public function test_admin_mode_lands_an_administrator_on_the_admin_console(): void
-    {
-        $user = $this->userWithPermission('users.view');
-
-        $this->post('/login', ['username' => $user->username, 'password' => 'password', 'mode' => 'admin'])
-            ->assertRedirect(route('admin.index'));
-    }
-
-    public function test_admin_mode_never_grants_access_to_a_regular_user(): void
-    {
-        $user = User::factory()->create();
-
-        $this->post('/login', ['username' => $user->username, 'password' => 'password', 'mode' => 'admin'])
-            ->assertRedirect(route('dashboard'))
-            ->assertSessionHas('status');
-
-        $this->get('/admin')->assertForbidden();
+            ->where('lockoutSeconds', fn ($seconds) => $seconds > 60 && $seconds <= LoginRequest::LOCKOUT_SECONDS));
     }
 
     // ── Turnstile ────────────────────────────────────────────────────
@@ -162,7 +142,7 @@ class UsernameLoginTest extends TestCase
         User::factory()->create(['username' => 'jscruz']);
         $actor = $this->userWithPermission('users.create');
 
-        $this->actingAs($actor)->post('/users', ['name' => 'Juan Santos Cruz', 'email' => 'juan@example.test']);
+        $this->actingAs($actor)->post('/users', ['first_name' => 'Juan', 'middle_name' => 'Santos', 'last_name' => 'Cruz', 'email' => 'juan@example.test']);
 
         $this->assertDatabaseHas('users', ['email' => 'juan@example.test', 'username' => 'jscruz2']);
     }
@@ -173,11 +153,11 @@ class UsernameLoginTest extends TestCase
         User::factory()->create(['username' => 'taken']);
         $actor = $this->userWithPermission('users.create');
 
-        $this->actingAs($actor)->post('/users', ['name' => 'A', 'email' => 'a@example.test', 'username' => 'Taken'])
+        $this->actingAs($actor)->post('/users', ['first_name' => 'A', 'last_name' => 'A', 'email' => 'a@example.test', 'username' => 'Taken'])
             ->assertSessionHasErrors('username');
-        $this->actingAs($actor)->post('/users', ['name' => 'B', 'email' => 'b@example.test', 'username' => 'has space'])
+        $this->actingAs($actor)->post('/users', ['first_name' => 'B', 'last_name' => 'B', 'email' => 'b@example.test', 'username' => 'has space'])
             ->assertSessionHasErrors('username');
-        $this->actingAs($actor)->post('/users', ['name' => 'C', 'email' => 'c@example.test', 'username' => ' MDelaCruz '])
+        $this->actingAs($actor)->post('/users', ['first_name' => 'C', 'last_name' => 'C', 'email' => 'c@example.test', 'username' => ' MDelaCruz '])
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('users', ['email' => 'c@example.test', 'username' => 'mdelacruz']);

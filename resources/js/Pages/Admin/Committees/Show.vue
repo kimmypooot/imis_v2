@@ -12,6 +12,8 @@ import InputError from '../../../Components/Forms/InputError.vue';
 import FormGroup from '../../../Components/Forms/FormGroup.vue';
 import Select from '../../../Components/Forms/Select.vue';
 import ConfirmDialog from '../../../Components/Feedback/ConfirmDialog.vue';
+import RecordModal from '../../../Components/Admin/RecordModal.vue';
+import { committeeDefaults, committeeFields, committeeNullable } from '../../../Components/Admin/committeeFields';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 
 defineOptions({ layout: AdminLayout });
@@ -24,6 +26,7 @@ const props = defineProps({
 });
 
 const { can } = useAuthorization();
+const editingCommittee = ref(false);
 
 const addForm = useForm({
     user_id: '',
@@ -83,17 +86,27 @@ const confirmStatusChange = () => {
     <PageHeader
         :title="committee.name"
         :breadcrumbs="[
-            { label: 'Administration', href: '/admin' },
+            { label: 'Home', href: '/admin' },
             { label: 'Committees', href: '/admin/committees' },
             { label: committee.name },
         ]"
     >
         <template v-if="can('committees.update')" #actions>
-            <Link :href="`/admin/committees/${committee.id}/edit`">
-                <Button variant="secondary">Edit committee</Button>
-            </Link>
+            <Button variant="secondary" @click="editingCommittee = true">Edit committee</Button>
         </template>
     </PageHeader>
+
+    <RecordModal
+        :open="editingCommittee"
+        noun="Committee"
+        :record="committee"
+        :fields="committeeFields(statusOptions)"
+        :defaults="committeeDefaults"
+        :nullable="committeeNullable"
+        store-url="/admin/committees"
+        :update-url="(record) => `/admin/committees/${record.id}`"
+        @close="editingCommittee = false"
+    />
 
     <Card class="mb-6 max-w-2xl">
         <div class="mb-3 flex flex-wrap items-center gap-2">

@@ -1,0 +1,283 @@
+--- a/includes/session.php	2026-10-02 22:01:35.068976300 +0800
++++ b/includes/session.php	2026-10-02 22:03:23.086477000 +0800
+@@ -655,6 +655,53 @@
+     }
+ }
+ 
++/**
++ * [SSO-2] The per-user session keys api/system-redirect.php set when a
++ * system was launched from the old dashboard (its requires_setup
++ * handlers). An IMIS sign-in arrives at the subsystem directly, so they
++ * are set here, for every system at once — each is a fact about the user,
++ * harmless where unused. A missing table (not every server has every
++ * subsystem) is skipped.
++ * @internal
++ */
++function _session_sso_system_setup(int $userId): void
++{
++    global $conn;
++
++    $lookups = [
++        // CTS — Legal Services Division case handlers.
++        'SELECT id, ao_number FROM cts_manage_users WHERE user = :id LIMIT 1' => static function (array $row): void {
++            $_SESSION['cts_user_id'] = (int) $row['id'];
++            $_SESSION['ao_number']   = (string) ($row['ao_number'] ?? '');
++        },
++        // RFCS — active drivers.
++        "SELECT id FROM trip_drivers WHERE user = :id AND status != 'Inactive' LIMIT 1" => static function (array $row): void {
++            $_SESSION['driver_id'] = (int) $row['id'];
++        },
++    ];
++
++    foreach ($lookups as $sql => $apply) {
++        try {
++            $stmt = $conn->prepare($sql);
++            $stmt->execute([':id' => $userId]);
++            if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
++                $apply($row);
++            }
++        } catch (PDOException $e) {
++            error_log('[session.php] SSO setup lookup skipped: ' . $e->getMessage());
++        }
++    }
++
++    // ICTSRTS — ITG membership.
++    try {
++        $stmt = $conn->prepare('SELECT id FROM itg_tbl WHERE id = :id LIMIT 1');
++        $stmt->execute([':id' => $userId]);
++        $_SESSION['is_itg_member'] = (bool) $stmt->fetch();
++    } catch (PDOException $e) {
++        error_log('[session.php] SSO setup lookup skipped: ' . $e->getMessage());
++    }
++}
++
+ // ═════════════════════════════════════════════════════════════════════════════
+ // 7. BOOTSTRAP EXECUTION
+ // Runs once when this file is included. All functions above are already defined
+@@ -664,102 +711,134 @@
+ // ── 7a. Start session ────────────────────────────────────────────────────────
+ startSecureSession();
+ 
+-// ── Intercept SSO Token Redirects from Laravel Hub ───────────────────────────
+-if (isset($_GET['sso_token']) && PHP_SAPI !== 'cli') {
+-    $token = $_GET['sso_token'];
+-    
+-    // Resolve the internal API URL for token validation
+-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+-    $host = $_SERVER['HTTP_HOST'] ?? 'imis.cscro8.com';
+-    $apiUrl = $protocol . $host . '/vilt-sandbox/api/v1/sso/validate';
+-
+-    $ch = curl_init($apiUrl);
+-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+-    curl_setopt($ch, CURLOPT_POST, true);
+-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['token' => $token]));
+-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+-        'X-Requested-With: XMLHttpRequest',
+-        'Accept: application/json'
+-    ]);
+-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+-
+-    $response = curl_exec($ch);
+-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+-    curl_close($ch);
+-
+-    if ($httpCode === 200) {
+-        $result = json_decode((string)$response, true);
+-        if ($result && !empty($result['success']) && !empty($result['user'])) {
+-            $user = $result['user'];
+-            
+-            // Build the full name exactly like login.php does
+-            $name = trim(
+-                $user['fname'] . ' ' .
+-                (!empty($user['minitial']) ? $user['minitial'] . ' ' : '') .
+-                $user['lname']
+-            );
++// ── Sign-in hand-off from IMIS (Laravel) ─────────────────────────────────────
++// [SSO-2] IMIS appends a one-time ?sso_token= to a subsystem's launch URL.
++// It is redeemed server-to-server at IMIS_SSO_VALIDATE_URL (set in
++// config.local.php), never at an address built from the request's Host
++// header, and with certificate checks on. The page path is sent along so
++// IMIS can check the token was issued for this system. Whatever the
++// outcome, the token is stripped from the URL straight away.
++if (isset($_GET['sso_token']) && is_string($_GET['sso_token']) && PHP_SAPI !== 'cli') {
++    // $conn, plus config.local.php's environment (IMIS_SSO_VALIDATE_URL).
++    require_once __DIR__ . '/connect.php';
++
++    $_sso_token = $_GET['sso_token'];
++    $_sso_url   = (string) getenv('IMIS_SSO_VALIDATE_URL');
++    $_sso_path  = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
++    $_sso_user  = null;
++
++    if ($_sso_url === '') {
++        error_log('[session.php] SSO: IMIS_SSO_VALIDATE_URL is not set in config.local.php');
++    } elseif (preg_match('/^[A-Za-z0-9]{20,128}$/', $_sso_token)) {
++        $ch = curl_init($_sso_url);
++        curl_setopt_array($ch, [
++            CURLOPT_RETURNTRANSFER => true,
++            CURLOPT_POST           => true,
++            CURLOPT_POSTFIELDS     => http_build_query(['token' => $_sso_token, 'path' => $_sso_path]),
++            CURLOPT_HTTPHEADER     => ['Accept: application/json'],
++            CURLOPT_SSL_VERIFYPEER => true,
++            CURLOPT_SSL_VERIFYHOST => 2,
++            CURLOPT_FOLLOWLOCATION => false,
++            CURLOPT_CONNECTTIMEOUT => 5,
++            CURLOPT_TIMEOUT        => 10,
++        ]);
++        $_sso_response = curl_exec($ch);
++        $_sso_status   = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
++        $_sso_error    = curl_error($ch);
++        curl_close($ch);
++
++        $_sso_result = json_decode((string) $_sso_response, true);
++        if ($_sso_status === 200 && is_array($_sso_result) && !empty($_sso_result['success'])
++            && !empty($_sso_result['user']['id'])) {
++            $_sso_user = $_sso_result['user'];
++        } else {
++            error_log(sprintf('[session.php] SSO: token rejected (HTTP %d) %s', $_sso_status, $_sso_error));
++        }
++    }
+ 
+-            // Populate $_SESSION to match the legacy authenticated structure
+-            $_SESSION['id']            = (int) $user['id'];
+-            $_SESSION['username']      = $user['username'];
+-            $_SESSION['name']          = $name;
+-            $_SESSION['fname']         = $user['fname'];
+-            $_SESSION['lname']         = $user['lname'];
+-            $_SESSION['minitial']      = $user['minitial'] ?? '';
+-            $_SESSION['fullname']      = $name;
+-            $_SESSION['role']          = $user['global_role'] ?? 'user';
+-            $_SESSION['email']         = $user['email'] ?? '';
+-            $_SESSION['position']      = $user['position'] ?? '';
+-            $_SESSION['login_user']    = (int) $user['id'];
+-            $_SESSION['login_success'] = true;
+-            $_SESSION['created']       = time();
+-
+-            // Session-fixation protection for the SSO path. Unlike auth/login.php
+-            // (which regenerates the ID on every successful password login), this
+-            // bridge previously reused whatever session ID arrived with the
+-            // ?sso_token= request — an attacker who fixated an ID before the
+-            // hand-off would have shared the resulting authenticated session.
+-            // Rotate now, keeping the just-populated $_SESSION data intact.
+-            session_regenerate_id(true);
+-
+-            // Audit trail: record the SSO login in imis_history_login_logs so it
+-            // is visible alongside password logins and so login_log_id exists for
+-            // the heartbeat force-logout check and clean logout accounting.
+-            // connect.php is loaded here (idempotent) because §7b below has not
+-            // run yet at this point in the bootstrap — $conn is not defined until
+-            // then. require_once at this global scope defines $conn in scope.
+-            require_once __DIR__ . '/connect.php';
+-            if (isset($conn) && $conn instanceof PDO) {
+-                try {
+-                    $ssoLog = $conn->prepare(
+-                        "INSERT INTO imis_history_login_logs
+-                             (user_id, username, ip_address, login_time, user_agent, status, session_id)
+-                         VALUES (:uid, :uname, :ip, NOW(), :ua, 'active', :sid)"
+-                    );
+-                    $ssoLog->execute([
+-                        ':uid'   => (int) $user['id'],
+-                        ':uname' => $user['username'],
+-                        ':ip'    => $_SERVER['HTTP_CF_CONNECTING_IP']
+-                                    ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+-                                    ?? ($_SERVER['REMOTE_ADDR'] ?? 'unknown'),
+-                        ':ua'    => substr($_SERVER['HTTP_USER_AGENT'] ?? 'unknown', 0, 255),
+-                        ':sid'   => session_id(),
+-                    ]);
+-                    $_SESSION['login_log_id'] = (int) $conn->lastInsertId();
+-                } catch (PDOException $e) {
+-                    error_log('[session.php] SSO login log insert failed: ' . $e->getMessage());
+-                }
+-            }
++    $_sso_redirect = rtrim((string) preg_replace('/([?&])sso_token=[^&]*(&|$)/', '$1', $_SERVER['REQUEST_URI'] ?? '/'), '?&');
++
++    if ($_sso_user !== null) {
++        $_sso_id = (int) $_sso_user['id'];
+ 
+-            // Redirect back to the same page but strip sso_token from query string
+-            $uri = $_SERVER['REQUEST_URI'];
+-            $cleanUri = preg_replace('/([?&])sso_token=[^&]+(&|$)/', '$1', $uri);
+-            $cleanUri = rtrim($cleanUri, '?&');
+-            
+-            header('Location: ' . $cleanUri);
+-            exit();
++        // The legacy row is authoritative for office (type) and role, as in login.php.
++        $_sso_row = [];
++        try {
++            $stmt = $conn->prepare('SELECT type, role FROM users_cscro8 WHERE id = :id LIMIT 1');
++            $stmt->execute([':id' => $_sso_id]);
++            $_sso_row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
++        } catch (PDOException $e) {
++            error_log('[session.php] SSO: users_cscro8 lookup failed: ' . $e->getMessage());
++        }
++
++        $name = trim(
++            $_sso_user['fname'] . ' ' .
++            (!empty($_sso_user['minitial']) ? $_sso_user['minitial'] . ' ' : '') .
++            $_sso_user['lname']
++        );
++
++        // Start clean: never inherit another account's per-system roles or setup keys.
++        $_SESSION = [];
++        session_regenerate_id(true);   // session-fixation protection
++
++        $_SESSION['id']             = $_sso_id;
++        $_SESSION['username']       = $_sso_user['username'];
++        $_SESSION['name']           = $name;
++        $_SESSION['fname']          = $_sso_user['fname'];
++        $_SESSION['lname']          = $_sso_user['lname'];
++        $_SESSION['minitial']       = $_sso_user['minitial'] ?? '';
++        $_SESSION['fullname']       = $name;
++        $_SESSION['role']           = ($_sso_row['role'] ?? '') !== '' ? $_sso_row['role'] : ($_sso_user['global_role'] ?? 'user');
++        $_SESSION['type']           = $_sso_row['type'] ?? '';
++        $_SESSION['email']          = $_sso_user['email'] ?? '';
++        $_SESSION['position']       = $_sso_user['position'] ?? '';
++        $_SESSION['login_user']     = $_sso_id;
++        $_SESSION['login_success']  = true;
++        $_SESSION['created']        = time();
++        $_SESSION['_started_at']    = time();
++        $_SESSION['_last_activity'] = time();
++
++        // Per-user setup that api/system-redirect.php used to do at launch.
++        _session_sso_system_setup($_sso_id);
++
++        // Per-system roles, as on any first authenticated request (§7l).
++        loadUserSystemPermissions($_sso_id);
++        $_SESSION['_perms_loaded'] = true;
++
++        // Audit trail: the SSO sign-in in imis_history_login_logs, like a password login.
++        try {
++            $ssoLog = $conn->prepare(
++                "INSERT INTO imis_history_login_logs
++                     (user_id, username, ip_address, login_time, user_agent, status, session_id)
++                 VALUES (:uid, :uname, :ip, NOW(), :ua, 'active', :sid)"
++            );
++            $ssoLog->execute([
++                ':uid'   => $_sso_id,
++                ':uname' => $_sso_user['username'],
++                ':ip'    => $_SERVER['HTTP_CF_CONNECTING_IP']
++                            ?? $_SERVER['HTTP_X_FORWARDED_FOR']
++                            ?? ($_SERVER['REMOTE_ADDR'] ?? 'unknown'),
++                ':ua'    => substr($_SERVER['HTTP_USER_AGENT'] ?? 'unknown', 0, 255),
++                ':sid'   => session_id(),
++            ]);
++            $_SESSION['login_log_id'] = (int) $conn->lastInsertId();
++        } catch (PDOException $e) {
++            error_log('[session.php] SSO login log insert failed: ' . $e->getMessage());
++        }
++
++        // OTRS users open at their own office, as api/system-redirect.php did.
++        if (str_contains(strtolower($_sso_path), '/otrs/') && ($_SESSION['otrs'] ?? '') === 'User'
++            && !isset($_GET['location'])) {
++            $_sso_redirect .= (str_contains($_sso_redirect, '?') ? '&' : '?')
++                . 'location=' . urlencode($_SESSION['type']);
+         }
+     }
++
++    unset($_sso_token, $_sso_url, $_sso_path, $_sso_user, $_sso_response, $_sso_status,
++          $_sso_error, $_sso_result, $_sso_id, $_sso_row);
++
++    header('Location: ' . $_sso_redirect);
++    exit();
+ }
+ 
+ // ── 7b. Database connection ($conn) ─────────────────────────────────────────

@@ -3,7 +3,10 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Application;
+use App\Models\ApplicationAccess;
+use App\Models\ApplicationRole;
 use App\Models\Committee;
+use App\Models\LoginHistory;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
@@ -92,6 +95,42 @@ class AdminDashboardTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->has('attention', 1)
             ->where('attention.0.label', 'Services'));
+    }
+
+    public function test_dashboard_sections_are_scoped_to_what_the_viewer_can_see(): void
+    {
+        $user = $this->userWithPermissions(['users.view']);
+
+        $this->actingAs($user)->get('/admin')->assertInertia(fn ($page) => $page
+            ->component('Admin/Index')
+            ->whereNot('dashboard.metrics.users', null)
+            ->where('dashboard.metrics.systems', null)
+            ->where('dashboard.metrics.access', null)
+            ->where('dashboard.loginTrend', null)
+            ->where('dashboard.recentActivity', null)
+            ->whereNot('dashboard.roleCounts', null));
+    }
+
+    public function test_dashboard_reports_real_counts(): void
+    {
+        $viewer = $this->userWithPermissions(['users.view', 'applications.view', 'audit_logs.view']);
+        User::factory()->inactive()->create();
+        $system = Application::factory()->create();
+        $role = ApplicationRole::factory()->for($system)->create();
+        ApplicationAccess::factory()->forRole($role)->create();
+        LoginHistory::query()->forceCreate(['username' => 'x', 'logged_in_at' => now()]);
+
+        $this->actingAs($viewer)->get('/admin')->assertInertia(fn ($page) => $page
+            // viewer + inactive user + the grant's user
+            ->where('dashboard.metrics.users.total', 3)
+            ->where('dashboard.metrics.users.inactive', 1)
+            ->where('dashboard.metrics.systems.total', 1)
+            ->where('dashboard.metrics.access.grants', 1)
+            ->where('dashboard.metrics.access.usersWithAccess', 1)
+            ->where('dashboard.metrics.access.usersWithoutAccess', 1)
+            ->where('dashboard.metrics.logins.today', 1)
+            ->where('dashboard.loginTrend.values', fn ($values) => count($values) === 14 && collect($values)->last() === 1)
+            ->where('dashboard.accessBySystem.top.0.assigned', 1));
     }
 
     /**

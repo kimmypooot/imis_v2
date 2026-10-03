@@ -113,7 +113,7 @@ const hasContactInfo = computed(() =>
         </section>
 
         <section>
-            <h2 class="text-base font-semibold text-text">Applications</h2>
+            <h2 class="text-base font-semibold text-text">Systems</h2>
             <div v-if="applications.length" class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <PortalCard
                     v-for="application in applications"
@@ -125,7 +125,7 @@ const hasContactInfo = computed(() =>
                     :subtitle="application.short_name"
                 />
             </div>
-            <EmptyState v-else title="No applications from this unit yet" class="mt-3" />
+            <EmptyState v-else title="No systems from this unit yet" class="mt-3" />
         </section>
 
         <section>

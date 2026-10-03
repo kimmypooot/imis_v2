@@ -139,7 +139,7 @@ watch(selected, async (now, before) => {
                 </div>
             </div>
 
-            <div v-if="visibleSystems.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div v-if="visibleSystems.length" class="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
                 <SystemLaunchCard v-for="system in visibleSystems" :key="system.id" :system="system" />
             </div>
             <EmptyState v-else icon="search" title="No systems match" description="Try a different search." />
@@ -172,38 +172,57 @@ watch(selected, async (now, before) => {
             />
             <EmptyState v-else-if="visibleCategories.length === 0" icon="search" title="No matches" description="Try a different search." />
 
-            <div v-else class="space-y-6">
+            <div v-else class="space-y-11">
                 <div v-for="category in visibleCategories" :key="category.key">
-                    <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-text">
-                        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-csc-blue text-white" aria-hidden="true">
+                    <!-- Legacy category label: small caps, tinted icon, count badge, trailing rule. -->
+                    <h3 class="mb-4 flex items-center gap-2.5 text-xs font-bold tracking-widest text-text-muted uppercase">
+                        <span
+                            class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md"
+                            :class="category.type === 'committee' ? 'bg-warning-bg text-warning' : 'bg-info-bg text-primary'"
+                            aria-hidden="true"
+                        >
                             <Icon :name="icons[category.type]" size="sm" />
                         </span>
                         {{ category.label }}
-                        <span class="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-text-muted ring-1 ring-border">
+                        <span
+                            v-if="category.type !== 'committee'"
+                            class="shrink-0 rounded-full bg-info-bg px-2 py-px text-[0.68rem] font-semibold tracking-normal text-primary normal-case"
+                        >
                             {{ category.divisions.length }} {{ category.divisions.length === 1 ? 'division' : 'divisions' }}
                             · {{ systemCount(category) }} {{ systemCount(category) === 1 ? 'system' : 'systems' }}
                         </span>
+                        <span class="h-px flex-1 bg-border" aria-hidden="true" />
                     </h3>
 
-                    <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <ul class="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
                         <li v-for="division in category.divisions" :key="division.key">
                             <button
                                 type="button"
                                 :data-division="division.key"
-                                class="flex h-full w-full gap-3 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                                class="group relative flex h-full min-h-50 w-full overflow-hidden rounded-xl border-2 border-transparent bg-surface text-left shadow-card transition duration-200 hover:border-primary hover:shadow-card-hover focus:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring/30 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-primary motion-safe:hover:-translate-y-1.5"
                                 @click="open(division)"
                             >
-                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
-                                    <Icon :name="icons[division.type]" />
-                                </span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="block font-medium text-text">{{ division.name }}</span>
-                                    <span v-if="division.description" class="mt-0.5 line-clamp-2 block text-sm text-text-muted">
-                                        {{ division.description }}
+                                <!-- Legacy top accent bar, drawn in on hover. -->
+                                <span class="absolute inset-x-0 top-0 h-1 scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+
+                                <span class="flex w-full gap-3.5 px-6 py-5">
+                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-info-bg text-primary" aria-hidden="true">
+                                        <Icon :name="icons[division.type]" />
                                     </span>
-                                    <span class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary">
-                                        View systems ({{ division.system_ids.length }})
-                                        <Icon name="chevronRight" size="sm" />
+                                    <span class="flex min-w-0 flex-1 flex-col gap-1 pt-1.5">
+                                        <span class="text-[0.95rem] leading-snug font-semibold text-text">{{ division.name }}</span>
+                                        <span class="line-clamp-2 flex-1 text-[0.825rem] leading-snug text-text-muted">
+                                            {{ division.description }}
+                                        </span>
+                                        <!-- Looks like the legacy button; the whole card is the control. -->
+                                        <span
+                                            class="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white transition group-hover:bg-primary-hover group-hover:shadow-md"
+                                            aria-hidden="true"
+                                        >
+                                            <Icon name="chevronRight" size="sm" />
+                                            View Systems ({{ division.system_ids.length }})
+                                        </span>
+                                        <span class="sr-only">View {{ division.system_ids.length }} systems</span>
                                     </span>
                                 </span>
                             </button>

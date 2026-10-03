@@ -34,3 +34,16 @@ export function formatDate(iso) {
 
     return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'long' });
 }
+
+/**
+ * A calendar date ("2020-05-01", e.g. a birthday) → human-readable, read
+ * as that day wherever the viewer is. new Date("2020-05-01") would be UTC
+ * midnight, which shows as the previous day in timezones behind UTC.
+ */
+export function formatCalendarDate(value) {
+    if (!value) return '';
+
+    const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, { dateStyle: 'long' });
+}

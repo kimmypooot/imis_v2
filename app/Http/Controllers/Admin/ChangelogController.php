@@ -25,21 +25,19 @@ class ChangelogController extends Controller
         $this->authorize('viewAny', Changelog::class);
 
         return Inertia::render('Admin/Changelogs/Index', [
+            // Everything the side form edits, per row (legacy layout).
             'changelogs' => Changelog::query()
-                ->withCount('items')
+                ->with('items')
                 ->orderByRaw("status = 'published' desc")
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
-                ->get(['id', 'version', 'title', 'release_date', 'status', 'published_at']),
-        ]);
-    }
-
-    public function create(): Response
-    {
-        $this->authorize('create', Changelog::class);
-
-        return Inertia::render('Admin/Changelogs/Edit', [
-            'changelog' => null,
+                ->get(['id', 'version', 'title', 'release_date', 'status', 'published_at'])
+                ->map(fn (Changelog $changelog) => [
+                    ...$changelog->only(['id', 'version', 'title', 'status']),
+                    'release_date' => $changelog->release_date?->toDateString(),
+                    'published_at' => $changelog->published_at?->toIso8601String(),
+                    'items' => $changelog->items->map(fn ($item) => ['type' => $item->type->value, 'description' => $item->description]),
+                ]),
             'typeOptions' => ChangelogItemType::options(),
         ]);
     }
@@ -58,22 +56,7 @@ class ChangelogController extends Controller
             'entries' => count($request->entries()),
         ]);
 
-        return to_route('admin.changelogs.edit', $changelog);
-    }
-
-    public function edit(Changelog $changelog): Response
-    {
-        $this->authorize('update', $changelog);
-
-        return Inertia::render('Admin/Changelogs/Edit', [
-            'changelog' => [
-                ...$changelog->only(['id', 'version', 'title', 'status']),
-                'release_date' => $changelog->release_date?->toDateString(),
-                'published_at' => $changelog->published_at?->toIso8601String(),
-                'items' => $changelog->items->map->only(['type', 'description']),
-            ],
-            'typeOptions' => ChangelogItemType::options(),
-        ]);
+        return back()->with('status', "Release {$changelog->version} was saved as a draft.");
     }
 
     public function update(ChangelogRequest $request, Changelog $changelog): RedirectResponse
@@ -87,7 +70,7 @@ class ChangelogController extends Controller
             'entries' => count($request->entries()),
         ]);
 
-        return to_route('admin.changelogs.edit', $changelog);
+        return back()->with('status', "Release {$changelog->version} was saved.");
     }
 
     public function updateStatus(UpdateChangelogStatusRequest $request, Changelog $changelog): RedirectResponse
@@ -111,6 +94,6 @@ class ChangelogController extends Controller
             $changelog,
         );
 
-        return back();
+        return back()->with('status', "Release {$changelog->version} was ".($publish ? 'published' : 'unpublished').'.');
     }
 }

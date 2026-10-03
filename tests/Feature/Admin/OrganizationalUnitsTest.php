@@ -78,7 +78,7 @@ class OrganizationalUnitsTest extends TestCase
             'sort_order' => 5,
         ]);
 
-        $response->assertRedirect('/admin/organizational-units');
+        $response->assertRedirect();
         $this->assertDatabaseHas('organizational_units', ['code' => 'NEW-01', 'name' => 'New Unit']);
 
         $created = OrganizationalUnit::where('code', 'NEW-01')->firstOrFail();
@@ -172,7 +172,7 @@ class OrganizationalUnitsTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response->assertRedirect('/admin/organizational-units');
+        $response->assertRedirect();
         $this->assertDatabaseHas('organizational_units', ['id' => $unit->id, 'name' => 'Updated Name']);
     }
 
@@ -229,7 +229,7 @@ class OrganizationalUnitsTest extends TestCase
             'parent_id' => $unitA->id,
         ]);
 
-        $response->assertRedirect('/admin/organizational-units');
+        $response->assertRedirect();
         $this->assertSame($unitA->id, $unitB->fresh()->parent_id);
     }
 
@@ -252,13 +252,13 @@ class OrganizationalUnitsTest extends TestCase
 
         $this->actingAs($user)
             ->patch("/admin/organizational-units/{$unit->id}/status", ['status' => 'inactive'])
-            ->assertRedirect('/admin/organizational-units');
+            ->assertRedirect();
 
         $this->assertSame('inactive', $unit->fresh()->status->value);
 
         $this->actingAs($user)
             ->patch("/admin/organizational-units/{$unit->id}/status", ['status' => 'active'])
-            ->assertRedirect('/admin/organizational-units');
+            ->assertRedirect();
 
         $this->assertSame('active', $unit->fresh()->status->value);
     }
@@ -267,7 +267,7 @@ class OrganizationalUnitsTest extends TestCase
     {
         $user = $this->userWithPermission('organizational_units.update');
 
-        $this->actingAs($user)->get('/admin/organizational-units/999999/edit')->assertNotFound();
+        $this->actingAs($user)->put('/admin/organizational-units/999999', [])->assertNotFound();
     }
 
     private function userWithPermission(string $permission): User

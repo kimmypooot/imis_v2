@@ -14,7 +14,7 @@ Key conventions:
 - Keep dependencies minimal; prefer what Laravel/Vue/Tailwind already
   provide before adding a package.
 
-Phases 1–18 are implemented — `docs/architecture.md` has one section per
+Phases 1–19 are implemented — `docs/architecture.md` has one section per
 phase and is the source of truth for what exists. In particular:
 - Authentication is session-based and signs in by **username** (legacy
   IMIS convention), not email; password resets still go by email. Don't
@@ -26,6 +26,31 @@ phase and is the source of truth for what exists. In particular:
 - Each external system can have its own roles (`ApplicationRole` /
   `ApplicationAccess`), separate from IMIS platform roles.
 - Self-registration is not implemented; accounts are created by admins.
+- Human Resources is being built in phases HR-1–HR-7 (plus HR-1b,
+  reassignment history between offices, done), replacing the
+  legacy PRISM, ldms (`../old-imis/ldms`) and LMS (`../old-imis/leave`)
+  subsystems. HR-1 (employee record), HR-2a (PDS, CS Form 212 Revised
+  2026), HR-2b (e-signing, HR verification, printing) HR-2c (201 file
+  documents), HR-3a (Learning & Development log, replacing ldms), HR-3b
+  (HRD L&D review queue, per-employee management, bulk add) and HR-3c
+  (L&D dashboard, training report, `imis:import-legacy-ld`) HR-4
+  (plantilla, appointments, salary schedules) and HR-5 (Service Record,
+  built from plantilla periods; standard CSC columns) are done. HR-6
+  (Leave, porting `../old-imis/leave`) is split into 6a/6b/6c; 6a (leave
+  types as data, holidays, working days, the append-only credit ledger,
+  accrual, leave card) 6b (filing on CS Form 6, supervisor → HR →
+  Head approval with OIC designations, notifications/bell, printable
+  form, LWOP) and 6c (monetization/terminal leave, flexible work and
+  weekly reports, leave reports, calendar) are done. Wellness Leave is
+  seeded inactive until HR enters its terms. HR-7's cutover tools are
+  built (`imis:import-legacy-leave`, Cutover Readiness page,
+  `imis:retire-legacy-hr`), but the leave import hasn't run on real
+  data: the `lms_*` tables are only on the live server. HR
+  data is personal data under RA 10173: permission-gated, and every
+  access by someone other than the employee is audited. PDS identity
+  numbers, items 34–40 and signed submissions are encrypted with
+  `APP_KEY`, so that key must never be lost or changed carelessly.
+  Progress and next steps: `docs/hr-checkpoint.md`.
 
 The legacy PHP IMIS this replaces lives at `../old-imis` (reference only —
 never edit it). Match its behavior when carrying a feature over.

@@ -42,7 +42,7 @@ const metadata = computed(() => (props.log.metadata ? JSON.stringify(props.log.m
     <PageHeader
         :title="log.description"
         :breadcrumbs="[
-            { label: 'Administration', href: '/admin' },
+            { label: 'Home', href: '/admin' },
             { label: 'Audit Logs', href: '/admin/audit-logs' },
             { label: `Entry #${log.id}` },
         ]"

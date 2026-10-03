@@ -1,6 +1,5 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
 
 /**
  * `items`: [{ label, href }]. The last item is treated as the current
@@ -16,13 +15,13 @@ defineProps({
 
 <template>
     <nav aria-label="Breadcrumb">
-        <ol class="flex flex-wrap items-center gap-1 text-sm text-text-muted">
+        <ol class="flex flex-wrap items-center gap-1 text-xs text-text-muted">
             <li v-for="(item, index) in items" :key="item.label" class="flex items-center gap-1">
-                <Icon v-if="index > 0" name="chevronRight" size="sm" class="shrink-0" />
+                <span v-if="index > 0" class="opacity-60" aria-hidden="true">/</span>
                 <Link
                     v-if="item.href && index < items.length - 1"
                     :href="item.href"
-                    class="hover:text-text"
+                    class="text-primary hover:text-primary-hover"
                 >
                     {{ item.label }}
                 </Link>

@@ -35,6 +35,19 @@ class Usernames
         return $candidate;
     }
 
+    /**
+     * The exact legacy rule, for accounts with separate name parts: first
+     * initial + middle initial + surname with spaces removed
+     * ("Juan", "Santos", "Dela Cruz" → "jsdelacruz").
+     */
+    public static function generateFromParts(string $first, ?string $middle, string $last, ?int $ignoreUserId = null): string
+    {
+        $clean = fn (?string $part) => preg_replace('/[^a-z0-9]/', '', Str::lower(Str::ascii((string) $part)));
+        $base = mb_substr($clean($first), 0, 1).mb_substr($clean($middle), 0, 1).$clean($last);
+
+        return self::generate($base !== '' ? $base : $first, $ignoreUserId);
+    }
+
     public static function normalize(?string $username): string
     {
         return Str::lower(trim((string) $username));

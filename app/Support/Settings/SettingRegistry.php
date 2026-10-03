@@ -66,7 +66,7 @@ final class SettingRegistry
                 'group' => SettingGroup::Portal,
                 'label' => 'Welcome message',
                 'description' => 'Shown under the greeting on the portal home. Leave empty to use the default message.',
-                'default' => 'Welcome to the CSC RO VIII Integrated Management Information System.',
+                'default' => 'Enhancing public service delivery through innovation and digital transformation.',
                 'constraints' => ['max' => 300],
             ],
             'portal_home_announcement_limit' => [
@@ -114,6 +114,32 @@ final class SettingRegistry
                 'label' => 'Office website',
                 'description' => 'Full address starting with https://. Leave empty to hide.',
                 'default' => null,
+            ],
+
+            // HR-5: what the printed Service Record says.
+            'hr_certifying_officer_name' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'Certifying officer',
+                'description' => 'Who signs printed Service Records, as it should appear (e.g. the HR head). Leave empty to print a blank line.',
+                'default' => null,
+                'constraints' => ['max' => 150],
+            ],
+            'hr_certifying_officer_position' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'Certifying officer\'s position',
+                'description' => 'Printed under the certifying officer\'s name.',
+                'default' => null,
+                'constraints' => ['max' => 150],
+            ],
+            'hr_service_record_branch' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'Service Record branch',
+                'description' => 'The Branch column of the Service Record (National, for a national government agency).',
+                'default' => 'National',
+                'constraints' => ['required' => true, 'max' => 50],
             ],
         ];
     }

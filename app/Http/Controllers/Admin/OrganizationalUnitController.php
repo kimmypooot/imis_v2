@@ -41,17 +41,7 @@ class OrganizationalUnitController extends Controller
             'filters' => $request->only(['search', 'status', 'unit_type']),
             'statusOptions' => Status::options(),
             'unitTypeOptions' => UnitType::options(),
-        ]);
-    }
-
-    public function create(): Response
-    {
-        $this->authorize('create', OrganizationalUnit::class);
-
-        return Inertia::render('Admin/OrganizationalUnits/Create', [
             'parentOptions' => $this->parentOptions(),
-            'statusOptions' => Status::options(),
-            'unitTypeOptions' => UnitType::options(),
         ]);
     }
 
@@ -64,24 +54,7 @@ class OrganizationalUnitController extends Controller
 
         $this->audit()->record(AuditEvent::OrganizationalUnitCreated, "Created organizational unit {$unit->name}", $unit);
 
-        return to_route('admin.organizational-units.index');
-    }
-
-    public function edit(OrganizationalUnit $organizationalUnit): Response
-    {
-        $this->authorize('update', $organizationalUnit);
-
-        $organizationalUnit->load('parent:id,name,code');
-
-        return Inertia::render('Admin/OrganizationalUnits/Edit', [
-            'organizationalUnit' => $organizationalUnit,
-            'ancestors' => $organizationalUnit->ancestors()->reverse()->values()
-                ->map(fn (OrganizationalUnit $ancestor) => ['id' => $ancestor->id, 'name' => $ancestor->name]),
-            'children' => $organizationalUnit->children()->orderBy('sort_order')->get(['id', 'name', 'code', 'status']),
-            'parentOptions' => $this->parentOptions($organizationalUnit),
-            'statusOptions' => Status::options(),
-            'unitTypeOptions' => UnitType::options(),
-        ]);
+        return back()->with('status', "{$unit->name} was added.");
     }
 
     public function update(UpdateOrganizationalUnitRequest $request, OrganizationalUnit $organizationalUnit): RedirectResponse
@@ -94,7 +67,7 @@ class OrganizationalUnitController extends Controller
             $organizationalUnit,
         );
 
-        return to_route('admin.organizational-units.index');
+        return back()->with('status', "{$organizationalUnit->name} was saved.");
     }
 
     public function updateStatus(
@@ -109,7 +82,7 @@ class OrganizationalUnitController extends Controller
             $organizationalUnit,
         );
 
-        return to_route('admin.organizational-units.index');
+        return back()->with('status', "{$organizationalUnit->name} was ".strtolower($this->activationVerb($organizationalUnit->status)).'.');
     }
 
     /**

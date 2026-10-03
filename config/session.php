@@ -34,6 +34,17 @@ return [
 
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
+    /*
+    | IMIS session limits (legacy includes/session.php): a sign-in ends
+    | after `absolute_lifetime` minutes however active it is, and the user
+    | is warned `idle_warning` minutes before either limit. "Remember me"
+    | sign-ins are exempt from both. See App\Support\Security\SessionLimits.
+    */
+
+    'absolute_lifetime' => (int) env('SESSION_ABSOLUTE_LIFETIME', 480),
+
+    'idle_warning' => (int) env('SESSION_IDLE_WARNING', 5),
+
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
     /*

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 /**
  * A CSC RO VIII committee record — who's on it and in what capacity.
@@ -35,6 +36,14 @@ class Committee extends Model
             'effective_from' => 'date:Y-m-d',
             'effective_until' => 'date:Y-m-d',
         ];
+    }
+
+    /**
+     * Systems listed under this committee in the dashboard directory.
+     */
+    public function listedApplications(): MorphToMany
+    {
+        return $this->morphToMany(Application::class, 'listable', 'application_listings')->withTimestamps();
     }
 
     public function members(): HasMany

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\User;
 
 use App\Http\Requests\Concerns\GuardsSuperAdminRoleGrant;
+use App\Http\Requests\User\Concerns\ProfileRules;
 use App\Http\Requests\User\Concerns\UsernameRules;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,7 @@ use Illuminate\Validation\Validator;
 class StoreUserRequest extends FormRequest
 {
     use GuardsSuperAdminRoleGrant;
+    use ProfileRules;
     use UsernameRules;
 
     public function authorize(): bool
@@ -24,8 +26,9 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            // Optional: generated from the name (legacy convention) when left blank.
+            ...$this->profileRules(),
+            'profile_photo' => ['nullable', ...$this->photoRules()],
+            // Optional: generated from the name parts (legacy convention) when left blank.
             'username' => ['nullable', ...$this->usernameRules()],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'role_ids' => ['sometimes', 'array'],

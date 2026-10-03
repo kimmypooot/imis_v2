@@ -1,40 +1,99 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Table from '../../../Components/UI/Table.vue';
-import Badge from '../../../Components/UI/Badge.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import AdminCard from '../../../Components/UI/AdminCard.vue';
+import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
-import TextInput from '../../../Components/Forms/TextInput.vue';
-import Select from '../../../Components/Forms/Select.vue';
+import ActionButton from '../../../Components/UI/ActionButton.vue';
+import StatusBadge from '../../../Components/UI/StatusBadge.vue';
+import Icon from '../../../Components/UI/Icon.vue';
+import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
+import { confirm } from '../../../Composables/useDialog';
 
 defineOptions({ layout: AdminLayout });
 
+/**
+ * Offices (Regional Support Units, field and satellite offices) — the
+ * legacy divisions list. Add / Edit in a modal; activate / deactivate per
+ * row. A unit can't be made its own ancestor (checked on the server).
+ */
 const props = defineProps({
     organizationalUnits: { type: Array, required: true },
     filters: { type: Object, required: true },
     statusOptions: { type: Array, required: true },
     unitTypeOptions: { type: Array, required: true },
+    parentOptions: { type: Array, required: true },
 });
 
 const { can } = useAuthorization();
 
-const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
-const unitType = ref(props.filters.unit_type ?? '');
+const typeLabel = (value) => props.unitTypeOptions.find((option) => option.value === value)?.label ?? value;
 
-const applyFilters = () => {
-    router.get(
-        '/admin/organizational-units',
-        { search: search.value, status: status.value, unit_type: unitType.value },
-        { preserveState: true, replace: true },
-    );
+const columns = [
+    { key: 'name', label: 'Name' },
+    { key: 'code', label: 'Code', align: 'center' },
+    { key: 'unit_type', label: 'Type', value: (unit) => typeLabel(unit.unit_type) },
+    { key: 'parent', label: 'Parent', value: (unit) => unit.parent?.name ?? '' },
+    { key: 'sort_order', label: 'Order', align: 'center' },
+    { key: 'status', label: 'Status', align: 'center' },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '6rem' },
+];
+
+const modalOpen = ref(false);
+const editing = ref(null);
+
+const fields = computed(() => [
+    { key: 'code', label: 'Code', required: true },
+    { key: 'name', label: 'Name', required: true },
+    { key: 'short_name', label: 'Short name' },
+    {
+        key: 'parent_id',
+        label: 'Parent unit',
+        type: 'select',
+        options: [
+            { value: '', label: 'None (top-level)' },
+            ...props.parentOptions.filter((unit) => unit.id !== editing.value?.id).map((unit) => ({ value: unit.id, label: unit.name })),
+        ],
+    },
+    { key: 'unit_type', label: 'Type', type: 'select', required: true, options: props.unitTypeOptions },
+    { key: 'status', label: 'Status', type: 'select', required: true, options: props.statusOptions },
+    { key: 'sort_order', label: 'Display order', type: 'number', required: true },
+    { key: 'email', label: 'Email', type: 'email' },
+    { key: 'telephone', label: 'Telephone', type: 'tel' },
+    { key: 'website_url', label: 'Website URL', type: 'url' },
+    { key: 'address', label: 'Address', span: 'full' },
+    { key: 'description', label: 'Description', type: 'textarea' },
+]);
+
+const defaults = {
+    code: '', name: '', short_name: '', parent_id: '', unit_type: 'regional_support_unit', status: 'active', sort_order: 0,
+    email: '', telephone: '', website_url: '', address: '', description: '',
 };
 
-const unitTypeLabel = (value) => props.unitTypeOptions.find((option) => option.value === value)?.label ?? value;
+const openAdd = () => {
+    editing.value = null;
+    modalOpen.value = true;
+};
+
+const openEdit = (unit) => {
+    editing.value = unit;
+    modalOpen.value = true;
+};
+
+const toggleStatus = async (unit) => {
+    const deactivating = unit.status === 'active';
+    const confirmed = await confirm({
+        title: deactivating ? `Deactivate ${unit.name}?` : `Activate ${unit.name}?`,
+        text: deactivating ? 'It will be hidden from the portal and the dashboard directory.' : 'It will appear in the portal again.',
+        tone: deactivating ? 'danger' : 'primary',
+        confirmText: deactivating ? 'Deactivate' : 'Activate',
+    });
+
+    if (confirmed) router.patch(`/admin/organizational-units/${unit.id}/status`, { status: deactivating ? 'inactive' : 'active' }, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -42,88 +101,48 @@ const unitTypeLabel = (value) => props.unitTypeOptions.find((option) => option.v
 
     <PageHeader
         title="Organizational Units"
-        :breadcrumbs="[{ label: 'Administration', href: '/admin' }, { label: 'Organizational Units' }]"
-    >
+        description="CSC RO VIII's Regional Support Units, field offices, and satellite office. They group users and systems, and form the dashboard directory."
+        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Organizational Units' }]"
+    />
+
+    <AdminCard title="List of Offices" icon="building">
         <template v-if="can('organizational_units.create')" #actions>
-            <Link href="/admin/organizational-units/create">
-                <Button>New unit</Button>
-            </Link>
-        </template>
-    </PageHeader>
-
-    <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">
-        <div class="w-full max-w-xs">
-            <TextInput id="search" v-model="search" label="Search" placeholder="Name or code" />
-        </div>
-        <div class="w-48">
-            <label for="status-filter" class="block text-sm font-medium text-text">Status</label>
-            <div class="mt-1">
-                <Select
-                    id="status-filter"
-                    v-model="status"
-                    placeholder="All statuses"
-                    :options="statusOptions"
-                />
-            </div>
-        </div>
-        <div class="w-56">
-            <label for="type-filter" class="block text-sm font-medium text-text">Type</label>
-            <div class="mt-1">
-                <Select
-                    id="type-filter"
-                    v-model="unitType"
-                    placeholder="All types"
-                    :options="unitTypeOptions"
-                />
-            </div>
-        </div>
-        <Button type="submit" variant="secondary">Filter</Button>
-    </form>
-
-    <Table :empty="organizationalUnits.length === 0">
-        <template #empty>
-            <EmptyState
-                title="No organizational units found"
-                description="Try a different search or filter, or create the first unit."
-            />
+            <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Office</Button>
         </template>
 
-        <thead>
-            <tr>
-                <th scope="col">Code</th>
-                <th scope="col">Name</th>
-                <th scope="col">Type</th>
-                <th scope="col">Parent</th>
-                <th scope="col">Status</th>
-                <th scope="col">Sort Order</th>
-                <th scope="col"><span class="sr-only">Actions</span></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="unit in organizationalUnits" :key="unit.id">
-                <td class="text-text-muted">{{ unit.code }}</td>
-                <td>
-                    <div class="font-medium text-text">{{ unit.name }}</div>
-                    <div v-if="unit.children_count" class="text-text-muted">
-                        {{ unit.children_count }} sub-unit{{ unit.children_count === 1 ? '' : 's' }}
-                    </div>
-                </td>
-                <td class="text-text-muted">{{ unitTypeLabel(unit.unit_type) }}</td>
-                <td class="text-text-muted">{{ unit.parent?.name ?? '—' }}</td>
-                <td>
-                    <Badge :tone="unit.status === 'active' ? 'success' : 'neutral'">{{ unit.status }}</Badge>
-                </td>
-                <td class="text-text-muted">{{ unit.sort_order }}</td>
-                <td class="text-right">
-                    <Link
-                        v-if="can('organizational_units.update')"
-                        :href="`/admin/organizational-units/${unit.id}/edit`"
-                        class="font-medium text-primary hover:text-primary-hover"
-                    >
-                        Edit
-                    </Link>
-                </td>
-            </tr>
-        </tbody>
-    </Table>
+        <DataTable :columns="columns" :rows="organizationalUnits" caption="Organizational units" export-name="imis-offices">
+            <template #cell-name="{ row }">
+                <div class="font-medium text-text">{{ row.name }}</div>
+                <div v-if="row.short_name && row.short_name !== row.code" class="text-xs text-text-muted">{{ row.short_name }}</div>
+            </template>
+            <template #cell-code="{ row }">
+                <span class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.code }}</span>
+            </template>
+            <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+            <template #cell-actions="{ row }">
+                <div class="flex justify-center gap-1">
+                    <ActionButton v-if="can('organizational_units.update')" icon="pencil" :label="`Edit ${row.name}`" @click="openEdit(row)" />
+                    <ActionButton
+                        v-if="can('organizational_units.archive')"
+                        icon="power"
+                        :tone="row.status === 'active' ? 'danger' : 'success'"
+                        :label="`${row.status === 'active' ? 'Deactivate' : 'Activate'} ${row.name}`"
+                        @click="toggleStatus(row)"
+                    />
+                </div>
+            </template>
+        </DataTable>
+    </AdminCard>
+
+    <RecordModal
+        :open="modalOpen"
+        noun="Office"
+        :record="editing"
+        :fields="fields"
+        :defaults="defaults"
+        :nullable="['parent_id', 'short_name', 'email', 'telephone', 'website_url', 'address', 'description']"
+        store-url="/admin/organizational-units"
+        :update-url="(unit) => `/admin/organizational-units/${unit.id}`"
+        @close="modalOpen = false"
+    />
 </template>

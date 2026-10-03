@@ -10,6 +10,7 @@ use App\Http\Requests\Announcement\UpdateAnnouncementFeaturedRequest;
 use App\Http\Requests\Announcement\UpdateAnnouncementRequest;
 use App\Http\Requests\Announcement\UpdateAnnouncementStatusRequest;
 use App\Models\Announcement;
+use App\Support\Tables\ServerTable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -38,22 +39,24 @@ class AnnouncementController extends Controller
                 fn ($query) => $query->where('featured', $request->boolean('featured')),
             )
             ->latest('updated_at')
-            ->paginate(15)
+            ->paginate(in_array($request->integer('per_page'), ServerTable::PAGE_SIZES, true) ? $request->integer('per_page') : 10)
             ->withQueryString()
             ->through(fn (Announcement $announcement) => $this->present($announcement));
 
+        // ?edit=ID (e.g. from the preview page) opens that one in the side
+        // form, whether or not it's on the current page of the table.
+        $editing = $request->integer('edit') ? Announcement::query()->find($request->integer('edit')) : null;
+
+        if ($editing) {
+            $this->authorize('update', $editing);
+        }
+
         return Inertia::render('Admin/Announcements/Index', [
             'announcements' => $announcements,
+            'editing' => $editing ? $this->present($editing) : null,
             'filters' => $request->only(['search', 'status', 'featured']),
             'statusOptions' => AnnouncementStatus::options(),
         ]);
-    }
-
-    public function create(): Response
-    {
-        $this->authorize('create', Announcement::class);
-
-        return Inertia::render('Admin/Announcements/Create');
     }
 
     public function store(StoreAnnouncementRequest $request): RedirectResponse
@@ -70,7 +73,7 @@ class AnnouncementController extends Controller
             $announcement,
         );
 
-        return to_route('admin.announcements.show', $announcement);
+        return back()->with('status', "Draft \"{$announcement->title}\" was saved. Preview it to publish.");
     }
 
     /**
@@ -84,15 +87,6 @@ class AnnouncementController extends Controller
         $announcement->load('author:id,name');
 
         return Inertia::render('Admin/Announcements/Show', [
-            'announcement' => $this->present($announcement),
-        ]);
-    }
-
-    public function edit(Announcement $announcement): Response
-    {
-        $this->authorize('update', $announcement);
-
-        return Inertia::render('Admin/Announcements/Edit', [
             'announcement' => $this->present($announcement),
         ]);
     }
@@ -112,7 +106,7 @@ class AnnouncementController extends Controller
             $announcement,
         );
 
-        return to_route('admin.announcements.show', $announcement);
+        return back()->with('status', "\"{$announcement->title}\" was saved.");
     }
 
     public function updateStatus(UpdateAnnouncementStatusRequest $request, Announcement $announcement): RedirectResponse

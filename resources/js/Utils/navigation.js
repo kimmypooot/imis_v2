@@ -16,31 +16,81 @@
  * rather than duplicating the permission-filtering logic per surface.
  */
 
+// Any one of these permissions is enough to see the Administration entry
+// (sidebar and account menu) — kept in sync with
+// AppServiceProvider::ADMIN_ACCESS_PERMISSIONS.
+export const adminAccessPermissions = [
+    'roles.view',
+    'permissions.view',
+    'users.view',
+    'organizational_units.view',
+    'services.view',
+    'applications.view',
+    'committees.view',
+    'announcements.view',
+    'audit_logs.view',
+    'settings.view',
+    'changelogs.view',
+    'applications.manage_access',
+    'sessions.view',
+    'backups.create',
+    'employees.view',
+    'employees.view_unit',
+    'pds.view',
+    'pds.verify',
+    'employee_documents.view',
+    'ld.view',
+    'ld.manage',
+    'ld.approve',
+    'plantilla.view',
+    'plantilla.manage',
+    'service_records.view',
+    'leave.view',
+    'leave.manage',
+];
+
+/**
+ * Portal sidebar: Home on its own, then headed groups. The Management
+ * group holds only Administration, so it disappears entirely for users
+ * without admin access (SidebarNav drops empty groups).
+ */
 export const portalNavItems = [
     { label: 'Home', href: '/dashboard', icon: 'home' },
-    { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
-    { label: 'Applications', href: '/applications', icon: 'grid' },
-    { label: 'Services', href: '/services', icon: 'clipboard' },
-    { label: 'Organizational Units', href: '/organizational-units', icon: 'building' },
-    // Any one of these permissions is enough to see the Administration
-    // entry — kept in sync with AppServiceProvider::ADMIN_ACCESS_PERMISSIONS.
     {
-        label: 'Administration',
-        href: '/admin',
-        icon: 'shield',
-        permission: [
-            'roles.view',
-            'permissions.view',
-            'users.view',
-            'organizational_units.view',
-            'services.view',
-            'applications.view',
-            'committees.view',
-            'announcements.view',
-            'audit_logs.view',
-            'settings.view',
-            'changelogs.view',
+        group: 'Updates',
+        items: [
+            { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
+            { label: "What's New", href: '/whats-new', icon: 'activity' },
         ],
+    },
+    {
+        group: 'Directory',
+        items: [
+            { label: 'Systems', href: '/applications', icon: 'grid' },
+            { label: 'Services', href: '/services', icon: 'clipboard' },
+            { label: 'Organizational Units', href: '/organizational-units', icon: 'building' },
+        ],
+    },
+    {
+        group: 'Human Resources',
+        items: [
+            { label: 'My Employee Record', href: '/my/employee-record', icon: 'clipboard' },
+            { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'user' },
+            { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
+            { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
+            { label: 'My Leave', href: '/my/leave', icon: 'calendar' },
+            { label: 'File Leave', href: '/my/leave/apply', icon: 'plus' },
+            { label: 'My Leave Applications', href: '/my/leave/applications', icon: 'clipboard' },
+            { label: 'Leave Calendar', href: '/my/leave/calendar', icon: 'calendar' },
+            { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'database' },
+            { label: 'Flexible Work', href: '/my/flexible-work', icon: 'clock' },
+            { label: 'Leave Approvals', href: '/leave/approvals', icon: 'checkCircle', flag: 'leaveApprover' },
+            { label: 'My Learning & Development', href: '/my/learning-development', icon: 'chartBar' },
+        ],
+    },
+    {
+        group: 'Management',
+        items: [{ label: 'Administration', href: '/admin', icon: 'shield', permission: adminAccessPermissions }],
     },
 ];
 
@@ -50,144 +100,91 @@ export const portalNavItems = [
  * admin surface (index route) behind it — e.g. Users isn't listed yet
  * because only a per-user show/assign-roles route exists, not an index.
  */
+/**
+ * Admin sidebar, following the legacy IMIS admin panel: Dashboard, then the
+ * collapsible "User Management" and "System Administration" groups (same
+ * order and names as the legacy menu), with this platform's portal-content
+ * modules in their own group. Each group's icon shows on its toggle.
+ */
 export const adminModuleGroups = [
     {
-        group: 'Portal Management',
+        group: 'User Management',
+        icon: 'users',
         items: [
-            {
-                label: 'Organizational Units',
-                href: '/admin/organizational-units',
-                icon: 'building',
-                permission: 'organizational_units.view',
-                description: 'Manage Regional Support Units, field offices, and their hierarchy.',
-                create: {
-                    permission: 'organizational_units.create',
-                    href: '/admin/organizational-units/create',
-                    label: 'New organizational unit',
-                },
-            },
-            {
-                label: 'Services',
-                href: '/admin/services',
-                icon: 'clipboard',
-                permission: 'services.view',
-                description: 'Manage the CSC services directory.',
-                create: {
-                    permission: 'services.create',
-                    href: '/admin/services/create',
-                    label: 'New service',
-                },
-            },
-            {
-                label: 'Systems / Applications',
-                href: '/admin/applications',
-                icon: 'grid',
-                permission: 'applications.view',
-                description: 'Manage the directory of CSC RO VIII systems IMIS launches.',
-                create: {
-                    permission: 'applications.create',
-                    href: '/admin/applications/create',
-                    label: 'New system',
-                },
-            },
-            {
-                label: 'Committees',
-                href: '/admin/committees',
-                icon: 'users',
-                permission: 'committees.view',
-                description: 'Manage committees, their members, and positions.',
-                create: {
-                    permission: 'committees.create',
-                    href: '/admin/committees/create',
-                    label: 'New committee',
-                },
-            },
-            {
-                label: 'Announcements',
-                href: '/admin/announcements',
-                icon: 'megaphone',
-                permission: 'announcements.view',
-                description: 'Draft, schedule, publish, and archive portal announcements.',
-                create: {
-                    permission: 'announcements.create',
-                    href: '/admin/announcements/create',
-                    label: 'New announcement',
-                },
-            },
+            { label: 'Manage Dashboard', href: '/admin/dashboard-layout', icon: 'grid', permission: 'applications.update' },
+            { label: 'Manage Users', href: '/users', icon: 'user', permission: 'users.view' },
+            { label: 'Manage Systems', href: '/admin/applications', icon: 'grid', permission: 'applications.view' },
+            { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: 'applications.manage_access' },
+            { label: 'User Access', href: '/admin/user-access', icon: 'key', permission: 'applications.manage_access' },
         ],
     },
     {
-        group: 'Access Management',
+        // HR-1. Later HR phases (PDS, L&D, plantilla, service record,
+        // leave) add their pages here.
+        group: 'Human Resources',
+        icon: 'clipboard',
         items: [
-            {
-                label: 'Users',
-                href: '/users',
-                icon: 'user',
-                permission: 'users.view',
-                description: 'Manage user accounts, status, and role assignments.',
-                create: {
-                    permission: 'users.create',
-                    href: '/users/create',
-                    label: 'New user',
-                },
-            },
-            {
-                label: 'Roles',
-                href: '/roles',
-                icon: 'users',
-                permission: 'roles.view',
-                description: 'Manage roles and their permissions.',
-                create: {
-                    permission: 'roles.create',
-                    href: '/roles/create',
-                    label: 'New role',
-                },
-            },
-            {
-                label: 'Permissions',
-                href: '/permissions',
-                icon: 'key',
-                permission: 'permissions.view',
-                description: 'View the permissions available in the system.',
-            },
-            {
-                label: 'Audit Logs',
-                href: '/admin/audit-logs',
-                icon: 'clipboard',
-                permission: 'audit_logs.view',
-                description: 'Review sign-ins and administrative changes. Read-only.',
-            },
+            { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
+            { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
+            { label: 'Plantilla', href: '/admin/hr/plantilla', icon: 'grid', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Positions', href: '/admin/hr/positions', icon: 'clipboard', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Staffing', href: '/admin/hr/staffing', icon: 'building', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Salary Schedules', href: '/admin/hr/salary-schedules', icon: 'database', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Leave Credits', href: '/admin/hr/leave', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Types', href: '/admin/hr/leave/types', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Holidays', href: '/admin/hr/leave/holidays', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
+            { label: 'OIC Designations', href: '/admin/hr/leave/designations', icon: 'users', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Monetization', href: '/admin/hr/leave/monetization', icon: 'database', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Reports', href: '/admin/hr/leave/reports', icon: 'printer', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Cutover Readiness', href: '/admin/hr/readiness', icon: 'checkCircle', permission: 'leave.manage' },
+            { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify' },
+            { label: 'L&D Dashboard', href: '/admin/hr/learning-development/dashboard', icon: 'activity', permission: ['ld.view', 'ld.manage'] },
+            { label: 'Learning & Development', href: '/admin/hr/learning-development', icon: 'chartBar', permission: ['ld.view', 'ld.manage'] },
+            { label: 'Training Report', href: '/admin/hr/learning-development/report', icon: 'printer', permission: ['ld.view', 'ld.manage'] },
+            { label: 'L&D Review', href: '/admin/hr/learning-development/reviews', icon: 'checkCircle', permission: 'ld.approve' },
         ],
     },
     {
-        group: 'System',
+        group: 'Portal Content',
+        icon: 'building',
         items: [
-            {
-                label: 'System Settings',
-                href: '/admin/settings',
-                icon: 'cog',
-                permission: 'settings.view',
-                description: 'Portal name, portal notice, home page, and contact details.',
-            },
-            {
-                label: "What's New",
-                href: '/admin/changelogs',
-                icon: 'megaphone',
-                permission: 'changelogs.view',
-                description: "Write and publish release notes that pop up on everyone's dashboard.",
-                create: {
-                    permission: 'changelogs.manage',
-                    href: '/admin/changelogs/create',
-                    label: 'New release note',
-                },
-            },
+            { label: 'Organizational Units', href: '/admin/organizational-units', icon: 'building', permission: 'organizational_units.view' },
+            { label: 'Services', href: '/admin/services', icon: 'clipboard', permission: 'services.view' },
+            { label: 'Committees', href: '/admin/committees', icon: 'users', permission: 'committees.view' },
+        ],
+    },
+    {
+        // Legacy order (old-imis admin/inc/sidebar.php), then the
+        // new-only modules: settings before backup, IMIS roles last.
+        group: 'System Administration',
+        icon: 'shield',
+        items: [
+            { label: 'Announcements', href: '/admin/announcements', icon: 'megaphone', permission: 'announcements.view' },
+            { label: 'Changelog', href: '/admin/changelogs', icon: 'activity', permission: 'changelogs.view' },
+            { label: 'Active Sessions', href: '/admin/sessions', icon: 'desktop', permission: 'sessions.view' },
+            { label: 'Login History', href: '/admin/login-history', icon: 'clock', permission: 'audit_logs.view' },
+            { label: 'System Access Logs', href: '/admin/access-logs', icon: 'globe', permission: 'audit_logs.view' },
+            { label: 'Security Logs', href: '/admin/security-logs', icon: 'shield', permission: 'audit_logs.view' },
+            { label: 'Admin Audit Log', href: '/admin/audit-logs', icon: 'clipboard', permission: 'audit_logs.view' },
+            { label: 'System Settings', href: '/admin/settings', icon: 'cog', permission: 'settings.view' },
+            { label: 'Backup Database', href: '/admin/backup', icon: 'database', permission: 'backups.create' },
+            { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
+            { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },
+        ],
+    },
+    {
+        // Developer tools: only when the app runs locally (APP_ENV=local);
+        // the routes themselves don't exist anywhere else.
+        group: 'Developer',
+        localOnly: true,
+        icon: 'palette',
+        items: [
+            { label: 'Authorization demo', href: '/authorization-demo', icon: 'shield' },
+            { label: 'Design system', href: '/design-system', icon: 'palette' },
         ],
     },
 ];
 
-export const adminNavItems = [
-    { label: 'Administration', href: '/admin', icon: 'shield' },
-    ...adminModuleGroups,
-    { label: 'Authorization demo', href: '/authorization-demo', icon: 'shield' },
-    { label: 'Design system', href: '/design-system', icon: 'palette' },
-];
+export const adminNavItems = [{ label: 'Dashboard', href: '/admin', icon: 'chartBar' }, ...adminModuleGroups];

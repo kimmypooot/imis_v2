@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Collection;
 
 #[Fillable([
@@ -52,6 +53,15 @@ class OrganizationalUnit extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * Systems listed under this office in the dashboard directory besides
+     * the ones it manages (application_listings).
+     */
+    public function listedApplications(): MorphToMany
+    {
+        return $this->morphToMany(Application::class, 'listable', 'application_listings')->withTimestamps();
     }
 
     public function applications(): HasMany

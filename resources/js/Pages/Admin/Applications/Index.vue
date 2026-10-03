@@ -1,132 +1,145 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Table from '../../../Components/UI/Table.vue';
-import Badge from '../../../Components/UI/Badge.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import AdminCard from '../../../Components/UI/AdminCard.vue';
+import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
-import TextInput from '../../../Components/Forms/TextInput.vue';
-import Select from '../../../Components/Forms/Select.vue';
+import ActionButton from '../../../Components/UI/ActionButton.vue';
+import StatusBadge from '../../../Components/UI/StatusBadge.vue';
+import Icon from '../../../Components/UI/Icon.vue';
+import SystemModal from '../../../Components/Admin/SystemModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
+import { confirm } from '../../../Composables/useDialog';
 
 defineOptions({ layout: AdminLayout });
 
+/**
+ * The legacy "Manage Projects" page: every registered system, with Add /
+ * Edit in one extra-large modal (details, dashboard listing, roles,
+ * maintenance) and an activate/deactivate toggle per row.
+ */
 const props = defineProps({
     applications: { type: Array, required: true },
     filters: { type: Object, required: true },
     statusOptions: { type: Array, required: true },
+    visibilityOptions: { type: Array, required: true },
     organizationalUnitOptions: { type: Array, required: true },
+    committeeOptions: { type: Array, required: true },
 });
 
 const { can } = useAuthorization();
 
-const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
-const organizationalUnitId = ref(props.filters.organizational_unit_id ?? '');
+const options = computed(() => ({
+    statusOptions: props.statusOptions,
+    visibilityOptions: props.visibilityOptions,
+    organizationalUnitOptions: props.organizationalUnitOptions,
+    committeeOptions: props.committeeOptions,
+}));
 
-const applyFilters = () => {
-    router.get(
-        '/admin/applications',
-        {
-            search: search.value,
-            status: status.value,
-            organizational_unit_id: organizationalUnitId.value,
-        },
-        { preserveState: true, replace: true },
-    );
+const columns = [
+    { key: 'name', label: 'System name', value: (system) => `${system.name} ${system.short_name ?? ''}` },
+    { key: 'description', label: 'Description' },
+    { key: 'short_name', label: 'Code', align: 'center' },
+    { key: 'office', label: 'Office', align: 'center' },
+    { key: 'roles', label: 'Roles', align: 'center', value: (system) => system.roles.length },
+    { key: 'users_count', label: 'Users', align: 'center' },
+    { key: 'status', label: 'Status', align: 'center', value: (system) => (system.under_maintenance ? 'maintenance' : system.status) },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '8rem' },
+];
+
+const modalOpen = ref(false);
+const editingId = ref(null);
+const editing = computed(() => props.applications.find((system) => system.id === editingId.value) ?? null);
+
+const openAdd = () => {
+    editingId.value = null;
+    modalOpen.value = true;
+};
+
+const openEdit = (system) => {
+    editingId.value = system.id;
+    modalOpen.value = true;
+};
+
+const toggleStatus = async (system) => {
+    const deactivating = system.status === 'active';
+    const confirmed = await confirm({
+        title: deactivating ? `Deactivate ${system.name}?` : `Activate ${system.name}?`,
+        text: deactivating ? 'It will disappear from the portal for everyone. Roles and access are kept.' : 'It will appear in the portal again.',
+        tone: deactivating ? 'danger' : 'primary',
+        confirmText: deactivating ? 'Deactivate' : 'Activate',
+    });
+
+    if (confirmed) router.patch(`/admin/applications/${system.id}/status`, { status: deactivating ? 'inactive' : 'active' }, { preserveScroll: true });
 };
 </script>
 
 <template>
-    <Head title="Systems / Applications" />
+    <Head title="Manage Systems" />
 
     <PageHeader
-        title="Systems / Applications"
-        description="The catalog of CSC RO VIII information systems IMIS launches. These remain independent applications — IMIS only lists and links to them."
-        :breadcrumbs="[{ label: 'Administration', href: '/admin' }, { label: 'Systems / Applications' }]"
-    >
+        title="Manage Systems"
+        description="The CSC RO VIII systems IMIS launches. They stay independent applications — IMIS lists them, knows each one's roles, and controls who can open them."
+        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Systems' }]"
+    />
+
+    <AdminCard title="Registered Systems" icon="grid">
         <template v-if="can('applications.create')" #actions>
-            <Link href="/admin/applications/create">
-                <Button>New system</Button>
-            </Link>
-        </template>
-    </PageHeader>
-
-    <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">
-        <div class="w-full max-w-xs">
-            <TextInput id="search" v-model="search" label="Search" placeholder="Name or short name" />
-        </div>
-        <div class="w-48">
-            <label for="status-filter" class="block text-sm font-medium text-text">Status</label>
-            <div class="mt-1">
-                <Select id="status-filter" v-model="status" placeholder="All statuses" :options="statusOptions" />
-            </div>
-        </div>
-        <div class="w-56">
-            <label for="unit-filter" class="block text-sm font-medium text-text">Organizational unit</label>
-            <div class="mt-1">
-                <Select
-                    id="unit-filter"
-                    v-model="organizationalUnitId"
-                    placeholder="All units"
-                    :options="organizationalUnitOptions.map((unit) => ({ value: unit.id, label: unit.name }))"
-                />
-            </div>
-        </div>
-        <Button type="submit" variant="secondary">Filter</Button>
-    </form>
-
-    <Table :empty="applications.length === 0">
-        <template #empty>
-            <EmptyState
-                title="No systems found"
-                description="Try a different search or filter, or add the first system to the directory."
-            />
+            <Button variant="success" class="rounded-full" @click="openAdd">
+                <Icon name="plus" size="sm" />
+                Add System
+            </Button>
         </template>
 
-        <thead>
-            <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Organizational unit</th>
-                <th scope="col">Status</th>
-                <th scope="col">Visibility</th>
-                <th scope="col">Featured</th>
-                <th scope="col">Sort Order</th>
-                <th scope="col"><span class="sr-only">Actions</span></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="application in applications" :key="application.id">
-                <td>
-                    <div class="font-medium text-text">{{ application.name }}</div>
-                    <div v-if="application.short_name" class="text-text-muted">{{ application.short_name }}</div>
-                </td>
-                <td class="text-text-muted">{{ application.organizational_unit?.name ?? '—' }}</td>
-                <td>
-                    <Badge :tone="application.status === 'active' ? 'success' : 'neutral'">{{ application.status }}</Badge>
-                    <Badge v-if="application.under_maintenance" tone="warning" class="ml-1">maintenance</Badge>
-                </td>
-                <td class="text-text-muted">{{ application.visibility }}</td>
-                <td class="text-text-muted">{{ application.featured ? 'Yes' : 'No' }}</td>
-                <td class="text-text-muted">{{ application.sort_order }}</td>
-                <td class="text-right whitespace-nowrap">
-                    <Link
-                        :href="`/admin/applications/${application.id}/access`"
-                        class="font-medium text-primary hover:text-primary-hover"
-                    >
-                        Access
-                    </Link>
-                    <Link
-                        v-if="can('applications.update')"
-                        :href="`/admin/applications/${application.id}/edit`"
-                        class="ml-3 font-medium text-primary hover:text-primary-hover"
-                    >
-                        Edit
-                    </Link>
-                </td>
-            </tr>
-        </tbody>
-    </Table>
+        <DataTable :columns="columns" :rows="applications" caption="Registered systems" export-name="imis-systems">
+            <template #cell-name="{ row }">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <Icon name="grid" size="sm" />
+                    </span>
+                    <div class="min-w-0">
+                        <div class="font-medium text-text">{{ row.name }}</div>
+                        <div v-if="row.requires_access" class="text-xs text-text-muted">Restricted</div>
+                    </div>
+                </div>
+            </template>
+            <template #cell-description="{ row }">
+                <p class="line-clamp-2 max-w-sm text-text-muted">{{ row.description || '—' }}</p>
+            </template>
+            <template #cell-short_name="{ row }">
+                <span v-if="row.short_name" class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.short_name }}</span>
+                <span v-else class="text-text-muted">—</span>
+            </template>
+            <template #cell-roles="{ row }">{{ row.roles.length }}</template>
+            <template #cell-status="{ row }">
+                <div class="flex flex-col items-center gap-1">
+                    <StatusBadge :status="row.status" />
+                    <StatusBadge v-if="row.under_maintenance" status="maintenance" label="Maintenance" />
+                </div>
+            </template>
+            <template #cell-actions="{ row }">
+                <div class="flex justify-center gap-1">
+                    <ActionButton icon="pencil" :label="`Edit ${row.name}`" @click="openEdit(row)" />
+                    <ActionButton
+                        v-if="can('applications.manage_access')"
+                        icon="key"
+                        tone="success"
+                        :label="`Manage access to ${row.name}`"
+                        :href="`/admin/system-access?system=${row.id}`"
+                    />
+                    <ActionButton
+                        v-if="can('applications.archive')"
+                        icon="power"
+                        :tone="row.status === 'active' ? 'danger' : 'success'"
+                        :label="`${row.status === 'active' ? 'Deactivate' : 'Activate'} ${row.name}`"
+                        @click="toggleStatus(row)"
+                    />
+                </div>
+            </template>
+        </DataTable>
+    </AdminCard>
+
+    <SystemModal :open="modalOpen" :system="editing" :options="options" @close="modalOpen = false" />
 </template>

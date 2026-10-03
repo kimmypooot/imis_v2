@@ -40,22 +40,13 @@ class CommitteeController extends Controller
         ]);
     }
 
-    public function create(): Response
-    {
-        $this->authorize('create', Committee::class);
-
-        return Inertia::render('Admin/Committees/Create', [
-            'statusOptions' => Status::options(),
-        ]);
-    }
-
     public function store(StoreCommitteeRequest $request): RedirectResponse
     {
         $committee = Committee::create($request->validated());
 
         $this->audit()->record(AuditEvent::CommitteeCreated, "Created committee {$committee->name}", $committee);
 
-        return to_route('admin.committees.show', $committee);
+        return to_route('admin.committees.show', $committee)->with('status', "Committee {$committee->name} was added. Add its members next.");
     }
 
     public function show(Committee $committee): Response
@@ -78,23 +69,13 @@ class CommitteeController extends Controller
         ]);
     }
 
-    public function edit(Committee $committee): Response
-    {
-        $this->authorize('update', $committee);
-
-        return Inertia::render('Admin/Committees/Edit', [
-            'committee' => $committee,
-            'statusOptions' => Status::options(),
-        ]);
-    }
-
     public function update(UpdateCommitteeRequest $request, Committee $committee): RedirectResponse
     {
         $committee->update($request->validated());
 
         $this->audit()->recordChanges(AuditEvent::CommitteeUpdated, "Updated committee {$committee->name}", $committee);
 
-        return to_route('admin.committees.show', $committee);
+        return back()->with('status', "Committee {$committee->name} was saved.");
     }
 
     public function updateStatus(UpdateCommitteeStatusRequest $request, Committee $committee): RedirectResponse
@@ -107,6 +88,6 @@ class CommitteeController extends Controller
             $committee,
         );
 
-        return to_route('admin.committees.show', $committee);
+        return back()->with('status', "Committee {$committee->name} was ".strtolower($this->activationVerb($committee->status)).'.');
     }
 }

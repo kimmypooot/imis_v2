@@ -2,10 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
+import UserAvatar from '../UI/UserAvatar.vue';
 import ConfirmDialog from '../Feedback/ConfirmDialog.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { firstName, useSplash } from '../../Composables/useSplash';
-import { portalNavItems } from '../../Utils/navigation';
+import { adminAccessPermissions } from '../../Utils/navigation';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
@@ -18,7 +19,7 @@ const props = defineProps({
     user: {
         type: Object,
         required: true,
-        /** { name, username, email, previous_login_at } */
+        /** { name, username, email, position, profile_photo_url, previous_login_at } */
     },
 });
 
@@ -27,9 +28,8 @@ const emit = defineEmits(['about']);
 const { canAny } = useAuthorization();
 const { show: showSplash, hide: hideSplash } = useSplash();
 
-// Same any-of list as the Administration nav entry (kept in one place).
-const adminPermissions = portalNavItems.find((item) => item.href === '/admin')?.permission ?? [];
-const canAccessAdmin = computed(() => canAny(adminPermissions));
+// Same any-of list as the sidebar's Administration entry (kept in one place).
+const canAccessAdmin = computed(() => canAny(adminAccessPermissions));
 
 const open = ref(false);
 const rootRef = ref(null);
@@ -82,7 +82,7 @@ const logout = () => {
         title: 'Signing Out',
         subtitle: 'See you soon, {name}',
         name: firstName(props.user.name),
-        note: 'Returning to the login page…',
+        note: 'Redirecting to the login page…',
     });
 
     // A short hold so the message can be read, then the splash stays up
@@ -91,13 +91,6 @@ const logout = () => {
         router.post('/logout', {}, { onFinish: () => hideSplash(500) });
     }, 700);
 };
-
-const initials = props.user.name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 const itemClass =
     'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none';
@@ -108,18 +101,18 @@ const itemClass =
         <button
             type="button"
             class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            :aria-label="`Account menu for ${user.name}`"
             :aria-expanded="open"
             aria-haspopup="menu"
             @click="toggle"
         >
-            <span
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white"
-                aria-hidden="true"
-            >
-                {{ initials }}
+            <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" />
+            <!-- Name over position; long values truncate, with the full text on hover. -->
+            <span class="hidden max-w-48 min-w-0 flex-col text-left leading-tight sm:flex">
+                <span class="truncate font-semibold text-text" :title="user.name">{{ user.name }}</span>
+                <span v-if="user.position" class="truncate text-xs text-text-muted" :title="user.position">{{ user.position }}</span>
             </span>
-            <span class="hidden text-text sm:inline">{{ user.name }}</span>
-            <Icon name="chevronDown" size="sm" class="text-text-muted" />
+            <Icon name="chevronDown" size="sm" class="shrink-0 text-text-muted" />
         </button>
 
         <div
@@ -128,7 +121,8 @@ const itemClass =
             class="absolute right-0 z-50 mt-2 w-64 rounded-md border border-border bg-surface py-1 shadow-lg"
         >
             <div class="border-b border-border px-3 py-2">
-                <p class="truncate text-sm font-medium text-text">{{ user.name }}</p>
+                <p class="truncate text-sm font-semibold text-text">{{ user.name }}</p>
+                <p v-if="user.position" class="truncate text-xs text-text-muted">{{ user.position }}</p>
                 <p class="truncate text-xs text-text-muted">@{{ user.username }} · {{ user.email }}</p>
                 <p v-if="user.previous_login_at" class="mt-1 text-xs text-text-muted">
                     Last login: <time :datetime="user.previous_login_at">{{ formatDateTime(user.previous_login_at) }}</time>

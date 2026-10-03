@@ -24,13 +24,7 @@ const form = useForm({
     username: '',
     password: '',
     remember: false,
-    mode: 'employee',
     'cf-turnstile-response': '',
-});
-
-const adminMode = computed({
-    get: () => form.mode === 'admin',
-    set: (value) => (form.mode = value ? 'admin' : 'employee'),
 });
 
 // ── Caps Lock warning (legacy login parity) ──────────────────────────
@@ -139,8 +133,8 @@ const submit = () => {
 
     <div class="mb-6 text-center">
         <span class="inline-flex items-center gap-2 rounded-full bg-info-bg px-4 py-1.5 text-xs font-medium text-primary">
-            <Icon :name="adminMode ? 'shield' : 'user'" size="sm" />
-            {{ adminMode ? 'Login as Administrator' : 'Login as CSC RO VIII Employee' }}
+            <Icon name="user" size="sm" />
+            Login as CSC RO VIII Employee
         </span>
     </div>
 
@@ -198,25 +192,4 @@ const submit = () => {
             {{ form.processing ? 'Logging in…' : 'Login' }}
         </Button>
     </form>
-
-    <!-- The legacy "Switch to Superadmin Login" toggle. It only chooses
-         where you land; the admin console still checks your access. -->
-    <div class="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <span id="admin-mode-label" class="text-xs text-text-muted">Open the admin console after login</span>
-        <button
-            type="button"
-            role="switch"
-            :aria-checked="adminMode"
-            aria-labelledby="admin-mode-label"
-            class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
-            :class="adminMode ? 'bg-primary' : 'bg-border'"
-            @click="adminMode = !adminMode"
-        >
-            <span
-                class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
-                :class="adminMode ? 'translate-x-5' : 'translate-x-0.5'"
-                aria-hidden="true"
-            />
-        </button>
-    </div>
 </template>

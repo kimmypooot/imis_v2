@@ -4,31 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
 use App\Enums\RoleName;
+use App\Enums\UnitType;
 use App\Enums\UserStatus;
 use App\Http\Requests\User\AssignRolesRequest;
 use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserPhotoRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Requests\User\UpdateUserStatusRequest;
 use App\Models\Application;
+use App\Models\OrganizationalUnit;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\HR\EmployeeRecords;
+use App\Support\Legacy\LegacyBridge;
+use App\Support\ProfilePhotos;
 use App\Support\Usernames;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * User management, laid out like the legacy IMIS "Manage Users" page: one
+ * table, with Add and Edit (Profile / Account / Security) in modals.
+ * Every action answers with a redirect back plus a flash message, which
+ * the UI shows as a toast.
+ */
 class UserController extends Controller
 {
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', User::class);
 
+        $actor = $request->user();
+
         $users = User::query()
-            ->with('roles:id,name,display_name')
+            ->with(['roles:id,name,display_name', 'organizationalUnit:id,name,short_name'])
+            ->withCount('applicationAccess')
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
@@ -42,25 +58,33 @@ class UserController extends Controller
                 fn ($query, $roleId) => $query->whereHas('roles', fn ($query) => $query->whereKey($roleId)),
             )
             ->orderBy('name')
-            ->get(['id', 'name', 'username', 'email', 'status']);
+            ->get();
 
         return Inertia::render('Admin/Users/Index', [
-            'users' => $users,
+            'users' => $users->map(fn (User $user) => [
+                ...$user->only(['id', 'name', 'first_name', 'middle_name', 'last_name', 'name_extension', 'username', 'email', 'sex', 'position', 'organizational_unit_id']),
+                'status' => $user->status->value,
+                'birthday' => $user->birthday?->toDateString(),
+                'office' => $user->organizationalUnit?->short_name ?: $user->organizationalUnit?->name,
+                'office_name' => $user->organizationalUnit?->name,
+                'profile_photo_url' => $user->profile_photo_url,
+                'roles' => $user->roles->map->only(['id', 'name', 'display_name'])->values(),
+                'systems_count' => $user->application_access_count,
+                'last_login_at' => $user->last_login_at?->toIso8601String(),
+                // Per-row abilities (protected Super Administrators).
+                'can' => [
+                    'update' => $actor->can('update', $user),
+                    'status' => $actor->can('updateStatus', $user),
+                    'roles' => $actor->can('assignRoles', $user),
+                ],
+            ]),
             'filters' => $request->only(['search', 'status', 'role_id']),
             'statusOptions' => [
                 ['value' => UserStatus::Active->value, 'label' => 'Active'],
                 ['value' => UserStatus::Inactive->value, 'label' => 'Inactive'],
             ],
             'roleOptions' => $this->assignableRoles($request),
-        ]);
-    }
-
-    public function create(Request $request): Response
-    {
-        $this->authorize('create', User::class);
-
-        return Inertia::render('Admin/Users/Create', [
-            'roleOptions' => $this->assignableRoles($request, onlyActive: true),
+            'officeOptions' => $this->officeOptions(),
         ]);
     }
 
@@ -68,23 +92,40 @@ class UserController extends Controller
      * Creates the account with an unusable random password and
      * immediately sends a password-set link through the existing
      * password-reset flow — an admin never chooses or sees a new user's
-     * password.
+     * password. (The legacy system set it to the user's birthday; that is
+     * deliberately not carried over.)
      */
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, ProfilePhotos $photos, EmployeeRecords $records): RedirectResponse
     {
-        $user = User::create([
-            'name' => $request->validated('name'),
-            // Left blank → generated from the name, the legacy convention.
-            'username' => $request->validated('username') ?: Usernames::generate($request->validated('name')),
-            'email' => $request->validated('email'),
-            'password' => Str::random(40),
-            'status' => UserStatus::Active,
+        $profile = $request->safe()->only([
+            'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'email',
         ]);
 
-        $roleIds = $request->validated('role_ids') ?? [];
+        $user = DB::transaction(function () use ($request, $profile, $records) {
+            $user = User::create([
+                ...$profile,
+                'name' => User::composeName($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name'], $profile['name_extension'] ?? null),
+                // Left blank → generated the legacy way (initials + surname).
+                'username' => $request->validated('username')
+                    ?: Usernames::generateFromParts($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name']),
+                'password' => Str::random(40),
+                'status' => UserStatus::Active,
+            ]);
 
-        if ($roleIds) {
-            $user->roles()->sync($roleIds);
+            if ($roleIds = $request->validated('role_ids') ?? []) {
+                $user->roles()->sync($roleIds);
+            }
+
+            // Every new account is a staff member: their employee record
+            // (HR-1) comes with it, employment status "Not set" for HR, so
+            // they can fill in their PDS right away.
+            $records->setUp($user, how: 'Automatically set up');
+
+            return $user;
+        });
+
+        if ($request->hasFile('profile_photo')) {
+            $user->forceFill(['profile_photo_path' => $photos->store($request->file('profile_photo'))])->save();
         }
 
         Password::sendResetLink(['email' => $user->email]);
@@ -92,10 +133,10 @@ class UserController extends Controller
         $this->audit()->record(AuditEvent::UserCreated, "Created user {$user->name}", $user, [
             'username' => $user->username,
             'email' => $user->email,
-            'roles' => Role::query()->whereKey($roleIds)->pluck('name')->all(),
+            'roles' => $user->roles()->pluck('name')->all(),
         ]);
 
-        return to_route('users.show', $user);
+        return back()->with('status', "{$user->name} was added. A link to set their password was emailed to {$user->email}.");
     }
 
     public function show(Request $request, User $user): Response
@@ -145,41 +186,47 @@ class UserController extends Controller
             ->all();
     }
 
-    public function edit(User $user): Response
-    {
-        $this->authorize('update', $user);
-
-        return Inertia::render('Admin/Users/Edit', [
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'username' => $user->username,
-                'email' => $user->email,
-                'status' => $user->status,
-            ],
-        ]);
-    }
-
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
 
         $this->audit()->recordChanges(AuditEvent::UserUpdated, "Updated user {$user->name}", $user);
 
-        return to_route('users.show', $user);
+        return back()->with('status', "{$user->name}'s account was saved.");
+    }
+
+    public function updatePhoto(UpdateUserPhotoRequest $request, User $user, ProfilePhotos $photos): RedirectResponse
+    {
+        $user->forceFill([
+            'profile_photo_path' => $photos->store($request->file('profile_photo'), $user->profile_photo_path),
+        ])->save();
+
+        $this->audit()->record(AuditEvent::UserUpdated, "Changed the profile photo of {$user->name}", $user);
+
+        return back()->with('status', 'Profile photo updated.');
+    }
+
+    public function destroyPhoto(User $user, ProfilePhotos $photos): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $photos->delete($user->profile_photo_path);
+        $user->forceFill(['profile_photo_path' => null])->save();
+
+        $this->audit()->record(AuditEvent::UserUpdated, "Removed the profile photo of {$user->name}", $user);
+
+        return back()->with('status', 'Profile photo removed.');
     }
 
     public function updateStatus(UpdateUserStatusRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
 
-        $this->audit()->recordChanges(
-            AuditEvent::UserStatusChanged,
-            "{$this->activationVerb($user->status)} user {$user->name}",
-            $user,
-        );
+        $verb = $this->activationVerb($user->status);
 
-        return to_route('users.show', $user);
+        $this->audit()->recordChanges(AuditEvent::UserStatusChanged, "{$verb} user {$user->name}", $user);
+
+        return back()->with('status', "{$user->name} was ".Str::lower($verb).'.');
     }
 
     public function assignRoles(AssignRolesRequest $request, User $user): RedirectResponse
@@ -194,7 +241,10 @@ class UserController extends Controller
             $result,
         );
 
-        return to_route('users.show', $user);
+        // Super Administrator is the legacy "superadmin" role; pivot changes fire no model event.
+        app(LegacyBridge::class)->queue($user->id);
+
+        return back()->with('status', "{$user->name}'s IMIS roles were saved.");
     }
 
     /**
@@ -230,5 +280,27 @@ class UserController extends Controller
             )
             ->orderBy('name')
             ->get(['id', 'name', 'display_name']);
+    }
+
+    /**
+     * Offices grouped by type, for the "Division / Office" select (the
+     * legacy fo_rsu list).
+     *
+     * @return array<int, array{label: string, options: array<int, array{value: int, label: string}>}>
+     */
+    private function officeOptions(): array
+    {
+        $units = OrganizationalUnit::query()->active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'short_name', 'unit_type']);
+
+        return collect(UnitType::cases())
+            ->map(fn (UnitType $type) => [
+                'label' => $type->pluralLabel(),
+                'options' => $units->where('unit_type', $type)
+                    ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name])
+                    ->values()->all(),
+            ])
+            ->filter(fn (array $group) => $group['options'] !== [])
+            ->values()
+            ->all();
     }
 }

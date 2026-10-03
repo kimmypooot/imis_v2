@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\Tables\ServerTable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -48,7 +49,7 @@ class AuditLogController extends Controller
             ->when($to, fn ($query, Carbon $to) => $query->where('created_at', '<=', $to))
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate(25, ['id', 'actor_id', 'actor_label', 'event', 'target_type', 'target_id', 'target_label', 'description', 'ip_address', 'created_at'])
+            ->paginate(in_array($request->integer('per_page'), ServerTable::PAGE_SIZES, true) ? $request->integer('per_page') : 25, ['id', 'actor_id', 'actor_label', 'event', 'target_type', 'target_id', 'target_label', 'description', 'ip_address', 'created_at'])
             ->withQueryString()
             ->through(fn (AuditLog $log) => [
                 'id' => $log->id,

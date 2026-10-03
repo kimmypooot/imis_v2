@@ -71,7 +71,22 @@ class ChangePasswordTest extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.username', 'jdcruz')
             ->where('auth.user.previous_login_at', fn ($value) => $value !== null)
-            ->where('app.version', config('app.version')));
+            ->where('app.version', config('app.version'))
+            // Hides the sidebar's Developer group outside local.
+            ->where('app.local', false));
+    }
+
+    public function test_shared_props_include_the_header_photo_and_position(): void
+    {
+        $user = User::factory()->create(['profile_photo_path' => 'profile-photos/jdcruz.jpg', 'position' => 'Information Technology Officer I']);
+
+        $this->actingAs($user)->get('/dashboard')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.profile_photo_url', $user->profile_photo_url)
+            ->where('auth.user.position', 'Information Technology Officer I'));
+
+        $this->actingAs(User::factory()->create(['position' => null]))->get('/dashboard')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.profile_photo_url', null)
+            ->where('auth.user.position', null));
     }
 
     public function test_sign_in_flags_the_welcome_splash_once(): void

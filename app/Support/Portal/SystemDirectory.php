@@ -32,6 +32,13 @@ class SystemDirectory
 {
     public const OTHER_KEY = 'other';
 
+    /**
+     * Divisions and their systems are alphabetical: case-insensitive and
+     * natural, so "Unit 2" comes before "Unit 10". Categories keep their
+     * fixed order (unit types, then Committees, then Other).
+     */
+    private const ALPHABETICAL = SORT_NATURAL | SORT_FLAG_CASE;
+
     public function __construct(private readonly ?User $user, private readonly Request $request) {}
 
     /**
@@ -47,9 +54,10 @@ class SystemDirectory
                 'listedUnits' => fn ($query) => $query->active(),
                 'listedCommittees' => fn ($query) => $query->active(),
             ])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+            ->get()
+            // Systems are listed alphabetically within each division.
+            ->sortBy('name', self::ALPHABETICAL)
+            ->values();
 
         $units = collect();
         $committees = collect();
@@ -94,7 +102,7 @@ class SystemDirectory
         foreach (UnitType::cases() as $type) {
             $divisions = $units
                 ->filter(fn (OrganizationalUnit $unit) => $unit->unit_type === $type)
-                ->sortBy([['sort_order', 'asc'], ['name', 'asc']])
+                ->sortBy('name', self::ALPHABETICAL)
                 ->map(fn (OrganizationalUnit $unit) => $this->division(
                     "unit-{$unit->id}", 'unit', $unit->name, $unit->short_name, $unit->description, $placements,
                 ));
@@ -105,7 +113,7 @@ class SystemDirectory
         }
 
         $committeeDivisions = $committees
-            ->sortBy('name')
+            ->sortBy('name', self::ALPHABETICAL)
             ->map(fn (Committee $committee) => $this->division(
                 "committee-{$committee->id}", 'committee', $committee->name, $committee->short_name, $committee->description, $placements,
             ));

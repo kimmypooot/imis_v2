@@ -19,37 +19,98 @@ class ApplicationAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ── Access page ──────────────────────────────────────────────────
+    // ── System Access page (legacy "Roles and Permissions") ──────────
 
-    public function test_access_page_requires_applications_view(): void
+    public function test_system_access_page_requires_manage_access(): void
     {
-        $application = Application::factory()->create();
-
-        $this->actingAs(User::factory()->create())
-            ->get("/admin/applications/{$application->id}/access")
+        $this->actingAs($this->userWithPermissions('applications.view'))
+            ->get('/admin/system-access')
             ->assertForbidden();
     }
 
-    public function test_access_page_lists_roles_and_grants(): void
+    public function test_system_access_grid_loads_on_demand_with_locked_rows(): void
     {
-        $actor = $this->userWithPermissions('applications.view');
+        $actor = $this->userWithPermissions('applications.manage_access');
         $role = ApplicationRole::factory()->create(['name' => 'Administrator']);
         $grant = ApplicationAccess::factory()->forRole($role)->create();
+        $superAdmin = $this->superAdmin();
+
+        $this->actingAs($actor)->get('/admin/system-access')->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/SystemAccess/Index')
+            ->has('systems', 1)
+            ->missing('access'));
 
         $this->actingAs($actor)
-            ->get("/admin/applications/{$role->application_id}/access")
-            ->assertOk()
+            ->get("/admin/system-access?system={$role->application_id}")
+            ->assertInertia(fn (Assert $page) => $page->reloadOnly('access', fn (Assert $reload) => $reload
+                ->where('access.system_id', $role->application_id)
+                ->where('access.roles.0.name', 'Administrator')
+                ->where('access.users', function ($users) use ($grant, $actor, $superAdmin) {
+                    $users = collect($users)->keyBy('id');
+
+                    return $users[$grant->user_id]['role_id'] === $grant->application_role_id
+                        && $users[$actor->id]['locked'] === 'self'
+                        && $users[$superAdmin->id]['locked'] === 'protected';
+                })));
+    }
+
+    public function test_bulk_save_grants_changes_and_revokes_together(): void
+    {
+        $actor = $this->userWithPermissions('applications.manage_access');
+        $role = ApplicationRole::factory()->create();
+        $other = ApplicationRole::factory()->create(['application_id' => $role->application_id]);
+        $toChange = ApplicationAccess::factory()->forRole($role)->create();
+        $toRevoke = ApplicationAccess::factory()->forRole($role)->create();
+        $newcomer = User::factory()->create();
+
+        $this->actingAs($actor)->put("/admin/system-access/{$role->application_id}", ['entries' => [
+            ['user_id' => $toChange->user_id, 'application_role_id' => $other->id],
+            ['user_id' => $toRevoke->user_id, 'application_role_id' => null],
+            ['user_id' => $newcomer->id, 'application_role_id' => $role->id],
+        ]])->assertSessionHasNoErrors()->assertSessionHas('status');
+
+        $this->assertSame($other->id, $toChange->fresh()->application_role_id);
+        $this->assertModelMissing($toRevoke);
+        $this->assertDatabaseHas('application_access', ['user_id' => $newcomer->id, 'application_role_id' => $role->id, 'granted_by' => $actor->id]);
+    }
+
+    public function test_bulk_save_is_all_or_nothing_and_enforces_the_guards(): void
+    {
+        $actor = $this->userWithPermissions('applications.manage_access');
+        $role = ApplicationRole::factory()->create();
+        $foreign = ApplicationRole::factory()->create();
+        $fine = User::factory()->create();
+
+        $this->actingAs($actor)->put("/admin/system-access/{$role->application_id}", ['entries' => [
+            ['user_id' => $fine->id, 'application_role_id' => $role->id],
+            ['user_id' => $actor->id, 'application_role_id' => $role->id],
+            ['user_id' => $this->superAdmin()->id, 'application_role_id' => $role->id],
+            ['user_id' => User::factory()->create()->id, 'application_role_id' => $foreign->id],
+            ['user_id' => User::factory()->inactive()->create()->id, 'application_role_id' => $role->id],
+        ]])->assertSessionHasErrors([
+            'entries.1.application_role_id',
+            'entries.2.application_role_id',
+            'entries.3.application_role_id',
+            'entries.4.application_role_id',
+        ]);
+
+        $this->assertDatabaseCount('application_access', 0);
+    }
+
+    public function test_user_access_page_loads_one_users_systems_on_demand(): void
+    {
+        $actor = $this->userWithPermissions('applications.manage_access', 'users.view');
+        $grant = ApplicationAccess::factory()->create();
+
+        $this->actingAs($actor)
+            ->get("/admin/user-access?user={$grant->user_id}")
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Applications/Access')
-                ->has('roles', 1, fn (Assert $role) => $role
-                    ->where('name', 'Administrator')
-                    ->where('access_grants_count', 1)
-                    ->etc())
-                ->has('grants', 1, fn (Assert $row) => $row
-                    ->where('user.id', $grant->user_id)
-                    ->where('role.name', 'Administrator')
-                    ->etc())
-                ->where('userOptions', fn ($options) => ! collect($options)->contains('id', $grant->user_id)));
+                ->component('Admin/UserAccess/Index')
+                ->missing('access')
+                ->reloadOnly('access', fn (Assert $reload) => $reload
+                    ->where('access.user_id', $grant->user_id)
+                    ->where('access.locked', null)
+                    ->where('access.systems.0.role_id', $grant->application_role_id)));
     }
 
     // ── Defining roles ───────────────────────────────────────────────
@@ -78,7 +139,7 @@ class ApplicationAccessTest extends TestCase
                 'launch_url' => 'https://example.test/admin',
                 'sort_order' => 1,
             ])
-            ->assertRedirect("/admin/applications/{$application->id}/access");
+            ->assertRedirect()->assertSessionHas('status');
 
         $this->assertDatabaseHas('application_roles', [
             'application_id' => $application->id,
@@ -190,7 +251,7 @@ class ApplicationAccessTest extends TestCase
                 'user_id' => $target->id,
                 'application_role_id' => $role->id,
             ])
-            ->assertRedirect("/admin/applications/{$role->application_id}/access");
+            ->assertRedirect()->assertSessionHas('status');
 
         $this->assertDatabaseHas('application_access', [
             'application_id' => $role->application_id,
@@ -363,7 +424,7 @@ class ApplicationAccessTest extends TestCase
 
         $this->actingAs($actor)
             ->delete("/admin/applications/{$grant->application_id}/access/{$grant->id}")
-            ->assertRedirect("/admin/applications/{$grant->application_id}/access");
+            ->assertRedirect()->assertSessionHas('status');
 
         $this->assertModelMissing($grant);
         $this->assertDatabaseHas('audit_logs', ['event' => 'application.access_revoked', 'target_id' => $grant->application_id]);

@@ -6,9 +6,9 @@ import Button from '../../Components/UI/Button.vue';
 import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import { formatDateTime } from '../../Utils/datetime';
+import { firstName } from '../../Composables/useSplash';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
-import StatsBar from '../../Components/Portal/StatsBar.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
@@ -18,16 +18,16 @@ import AnnouncementCard from '../../Components/Announcements/AnnouncementCard.vu
 defineOptions({ layout: PortalLayout });
 
 const props = defineProps({
-    stats: { type: Object, required: true },
     whatsNew: { type: Object, default: null },
     directory: { type: Object, required: true },
     division: { type: String, default: null },
     announcements: { type: Array, required: true },
-    mySystems: { type: Array, required: true },
     maintenanceNotices: { type: Array, required: true },
     services: { type: Array, required: true },
     // From System Settings.
     welcomeMessage: { type: String, default: null },
+    // The user's division, shown as a badge beside the greeting.
+    userDivision: { type: String, default: null },
     contact: { type: Object, default: () => ({}) },
 });
 
@@ -44,15 +44,15 @@ const hasContact = computed(() => Boolean(props.contact.email || props.contact.p
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 
-// Computed from the visiting browser's own clock — server time would be
-// wrong for the greeting's purpose whenever it differs from the user's
-// local timezone.
+// The legacy greeting ("Good morning, Juan! 👋"), from the visiting
+// browser's own clock — server time would be wrong for the greeting's
+// purpose whenever it differs from the user's local timezone.
 const greeting = computed(() => {
     const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const name = firstName(user.value?.name);
 
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    return name ? `${part}, ${name}! 👋` : `${part}!`;
 });
 </script>
 
@@ -60,10 +60,12 @@ const greeting = computed(() => {
     <Head title="Portal" />
 
     <div class="space-y-8">
-        <div class="space-y-4">
-            <WelcomeBanner :greeting="`${greeting}, ${user?.name ?? ''}`" :message="welcomeMessage" />
-            <StatsBar :stats="stats" />
-        </div>
+        <WelcomeBanner
+            :greeting="greeting"
+            :division="userDivision"
+            :version="page.props.app?.version"
+            :message="welcomeMessage"
+        />
 
         <Alert v-if="maintenanceNotices.length" tone="warning" title="Systems under maintenance">
             <ul class="space-y-1">
@@ -84,21 +86,6 @@ const greeting = computed(() => {
                     v-for="announcement in announcements"
                     :key="announcement.id"
                     :announcement="announcement"
-                />
-            </div>
-        </PortalSection>
-
-        <!-- Only shown once the user holds a role in some system. -->
-        <PortalSection v-if="mySystems.length" title="My Systems" description="Systems you have a role in.">
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <PortalCard
-                    v-for="application in mySystems"
-                    :key="application.id"
-                    :href="`/applications/${application.id}`"
-                    :icon="application.icon || 'grid'"
-                    :title="application.name"
-                    :maintenance="application.under_maintenance"
-                    :subtitle="application.role"
                 />
             </div>
         </PortalSection>

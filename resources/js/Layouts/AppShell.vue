@@ -5,45 +5,53 @@ import Icon from '../Components/UI/Icon.vue';
 import SidebarNav from '../Components/Navigation/SidebarNav.vue';
 import UserMenu from '../Components/Navigation/UserMenu.vue';
 import PortalSearch from '../Components/Portal/PortalSearch.vue';
-import Alert from '../Components/Feedback/Alert.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
+import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
 import { firstName, useSplash } from '../Composables/useSplash';
 
 /**
  * Shared authenticated shell that PortalLayout and AdminLayout both wrap
  * around their own `navItems` — it never hardcodes a business module.
  *
- * Follows the legacy IMIS layout: a fixed top bar (logo, search, user
- * menu) and no sidebar until the hamburger is clicked. On desktop the
- * sidebar docks beside the content and the choice is remembered per
- * browser; on smaller screens it overlays the page and closes on
- * navigation.
+ * Follows the legacy IMIS layouts: a fixed top bar (logo, search, user
+ * menu) and a hamburger-toggled sidebar. The portal starts with the
+ * sidebar closed (legacy dashboard); the admin area starts with it open
+ * and white, like the legacy NiceAdmin panel. On desktop the sidebar docks
+ * beside the content and each area remembers its own choice per browser;
+ * on smaller screens it overlays the page and closes on navigation.
  */
-defineProps({
+const props = defineProps({
     navItems: {
         type: Array,
         required: true,
     },
+    variant: {
+        type: String,
+        default: 'portal',
+        validator: (value) => ['portal', 'admin'].includes(value),
+    },
 });
 
-const STORAGE_KEY = 'imis.sidebar-open';
+const STORAGE_KEY = props.variant === 'admin' ? 'imis.admin-sidebar-open' : 'imis.sidebar-open';
+const DEFAULT_OPEN = props.variant === 'admin';
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 const page = usePage();
 // From System Settings (shared by HandleInertiaRequests).
 const portalNotice = computed(() => page.props.portal?.notice);
-const flashStatus = computed(() => page.props.flash?.status);
+const unread = computed(() => page.props.notifications?.unread ?? 0);
 
 // Right after signing in, open with the legacy "Login Successful" splash.
-// Raised during setup, so it paints in the same frame as this page — the
-// page never flashes underneath first.
+// Raised during setup, so it paints in the same frame as this page, and
+// `instant` (no fade-in) so the page never shows through first.
 const { show: showSplash, hide: hideSplash } = useSplash();
 if (page.props.flash?.signedIn) {
     showSplash({
+        instant: true,
         title: 'Login Successful',
         subtitle: 'Welcome back, {name}',
         name: firstName(page.props.auth.user?.name),
-        note: page.props.flash.signedIn === 'admin' ? 'Opening the admin console…' : 'Opening your dashboard…',
+        note: 'Redirecting to your dashboard…',
     });
     hideSplash(1400);
 }
@@ -56,9 +64,11 @@ const sidebarRef = ref(null);
 
 const readPreference = () => {
     try {
-        return window.localStorage.getItem(STORAGE_KEY) === '1';
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+
+        return saved === null ? DEFAULT_OPEN : saved === '1';
     } catch {
-        return false;
+        return DEFAULT_OPEN;
     }
 };
 
@@ -193,19 +203,26 @@ onBeforeUnmount(() => {
                     <Icon name="info" size="md" />
                     <span class="hidden md:inline">About</span>
                 </button>
-                <button
-                    type="button"
-                    class="rounded-md p-2 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                    aria-label="Notifications (coming in a future phase)"
-                    title="Notifications — coming in a future phase"
+                <Link
+                    v-if="page.props.notifications"
+                    href="/notifications"
+                    class="relative rounded-md p-2 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    :aria-label="unread ? `Notifications, ${unread} unread` : 'Notifications'"
+                    title="Notifications"
                 >
                     <Icon name="bell" size="md" />
-                </button>
+                    <span
+                        v-if="unread"
+                        class="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-danger px-1 text-center text-[0.65rem] font-bold leading-[1.1rem] text-white"
+                        aria-hidden="true"
+                    >{{ unread > 99 ? '99+' : unread }}</span>
+                </Link>
                 <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @about="aboutOpen = true" />
             </div>
         </header>
 
         <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
+        <SessionTimeoutDialog v-if="page.props.auth.user" />
 
         <!-- Overlay backdrop (below desktop width only) -->
         <div
@@ -218,14 +235,25 @@ onBeforeUnmount(() => {
         <aside
             id="app-sidebar"
             ref="sidebarRef"
-            class="fixed bottom-0 left-0 top-16 z-30 w-64 overflow-y-auto bg-csc-blue py-4 text-white transition-transform duration-200 motion-reduce:transition-none"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col transition-transform duration-200 motion-reduce:transition-none"
+            :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', variant === 'admin' ? 'border-r border-border bg-surface text-text shadow-sm' : 'bg-csc-blue text-white']"
             :role="isDesktop ? undefined : 'dialog'"
             :aria-modal="isDesktop ? undefined : sidebarOpen"
             aria-label="Navigation menu"
             :inert="!sidebarOpen"
         >
-            <SidebarNav :items="navItems" />
+            <div class="min-h-0 flex-1 overflow-y-auto py-4">
+                <SidebarNav :items="navItems" :variant="variant" />
+            </div>
+
+            <!-- Version and agency, as in the legacy About footer. -->
+            <footer
+                class="shrink-0 border-t px-6 py-3 text-xs leading-relaxed"
+                :class="variant === 'admin' ? 'border-border text-text-muted' : 'border-white/10 text-white/50'"
+            >
+                <p class="font-medium">IMIS v{{ page.props.app?.version }}</p>
+                <p>CSC Regional Office VIII</p>
+            </footer>
         </aside>
 
         <div
@@ -248,7 +276,6 @@ onBeforeUnmount(() => {
             </div>
 
             <main id="main-content" tabindex="-1" class="flex-1 px-4 py-6 focus:outline-none sm:px-6 lg:px-8">
-                <Alert v-if="flashStatus" :key="flashStatus" tone="info" dismissible class="mb-6">{{ flashStatus }}</Alert>
                 <slot />
             </main>
         </div>

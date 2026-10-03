@@ -30,7 +30,13 @@ class ApplicationController extends Controller
         $this->authorize('viewAny', Application::class);
 
         $applications = Application::query()
-            ->with('organizationalUnit:id,name')
+            ->with([
+                'organizationalUnit:id,name,short_name',
+                'roles' => fn ($query) => $query->withCount('accessGrants'),
+                'listedUnits:id',
+                'listedCommittees:id',
+            ])
+            ->withCount('accessGrants')
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
@@ -47,18 +53,28 @@ class ApplicationController extends Controller
             ->get();
 
         return Inertia::render('Admin/Applications/Index', [
-            'applications' => $applications,
+            // Everything the legacy "Manage Projects" modal edits, per row.
+            'applications' => $applications->map(fn (Application $application) => [
+                ...$application->only([
+                    'id', 'name', 'short_name', 'description', 'icon', 'url', 'category', 'external', 'featured',
+                    'requires_access', 'sort_order', 'organizational_unit_id', 'under_maintenance', 'maintenance_message',
+                ]),
+                'status' => $application->status->value,
+                'visibility' => $application->visibility->value,
+                'maintenance_started_at' => $application->maintenance_started_at?->toIso8601String(),
+                'office' => $application->organizationalUnit?->short_name ?: $application->organizationalUnit?->name,
+                'users_count' => $application->access_grants_count,
+                'listed_unit_ids' => $application->listedUnits->pluck('id'),
+                'listed_committee_ids' => $application->listedCommittees->pluck('id'),
+                'roles' => $application->roles->map(fn ($role) => [
+                    ...$role->only(['id', 'name', 'description', 'launch_url', 'sort_order']),
+                    'status' => $role->status->value,
+                    'users_count' => $role->access_grants_count,
+                ]),
+            ]),
             'filters' => $request->only(['search', 'status', 'organizational_unit_id']),
-            'statusOptions' => Status::options(),
-            'organizationalUnitOptions' => OrganizationalUnit::query()->orderBy('name')->get(['id', 'name']),
+            ...$this->formOptions(),
         ]);
-    }
-
-    public function create(): Response
-    {
-        $this->authorize('create', Application::class);
-
-        return Inertia::render('Admin/Applications/Create', $this->formOptions());
     }
 
     public function store(StoreApplicationRequest $request): RedirectResponse
@@ -68,21 +84,7 @@ class ApplicationController extends Controller
 
         $this->audit()->record(AuditEvent::ApplicationCreated, "Created system {$application->name}", $application);
 
-        return to_route('admin.applications.index');
-    }
-
-    public function edit(Application $application): Response
-    {
-        $this->authorize('update', $application);
-
-        return Inertia::render('Admin/Applications/Edit', [
-            'application' => [
-                ...$application->toArray(),
-                'listed_unit_ids' => $application->listedUnits()->pluck('organizational_units.id'),
-                'listed_committee_ids' => $application->listedCommittees()->pluck('committees.id'),
-            ],
-            ...$this->formOptions(),
-        ]);
+        return back()->with('status', "System {$application->name} was added. Add its roles next.");
     }
 
     public function update(UpdateApplicationRequest $request, Application $application): RedirectResponse
@@ -92,20 +94,18 @@ class ApplicationController extends Controller
         $this->audit()->recordChanges(AuditEvent::ApplicationUpdated, "Updated system {$application->name}", $application);
         $this->syncListings($request, $application);
 
-        return to_route('admin.applications.index');
+        return back()->with('status', "System {$application->name} was saved.");
     }
 
     public function updateStatus(UpdateApplicationStatusRequest $request, Application $application): RedirectResponse
     {
         $application->update($request->validated());
 
-        $this->audit()->recordChanges(
-            AuditEvent::ApplicationStatusChanged,
-            "{$this->activationVerb($application->status)} system {$application->name}",
-            $application,
-        );
+        $verb = $this->activationVerb($application->status);
 
-        return to_route('admin.applications.index');
+        $this->audit()->recordChanges(AuditEvent::ApplicationStatusChanged, "{$verb} system {$application->name}", $application);
+
+        return back()->with('status', "System {$application->name} was ".strtolower($verb).'.');
     }
 
     /**
@@ -123,7 +123,7 @@ class ApplicationController extends Controller
                 $this->audit()->record(AuditEvent::ApplicationMaintenanceEnded, "Ended maintenance of system {$application->name}", $application);
             }
 
-            return back();
+            return back()->with('status', "Maintenance of {$application->name} ended.");
         }
 
         $application->startMaintenance($message);
@@ -143,7 +143,7 @@ class ApplicationController extends Controller
             );
         }
 
-        return back();
+        return back()->with('status', "{$application->name} is under maintenance.");
     }
 
     /**

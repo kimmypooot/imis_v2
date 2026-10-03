@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\HR\Leave\LeaveApplications;
+use App\Support\Security\SessionLimits;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -46,6 +48,10 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'username' => $user->username,
                     'email' => $user->email,
+                    // Shown under the name in the header; may be null.
+                    'position' => $user->position,
+                    // Header avatar; null falls back to initials.
+                    'profile_photo_url' => $user->profile_photo_url,
                     // "Last login" in the account menu — the sign-in before this one.
                     'previous_login_at' => $user->previous_login_at?->toIso8601String(),
                 ] : null,
@@ -58,11 +64,23 @@ class HandleInertiaRequests extends Middleware
             ],
             'app' => [
                 'version' => config('app.version'),
+                // Shows the sidebar's Developer group (its routes exist only locally).
+                'local' => app()->environment('local'),
             ],
+            // Menu entries that depend on more than a permission (navigation `flag`).
+            'flags' => fn () => $user ? [
+                // HR-6b: a supervisor, HR certifier, the Head or an OIC.
+                'leaveApprover' => app(LeaveApplications::class)->isApprover($user),
+            ] : [],
+            // The top-bar bell.
+            'notifications' => fn () => $user ? ['unread' => $user->unreadNotifications()->count()] : null,
+            // Drives the idle/absolute timeout warning; null when exempt.
+            'sessionLimits' => fn () => $user ? app(SessionLimits::class)->forClient($request->session()) : null,
             // One-off confirmation messages ("You have been signed out.").
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
-                // 'portal' | 'admin' right after signing in — drives the splash.
+                'error' => fn () => $request->session()->get('error'),
+                // Set right after signing in — drives the splash.
                 'signedIn' => fn () => $request->session()->get('signed_in'),
             ],
             // An explicit whitelist of display settings (one cached read),

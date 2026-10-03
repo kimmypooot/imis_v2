@@ -28,7 +28,7 @@ class ApplicationRoleController extends Controller
             ['role_id' => $role->id, 'role' => $role->name],
         );
 
-        return to_route('admin.applications.access', $application);
+        return back()->with('status', "Role {$role->name} added.");
     }
 
     public function update(UpdateApplicationRoleRequest $request, Application $application, ApplicationRole $applicationRole): RedirectResponse
@@ -44,7 +44,7 @@ class ApplicationRoleController extends Controller
             $applicationRole,
         );
 
-        return to_route('admin.applications.access', $application);
+        return back()->with('status', "Role {$applicationRole->name} saved.");
     }
 
     public function updateStatus(
@@ -63,7 +63,7 @@ class ApplicationRoleController extends Controller
             $applicationRole,
         );
 
-        return to_route('admin.applications.access', $application);
+        return back()->with('status', "Role {$applicationRole->name} ".strtolower($this->activationVerb($applicationRole->status)).'.');
     }
 
     /**

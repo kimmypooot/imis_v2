@@ -17,7 +17,17 @@ class RouteSecurityTest extends TestCase
     {
         $this->get('/roles')->assertRedirect('/login');
         $this->get('/permissions')->assertRedirect('/login');
-        $this->get('/authorization-demo')->assertRedirect('/login');
+    }
+
+    public function test_developer_tools_do_not_exist_outside_local(): void
+    {
+        $this->assertFalse(app()->environment('local'));
+
+        $this->get('/authorization-demo')->assertNotFound();
+        $this->get('/design-system')->assertNotFound();
+        $admin = $this->userWithPermission('roles.view');
+        $this->actingAs($admin)->get('/authorization-demo')->assertNotFound();
+        $this->actingAs($admin)->get('/design-system')->assertNotFound();
     }
 
     public function test_authenticated_user_without_permission_receives_403(): void

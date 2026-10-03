@@ -81,7 +81,7 @@ class UsersTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->post('/users', [
-            'name' => 'New Person',
+            'first_name' => 'New', 'last_name' => 'Person',
             'email' => 'new-person@example.test',
         ])->assertForbidden();
 
@@ -95,7 +95,7 @@ class UsersTest extends TestCase
         $actor = $this->userWithPermission('users.create');
 
         $response = $this->actingAs($actor)->post('/users', [
-            'name' => 'New Person',
+            'first_name' => 'New', 'last_name' => 'Person',
             'email' => 'new-person@example.test',
         ]);
 
@@ -112,7 +112,7 @@ class UsersTest extends TestCase
         $actor = $this->userWithPermission('users.create');
 
         $this->actingAs($actor)->post('/users', [
-            'name' => 'New Person',
+            'first_name' => 'New', 'last_name' => 'Person',
             'email' => 'new-person@example.test',
         ]);
 
@@ -127,7 +127,7 @@ class UsersTest extends TestCase
 
         $response = $this->actingAs($actor)->post('/users', []);
 
-        $response->assertSessionHasErrors(['name', 'email']);
+        $response->assertSessionHasErrors(['first_name', 'last_name', 'email']);
     }
 
     public function test_duplicate_email_is_rejected_on_create(): void
@@ -136,7 +136,7 @@ class UsersTest extends TestCase
         $existing = User::factory()->create();
 
         $response = $this->actingAs($actor)->post('/users', [
-            'name' => 'Duplicate',
+            'first_name' => 'Duplicate', 'last_name' => 'Person',
             'email' => $existing->email,
         ]);
 
@@ -148,7 +148,7 @@ class UsersTest extends TestCase
         $actor = $this->userWithPermission('users.create');
 
         $this->actingAs($actor)->post('/users', [
-            'name' => 'Mass Assignment Person',
+            'first_name' => 'Mass', 'last_name' => 'Person',
             'email' => 'mass-assignment@example.test',
             'id' => 999999,
             'status' => 'inactive',
@@ -178,7 +178,7 @@ class UsersTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->put("/users/{$target->id}", [
-            'name' => 'Updated Name',
+            'first_name' => 'Updated', 'last_name' => 'Name',
             'username' => 'UpdatedName ',
             'email' => $target->email,
         ]);

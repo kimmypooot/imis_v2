@@ -21,7 +21,7 @@ defineProps({
     <PageHeader
         :title="application.name"
         :description="application.short_name"
-        :breadcrumbs="[{ label: 'Applications', href: '/applications' }, { label: application.name }]"
+        :breadcrumbs="[{ label: 'Systems', href: '/applications' }, { label: application.name }]"
     />
 
     <Card class="max-w-2xl">
@@ -64,7 +64,7 @@ defineProps({
                 <div class="mt-5">
                     <a
                         v-if="application.url"
-                        :href="application.url"
+                        :href="`/applications/${application.id}/launch`"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"

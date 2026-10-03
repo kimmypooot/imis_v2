@@ -47,17 +47,8 @@ class ServiceController extends Controller
         return Inertia::render('Admin/Services/Index', [
             'services' => $services,
             'filters' => $request->only(['search', 'status', 'category_id', 'organizational_unit_id']),
-            'statusOptions' => Status::options(),
-            'categoryOptions' => ServiceCategory::query()->orderBy('name')->get(['id', 'name']),
-            'organizationalUnitOptions' => OrganizationalUnit::query()->orderBy('name')->get(['id', 'name']),
+            ...$this->formOptions(),
         ]);
-    }
-
-    public function create(): Response
-    {
-        $this->authorize('create', Service::class);
-
-        return Inertia::render('Admin/Services/Create', $this->formOptions());
     }
 
     public function store(StoreServiceRequest $request): RedirectResponse
@@ -69,17 +60,7 @@ class ServiceController extends Controller
 
         $this->audit()->record(AuditEvent::ServiceCreated, "Created service {$service->name}", $service);
 
-        return to_route('admin.services.index');
-    }
-
-    public function edit(Service $service): Response
-    {
-        $this->authorize('update', $service);
-
-        return Inertia::render('Admin/Services/Edit', [
-            'service' => $service,
-            ...$this->formOptions(),
-        ]);
+        return back()->with('status', "Service {$service->name} was added.");
     }
 
     public function update(UpdateServiceRequest $request, Service $service): RedirectResponse
@@ -88,7 +69,7 @@ class ServiceController extends Controller
 
         $this->audit()->recordChanges(AuditEvent::ServiceUpdated, "Updated service {$service->name}", $service);
 
-        return to_route('admin.services.index');
+        return back()->with('status', "Service {$service->name} was saved.");
     }
 
     public function updateStatus(UpdateServiceStatusRequest $request, Service $service): RedirectResponse
@@ -101,7 +82,7 @@ class ServiceController extends Controller
             $service,
         );
 
-        return to_route('admin.services.index');
+        return back()->with('status', "Service {$service->name} was ".strtolower($this->activationVerb($service->status)).'.');
     }
 
     /**

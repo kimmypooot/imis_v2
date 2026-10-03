@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Portal;
 
+use App\Models\OrganizationalUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -25,12 +26,9 @@ class PortalAccessTest extends TestCase
         $response->assertInertia(fn ($page) => $page->component('Portal/Dashboard'));
     }
 
-    public function test_guest_visiting_home_sees_the_public_landing_page(): void
+    public function test_guest_visiting_root_is_sent_to_the_login_page(): void
     {
-        $response = $this->get('/');
-
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page->component('Home'));
+        $this->get('/')->assertRedirect('/login');
     }
 
     public function test_authenticated_user_visiting_root_is_redirected_to_the_portal(): void
@@ -50,7 +48,19 @@ class PortalAccessTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('Portal/Dashboard')
             ->where('directory.categories', [])
-            ->where('services', [])
-            ->where('mySystems', []));
+            ->where('services', []));
+    }
+
+    public function test_greeting_shows_the_users_division(): void
+    {
+        $unit = OrganizationalUnit::factory()->create(['name' => 'Examination Services Division', 'short_name' => 'ESD']);
+
+        $this->actingAs(User::factory()->create(['organizational_unit_id' => $unit->id]))
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('userDivision', 'ESD'));
+
+        $this->actingAs(User::factory()->create())
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('userDivision', null));
     }
 }

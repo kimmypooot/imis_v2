@@ -1,10 +1,16 @@
 <script setup>
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import Icon from '../UI/Icon.vue';
 
 /**
- * Generic accessible dialog. Covers the confirmation/form/information use
+ * Generic accessible dialog, styled after the legacy IMIS Bootstrap
+ * modals: optional colored header (`tone`: success for "Add …", primary
+ * for "Edit …", danger for destructive flows), a scrolling body, and a
+ * footer pinned to the bottom. Covers confirmation/form/information use
  * cases via slots — it does not know what content it holds.
+ *
+ * Slots: default (body), `summary` (a strip under the header, e.g. the
+ * record being edited), `footer` (actions).
  */
 const props = defineProps({
     open: {
@@ -20,14 +26,30 @@ const props = defineProps({
         default: 'md',
         validator: (value) => ['sm', 'md', 'lg', 'xl'].includes(value),
     },
+    tone: {
+        type: String,
+        default: 'neutral',
+        validator: (value) => ['neutral', 'primary', 'success', 'danger'].includes(value),
+    },
+    icon: {
+        type: String,
+        default: null,
+    },
 });
 
 const emit = defineEmits(['close']);
 
+const titleId = `modal-title-${useId()}`;
 const dialogRef = ref(null);
 let triggerElement = null;
 
-const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' };
+const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-5xl' };
+const headerClasses = {
+    neutral: 'border-b border-border text-text',
+    primary: 'bg-primary text-white',
+    success: 'bg-success text-white',
+    danger: 'bg-danger text-white',
+};
 
 const close = () => emit('close');
 
@@ -43,8 +65,8 @@ watch(
         if (isOpen) {
             triggerElement = document.activeElement;
             await nextTick();
-            dialogRef.value?.querySelector('[data-autofocus]')?.focus();
-            dialogRef.value?.focus();
+            const autofocus = dialogRef.value?.querySelector('[data-autofocus]');
+            (autofocus ?? dialogRef.value)?.focus();
             document.addEventListener('keydown', onKeydown);
             document.body.style.overflow = 'hidden';
         } else {
@@ -70,16 +92,20 @@ onBeforeUnmount(() => {
                 ref="dialogRef"
                 role="dialog"
                 aria-modal="true"
-                :aria-labelledby="`modal-title`"
+                :aria-labelledby="titleId"
                 tabindex="-1"
-                class="relative max-h-[90dvh] w-full overflow-y-auto rounded-lg bg-surface p-6 shadow-lg focus:outline-none"
+                class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-lg bg-surface shadow-xl focus:outline-none"
                 :class="sizeClasses[size]"
             >
-                <div class="mb-4 flex items-start justify-between gap-4">
-                    <h2 id="modal-title" class="text-base font-semibold text-text">{{ title }}</h2>
+                <div class="flex shrink-0 items-center justify-between gap-4 px-5 py-3" :class="headerClasses[tone]">
+                    <h2 :id="titleId" class="flex items-center gap-2 text-base font-semibold">
+                        <Icon v-if="icon" :name="icon" size="sm" />
+                        {{ title }}
+                    </h2>
                     <button
                         type="button"
-                        class="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        class="shrink-0 rounded-md p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        :class="tone === 'neutral' ? 'text-text-muted hover:bg-surface-muted hover:text-text' : 'text-white/85 hover:bg-white/15 hover:text-white'"
                         aria-label="Close dialog"
                         @click="close"
                     >
@@ -87,11 +113,15 @@ onBeforeUnmount(() => {
                     </button>
                 </div>
 
-                <div>
+                <div v-if="$slots.summary" class="shrink-0 border-b border-border bg-surface-muted px-5 py-3">
+                    <slot name="summary" />
+                </div>
+
+                <div class="min-h-0 flex-1 overflow-y-auto px-5 py-5">
                     <slot />
                 </div>
 
-                <div v-if="$slots.footer" class="mt-6 flex justify-end gap-3">
+                <div v-if="$slots.footer" class="flex shrink-0 justify-end gap-3 border-t border-border bg-surface px-5 py-3">
                     <slot name="footer" />
                 </div>
             </div>

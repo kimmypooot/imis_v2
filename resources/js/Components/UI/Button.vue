@@ -11,7 +11,7 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'primary',
-        validator: (value) => ['primary', 'secondary', 'danger', 'ghost', 'link'].includes(value),
+        validator: (value) => ['primary', 'secondary', 'danger', 'success', 'ghost', 'link'].includes(value),
     },
     type: {
         type: String,
@@ -38,6 +38,8 @@ const variantClasses = {
     primary: 'bg-primary text-white hover:bg-primary-hover',
     secondary: 'border border-border bg-surface text-text hover:bg-surface-muted',
     danger: 'bg-danger text-white hover:bg-csc-red-dark',
+    // Legacy "Add …" / "Save" actions were green.
+    success: 'bg-success text-white hover:brightness-95',
     ghost: 'text-text hover:bg-surface-muted',
     link: 'text-primary hover:text-primary-hover underline-offset-2 hover:underline px-0 py-0',
 };

@@ -49,6 +49,27 @@ class SystemDirectoryTest extends TestCase
                 ->has('directory.systems', 3));
     }
 
+    public function test_divisions_and_their_systems_are_alphabetical_ignoring_display_order(): void
+    {
+        // Display order would put these in reverse; the directory ignores it.
+        $units = collect(['msd', 'Field Office 10', 'Field Office 2', 'ESD'])->map(fn ($name, $index) => OrganizationalUnit::factory()
+            ->create(['name' => $name, 'unit_type' => UnitType::RegionalSupportUnit, 'sort_order' => $index]));
+        $esd = $units->last();
+
+        $systems = collect(['zeta', 'Beta 10', 'Beta 2', 'alpha'])->map(fn ($name, $index) => Application::factory()
+            ->create(['name' => $name, 'organizational_unit_id' => $esd->id, 'sort_order' => $index]));
+        $units->except(3)->each(fn ($unit) => Application::factory()->create(['organizational_unit_id' => $unit->id]));
+
+        $this->actingAs(User::factory()->create())
+            ->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page
+                // Case-insensitive and natural: 2 before 10, "msd" not pushed last.
+                ->where('directory.categories.0.divisions', fn ($divisions) => collect($divisions)->pluck('name')->all()
+                    === ['ESD', 'Field Office 2', 'Field Office 10', 'msd'])
+                // alpha, Beta 2, Beta 10, zeta.
+                ->where('directory.categories.0.divisions.0.system_ids', [$systems[3]->id, $systems[2]->id, $systems[1]->id, $systems[0]->id]));
+    }
+
     public function test_only_visible_systems_and_active_divisions_appear(): void
     {
         $unit = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);

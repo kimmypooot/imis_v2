@@ -108,14 +108,14 @@ const toggleFeatured = () => {
     <PageHeader
         :title="announcement.title"
         :breadcrumbs="[
-            { label: 'Administration', href: '/admin' },
+            { label: 'Home', href: '/admin' },
             { label: 'Announcements', href: '/admin/announcements' },
             { label: announcement.title },
         ]"
     >
         <template #actions>
             <div class="flex flex-wrap gap-2">
-                <Link v-if="can('announcements.update')" :href="`/admin/announcements/${announcement.id}/edit`">
+                <Link v-if="can('announcements.update')" :href="`/admin/announcements?edit=${announcement.id}`">
                     <Button variant="secondary">Edit</Button>
                 </Link>
                 <Button

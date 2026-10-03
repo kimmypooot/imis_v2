@@ -13,12 +13,12 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Applications" />
+    <Head title="Systems" />
 
     <PageHeader
-        title="Applications"
+        title="Systems"
         description="CSC RO VIII ITG systems you can access."
-        :breadcrumbs="[{ label: 'Applications' }]"
+        :breadcrumbs="[{ label: 'Systems' }]"
     />
 
     <div v-if="applications.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -37,7 +37,7 @@ defineProps({
     <EmptyState
         v-else
         icon="grid"
-        title="No applications available"
-        description="Applications registered in the directory will appear here."
+        title="No systems available"
+        description="Systems registered in the directory will appear here."
     />
 </template>

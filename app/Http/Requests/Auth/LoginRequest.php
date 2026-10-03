@@ -16,13 +16,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Username + password sign-in, as in the legacy IMIS. `mode=admin` is the
- * legacy "Superadmin Login" toggle: it only changes where the user lands
- * (see AuthenticatedSessionController) — it never grants anything.
+ * Username + password sign-in, as in the legacy IMIS.
  */
 class LoginRequest extends FormRequest
 {
     public const MAX_ATTEMPTS = 5;
+
+    /** How long MAX_ATTEMPTS failures lock sign-in out: 15 minutes, as in the legacy IMIS. */
+    public const LOCKOUT_SECONDS = 900;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -47,7 +48,6 @@ class LoginRequest extends FormRequest
         return [
             'username' => ['required', 'string', 'max:'.Usernames::MAX_LENGTH],
             'password' => ['required', 'string'],
-            'mode' => ['nullable', 'in:employee,admin'],
             ...(Turnstile::enabled()
                 ? ['cf-turnstile-response' => ['bail', 'required', new Turnstile($this->ip())]]
                 : []),
@@ -77,7 +77,7 @@ class LoginRequest extends FormRequest
         $user = User::where('username', $username)->first();
 
         if (! $user || ! Hash::check($this->string('password'), $user->password)) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
 
             // Only the attempted username is kept — never the password.
             app(AuditLogger::class)->recordFor(
@@ -94,7 +94,7 @@ class LoginRequest extends FormRequest
         }
 
         if (! $user->isActive()) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
 
             app(AuditLogger::class)->recordFor(
                 null,
@@ -113,11 +113,6 @@ class LoginRequest extends FormRequest
         $user->recordLogin();
 
         RateLimiter::clear($this->throttleKey());
-    }
-
-    public function wantsAdminConsole(): bool
-    {
-        return $this->input('mode') === 'admin';
     }
 
     /**

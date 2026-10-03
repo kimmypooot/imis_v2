@@ -1,6 +1,6 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import Card from '../UI/Card.vue';
+import AdminCard from '../UI/AdminCard.vue';
 import Badge from '../UI/Badge.vue';
 import Button from '../UI/Button.vue';
 import Icon from '../UI/Icon.vue';
@@ -49,7 +49,7 @@ const inputClass =
 </script>
 
 <template>
-    <Card :title="group.label" :description="group.description">
+    <AdminCard :title="group.label" :subtitle="group.description" icon="cog">
         <form :aria-label="`${group.label} settings`" class="space-y-5" @submit.prevent="submit">
             <div v-for="setting in group.settings" :key="setting.key">
                 <!-- Protected: value only, never an input. -->
@@ -134,5 +134,5 @@ const inputClass =
                 </p>
             </div>
         </form>
-    </Card>
+    </AdminCard>
 </template>

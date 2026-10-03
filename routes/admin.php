@@ -1,22 +1,56 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Admin\ApplicationAccessController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\ApplicationRoleController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\ChangelogController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
+use App\Http\Controllers\Admin\DashboardLayoutController;
+use App\Http\Controllers\Admin\EmployeeAssignmentController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\EmployeeDocumentController;
+use App\Http\Controllers\Admin\EmployeeLearningDevelopmentController;
+use App\Http\Controllers\Admin\EmployeeLeaveController;
+use App\Http\Controllers\Admin\EmployeePdsController;
+use App\Http\Controllers\Admin\EmployeeServiceRecordController;
+use App\Http\Controllers\Admin\FlexibleWorkController;
+use App\Http\Controllers\Admin\HolidayController;
+use App\Http\Controllers\Admin\HrReadinessController;
+use App\Http\Controllers\Admin\LdReportController;
+use App\Http\Controllers\Admin\LdReviewController;
+use App\Http\Controllers\Admin\LearningDevelopmentController;
+use App\Http\Controllers\Admin\LeaveApplicationController as AdminLeaveApplicationController;
+use App\Http\Controllers\Admin\LeaveCreditController;
+use App\Http\Controllers\Admin\LeaveDesignationController;
+use App\Http\Controllers\Admin\LeaveMonetizationController;
+use App\Http\Controllers\Admin\LeaveReportController;
+use App\Http\Controllers\Admin\LeaveTypeController;
 use App\Http\Controllers\Admin\OrganizationalUnitController as AdminOrganizationalUnitController;
+use App\Http\Controllers\Admin\PdsVerificationController;
+use App\Http\Controllers\Admin\PlantillaAppointmentController;
+use App\Http\Controllers\Admin\PlantillaController;
+use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\ReassignmentReportController;
+use App\Http\Controllers\Admin\SalaryScheduleController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\SessionController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\StaffingController;
+use App\Http\Controllers\Admin\SystemAccessController;
+use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthorizationDemoController;
+use App\Http\Controllers\PdsPhotoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserSystemAccessController;
+use App\Support\HR\Pds\PdsSchema;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -32,24 +66,26 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:access-admin')
         ->name('admin.index');
 
-    Route::get('authorization-demo', [AuthorizationDemoController::class, 'show'])
-        ->name('authorization.demo');
+    // Developer tools, registered only when running locally (APP_ENV=local),
+    // so they don't exist (404) on staging or the live server.
+    if (app()->environment('local')) {
+        Route::get('authorization-demo', [AuthorizationDemoController::class, 'show'])
+            ->name('authorization.demo');
 
-    // Development-only component library reference — not a business page.
-    Route::get('design-system', fn () => Inertia::render('Dev/DesignSystem'))
-        ->name('design-system');
+        // Component library reference — not a business page.
+        Route::get('design-system', fn () => Inertia::render('Dev/DesignSystem'))
+            ->name('design-system');
+    }
 
     Route::middleware('permission:roles.view')->group(function () {
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     });
 
     Route::middleware('permission:roles.create')->group(function () {
-        Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
         Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
     });
 
     Route::middleware('permission:roles.update')->group(function () {
-        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
         Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     });
 
@@ -67,7 +103,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:users.create')->group(function () {
-        Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
     });
 
@@ -76,8 +111,9 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:users.update')->group(function () {
-        Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::post('users/{user}/photo', [UserController::class, 'updatePhoto'])->name('users.photo.update');
+        Route::delete('users/{user}/photo', [UserController::class, 'destroyPhoto'])->name('users.photo.destroy');
         Route::put('users/{user}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles');
         Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordReset'])
             ->name('users.send-password-reset');
@@ -93,15 +129,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:organizational_units.create')->group(function () {
-        Route::get('admin/organizational-units/create', [AdminOrganizationalUnitController::class, 'create'])
-            ->name('admin.organizational-units.create');
         Route::post('admin/organizational-units', [AdminOrganizationalUnitController::class, 'store'])
             ->name('admin.organizational-units.store');
     });
 
     Route::middleware('permission:organizational_units.update')->group(function () {
-        Route::get('admin/organizational-units/{organizationalUnit}/edit', [AdminOrganizationalUnitController::class, 'edit'])
-            ->name('admin.organizational-units.edit');
         Route::put('admin/organizational-units/{organizationalUnit}', [AdminOrganizationalUnitController::class, 'update'])
             ->name('admin.organizational-units.update');
     });
@@ -116,12 +148,10 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:services.create')->group(function () {
-        Route::get('admin/services/create', [AdminServiceController::class, 'create'])->name('admin.services.create');
         Route::post('admin/services', [AdminServiceController::class, 'store'])->name('admin.services.store');
     });
 
     Route::middleware('permission:services.update')->group(function () {
-        Route::get('admin/services/{service}/edit', [AdminServiceController::class, 'edit'])->name('admin.services.edit');
         Route::put('admin/services/{service}', [AdminServiceController::class, 'update'])->name('admin.services.update');
     });
 
@@ -135,12 +165,10 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:applications.create')->group(function () {
-        Route::get('admin/applications/create', [AdminApplicationController::class, 'create'])->name('admin.applications.create');
         Route::post('admin/applications', [AdminApplicationController::class, 'store'])->name('admin.applications.store');
     });
 
     Route::middleware('permission:applications.update')->group(function () {
-        Route::get('admin/applications/{application}/edit', [AdminApplicationController::class, 'edit'])->name('admin.applications.edit');
         Route::put('admin/applications/{application}', [AdminApplicationController::class, 'update'])->name('admin.applications.update');
     });
 
@@ -156,11 +184,6 @@ Route::middleware('auth')->group(function () {
 
     // Per-system roles and who holds them. Defining a system's roles is
     // part of editing it; granting them to people is `manage_access`.
-    Route::middleware('permission:applications.view')->group(function () {
-        Route::get('admin/applications/{application}/access', [ApplicationAccessController::class, 'show'])
-            ->name('admin.applications.access');
-    });
-
     Route::middleware('permission:applications.update')->group(function () {
         Route::post('admin/applications/{application}/roles', [ApplicationRoleController::class, 'store'])
             ->name('admin.applications.roles.store');
@@ -170,7 +193,20 @@ Route::middleware('auth')->group(function () {
             ->name('admin.applications.roles.update-status');
     });
 
+    // Legacy "Manage Dashboard": which systems appear under each division.
+    Route::middleware('permission:applications.update')->group(function () {
+        Route::get('admin/dashboard-layout', [DashboardLayoutController::class, 'index'])->name('admin.dashboard-layout.index');
+        Route::put('admin/dashboard-layout/{type}/{id}', [DashboardLayoutController::class, 'update'])
+            ->whereIn('type', ['unit', 'committee'])
+            ->whereNumber('id')
+            ->name('admin.dashboard-layout.update');
+    });
+
     Route::middleware('permission:applications.manage_access')->group(function () {
+        // Legacy "Roles and Permissions" (per system) and "User Access" (per user).
+        Route::get('admin/system-access', [SystemAccessController::class, 'index'])->name('admin.system-access.index');
+        Route::put('admin/system-access/{application}', [SystemAccessController::class, 'update'])->name('admin.system-access.update');
+        Route::get('admin/user-access', [UserAccessController::class, 'index'])->name('admin.user-access.index');
         Route::post('admin/applications/{application}/access', [ApplicationAccessController::class, 'store'])
             ->name('admin.applications.access.store');
         Route::put('admin/applications/{application}/access/{access}', [ApplicationAccessController::class, 'update'])
@@ -186,7 +222,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:committees.create')->group(function () {
-        Route::get('admin/committees/create', [CommitteeController::class, 'create'])->name('admin.committees.create');
         Route::post('admin/committees', [CommitteeController::class, 'store'])->name('admin.committees.store');
     });
 
@@ -195,7 +230,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:committees.update')->group(function () {
-        Route::get('admin/committees/{committee}/edit', [CommitteeController::class, 'edit'])->name('admin.committees.edit');
         Route::put('admin/committees/{committee}', [CommitteeController::class, 'update'])->name('admin.committees.update');
         Route::post('admin/committees/{committee}/members', [CommitteeMemberController::class, 'store'])
             ->name('admin.committees.members.store');
@@ -210,12 +244,190 @@ Route::middleware('auth')->group(function () {
             ->name('admin.committees.update-status');
     });
 
+    // HR-1 employee records. Viewing takes either permission (supervisors
+    // hold only `view_unit`); EmployeePolicy narrows which records.
+    Route::middleware('permission:employees.view,employees.view_unit')->group(function () {
+        Route::get('admin/hr/employees', [EmployeeController::class, 'index'])->name('admin.hr.employees.index');
+        Route::get('admin/hr/employees/{employee}', [EmployeeController::class, 'show'])->name('admin.hr.employees.show');
+    });
+
+    Route::middleware('permission:employees.create')->group(function () {
+        Route::post('admin/hr/employees', [EmployeeController::class, 'store'])->name('admin.hr.employees.store');
+        Route::post('admin/hr/employees/bulk', [EmployeeController::class, 'storeMany'])->name('admin.hr.employees.store-many');
+    });
+
+    Route::middleware('permission:employees.update')->group(function () {
+        Route::put('admin/hr/employees/{employee}', [EmployeeController::class, 'update'])->name('admin.hr.employees.update');
+    });
+
+    // HR-1b: reassignment history. Who was where on a date, and movements
+    // (supervisors see their office's people only); recording is HR's.
+    // Scoped bindings: an entry only resolves under its own employee.
+    Route::middleware('permission:employees.view,employees.view_unit')->group(function () {
+        Route::get('admin/hr/reassignments', [ReassignmentReportController::class, 'index'])->name('admin.hr.reassignments');
+    });
+
+    // HR-5: someone's Service Record, on screen and printable (HR only;
+    // EmployeePolicy::viewServiceRecord).
+    Route::middleware('permission:service_records.view')->group(function () {
+        Route::get('admin/hr/employees/{employee}/service-record', [EmployeeServiceRecordController::class, 'show'])->name('admin.hr.employees.service-record');
+        Route::get('admin/hr/employees/{employee}/service-record/print', [EmployeeServiceRecordController::class, 'print'])->name('admin.hr.employees.service-record.print');
+    });
+
+    // HR-6a: leave — types, holidays, everyone's credits, one person's
+    // leave card. `leave.manage` also reads; EmployeePolicy keeps HR off
+    // their own card. Scoped bindings: an entry only resolves under its
+    // own employee.
+    Route::middleware('permission:leave.view,leave.manage')->group(function () {
+        Route::get('admin/hr/leave', [LeaveCreditController::class, 'index'])->name('admin.hr.leave.index');
+        Route::get('admin/hr/leave/types', [LeaveTypeController::class, 'index'])->name('admin.hr.leave.types');
+        Route::get('admin/hr/leave/holidays', [HolidayController::class, 'index'])->name('admin.hr.leave.holidays');
+        // HR-6b: every application, and officers-in-charge for the Head.
+        Route::get('admin/hr/leave/applications', [AdminLeaveApplicationController::class, 'index'])->name('admin.hr.leave.applications');
+        Route::get('admin/hr/leave/designations', [LeaveDesignationController::class, 'index'])->name('admin.hr.leave.designations');
+        // HR-6c: monetization / terminal leave, flexible work, reports.
+        Route::get('admin/hr/leave/monetization', [LeaveMonetizationController::class, 'index'])->name('admin.hr.leave.monetization');
+        Route::get('admin/hr/leave/flexible-work', [FlexibleWorkController::class, 'index'])->name('admin.hr.leave.fwa');
+        Route::get('admin/hr/leave/reports', [LeaveReportController::class, 'index'])->name('admin.hr.leave.reports');
+        Route::get('admin/hr/employees/{employee}/leave', [EmployeeLeaveController::class, 'show'])->name('admin.hr.employees.leave');
+    });
+
+    Route::middleware('permission:leave.manage')->scopeBindings()->group(function () {
+        // HR-7: what is left before the legacy PRISM, LMS and ldms are retired.
+        Route::get('admin/hr/readiness', [HrReadinessController::class, 'index'])->name('admin.hr.readiness');
+        Route::post('admin/hr/leave/accrual', [LeaveCreditController::class, 'accrue'])->name('admin.hr.leave.accrue');
+        Route::post('admin/hr/leave/year-start', [LeaveCreditController::class, 'startYear'])->name('admin.hr.leave.year-start');
+        Route::post('admin/hr/leave/types', [LeaveTypeController::class, 'store'])->name('admin.hr.leave.types.store');
+        Route::put('admin/hr/leave/types/{type}', [LeaveTypeController::class, 'update'])->name('admin.hr.leave.types.update');
+        Route::post('admin/hr/leave/holidays', [HolidayController::class, 'store'])->name('admin.hr.leave.holidays.store');
+        Route::put('admin/hr/leave/holidays/{holiday}', [HolidayController::class, 'update'])->name('admin.hr.leave.holidays.update');
+        Route::delete('admin/hr/leave/holidays/{holiday}', [HolidayController::class, 'destroy'])->name('admin.hr.leave.holidays.destroy');
+        Route::post('admin/hr/leave/designations', [LeaveDesignationController::class, 'store'])->name('admin.hr.leave.designations.store');
+        Route::put('admin/hr/leave/designations/{designation}', [LeaveDesignationController::class, 'update'])->name('admin.hr.leave.designations.update');
+        Route::delete('admin/hr/leave/designations/{designation}', [LeaveDesignationController::class, 'destroy'])->name('admin.hr.leave.designations.destroy');
+        Route::post('admin/hr/leave/monetization/terminal', [LeaveMonetizationController::class, 'terminal'])->name('admin.hr.leave.monetization.terminal');
+        Route::post('admin/hr/leave/monetization/{monetization}/decide', [LeaveMonetizationController::class, 'decide'])->name('admin.hr.leave.monetization.decide');
+        Route::post('admin/hr/leave/monetization/{monetization}/release', [LeaveMonetizationController::class, 'release'])->name('admin.hr.leave.monetization.release');
+        Route::post('admin/hr/leave/flexible-work/{arrangement}/decide', [FlexibleWorkController::class, 'decide'])->name('admin.hr.leave.fwa.decide');
+        Route::post('admin/hr/leave/flexible-work/{arrangement}/terminate', [FlexibleWorkController::class, 'terminate'])->name('admin.hr.leave.fwa.terminate');
+        Route::post('admin/hr/leave/flexible-work/reports/{report}/acknowledge', [FlexibleWorkController::class, 'acknowledge'])->name('admin.hr.leave.fwa.acknowledge');
+        Route::post('admin/hr/employees/{employee}/leave/entries', [EmployeeLeaveController::class, 'store'])->name('admin.hr.employees.leave.store');
+        Route::post('admin/hr/employees/{employee}/leave/entries/{entry}/reverse', [EmployeeLeaveController::class, 'reverse'])->name('admin.hr.employees.leave.reverse');
+        Route::put('admin/hr/employees/{employee}/leave/settings', [EmployeeLeaveController::class, 'updateSettings'])->name('admin.hr.employees.leave.settings');
+    });
+
+    // HR-4: plantilla and salary schedules. `plantilla.manage` also reads;
+    // PlantillaItemPolicy keeps HR off their own appointment. Scoped
+    // bindings: an appointment only resolves under its own item.
+    Route::middleware('permission:plantilla.view,plantilla.manage')->group(function () {
+        Route::get('admin/hr/plantilla', [PlantillaController::class, 'index'])->name('admin.hr.plantilla.index');
+        Route::get('admin/hr/plantilla/{item}', [PlantillaController::class, 'show'])->name('admin.hr.plantilla.show');
+        Route::get('admin/hr/salary-schedules', [SalaryScheduleController::class, 'index'])->name('admin.hr.salary-schedules.index');
+        Route::get('admin/hr/positions', [PositionController::class, 'index'])->name('admin.hr.positions.index');
+        Route::get('admin/hr/staffing', [StaffingController::class, 'index'])->name('admin.hr.staffing.index');
+    });
+
+    Route::middleware('permission:plantilla.manage')->scopeBindings()->group(function () {
+        Route::post('admin/hr/plantilla', [PlantillaController::class, 'store'])->name('admin.hr.plantilla.store');
+        Route::put('admin/hr/plantilla/{item}', [PlantillaController::class, 'update'])->name('admin.hr.plantilla.update');
+        Route::patch('admin/hr/plantilla/{item}/abolish', [PlantillaController::class, 'abolish'])->name('admin.hr.plantilla.abolish');
+        Route::patch('admin/hr/plantilla/{item}/restore', [PlantillaController::class, 'restore'])->name('admin.hr.plantilla.restore');
+
+        Route::post('admin/hr/plantilla/{item}/appointments', [PlantillaAppointmentController::class, 'store'])->name('admin.hr.plantilla.appointments.store');
+        Route::put('admin/hr/plantilla/{item}/appointments/{appointment}', [PlantillaAppointmentController::class, 'update'])->name('admin.hr.plantilla.appointments.update');
+        Route::post('admin/hr/plantilla/{item}/appointments/{appointment}/step-increment', [PlantillaAppointmentController::class, 'stepIncrement'])->name('admin.hr.plantilla.appointments.step-increment');
+        Route::patch('admin/hr/plantilla/{item}/appointments/{appointment}/vacate', [PlantillaAppointmentController::class, 'vacate'])->name('admin.hr.plantilla.appointments.vacate');
+        Route::delete('admin/hr/plantilla/{item}/appointments/{appointment}', [PlantillaAppointmentController::class, 'destroy'])->name('admin.hr.plantilla.appointments.destroy');
+
+        Route::post('admin/hr/salary-schedules', [SalaryScheduleController::class, 'store'])->name('admin.hr.salary-schedules.store');
+        Route::put('admin/hr/salary-schedules/{schedule}', [SalaryScheduleController::class, 'update'])->name('admin.hr.salary-schedules.update');
+        Route::delete('admin/hr/salary-schedules/{schedule}', [SalaryScheduleController::class, 'destroy'])->name('admin.hr.salary-schedules.destroy');
+
+        Route::post('admin/hr/positions', [PositionController::class, 'store'])->name('admin.hr.positions.store');
+        Route::post('admin/hr/positions/from-staff', [PositionController::class, 'addFromStaff'])->name('admin.hr.positions.from-staff');
+        Route::put('admin/hr/positions/{position}', [PositionController::class, 'update'])->name('admin.hr.positions.update');
+        Route::delete('admin/hr/positions/{position}', [PositionController::class, 'destroy'])->name('admin.hr.positions.destroy');
+    });
+
+    Route::middleware('permission:employees.reassign')->scopeBindings()->group(function () {
+        Route::post('admin/hr/employees/{employee}/assignments', [EmployeeAssignmentController::class, 'store'])->name('admin.hr.employees.assignments.store');
+        // POST + _method=PUT, so a scanned order can be attached to a correction.
+        Route::put('admin/hr/employees/{employee}/assignments/{assignment}', [EmployeeAssignmentController::class, 'update'])->name('admin.hr.employees.assignments.update');
+        Route::delete('admin/hr/employees/{employee}/assignments/{assignment}', [EmployeeAssignmentController::class, 'destroy'])->name('admin.hr.employees.assignments.destroy');
+    });
+
+    // HR-2: an employee's PDS, for HR only (supervisors never reach it).
+    Route::middleware('permission:pds.view')->group(function () {
+        Route::get('admin/hr/employees/{employee}/pds', [EmployeePdsController::class, 'show'])->name('admin.hr.employees.pds');
+        Route::get('admin/hr/employees/{employee}/pds/print', [EmployeePdsController::class, 'print'])->name('admin.hr.employees.pds.print');
+        Route::get('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'showFor'])->name('admin.hr.employees.pds.photo');
+    });
+
+    Route::middleware('permission:pds.update')->group(function () {
+        Route::put('admin/hr/employees/{employee}/pds/{section}', [EmployeePdsController::class, 'update'])
+            ->whereIn('section', PdsSchema::editableSectionKeys())
+            ->name('admin.hr.employees.pds.update');
+        Route::post('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'storeFor'])->name('admin.hr.employees.pds.photo.store');
+        Route::delete('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'destroyFor'])->name('admin.hr.employees.pds.photo.destroy');
+    });
+
+    // HR-2c: an employee's 201-file documents (HR only). Scoped bindings:
+    // a document id only resolves under its own employee.
+    Route::middleware('permission:employee_documents.view')->group(function () {
+        Route::get('admin/hr/employees/{employee}/documents', [EmployeeDocumentController::class, 'index'])->name('admin.hr.employees.documents');
+    });
+
+    Route::middleware('permission:employee_documents.manage')->scopeBindings()->group(function () {
+        Route::post('admin/hr/employees/{employee}/documents', [EmployeeDocumentController::class, 'store'])->name('admin.hr.employees.documents.store');
+        Route::patch('admin/hr/employees/{employee}/documents/{document}/archive', [EmployeeDocumentController::class, 'archive'])
+            ->name('admin.hr.employees.documents.archive');
+        Route::patch('admin/hr/employees/{employee}/documents/{document}/restore', [EmployeeDocumentController::class, 'restore'])
+            ->name('admin.hr.employees.documents.restore');
+    });
+
+    // HR-2b: a signed PDS (read with either permission; reviewing needs
+    // pds.verify — see PdsSubmissionPolicy) and the verification queue.
+    Route::middleware('permission:pds.view,pds.verify')->group(function () {
+        Route::get('admin/hr/pds-verifications/{submission}', [PdsVerificationController::class, 'show'])->name('admin.hr.pds-verifications.show');
+    });
+
+    Route::middleware('permission:pds.verify')->group(function () {
+        Route::get('admin/hr/pds-verifications', [PdsVerificationController::class, 'index'])->name('admin.hr.pds-verifications.index');
+        Route::post('admin/hr/pds-verifications/{submission}/verify', [PdsVerificationController::class, 'verify'])->name('admin.hr.pds-verifications.verify');
+        Route::post('admin/hr/pds-verifications/{submission}/return', [PdsVerificationController::class, 'sendBack'])->name('admin.hr.pds-verifications.return');
+    });
+
+    // HR-3b: HRD's Learning & Development — the overview and one person's
+    // log (read with either permission), managing on someone's behalf
+    // (scoped: a training only resolves under its own employee), and the
+    // review queue. The policies keep HRD off their own records.
+    Route::middleware('permission:ld.view,ld.manage')->group(function () {
+        Route::get('admin/hr/learning-development', [LearningDevelopmentController::class, 'index'])->name('admin.hr.ld.index');
+        // HR-3c: the dashboard and training report (approved trainings only).
+        Route::get('admin/hr/learning-development/dashboard', [LdReportController::class, 'dashboard'])->name('admin.hr.ld.dashboard');
+        Route::get('admin/hr/learning-development/report', [LdReportController::class, 'report'])->name('admin.hr.ld.report');
+        Route::get('admin/hr/employees/{employee}/learning-development', [EmployeeLearningDevelopmentController::class, 'index'])->name('admin.hr.employees.ld');
+    });
+
+    Route::middleware('permission:ld.manage')->scopeBindings()->group(function () {
+        Route::post('admin/hr/learning-development/bulk', [LearningDevelopmentController::class, 'storeMany'])->name('admin.hr.ld.store-many');
+        Route::post('admin/hr/employees/{employee}/learning-development', [EmployeeLearningDevelopmentController::class, 'store'])->name('admin.hr.employees.ld.store');
+        // POST + _method=PUT, so a certificate file can ride along.
+        Route::put('admin/hr/employees/{employee}/learning-development/{training}', [EmployeeLearningDevelopmentController::class, 'update'])->name('admin.hr.employees.ld.update');
+        Route::delete('admin/hr/employees/{employee}/learning-development/{training}', [EmployeeLearningDevelopmentController::class, 'destroy'])->name('admin.hr.employees.ld.destroy');
+    });
+
+    Route::middleware('permission:ld.approve')->group(function () {
+        Route::get('admin/hr/learning-development/reviews', [LdReviewController::class, 'index'])->name('admin.hr.ld.reviews');
+        Route::post('admin/hr/learning-development/reviews/{training}/approve', [LdReviewController::class, 'approve'])->name('admin.hr.ld.reviews.approve');
+        Route::post('admin/hr/learning-development/reviews/{training}/reject', [LdReviewController::class, 'reject'])->name('admin.hr.ld.reviews.reject');
+    });
+
     Route::middleware('permission:announcements.view')->group(function () {
         Route::get('admin/announcements', [AdminAnnouncementController::class, 'index'])->name('admin.announcements.index');
     });
 
     Route::middleware('permission:announcements.create')->group(function () {
-        Route::get('admin/announcements/create', [AdminAnnouncementController::class, 'create'])->name('admin.announcements.create');
         Route::post('admin/announcements', [AdminAnnouncementController::class, 'store'])->name('admin.announcements.store');
     });
 
@@ -224,7 +436,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:announcements.update')->group(function () {
-        Route::get('admin/announcements/{announcement}/edit', [AdminAnnouncementController::class, 'edit'])->name('admin.announcements.edit');
         Route::put('admin/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->name('admin.announcements.update');
         Route::patch('admin/announcements/{announcement}/featured', [AdminAnnouncementController::class, 'updateFeatured'])
             ->name('admin.announcements.update-featured');
@@ -245,6 +456,34 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/audit-logs/{auditLog}', [AuditLogController::class, 'show'])->name('admin.audit-logs.show');
     });
 
+    // Legacy "Backup Database" — Super Administrators only (see BackupController).
+    Route::middleware('permission:backups.create')->group(function () {
+        Route::get('admin/backup', [BackupController::class, 'index'])->name('admin.backup.index');
+        Route::post('admin/backup', [BackupController::class, 'download'])
+            ->middleware('throttle:5,10')
+            ->name('admin.backup.download');
+    });
+
+    // Legacy System Administration logs (read-only) and Active Sessions.
+    Route::middleware('permission:audit_logs.view')->group(function () {
+        Route::get('admin/login-history', [ActivityLogController::class, 'logins'])->name('admin.login-history.index');
+        Route::get('admin/login-history/export', [ActivityLogController::class, 'exportLogins'])->name('admin.login-history.export');
+        Route::get('admin/access-logs', [ActivityLogController::class, 'access'])->name('admin.access-logs.index');
+        Route::get('admin/access-logs/export', [ActivityLogController::class, 'exportAccess'])->name('admin.access-logs.export');
+        Route::get('admin/security-logs', [ActivityLogController::class, 'security'])->name('admin.security-logs.index');
+        Route::get('admin/security-logs/export', [ActivityLogController::class, 'exportSecurity'])->name('admin.security-logs.export');
+    });
+
+    Route::middleware('permission:sessions.view')->group(function () {
+        Route::get('admin/sessions', [SessionController::class, 'index'])->name('admin.sessions.index');
+    });
+
+    Route::middleware('permission:sessions.revoke')->group(function () {
+        Route::delete('admin/sessions/{key}', [SessionController::class, 'destroy'])
+            ->where('key', '[a-f0-9]{64}')
+            ->name('admin.sessions.destroy');
+    });
+
     Route::middleware('permission:settings.view')->group(function () {
         Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
     });
@@ -254,9 +493,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:changelogs.manage')->group(function () {
-        Route::get('admin/changelogs/create', [ChangelogController::class, 'create'])->name('admin.changelogs.create');
         Route::post('admin/changelogs', [ChangelogController::class, 'store'])->name('admin.changelogs.store');
-        Route::get('admin/changelogs/{changelog}/edit', [ChangelogController::class, 'edit'])->name('admin.changelogs.edit');
         Route::put('admin/changelogs/{changelog}', [ChangelogController::class, 'update'])->name('admin.changelogs.update');
     });
 

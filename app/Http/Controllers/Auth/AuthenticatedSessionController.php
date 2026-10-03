@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Rules\Turnstile;
+use App\Support\Security\LoginHistoryRecorder;
+use App\Support\Security\SessionLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +21,10 @@ class AuthenticatedSessionController extends Controller
     public function create(Request $request): Response
     {
         return Inertia::render('Auth/Login', [
-            'status' => $request->session()->get('status'),
+            // `?reason=idle` comes from the browser's idle countdown, after
+            // the server session has already expired — nothing to flash.
+            'status' => $request->session()->get('status')
+                ?? ($request->query('reason') === 'idle' ? 'You were signed out after a period of inactivity.' : null),
             'lockoutSeconds' => $request->session()->get('lockout_seconds'),
             // Public by design (it's embedded in the page); the secret
             // never leaves the server.
@@ -30,23 +35,21 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, LoginHistoryRecorder $history, SessionLimits $limits): RedirectResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        // Tells the next page to open with the "Login Successful" splash.
-        $request->session()->flash('signed_in', $request->wantsAdminConsole() ? 'admin' : 'portal');
+        // Starts the idle/absolute limits; "Remember me" opts out of them.
+        $limits->start($request->session(), $request->boolean('remember'));
 
-        // The legacy "Superadmin Login" toggle: land on the admin console.
-        // Choosing it never grants access — without it the user simply
-        // lands on the dashboard, told why.
-        if ($request->wantsAdminConsole()) {
-            return $request->user()->can('access-admin')
-                ? redirect()->route('admin.index')
-                : redirect()->route('dashboard')->with('status', "Your account doesn't have administrator access, so you've been signed in to the portal.");
-        }
+        // Login history (legacy imis_history_login_logs), keyed by the
+        // regenerated session id so Active Sessions can match it.
+        $history->started($request, $request->user());
+
+        // Tells the next page to open with the "Login Successful" splash.
+        $request->session()->flash('signed_in', 'portal');
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
@@ -54,8 +57,10 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, LoginHistoryRecorder $history): RedirectResponse
     {
+        $history->signedOut($request->session()->getId(), $request->user()?->id);
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

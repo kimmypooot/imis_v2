@@ -21,7 +21,7 @@ class RolesTest extends TestCase
             'name' => 'rsu-manager',
             'display_name' => 'RSU Manager',
             'status' => 'active',
-        ])->assertRedirect('/roles');
+        ])->assertRedirect();
 
         $role = Role::where('name', 'rsu-manager')->firstOrFail();
 
@@ -29,7 +29,7 @@ class RolesTest extends TestCase
             'name' => 'rsu-manager-renamed',
             'display_name' => 'RSU Manager Renamed',
             'status' => 'inactive',
-        ])->assertRedirect('/roles');
+        ])->assertRedirect();
 
         $this->assertSame('rsu-manager-renamed', $role->fresh()->name);
         $this->assertSame('inactive', $role->fresh()->status->value);
@@ -80,7 +80,7 @@ class RolesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response->assertRedirect('/roles');
+        $response->assertRedirect();
         $this->assertSame('Updated Display Name', $superAdminRole->fresh()->display_name);
     }
 

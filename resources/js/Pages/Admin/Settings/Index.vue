@@ -18,9 +18,9 @@ defineProps({
     <Head title="System settings" />
 
     <PageHeader
-        title="System settings"
+        title="System Settings"
         description="Portal-wide display and contact settings. Server configuration and credentials are managed outside the application and never appear here."
-        :breadcrumbs="[{ label: 'Administration', href: '/admin' }, { label: 'System settings' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'System Settings' }]"
     />
 
     <div class="max-w-3xl space-y-6">

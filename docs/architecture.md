@@ -5,7 +5,7 @@ Next-Generation IMIS and distinguishes what is **IMPLEMENTED** (Phase 0 —
 foundation, Phase 1 — authentication, Phase 2 — authorization, Phase 3 —
 UI/UX design system & application shell, Phase 4 — IMIS portal foundation &
 dashboard, Phase 5 — organizational structure & Regional Support Units,
-Phase 6 — services directory, through Phase 18 — dashboard systems directory; see
+Phase 6 — services directory, through Phase 19 — legacy admin panel adaptation; see
 each section below) from what is **PLANNED** (future phases).
 It is not a description of business features that do not exist yet.
 
@@ -239,7 +239,7 @@ silently dropped by Eloquent rather than mass-assigned.
 
 | Method | URI                        | Name                     | Permission required |
 |--------|-----------------------------|---------------------------|----------------------|
-| GET    | `/authorization-demo`       | `authorization.demo`      | any authenticated user |
+| GET    | `/authorization-demo`       | `authorization.demo`      | any authenticated user; registered only under `APP_ENV=local` |
 | GET    | `/roles`                    | `roles.index`              | `roles.view` |
 | GET    | `/roles/create`             | `roles.create`             | `roles.create` |
 | POST   | `/roles`                    | `roles.store`              | `roles.create` |
@@ -362,8 +362,6 @@ Key components:
   needs an `aria-label` on that control.
 
 ### Layouts & application shell (`resources/js/Layouts/`)
-- **`PublicLayout.vue`**: unauthenticated pages (currently just `Home`).
-  Simple header/content/footer, no sidebar.
 - **`AuthLayout.vue`**: login, forgot/reset password, verify email. It is
   the legacy IMIS split screen: on desktop, a CSC-navy brand panel over
   the regional office facade with the CSC, Bagong Pilipinas and Lingkod
@@ -461,8 +459,9 @@ PROCTAD, etc.) lives here; the portal only holds pointers to them.
 `GET /dashboard` (route name `dashboard`, unchanged from Phase 1 — the
 existing single authenticated entry point was extended rather than
 duplicated) is now `PortalController@index` instead of a closure
-rendering a placeholder. `GET /` branches: an authenticated user is
-redirected to `/dashboard`; a guest still sees the public `Home` page.
+rendering a placeholder. `GET /` (`home`) redirects: an authenticated
+user to `/dashboard`, a guest to `/login`. There is no public landing
+page; the login screen is the front door, as in the legacy IMIS.
 There is exactly one authenticated home route.
 
 ### Data model
@@ -485,10 +484,9 @@ portal controller queries through the same rule instead of reimplementing
 `icon`, `url` (nullable — see below), `category`, `external` (boolean),
 `featured` (boolean), and `sort_order`.
 
-No real CSC RO VIII unit/service names were invented — none are
-established anywhere in this project's documentation, so the seeded
-records are explicitly demo-labeled placeholders (`RolePermissionSeeder`-
-style `firstOrCreate`, deterministic). (`organizational_units` gained a
+No real CSC RO VIII unit/service names were invented. The demo-labeled
+placeholder units and services first seeded here were later removed (see
+"Demo data removal" below). (`organizational_units` gained a
 parent/child hierarchy in Phase 5 — see below.) The six seeded
 applications (OTRS, ORS/
 HRMPSB Connect, PROCTAD, CSE/COMEXAMS, Examinee Number Lookup, C-ERIS) are
@@ -566,11 +564,11 @@ placeholder entry point (Step 19) — no notification system exists yet.
 
 *Updated to follow the legacy dashboard:* the `PageHeader` was replaced by
 `WelcomeBanner` (greeting, system title, the welcome message from
-Settings) and `StatsBar`. The stats bar shows Active Systems, Accessible
-to You (open systems plus restricted ones the viewer holds a role in),
-Under Maintenance, and a local clock. All three numbers are real counts
-over what the viewer can see (`PortalController` → `stats`), never
-placeholders.
+Settings). A stats bar (`StatsBar`) and a "Recently Accessed" strip were
+added and later removed. The live legacy dashboard hides both
+(`.stats-bar, #recentlyAccessedSection { display: none }`, marked
+"Hidden per request"), so the banner leads straight into the notices and
+the Systems Directory.
 
 ## Organizational Structure & Regional Support Units — IMPLEMENTED (Phase 5)
 
@@ -1661,8 +1659,8 @@ props, not just hidden in the UI. Every portal query that feeds the
 resource (applications index, organizational-unit page, dashboard)
 eager-loads only the viewer's grant via `withAccessFor()`. That is one
 query per listing, not one per card. The resource also exposes
-`requires_access` and `role`. The dashboard adds a **My Systems** section:
-visible systems the viewer holds a role in.
+`requires_access` and `role`. (The dashboard's **My Systems** section was
+later removed; the Systems Directory covers it.)
 
 ### Administration
 - **Per system**: `/admin/applications/{application}/access`
@@ -1705,7 +1703,7 @@ super-admin bypass, `granted_by` mass-assignment protection, the database's
 composite-FK rejection, and the per-user save (partial, atomic).
 `tests/Feature/Portal/SystemAccessTest.php` covers URL withholding for
 restricted systems (including in listings and on the dashboard), role
-launch-URL override, My Systems scoping and visibility, and the
+launch-URL override, and the
 one-query-per-listing eager load.
 
 ## System Maintenance Mode — IMPLEMENTED (Phase 16)
@@ -1788,10 +1786,6 @@ this stack.
   drive "Last login" in the account menu.
 
 ### Login screen extras
-- **Administrator toggle** (legacy "Superadmin Login"): `mode=admin` only
-  changes the landing page. Users with `access-admin` land on `/admin`;
-  anyone else lands on the dashboard with an explanatory flash. It never
-  grants access.
 - **Turnstile** (legacy "Security Check"): enabled only when
   `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are set
   (`config/services.php`). The widget renders inside the login form, and
@@ -1803,9 +1797,21 @@ this stack.
   stays disabled until it reaches zero.
 
 ### Preloader and splashes
-- **Boot preloader** (`resources/views/app.blade.php`): the legacy
-  loading screen, styled with the design tokens and removed by `app.js`
-  once the first page renders. It never adds a delay.
+- **Two looks, as in the legacy app**. Both are styled by classes in
+  `app.css` built on the brand tokens.
+  - The page-load preloader ports `assets/css/preloader.css` (the
+    `.imis-preloader*` classes). It has a dotted navy field, a red top
+    strip, the logo on a white disc in a breathing red halo, a red
+    divider, bouncing dots, and a red progress bar along the bottom.
+  - The sign-in/sign-out splash ports `js/imis_transition.js` (the
+    `.imis-tr*` classes). It has a frosted-glass card over a pale blue
+    gradient with floating navy/red blobs. The CSC seal sits inside two
+    counter-rotating rings (navy outer, red inner), and three dots take
+    turns lighting up red every 400ms.
+- **Boot preloader** (`resources/views/app.blade.php`): shows the CSC-IMIS
+  logo with "Civil Service Commission" over "Regional Office VIII", then
+  "Loading". As in the legacy `preloader.js`, `app.js` holds it for 300ms
+  after the first page renders, then fades it out over 0.6s.
 - **Transition splash** (`Composables/useSplash.js` +
   `Components/Feedback/TransitionSplash.vue`, mounted beside the page in
   `app.js` so it survives page swaps):
@@ -1814,7 +1820,8 @@ this stack.
     Logout now returns to `/login` with "You have been signed out."
   - *Signing in*: the server flashes `signed_in`, and `AppShell` raises
     "Login Successful — Welcome back, {name}" during setup, so it paints
-    in the same frame as the new page and the page never shows through.
+    in the same frame as the new page. It skips the fade-in (`instant`),
+    so the page never shows through.
   Both respect `prefers-reduced-motion`.
 
 ### About dialog
@@ -1856,6 +1863,46 @@ the shared props and the one-time sign-in flag.
 mass-assignment protection, validation, entry replacement, publishing,
 the once-per-user pop-up, and the history page.
 
+### Login lockout and session limits
+Carried over from the legacy `auth/login.php` and `includes/session.php`:
+- **Lockout**: after `LoginRequest::MAX_ATTEMPTS` (5) failures the
+  username+IP pair is locked for `LOCKOUT_SECONDS` (15 minutes), which the
+  login page counts down.
+- **Idle timeout**: Laravel's `session.lifetime` (120 minutes). The browser
+  (`Composables/useSessionTimeout.js`, shown by
+  `Components/Feedback/SessionTimeoutDialog.vue` in `AppShell`) tracks real
+  input. While there is some, it calls `POST /session/heartbeat`
+  (`SessionHeartbeatController`, at most once a minute), and it warns
+  `session.idle_warning` minutes before the timeout with "Stay signed in".
+  An untouched tab sends nothing, so it does time out, and then it goes to
+  `/login?reason=idle`. Activity is shared between tabs through
+  localStorage.
+- **Absolute limit**: `session.absolute_lifetime` (480 minutes) per
+  sign-in. `Support/Security/SessionLimits` stamps the start at login
+  (or on the first request after a remember-cookie sign-in), and the
+  `EnforceSessionLimits` web middleware signs the user out once it passes:
+  a redirect to the login page with a message, or a JSON 401
+  (`reason: limit`) for the heartbeat. The dialog gives the same warning,
+  with no way to extend.
+- **"Remember me"** sign-ins are exempt from both limits (the remember
+  cookie would sign them straight back in), and get no warning.
+- The limits reach the browser as the `sessionLimits` shared prop, as
+  durations, not timestamps, so the client's clock never needs to match.
+- **Login history**: `login_histories.ended_by` gains `timeout`, written
+  by `EnforceSessionLimits` and by `imis:expire-sessions`
+  (`ExpireStaleSessions`, every five minutes via the scheduler, database
+  session driver only). That command closes open sign-ins whose session
+  row has idled out or gone, with the time it went idle (legacy
+  `inc/session_cleanup.php`). Such rows, and legacy rows with a sign-out
+  time but no `ended_by`, read as *expired*.
+- Not carried over: rotating the session id every 15 minutes. Login
+  history and Active Sessions are keyed by session id, and with the
+  database driver a rotation can race the heartbeat or a parallel Inertia
+  request and sign the user out. The id is still regenerated at sign-in.
+
+Covered by `tests/Feature/Auth/SessionLimitsTest.php` and the lockout
+assertion in `UsernameLoginTest`.
+
 ## Dashboard Systems Directory (Division Drill-down) — IMPLEMENTED (Phase 18)
 
 The legacy dashboard's main view, Category → Division → System, rebuilt
@@ -1874,6 +1921,11 @@ from data this platform already holds instead of the legacy
   via the morph map), carrying over the legacy rule that one system can
   sit under several divisions. A system with neither falls into
   "Other Systems", so no visible system is ever unreachable.
+- **Order**: categories keep the fixed order above. Divisions within a
+  category, and systems within a division, are **alphabetical**
+  (case-insensitive and natural, so "Field Office 2" comes before "Field
+  Office 10"). The admin "Display order" field on units and systems does
+  not affect the directory; it still orders other lists.
 - Only `visibleTo()` systems are included, each shaped by
   `ApplicationResource`, so launch URLs, roles, restricted access and
   maintenance follow the same rules as every other page. Systems are
@@ -1893,14 +1945,29 @@ division).
 ### Launch states (`SystemLaunchCard.vue`)
 These are the legacy button states, decided entirely by server-resolved
 fields: **Access System** with the viewer's role badge ("Guest" for open
-systems), **Access (maintenance)** for maintenance bypass, **Under
+systems), **Access [Maintenance]** for maintenance bypass, **Under
 Maintenance**, **No Access** (restricted, no role) and **Not configured
-yet**. Each card also states the reason in plain text, not only through
-color or a tooltip.
+yet**. As in the legacy cards, the button label is the only state cue;
+the Details link and explanatory note were removed. A system's
+maintenance message still shows in the dashboard's maintenance notice
+and on its details page.
+
+### Card styling
+Division and system cards follow the legacy dashboard cards: icon beside
+the details, a 2-line description clamp, a full-width button at the
+bottom, a lift and a top accent bar on hover (blue for divisions, green
+for systems), and an "online" dot on launchable systems. Button colors
+are green for launch, orange (`bypass` token) for maintenance bypass,
+red for Under Maintenance, and muted grey for No Access / Not configured.
+Category headers use the legacy small-caps label with a trailing rule;
+committees get the amber (`warning`) tint. Divisions show 4 per row on
+wide screens and systems 3. The hover lift only runs when the user
+allows motion. The card shadows and the bypass/hover colors are tokens
+in `app.css`.
 
 ### Dashboard layout
-The dashboard now follows the legacy order: banner → stats → maintenance
-notice → announcements → My Systems → **Systems Directory** → Services →
+The dashboard now follows the legacy order: banner → maintenance
+notice → announcements → **Systems Directory** → Services →
 Need help. The Phase 4 Quick Access and Organizational Units sections were
 removed (the directory supersedes both; `QuickAccess.vue` was deleted).
 The Organizational Units and Applications pages remain in the sidebar.
@@ -1909,7 +1976,7 @@ The Organizational Units and Applications pages remain in the sidebar.
 `RegionalOfficeSeeder` seeds the 15 actual CSC RO VIII offices from the
 legacy division map (7 Regional Support Units, 7 field offices, 1
 satellite office), matched by code, so it is safe to re-run and keeps admin
-edits. It replaces the Phase 4/5 demo units in `PortalDemoSeeder`.
+edits. It replaces the Phase 4/5 demo units.
 
 ### Admin
 The system form gains "Also list under these offices / committees"
@@ -1917,10 +1984,325 @@ The system form gains "Also list under these offices / committees"
 and audited as `application.listings_changed` (names added/removed).
 
 ### Tests
-`tests/Feature/Portal/SystemDirectoryTest.php` covers category order and
+`tests/Feature/Portal/SystemDirectoryTest.php` covers category order, alphabetical divisions and systems, and
 grouping, multi-placement without duplication, visibility and inactive
 divisions, per-viewer launch state with no restricted-URL leak, the
 division query parameter, and admin listing sync, audit and validation.
+
+## Legacy Admin Panel Adaptation — IMPLEMENTED (Phase 19)
+
+The admin area is rebuilt to match the legacy IMIS admin panel (NiceAdmin
+look, tables, modals, SweetAlert dialogs, the same menu and pages), on
+this stack. It supersedes the separate Create/Edit pages and module-grid
+dashboard described in earlier phases.
+
+### Shell, menu, page chrome
+- `AppShell` takes `variant="admin"`: a white sidebar, open by default
+  (its own remembered preference), with collapsible groups (`SidebarNav`
+  admin variant).
+- Menu (`Utils/navigation.js`), in legacy order:
+  - **Dashboard**
+  - **User Management**: Manage Dashboard, Manage Users, Manage Systems,
+    System Access, User Access
+  - **Portal Content** (new-only modules, no legacy page): Organizational
+    Units, Services, Committees
+  - **System Administration**, in the legacy order: Announcements,
+    Changelog, Active Sessions, Login History, System Access Logs,
+    Security Logs, Admin Audit Log. Then the new-only modules: System
+    Settings, Backup Database, IMIS Roles, Permissions.
+  - **Developer** (Authorization demo, Design system): `localOnly`. It is
+    shown only when the shared `app.local` prop is true, and its routes
+    are registered only under `APP_ENV=local`, so they 404 everywhere
+    else.
+- The portal sidebar (new-only; the legacy dashboard had none) is grouped
+  under headings, each a labelled `role="group"`:
+  - Home on its own.
+  - **Updates**: Announcements, What's New.
+  - **Directory**: **Systems** (`/applications`, renamed from
+    "Applications" to match the dashboard), Services, Organizational
+    Units.
+  - **Management**: Administration. The group disappears for users
+    without admin access.
+
+  The admin-access permission list is exported once as
+  `adminAccessPermissions`. The sidebar entry and the account menu both
+  use it, mirroring `AppServiceProvider::ADMIN_ACCESS_PERMISSIONS`.
+- Both sidebars end with a small footer showing "IMIS v{version}" and
+  "CSC Regional Office VIII".
+- `PageHeader` shows a bold navy title with the breadcrumb underneath
+  (legacy `.pagetitle`).
+
+### Shared components
+- `UI/DataTable` — legacy DataTables: show N entries, search, Copy / CSV
+  (with UTF-8 BOM) / Print, sortable headers, # column, "Showing x to y
+  of z", pagination. *Client* mode for ordinary lists. *Server* mode
+  (Laravel paginator + `only` partial reloads) for large logs, backed by
+  `Support/Tables/ServerTable` (whitelisted sorting, LIKE-escaped search)
+  and `Support/Tables/CsvExport` (streams every matching row and
+  neutralizes formula cells against CSV injection).
+- `Feedback/Modal` — colored header (`tone`), `summary` strip, scrolling
+  body, pinned footer, `xl` size.
+- `Composables/useDialog` + `Feedback/DialogHost` — promise-based
+  `confirm()`, `alert()`, and toasts (the SweetAlert2 replacement), mounted
+  once in `app.js`. Server `flash.status` / `flash.error` become toasts
+  automatically.
+- `UI/Tabs` (WAI-ARIA tabs), `UI/AdminCard`, `UI/ActionButton`,
+  `UI/StatusBadge`, `UI/UserAvatar`, `Forms/PhotoPicker`,
+  `Forms/CheckboxGroup`, `Admin/SchemaForm` + `Admin/RecordModal`
+  (schema-driven add/edit modal for simple records), `Admin/MetricCard`,
+  `Charts/SimpleChart`.
+- Admin actions now redirect `back()` with a flash message, so modals stay
+  on their page.
+
+### Users (legacy profile)
+- `users` gains `first_name`, `middle_name`, `last_name`, `sex`, `birthday`,
+  `position`, `organizational_unit_id` (office) and `profile_photo_path`.
+- `name` stays the stored display name, kept in sync as "First M. Last"
+  (`User::composeName`).
+- Usernames follow the exact legacy rule from the name parts
+  (`Usernames::generateFromParts`).
+- Photos are re-encoded by GD (`Support/ProfilePhotos`): a centered
+  400×400 JPEG, no EXIF, old file removed.
+- Manage Users: one table with the legacy Add modal (green) and the Edit
+  modal (blue) with Profile / Account / Security tabs. Per-row abilities
+  come from the server. Admins still never set or see passwords; the
+  legacy birthday password is not carried over.
+
+### Systems and access
+- **Manage Systems**: one extra-large modal with Details, Dashboard
+  listing, Roles (the legacy inline role editor) and Maintenance tabs.
+- **System Access** (legacy "Roles and Permissions"): every user × one
+  system. **User Access**: one user × every system. Both use the shared
+  `AccessGridModal` (search, filter, apply-to-visible, pending count,
+  undo). The grid loads on demand (`Inertia::optional`, `?system=` /
+  `?user=`), is built by `Support/SystemAccess/AccessMatrix` (rows marked
+  `locked`: self / protected / inactive), and is saved in bulk:
+  `SyncApplicationAccessRequest` validates every row (role belongs to the
+  system and is active, self and protected-target guards, inactive
+  accounts can only lose access), all or nothing.
+- The old per-system Access page is removed; its single-grant endpoints
+  remain.
+- **Manage Dashboard**: places systems under each office or committee
+  card (`application_listings` from the division side). Managed systems
+  are shown locked.
+
+### Logs and sessions
+- `login_histories`: written after the session id regenerates, closed on
+  sign-out (with a fallback if the id rotated), and marked `ended_by=admin`
+  on a forced sign-out.
+- `system_access_logs`: written by the new launch route
+  `GET /applications/{id}/launch`. That route resolves the URL
+  server-side through `launchUrlFor()`, logs the role held at that
+  moment, and redirects. It is not an open redirect. Portal launch
+  buttons use it.
+- Pages:
+  - **Login History**, **System Access Logs**, and **Security Logs**
+    (failed, blocked and locked-out sign-ins plus forced sign-outs, with
+    a top-failing-IPs panel): server tables with date filters and CSV.
+  - **Active Sessions** (database driver): force logout deletes the
+    session and rotates the remember token. Session ids never leave the
+    server (only a SHA-256 is sent). You can't end your own session, and
+    only a Super Administrator can end another Super Administrator's.
+  - **Admin Audit Log**: restyled into the same table.
+- Permissions: `audit_logs.view` (logs), `sessions.view`, `sessions.revoke`.
+
+### Admin dashboard
+The legacy admin home (`Support/Admin/AdminDashboard`, permission-scoped,
+real counts only):
+- welcome banner with role badge, date, clock and quick actions
+- metric cards (users, systems, access grants, logins today and active
+  sessions)
+- a 14-day login trend
+- people per IMIS role, users by office, access by system
+- top systems, active users without any system access
+- recent admin activity, plus the existing inactive-record counts
+
+Charts use **Chart.js 4** (tree-shaken: bar and line only) through
+`Charts/SimpleChart`, following the dataviz method:
+- a single series in the validated `--color-csc-blue-light` (brand navy
+  fails the lightness band for marks)
+- thin marks with rounded ends and hairline grids
+- no legend for a single series, hover tooltips, and a "View as table"
+  for every chart
+- the legacy roles donut became a bar, because roles overlap and don't
+  form one whole
+
+### Other pages
+- Offices, services, committees: tables with `RecordModal` add/edit.
+  Committee members are still managed on the committee page.
+- IMIS Roles: `RoleModal` with Details and Permissions tabs (grouped
+  picker with select-all per group). The super-admin role's name and
+  status are locked.
+- Permissions: a read-only table.
+- Announcements and Changelog: the legacy layout, with a sticky side form
+  (create, or edit the chosen row; `?edit=ID` deep-link for
+  announcements) beside the table. Publishing stays on the announcement
+  preview page; changelog rows publish and unpublish in place.
+
+### Backup Database
+`Support/Backup/DatabaseDumper` writes a restorable SQL dump in pure PHP
+(no `mysqldump`). It covers only the application's own database (MySQL
+schema-scoped), streams in chunks, exports session, cache, queue and
+reset-token tables as structure only, and blanks remember tokens.
+`BackupController`:
+- **Super Administrators only**, even with `backups.create`
+- requires the current password again
+- throttled to 5 per 10 minutes
+- audited as `system.backup_downloaded`
+
+A restore round-trip into a scratch MySQL database matched all 29 tables
+exactly.
+
+### Tests
+Covered by `UserProfileTest`, `ApplicationAccessTest` (System/User Access
+grids and bulk save), `DashboardLayoutTest`, `ActivityLogsTest` (history,
+launches, CSV escaping, sessions, force logout), `BackupTest`, and the
+additions to `AdminDashboardTest`. Earlier tests were updated where pages
+became modals (generic redirect plus flash assertions).
+
+## Demo data removal — IMPLEMENTED
+
+The database now seeds only real reference data: `RolePermissionSeeder`,
+`SettingSeeder` and `RegionalOfficeSeeder`. `PortalDemoSeeder` (demo
+services and categories, plus six placeholder systems) and the `testuser`
+Super Administrator account are gone. Systems and accounts come from the
+legacy import below.
+
+Migration `2026_10_13_090000_remove_demo_data` purges what earlier seeds
+left in existing databases: the "(Demo)" organizational units (and their
+directory listings), the two "(Demo)" services and categories, and the
+"Demonstration directory entry" description on the systems. It matches
+only those exact labels, so admin-created or renamed records are kept;
+`down()` does not restore them.
+
+## Legacy Data Import — IMPLEMENTED
+
+`php artisan imis:import-legacy ../old-imis/db_imis.sql` carries the
+legacy production database into this platform
+(`App\Console\Commands\ImportLegacyImis` → `App\Support\Legacy\LegacyImporter`).
+The command loads the phpMyAdmin dump into a temporary
+`<database>_legacy_import` schema on the same server and drops it
+afterwards. With `--database=<schema>` it reads legacy tables that are
+already loaded instead (e.g. on a host without CREATE DATABASE). It runs
+in one transaction, apart from photo files.
+
+| Legacy | Here |
+|---|---|
+| `imis_dash_divisions` (RSU category) | existing offices, matched by the code in parentheses, then by name; an empty description is filled |
+| `imis_dash_divisions` (committee category) | `committees` |
+| `imis_projects` | `applications`, matched by `short_name` = `code_name`. `requires_access` = not `is_public`; `url` = `guest_url`; Bootstrap icon → nearest `Icon.vue` name |
+| `imis_dash_division_systems` | first active office = managing unit; other active placements → `application_listings`; `is_maintenance` → maintenance mode. Inactive placements are skipped |
+| `imis_access_roles` | `application_roles` (`launch_url` = `project_url`). Roles the legacy system lacks are deactivated if nobody holds them |
+| `users_cscro8` | `users`, matched by username. New accounts keep their bcrypt hash, so legacy passwords work; `fo_rsu` → office by name; `superadmin` → `super-admin` (legacy `admin` had no admin-panel rights) |
+| `imis_system_access` | `application_access` (`granted_by`, granted time) |
+| `imis_announcements` | `announcements`: active → published, otherwise archived; `critical` → featured |
+| `imis_changelog(_items)` | `changelogs` / `changelog_items` |
+| `imis_history_login_logs` | `login_histories`. Legacy session ids are dropped; a timed-out session reads as expired |
+| `imis_history_access_logs` | `system_access_logs`, with IP and user agent from the sign-in row |
+| `admin/uploads/*` | profile photos, re-encoded through `ProfilePhotos` |
+
+Rules:
+- **Times**: legacy DATETIME columns are Asia/Manila wall-clock time,
+  converted to UTC. TIMESTAMP columns are read over a UTC session.
+- **Relative launch paths** are made absolute against `--legacy-url`
+  (default `https://imis.cscro8.com`), because launch URLs must be
+  absolute.
+- **Shared emails**: the account with the latest sign-in keeps the
+  address. The other is imported with `email` NULL (now nullable, still
+  unique) and can sign in by username until an admin adds one. An email
+  already held by an account here is never taken over.
+- **Existing accounts** matched by username keep their password, status
+  and roles; only empty profile fields are filled.
+- **Re-running** is safe: users, systems, roles, grants, releases,
+  announcements and history rows are matched, so nothing is duplicated.
+  Legacy values are re-applied to the systems the legacy data defines.
+- **Not carried over**: admin and security audit logs (their action names
+  don't map to `AuditEvent`), rate limits, SSO tokens, recent systems
+  (derived from launches here), and the legacy columns `first_day`,
+  `exam_fo_id`, `itg_id`, `type` and `must_change_password`.
+
+Covered by `tests/Feature/LegacyImportTest.php` (a fictional legacy DB on
+a second SQLite connection).
+
+The import also records each account's legacy id (`users.legacy_id`), and
+runs with the legacy bridge paused, so nothing it reads is written back.
+
+## Legacy Bridge & Single Sign-On — IMPLEMENTED
+
+The old PHP subsystems keep running until they are rebuilt. They read
+people and roles from the legacy database, keyed by `users_cscro8.id`.
+They also accept a sign-in from a Laravel hub through `?sso_token=`
+(legacy `includes/session.php`). This platform is now that hub, and the
+source of truth for accounts and system access. Configuration lives in
+`config/legacy.php`; server steps are in
+[`deploy/legacy-imis/README.md`](../deploy/legacy-imis/README.md).
+
+### Write-through to the legacy database (`Support/Legacy/LegacyBridge`)
+- Switched on by `LEGACY_BRIDGE=true`, over the `legacy` connection
+  (`LEGACY_DB_*`; not strict, `+08:00`). All legacy database access goes
+  through this class, so where that database lives is one setting.
+- `sync(User)` mirrors one whole account, so it is idempotent:
+  - **`users_cscro8`:** name parts, initial, sex, username, password
+    hash (bcrypt, which `password_verify()` accepts), email, position,
+    office (`fo_rsu`), birthday, status, and role. Super Administrator
+    becomes `superadmin`; a legacy `admin` is kept but never granted.
+  - **Matching:** by `legacy_id`, else once by username; otherwise a new
+    row is inserted with the legacy defaults and `type` = office code.
+  - **Fields kept from the legacy row:** whatever IMIS leaves empty, such
+    as a shared email that the import left NULL here.
+  - **Access:** `imis_system_access` mirrors the account's grants for
+    every system both sides know (`short_name` = `code_name`). Roles
+    added here are created in `imis_access_roles`. Legacy grants to
+    systems this platform doesn't have are never touched.
+- **When it runs:**
+  - after the response (`defer`, once per account per request), on any
+    `ApplicationAccess` save or delete
+  - on a `User` save that changes a mirrored field
+  - on an IMIS role change (`UserController::assignRoles`, since pivots
+    fire no events)
+
+  A failure is reported and never fails the admin action.
+- `imis:sync-legacy [--user=]` reconciles everything. It runs hourly on
+  the scheduler, and once by hand when the bridge is first switched on.
+- `LegacyBridge::withoutSyncing()` pauses it (used by the import).
+
+### Single sign-on (`Support/Legacy/LegacySso`)
+- **Issuing:** `ApplicationLaunchController` passes the resolved launch
+  URL through `launchUrl()`. A URL whose host is listed in
+  `LEGACY_SSO_HOSTS` gets `sso_token=<64 random chars>`; no other host
+  ever gets a token. With the bridge on, an account with no legacy id is
+  synced first; with it off, such an account just launches without one.
+- **Storage:** `sso_tokens` keeps only a SHA-256 hash, the account, the
+  system, and the *audience* (the launch URL's first path segment, e.g.
+  `otrs`). Tokens are valid for `LEGACY_SSO_TTL` seconds (60) and are
+  claimed atomically, once. They are pruned daily, a day after expiry.
+- **Redeeming:** `POST /api/v1/sso/validate` (`routes/api.php`, the
+  stateless `api` group with no session, cookies or CSRF, at 300/min).
+  It takes `token` and an optional `path`.
+  - The token must exist, be unused and unexpired.
+  - When `path` is given, or `LEGACY_SSO_REQUIRE_PATH=true`, its first
+    segment must match the audience.
+  - The account must still be active.
+  - Success returns 200 with the legacy payload: `id` (the legacy id),
+    `username`, `fname`, `lname`, `mname`, `minitial`, `global_role`,
+    `email` and `position`. Anything else returns 401.
+- **Patching the legacy side:** `deploy/legacy-imis/session-sso.patch`
+  changes `includes/session.php` on the server:
+  - the validate URL comes from config, not the `Host` header
+  - TLS verification is on, with timeouts
+  - the page path is sent along
+  - the session starts clean, and does the CTS / RFCS / ICTSRTS / OTRS
+    setup that `api/system-redirect.php` used to do
+  - the token is always stripped from the URL
+
+  Set `LEGACY_SSO_REQUIRE_PATH=true` once the patch is live.
+
+The legacy `api/*` endpoints other than `system-redirect.php`
+(user-access, maintenance-status, track-access, announcements and
+changelog) served only the old dashboard, and are already covered here.
+
+Covered by `tests/Feature/Legacy/LegacyBridgeTest.php` and
+`tests/Feature/Legacy/LegacySsoTest.php`.
 
 ## Backend / Frontend Boundary — IMPLEMENTED
 
@@ -1932,6 +2314,1317 @@ division query parameter, and admin listing sync, audit and validation.
   Vue components render data and dispatch Inertia requests, nothing more.
 - No server secrets are passed to the frontend; only explicit, whitelisted
   props defined per page.
+
+## Human Resources: Employee Core — IMPLEMENTED (HR-1)
+
+The first of the HR phases. They replace the legacy PRISM (blank), ldms
+(Learning & Development) and LMS (Leave) subsystems with one built-in
+module:
+
+| Phase | Name |
+|---|---|
+| HR-1 | Employee core |
+| HR-1b | Reassignment history |
+| HR-2 | 201 File / PDS |
+| HR-3 | Learning & Development |
+| HR-4 | Plantilla |
+| HR-5 | Service Record |
+| HR-6 | Leave |
+| HR-7 | Data migration and cutover |
+
+HR-1 lays the record the rest hang off.
+
+### HR-1b: Reassignment history — IMPLEMENTED
+Every employee has a history of movements between Regional Support Units
+and Field Offices (`employee_assignments`, `App\Models\EmployeeAssignment`,
+soft deletes).
+- **One entry per movement:**
+  - kind (`App\Enums\AssignmentKind`): reassignment, detail, designation,
+    or return to mother unit
+  - from office (defaults to their current office) and to office
+  - effective date; an end date for details and designations only
+  - Office/Special Order number and date, and remarks
+  - an optional scanned order
+- **The office rule (agreed with HR, 2026-10-03): only a reassignment
+  moves the account's office.** A detail or a designation leaves the
+  person in their mother unit; a return to the mother unit ends any
+  detail still running on its date.
+  - **Timing:** a reassignment dated today or earlier moves the office
+    at once. A future-dated one moves it on its date, via
+    `imis:apply-reassignments`, scheduled daily at 00:10.
+  - **Once only:** each reassignment moves the office once
+    (`applied_at`), so an office edited by hand afterwards isn't undone.
+  - **Corrections:** correcting or removing a reassignment re-settles the
+    office from the latest reassignment in effect. Removing the one that
+    moved them puts them back where it moved them from.
+  - **Other kinds** never touch the office.
+  - **Writer:** `App\Support\HR\EmployeeAssignments` is the only writer.
+    A move goes through the user model, so the legacy bridge mirrors it.
+- **Scanned orders** are filed in the 201 file as an Office Order
+  (`EmployeeDocuments`) and linked from the entry (`document_id`), so they
+  follow the 201 file's access and audit rules. A link to the scan is
+  only sent to viewers who may open that document (not supervisors).
+- **Views:**
+  - **Employee record page:** an "Assignment history" card
+    (`Components/HR/AssignmentTimeline.vue`), newest first, with today's
+    office (mother unit), current details and designations, and
+    current/upcoming badges. A reassignment's end is derived from the
+    next reassignment.
+  - **Recording:** HR records and corrects entries with
+    `AssignmentModal.vue` (POST + `_method=PUT`, so a scan can be added
+    to a correction), and removes them after a confirmation.
+  - **My Employee Record:** shows the same timeline, read-only.
+- **Reports** (Admin → Human Resources → **Reassignments**,
+  `/admin/hr/reassignments`, `ReassignmentReportController`):
+  - **Stations as of a date:** each in-service person's office per the
+    history, and any detail running that day
+    (`EmployeeAssignments::stationsOn()`).
+  - **Movements in a period:** filtered by kind and office (from or to).
+  - Both are DataTables with CSV and print, and limited to the records
+    the viewer may see (`Employee::visibleTo`): everyone for HR, their
+    own office for supervisors.
+- **Access:**
+  - `employees.reassign` (`EmployeePolicy::reassign`) records, corrects
+    and removes entries, never on your own record. Scoped bindings
+    resolve an entry only under its own employee.
+  - Reading follows `EmployeePolicy::view`.
+  - Audit events: `employee_assignment.recorded`, `.updated` (changed
+    fields) and `.deleted`. Each records any office move in its metadata;
+    a scan also records `employee_document.uploaded`. The morph map gains
+    `employee_assignment`.
+- **Feeds HR-5:** `stationsOn()` is the Service Record's station/place
+  of assignment.
+- **Tests:** `tests/Feature/HR/ReassignmentTest.php`.
+
+### Data
+- `employees`: one row per user (`user_id` unique, `restrictOnDelete`, so
+  a user with an HR record can't be hard-deleted).
+  - Columns: `employee_number` (unique, optional), `employment_status`
+    (`App\Enums\EmploymentStatus`), `original_appointment_date` (legacy
+    `first_day`), `separation_date` and `separation_reason`, and
+    `remarks`.
+  - Identity (name, sex, birthday, position, office) is **not**
+    duplicated. It is read from `users`.
+  - `user_id` isn't fillable. It is set once, explicitly, on create, so a
+    record can never be moved to another person.
+- `EmploymentStatus`: Permanent, Temporary, Coterminous, Casual,
+  Contractual, Job Order, Contract of Service.
+- A separation reason is required with a separation date, and dropped
+  without one (`UpdateEmployeeRequest::employmentData()`).
+
+### Authorization
+Permissions in `PermissionName`:
+
+| Permission | Allows |
+|---|---|
+| `employees.view` | Everyone's records |
+| `employees.view_unit` | The viewer's own office's records (supervisors) |
+| `employees.create` | Setting up a record |
+| `employees.update` | Editing a record |
+
+- Both view permissions grant `access-admin`, and are listed in
+  `ADMIN_ACCESS_PERMISSIONS` and the JS `adminAccessPermissions`.
+- `Employee::scopeVisibleTo()` and `EmployeePolicy::view()` apply the
+  same rule: your own record always, your office's with `view_unit`, and
+  anyone's with `view`.
+- **Separation of duties:** HR can't set up or edit their own record
+  (`StoreEmployeeRequest` and `EmployeePolicy::update`). A Super
+  Administrator can, through `Gate::before`.
+
+### Data Privacy Act (RA 10173)
+- Opening someone else's record records `employee.viewed` in the audit
+  log. Reading your own record does not.
+- Creating a record records `employee.created`. Editing one records
+  `employee.updated`, with the changed fields.
+- Audit entries name the record "Employee record of {name}" (the
+  `Employee::label` accessor).
+
+### Pages
+- **Admin → Human Resources → Employees**
+  (`Admin\EmployeeController`, `Admin/HR/Employees/Index`, `Show`)
+  - The list (DataTable) and "Add Employee Record".
+  - The add form only offers active users without a record, never the
+    viewer themself.
+  - The record page has an "Edit employment" button.
+
+### How records get created
+`App\Support\HR\EmployeeRecords::setUp()` is the single path, and each
+record is audited as `employee.created`.
+- **Existing staff:** "Set up records for staff" (`BulkSetupModal`,
+  `POST /admin/hr/employees/bulk`) lists every candidate, all ticked.
+  - A candidate is an active account with no record, never HR
+    themselves.
+  - HR unticks non-staff, such as duplicate, test or service accounts,
+    and creates the rest at once.
+  - Only current candidates are accepted (`BulkStoreEmployeesRequest`).
+- **New accounts:** `UserController::store` creates the record in the
+  same transaction as the account, so a new person can fill in their PDS
+  immediately.
+- **Employment status is optional.** It shows as "Not set" until HR fills
+  it in. The legacy IMIS never recorded it: `users_cscro8.type` is the
+  office code, and `first_day` was filled for only 2 of 61 staff. So
+  there was nothing to import.
+- **Portal → Human Resources → My Employee Record** (`/my/employee-record`,
+  `MyEmployeeRecordController`)
+  - Self-service and read-only, with no permission needed.
+  - Shows an empty state until HR sets the record up.
+- Both pages share `Components/HR/EmployeeDetails.vue`. Plain dates use
+  the new `formatCalendarDate()`, so a birthday never shifts a day in
+  timezones behind UTC.
+
+### Deploying
+1. Run `php artisan migrate`.
+2. Run `php artisan db:seed --class=RolePermissionSeeder`. It is
+   idempotent and adds the four permissions.
+3. Grant `employees.*` to an HR role.
+
+After deploying, HR runs "Set up records for staff" once for the
+existing accounts. The 2 legacy `first_day` dates can be typed in by
+hand.
+
+### Tests
+`tests/Feature/HR/EmployeeRecordTest.php` covers:
+- route and permission guards
+- HR versus supervisor (office-scoped) visibility, including a
+  supervisor with no office
+- the access trail, and no trail for reading your own record
+- one record per person and unique employee numbers
+- the self-edit guard and the super-admin exception
+- that `user_id` can't be moved
+- separation validation
+- the delete restriction
+- the self-service page
+
+## Human Resources: Personal Data Sheet — IMPLEMENTED (HR-2a)
+
+The PDS is **CS Form No. 212 (Revised 2026)**. The blank form is
+`../old-imis/CS Form No. 212 Revised 2026 Personal Data Sheet PDS.xlsx`.
+PRISM was blank, so this was built from that form.
+
+### What changed in Revised 2026
+- Item 5 is "Sex at birth".
+- Item 10 is UMID ID no., which replaces GSIS.
+- Item 13 is the PhilSys Card Number (PCN). SSS was removed.
+- Section VI is Learning & Development and VII is Voluntary Work. They
+  were the other way round in 2017.
+- Item 35b adds date filed and status of case.
+- Item 40c cites RA 11861.
+- References add email.
+- Every page has an e-signature line.
+- There are continuation sheets C5–C11.
+
+### One definition, two uses
+`App\Support\HR\Pds\PdsSchema` defines every section and field once, and
+both of these are generated from it:
+- the server-side validation rules
+- the schema the editor renders (`forEditor()` strips server-only parts,
+  such as regex patterns)
+
+Section kinds:
+
+| Kind | Holds | Stored in |
+|---|---|---|
+| `profile` | Personal information, family names, government ID | One `pds_profiles` row. The name extension (`target: user`) goes on the account instead. |
+| `questions` | Items 34–40 | One encrypted JSON document |
+| `list` | Repeating sections: children, education, eligibility, work experience, L&D, voluntary work, items 31–33 (one table, told apart by `scope.type`), references (`max_rows` 3) | One table per section |
+
+- **`when`:** a field with `when` (e.g. the dual-citizenship country, the
+  "If YES" details, the permanent address unless "same as residential")
+  is shown, required and kept only while its condition holds.
+  `PdsSchema::dropInapplicable()` blanks it otherwise.
+- **Country list:** the dual-citizenship country list is the form's own
+  list, copied verbatim into `config/pds.php`.
+
+### Identity
+Name, sex at birth and date of birth stay on `users`, and the agency
+employee number on `employees`. The editor shows them read-only.
+`users.name_extension` (new) is editable in the PDS and in the admin user
+form, and is part of the display name ("Juan D. Cruz Jr.").
+
+### Writing (`PdsWriter`)
+- One section is saved at a time, in a transaction.
+- **List sections sync by id:** rows with an id are updated, rows
+  without one are added, and this employee's rows missing from the
+  submission are removed. A row id is validated against the employee's
+  own rows, so another person's row can't be targeted.
+- **It returns what changed for the audit log:** field names, or added,
+  updated and removed counts. It **never returns values**.
+- `PdsReader` returns the decrypted PDS, and is built only for someone
+  the policy allows.
+
+### Encryption at rest
+These use Laravel `encrypted` casts:
+- UMID, Pag-IBIG, PhilHealth, PhilSys and TIN
+- the item 34–40 answers
+- the government ID number and issuance
+
+A database dump alone doesn't reveal them.
+
+**`APP_KEY` must be kept safe and never changed on its own.** Losing it
+makes that data unreadable. To rotate it, move the old key to
+`APP_PREVIOUS_KEYS`.
+
+### Access
+| Who | Can |
+|---|---|
+| Every employee | Read and edit their own PDS (`/my/pds`), with no permission. It needs their HR-1 record. |
+| `pds.view` (HR) | Read anyone's PDS (`/admin/hr/employees/{id}/pds`) |
+| `pds.update` (HR) | Edit someone's PDS on their behalf |
+
+- Supervisors (`employees.view_unit`) never reach a PDS. This is data
+  minimization under RA 10173.
+- **Audit:** `pds.viewed` is recorded when someone opens another
+  person's PDS. `pds.updated` is recorded for every save, including your
+  own, with the section and what changed.
+
+### Editor (`Components/HR/Pds`)
+- **`PdsEditor`:** a read-only identity card, then one tab per part of
+  the form. Tabs with unsaved changes get a dot. It warns before you
+  leave the page, or navigate away, with unsaved changes.
+- **`PdsSectionForm` and `PdsRowsForm`:** each section saves on its own.
+  List sections can add, remove and reorder rows, and focus moves to a
+  new row's first field.
+- **`PdsField`:** decimal steps, numeric keyboards for ID numbers,
+  suggestion lists, Yes/No answers, and errors tied to their inputs
+  (`aria-describedby`).
+
+### Deploying
+1. Run `php artisan migrate`.
+2. Run `php artisan db:seed --class=RolePermissionSeeder` to add
+   `pds.view` and `pds.update`.
+
+### Tests
+`tests/Feature/HR/PdsTest.php`.
+
+## Human Resources: PDS signing, verification and printing — IMPLEMENTED (HR-2b)
+
+### Signing (the e-signature)
+The 2026 form accepts an "(e-signature/digital certificate)".
+1. **On My PDS, "Sign and submit"** asks for two things:
+   - acceptance of item 42's declaration, shown in full
+   - the account password, checked with the `current_password` rule
+2. **The route** (`POST /my/pds/submit`) is throttled at 6 attempts per
+   minute, like a password change.
+3. **IMIS then records a submission:**
+   - who signed, when, and from which IP
+   - the frozen PDS
+4. Signing is refused when nothing has changed since the last signed or
+   verified copy.
+
+### Submissions (`pds_submissions`, `PdsSubmission`)
+- Each submission is an **immutable, encrypted copy** of the whole PDS
+  as signed (`PdsReader` output plus the form edition).
+- It keeps its own copy of the photo, so later changes never alter what
+  was signed.
+- **Status:** `submitted` (awaiting HR), then `verified` or `returned`.
+  An unreviewed submission is `superseded` when the employee signs again,
+  so HR only ever reviews the latest.
+- Verified submissions are the PDS history in the 201 file.
+- `PdsSubmissions` is the only writer.
+
+### State (`PdsSubmissions::status`)
+The states are:
+- `draft`
+- `submitted`
+- `changed_since_submitted`
+- `returned`
+- `verified`
+- `changed_since_verified`
+
+"Changed" compares fingerprints. A fingerprint is an HMAC (keyed by
+`APP_KEY`) over the PDS content and photo, with row ids excluded, so
+saving without changes doesn't count.
+
+### Verification (HR)
+- **Queue:** Admin → Human Resources → PDS Verification
+  (`Admin\PdsVerificationController`). It lists pending submissions,
+  oldest first, marked "First submission" or "Update".
+- **Review page:**
+  - shows the signed copy read-only
+  - shows who signed it, when and from where
+  - flags the sections (and the name/identity block) that changed since
+    the employee's last verified PDS (`changedSections`), with a
+    "changed" badge on those tabs
+- **Decisions:**
+  - **Verify and file:** remarks are optional.
+  - **Return to employee:** remarks are required. The employee sees them
+    on My PDS.
+
+### Permissions and policy
+- `pds.verify` (new) lets HR verify. Both `pds.view` and `pds.verify`
+  grant `access-admin`.
+- `PdsSubmissionPolicy` is registered explicitly in AppServiceProvider,
+  because models under `App\Models\Pds` sit outside auto-discovery.
+  - **view:** the owner, `pds.view` or `pds.verify`.
+  - **review:** `pds.verify`, never your own, and only while pending.
+- The morph map gains `employee` and `pds_submission`, so audit targets
+  are stable.
+
+### Photo
+- Passport size (3.5 × 4.5 cm), handled by `PdsPhotos`.
+- Re-encoded with GD as a centered 7:9 crop at 413×531, so no EXIF is
+  kept.
+- Stored on the **private** `local` disk.
+- Served only through authorized routes with `Cache-Control: private,
+  no-store`:
+  - the employee's own
+  - HR's with `pds.view`
+  - a submission's frozen copy, to whoever may view that submission
+- Uploads by the employee, or by HR with `pds.update`, are audited as
+  `pds.updated` (section `photo`).
+
+### Print (`Pages/HR/PdsPrint.vue`)
+- A standalone page laid out like the four official pages, using the
+  form's own row counts:
+  - children: 13
+  - education: 1 per level
+  - eligibility: 7
+  - work experience: 24
+  - L&D: 17
+  - voluntary work: 9
+  - other information: 7
+  - references: 3
+- Overflow goes onto continuation sheets C5–C11, as the form instructs.
+- Dates print as dd/mm/yyyy.
+- **Signature line:**
+  - On a signed copy: "Electronically signed through IMIS by {name}",
+    with the signing date as "Date Accomplished".
+  - On the current PDS: "Not signed — current PDS (draft)".
+- The right thumbmark and the oath block print blank, for wet completion.
+- **Paper:** printed on 8.5 × 13 in (long bond), as common in government
+  offices. The official .xlsx mixes A4 (pages 1–2) and legal (3–4).
+- **Routes:**
+  - the current PDS: `/my/pds/print`, `/admin/hr/employees/{id}/pds/print`
+  - a signed copy: `/pds/submissions/{id}/print`
+- Printing someone else's PDS is audited (`pds.printed`).
+
+### Audit
+- `pds.submitted`, `pds.verified`, `pds.returned` and `pds.printed`.
+- `pds.viewed` also covers opening a submission.
+
+### Deploying
+1. Run `php artisan migrate`.
+2. Run `php artisan db:seed --class=RolePermissionSeeder` to add
+   `pds.verify`.
+
+### Tests
+`tests/Feature/HR/PdsSubmissionTest.php`.
+
+## Human Resources: 201 File documents — IMPLEMENTED (HR-2c)
+
+### Data
+- `employee_documents` / `EmployeeDocument` holds:
+  - the type (`EmployeeDocumentType`: the usual CSC checklist, such as
+    appointment, oath, assumption, diplomas, eligibility, PSA
+    certificates, NBI, medical, SALN, NOSA/NOSI, IPCR, office orders,
+    clearance, plus "Other", which needs a title)
+  - title, document date and remarks
+  - the file: path, original name, MIME type, size and SHA-256
+  - who uploaded it
+  - archive details: when, by whom and why
+- Written only by `App\Support\HR\EmployeeDocuments`.
+
+### Files
+- PDF, JPG or PNG, up to 10 MB. The type is checked from the file's
+  content.
+- Stored on the **private** `local` disk under `hr/201/{employee}/`,
+  with a random name (never the uploaded file name).
+- PDFs are kept as uploaded, since they can't be safely re-encoded the
+  way photos are. A SHA-256 hash records exactly what was uploaded.
+- **Serving:** only through `EmployeeDocumentFileController`, either in
+  the browser (`/hr/documents/{id}`) or as a download (`/download`).
+  - Headers: `Cache-Control: private, no-store` and
+    `X-Content-Type-Options: nosniff`.
+  - The download name is safe: "Oath of Office - 2021-03-15.pdf".
+
+### Never deleted
+A wrong or outdated document is **archived with a required reason**,
+and can be restored. Archived documents:
+- are hidden from the employee
+- stay listed for HR (behind "Show archived")
+- keep their file
+
+### Access
+| Who | Can |
+|---|---|
+| The employee | Open their own **active** documents, with no permission. The **My 201 File** page also lists their verified PDS history. |
+| `employee_documents.view` | List and open anyone's documents, archived ones included |
+| `employee_documents.manage` | Upload, archive and restore. Never in your own 201 file (`EmployeePolicy::manageDocuments`). |
+
+- Supervisors never see 201 documents.
+- `EmployeeDocumentPolicy::view` is the per-file check.
+- Admin routes use **scoped bindings**, so a document id only resolves
+  under its own employee.
+
+### Audit
+- `employee_document.uploaded`, `archived` and `restored`.
+- `employee_document.viewed` is recorded every time someone other than
+  the employee opens or downloads a document.
+- The morph map gains `employee_document`.
+
+### Pages
+- **HR:** the employee page's **201 File** button (`/admin/hr/employees/{id}/documents`)
+  shows:
+  - the "Add a document" form (`DocumentUploadForm`)
+  - the documents (`DocumentList`), with archive and restore
+  - the verified PDS history
+- **Portal:** Human Resources → **My 201 File** (`/my/201-file`).
+
+### Deploying
+1. Run `php artisan migrate`.
+2. Run `php artisan db:seed --class=RolePermissionSeeder` to add
+   `employee_documents.view` and `employee_documents.manage`.
+
+Files go to `storage/app/private`, so include that directory in server
+backups.
+
+### Tests
+`tests/Feature/HR/EmployeeDocumentTest.php`.
+
+## Human Resources: Learning & Development — IMPLEMENTED (HR-3a)
+
+HR-3 replaces ldms (`../old-imis/ldms`). The live `ld_cscro8` holds 394
+records for 59 people (2025–2026), all approved, with no certificates.
+
+### One record, three places
+The PDS Section VI table (`pds_learning_developments`,
+`App\Models\Pds\PdsLearningDevelopment`) **is** the L&D record. A
+training entered once shows on:
+- the employee's L&D log
+- their PDS
+- HRD's reports (HR-3b/c)
+
+### New columns
+- ldms's fields: `modality`, `venue`, `resource_speaker`
+- `ld_type_other`
+- `approval_status`, with `reviewed_by`, `reviewed_at` and
+  `rejection_reason`
+- `created_by`
+- `certificate_*`
+- `legacy_id` (unique, for a re-runnable ldms import) and
+  `otrs_training_id` (kept from ldms, unused yet)
+- soft deletes
+
+### Lists
+| Enum | Values |
+|---|---|
+| `LdType` | The PDS list: Managerial, Supervisory, Technical, Foundation, Other (specify). The migration turned HR-2a's free-text types into these codes; ldms's "Leadership and Management" maps to Managerial. |
+| `LdModality` | face-to-face, online, blended, self-paced, other. Null means not recorded. |
+| `LdApprovalStatus` | pending, approved, rejected |
+
+### Rules (`App\Support\HR\LearningDevelopment\LdRecords`, the only writer)
+These are carried over from ldms:
+- hours above 0
+- end date not before the start date
+- no duplicate: the same title (ignoring case) and start date for the
+  same person
+
+Required fields: title, dates, hours, type, modality and sponsor. Venue
+and speaker are optional.
+
+### Approval and the PDS
+- **Employee entries start `pending`.** HRD's entries are approved at
+  once (HR-3b).
+- **Editing:** the owner can edit or remove an entry until it's approved
+  (`PdsLearningDevelopmentPolicy`, registered explicitly). Editing a
+  rejected entry sends it back to pending and clears the reason.
+- **Removing soft-deletes.**
+- **PDS:** Section VI shows approved and pending entries, never rejected
+  or removed ones (`scopeOnPds`, read by `PdsReader`), most recent first,
+  with the type as its label. It is `managed_by` L&D: read-only in the
+  PDS editor (`PdsManagedList`, with a "Manage in Learning &
+  Development" link on your own PDS) and excluded from the PDS save
+  routes (`PdsSchema::editableSectionKeys()`).
+- L&D changes count as PDS changes, through the fingerprint.
+
+### Certificates
+- Optional per training: PDF, JPG or PNG, up to 10 MB.
+- Stored on the private disk under `hr/ld/{employee}/` with a random
+  name. Replacing a certificate deletes the old file.
+- Served at `/hr/trainings/{id}/certificate` to the owner or `ld.view`,
+  with no-store and nosniff headers.
+- HRD opening a certificate is audited (`ld_record.certificate_viewed`).
+
+### Page
+Portal → Human Resources → **My Learning & Development**
+(`/my/learning-development`), ldms's "My L&D Interventions":
+- name, position and office
+- a year picker
+- summary cards: trainings, hours, and per type. Rejected trainings
+  don't count, and pending ones are noted.
+- month tabs and type/modality filters
+- the DataTable, with search, CSV and print
+- add and edit (`LdRecordModal`, POST + `_method=PUT` so a certificate
+  can be uploaded with the change)
+- removing pending or rejected entries
+
+### Permissions and audit
+- `ld.view` lets HRD see anyone's records and certificates. HR-3b adds
+  managing and approving.
+- Audit events: `ld_record.created`, `updated`, `deleted` and
+  `certificate_viewed`. The morph map gains `ld_record`.
+
+### Tests
+`tests/Feature/HR/LearningDevelopmentTest.php`.
+
+## Human Resources: L&D review and management — IMPLEMENTED (HR-3b)
+
+HRD's side of ldms: `hrd/approve_training.php`,
+`hrd/add_training_multiple.php` and `hrd/ld_manage.php`.
+
+### Permissions
+| Permission | Grants |
+|---|---|
+| `ld.view` | The overview and anyone's log and certificates (read only) |
+| `ld.manage` | Adding, editing and removing on someone's behalf (approved records included) and bulk add; also reads the overview and logs |
+| `ld.approve` | The review queue: approve, or reject with a reason; also opens certificates |
+
+All three open the admin area (`ADMIN_ACCESS_PERMISSIONS` and the JS
+`adminAccessPermissions`). **Separation of duties:** HRD never reviews or
+manages their own entries (a Super Administrator may, via
+`Gate::before`); on their own log they use "My Learning & Development"
+like anyone else.
+
+### Policies
+- `PdsLearningDevelopmentPolicy`: `viewAny` (overview), `viewQueue`,
+  `createMany` (bulk), `review` (`ld.approve`, not own, not yet
+  approved — a rejected entry can be approved after all), `manage`
+  (`ld.manage`, not own). `view` (certificates) now also takes
+  `ld.manage` and `ld.approve`.
+- `EmployeePolicy`: `viewLd` (own, or `ld.view`/`ld.manage`) and
+  `manageLd` (`ld.manage`, not own) for one person's log.
+
+### Service (`LdRecords`)
+- `review()` sets the status, `reviewed_by`/`reviewed_at`, and the
+  rejection reason (cleared on approval).
+- `createMany()` adds one training, approved, to many people. Anyone who
+  already has it (the same duplicate rule: title ignoring case + start
+  date) is **skipped and named** in the result, as ldms did. No
+  certificate in bulk; add one per person afterwards.
+- `yearLog()` builds the year view (rows, years, cards) shared by the
+  employee's page and HRD's.
+- HRD's edits never resubmit: the status stays as it is.
+
+### Pages (Admin → Human Resources)
+- **Learning & Development** (`/admin/hr/learning-development`): a year
+  picker, cards (employees, with training, trainings, hours), a link to
+  the queue when entries are pending, and every employee with their
+  approved trainings, hours and pending count (separated employees
+  hidden behind a toggle). DataTable CSV and print. **Add for several
+  employees** opens `LdBulkAddModal` (training fields + the
+  `BulkSetupModal`-style checklist of in-service employees, never
+  yourself).
+- **L&D Review** (`/admin/hr/learning-development/reviews`): pending
+  entries, oldest first, with certificate links. Approve, or reject
+  with a reason (`LdRejectModal`). Your own entries show as "Your
+  entry".
+- **One employee's log** (`/admin/hr/employees/{id}/learning-development`,
+  linked as "L&D" from the employee page): the same `LdLog` component as
+  "My Learning & Development", with add / edit / remove
+  (`LdRecordModal` with `on-behalf`) and approve / reject. Training ids
+  only resolve under their own employee (scoped bindings).
+
+Shared components: `LdLog` (cards, month tabs, filters, table) and
+`LdTrainingFields` (the training form fields).
+
+### Audit
+- `ld_record.log_viewed` — HRD opening someone's log (target: the
+  employee record).
+- `ld_record.approved`, `ld_record.rejected` (metadata: the reason).
+- `ld_record.created` / `updated` / `deleted` with `on_behalf: true`
+  (and `bulk: true` for bulk add, one entry per person).
+
+### Tests
+`tests/Feature/HR/LearningDevelopmentManagementTest.php`.
+
+## Human Resources: L&D dashboard, report and ldms import — IMPLEMENTED (HR-3c)
+
+HRD's reporting side of ldms (`hrd/fetch_hrd_dashboard.php` and
+`hrd/training_report.php`), plus carrying ldms's records over. **Both
+pages count approved trainings only**; ldms counted every row, but all of
+its rows were approved, so the figures match.
+
+### Figures (`App\Support\HR\LearningDevelopment\LdReports`)
+- `years()`: years with any training, plus this year and the selected
+  one. It is shared by every HRD L&D year picker (the overview now uses
+  it too).
+- `dashboard(year)` returns:
+  - **stats:** employees in service (separated excluded), people trained,
+    trainings this year and last, hours, and offices with employees
+  - **by type:** count and percent per PDS type
+  - **top 5** employees by hours
+  - **monthly:** 12 counts, by start month
+  - **recent:** the 8 most recently recorded trainings
+- `report(year, month?, office?)` returns one row per approved training,
+  sorted by surname and then most recent first. Columns are ldms's: name
+  ("Cruz, Juan D."), sex, position, office, training, provider, type,
+  modality, hours, venue, speaker(s), start and end.
+  `officeOptions()` lists the offices that have employees.
+- Year and month use `whereYear`/`whereMonth`, so they work on SQLite in
+  tests.
+
+### Pages (Admin → Human Resources), `LdReportController`
+- **L&D Dashboard** (`/admin/hr/learning-development/dashboard`):
+  - a year picker
+  - metric cards: employees with the share trained, trainings with the
+    change on last year, hours with hours per training, offices
+  - a monthly activity line and a by-type bar (`SimpleChart`, each with
+    "View as table")
+  - top employees and recent trainings, linked to each person's log
+- **Training Report** (`/admin/hr/learning-development/report`):
+  - year, month and office filters (validated)
+  - totals: trainings, employees and hours
+  - the DataTable, whose Print and CSV are the report's print and
+    export. Dates sort and export as ISO.
+
+Both pages take `ld.view` or `ld.manage` (`PdsLearningDevelopmentPolicy::viewAny`),
+like the overview. They appear in the HR sidebar menu.
+
+### Audit
+- `ld_record.report_viewed`: the report lists everyone's names, sex and
+  positions, so opening it is recorded, with the year, month, office and
+  row count. The dashboard shows aggregates and names only, like the
+  overview, and isn't recorded.
+- `ld_record.imported`: written once per import, with the counts.
+
+### ldms import (`php artisan imis:import-legacy-ld [--dry-run] [--connection=]`)
+- **Source:** `ld_cscro8` on the legacy connection (`config/legacy.php`).
+- **People** are matched by `users.legacy_id`, which `imis:import-legacy`
+  sets. The command refuses to run if no account has one yet.
+  - Only people with an employee record can receive trainings.
+  - Accounts without one are listed by username, and legacy user ids
+    with no account by id. Neither is guessed. Run HR's "Set up records
+    for staff", then import again.
+- **Mapping:**
+  - `training_name` → title, `training_provider` → sponsor,
+    `training_venue` → venue, `resource_speaker` → resource_speaker,
+    `training_hrs` → hours
+  - type via `LdType::fromText()`: "Leadership and Management" →
+    Managerial; unknown text → Other, with the text kept as its
+    specification
+  - **modality → null** ("not recorded"), because ldms's column default
+    made it unreliable
+  - `approval_status` is kept. `approved_by` → `reviewed_by`, through
+    the legacy id, when it matches.
+  - `created_by` → null
+  - `otrs_training_id` is kept
+  - timestamps: Manila time converted to UTC
+  - `deleted_at` is kept, so a record removed in ldms stays removed
+- **Data fixes:** an end date before the start date becomes the start
+  date. A row with no title or start date is skipped and counted.
+- **Re-running is safe:** records already imported (by `legacy_id`) are
+  skipped, never overwritten, so HR's later corrections survive. A
+  training the person already logged here (ldms's duplicate rule: same
+  title ignoring case, same start date) is skipped too.
+- **Writing:** it goes through `LdRecords::import()`, which keeps
+  `LdRecords` the only writer. Everything runs in one transaction;
+  `--dry-run` rolls back and only reports.
+
+### Tests
+`tests/Feature/HR/LdReportsTest.php` and `tests/Feature/HR/LegacyLdImportTest.php`
+(a fictional `ld_cscro8` on a second SQLite connection).
+
+## Human Resources: Plantilla — IMPLEMENTED (HR-4)
+
+The plantilla of positions, who holds each item, and the salary schedules
+that price them. Built from scratch (PRISM was blank), and modelled on
+the DBM plantilla (PSIPOP) columns while the office's own format is
+pending. Fields can be adjusted once it arrives.
+
+### Data
+- `plantilla_items` (`PlantillaItem`):
+  - item number (unique), position title, salary grade (1–33)
+  - level (`PositionLevel`: first, second, third), office, the authority
+    creating it, remarks
+  - **Status:** *filled* if someone holds it now, *vacant* otherwise.
+    *Abolished* items (`abolished_at`/`abolished_on`/`abolition_authority`)
+    are kept for the record, never deleted. Only a vacant item can be
+    abolished, and it can be restored.
+- `plantilla_appointments` (`PlantillaAppointment`, soft deletes): **one
+  period of service** by an employee on an item, which is also one
+  Service Record line for HR-5.
+  - step (1–8), status (only Permanent, Temporary or Coterminous:
+    `EmploymentStatus::onPlantilla()`), and nature (`AppointmentNature`:
+    the CSC natures, plus *step increment*)
+  - `date_from`, `date_to` (null while held), end reason and remarks
+  - `PlantillaItem::incumbency` is the open period.
+- `salary_schedules` and `salary_rates` (`SalarySchedule`, `SalaryRate`):
+  a grade × step table of monthly salaries as issued, with a name,
+  reference and effective date (unique). The schedule in force on a date
+  is the latest one effective by then.
+  - **The amounts are entered by HR from the issuance.** The schedule in
+    force is the 3rd tranche, 2026, under NBC No. 601. Nothing is seeded
+    or assumed.
+
+### Rules (`App\Support\HR\Plantilla\Plantilla`, the only writer)
+- **Appointing** needs an active, vacant item that nobody held on the
+  start date. If the person holds another item now (a promotion or a
+  transfer), that period ends the day before ("Promotion to {item}").
+- **A step increment** ends the current period the day before and opens
+  the next at a higher step, on the same item and status.
+- **Vacating** ends the period with a date and a reason (retirement,
+  resignation, …).
+- **Correcting** a period fixes its fields. **Removing** one (soft
+  delete) reopens the holder's previous period if this one ended it, as
+  long as that item is still free.
+- **The holder follows the item:** their employment status (HR-1) and
+  their account's position title are set from the open period.
+  Retitling an item retitles its holder's account. The **office does not
+  follow**; that's the reassignment history's job (HR-1b).
+- **Pricing:** `SalarySchedules::monthlySalary(grade, step, date)`. A
+  current period uses today's schedule; a past period uses the schedule
+  in force when it began. A vacant item is priced at step 1.
+
+### Pages (Admin → Human Resources)
+- **Plantilla** (`/admin/hr/plantilla`):
+  - metric cards: items, filled with the fill rate, vacant, abolished
+  - the schedule in force, or a warning to enter one
+  - All / Filled / Vacant / Abolished views, and the DataTable (Print,
+    CSV): item, position and level, SG, office, incumbent, step, monthly
+    salary and status
+  - "Add item" (`RecordModal`, `Components/HR/plantillaFields.js`). The
+    position title suggests (a datalist, not a fixed list) the titles
+    already on staff accounts and other items (`Plantilla::positionTitles`),
+    so the title an appointment copies onto the account stays consistent.
+- **One item** (`/admin/hr/plantilla/{item}`):
+  - its details and every holder, newest first
+  - actions: Appoint, Edit item, Abolish/Restore, and per period Step
+    increment, Vacate, Correct, Remove
+  - Appoint's employee list (`Plantilla::appointableEmployees`) puts staff
+    whose account position matches the item's title first, under
+    "Position matches"; everyone else follows with their current title.
+    Nothing is appointed automatically.
+- **Positions** (`/admin/hr/positions`, `PositionController`,
+  `App\Support\HR\Plantilla\Positions`, table `positions`):
+  - one row per position title: salary grade (blank until HR enters it),
+    monthly salary (step 1 of the grade under the schedule in force), level,
+    remarks; its plantilla items with item number, place of assignment
+    (the item's office) and holder; and how many staff accounts carry the
+    title, with their offices
+  - "Add item" on a position creates a plantilla item of that title (it
+    takes the position's grade) with an optional item number and place of
+    assignment, posting to the plantilla with `stay` to return here
+  - **Item number and grade are optional**
+    (`2026_10_28_090000_allow_incomplete_plantilla_links`), as are an
+    appointment's step, status, nature and start date. A period missing any
+    of them, or on an item without a grade, is incomplete
+    (`PlantillaAppointment::missingDetails()`, `complete()` scope): it isn't
+    priced and stays off the Service Record until HR completes it
+  - "Add titles from staff" adds every title on staff accounts and items
+    not yet on the list, grade blank
+  - **automatic adjustment:** a plantilla item links (`position_id`) to the
+    position of its title, matched however it's capitalized or spaced, and
+    takes its grade and level on every save (`PlantillaItem::saving`).
+    Saving a position adjusts all its items (renaming one renames them).
+    The grade is the item's only grade, so Service Record lines on those
+    items show the adjusted grade, as with editing an item directly.
+  - a position used by an item can't be deleted; same permissions as the
+    plantilla; audited (`position.*`)
+- **Staffing** (`/admin/hr/staffing`, `StaffingController`,
+  `App\Support\HR\Plantilla\Staffing`), for the recruitment and staffing
+  plans and for tracking personnel movement. It keeps two places apart: an
+  item's **place of assignment** (its office) and its holder's **station**
+  (where they serve today, from the reassignment history: the last
+  reassignment, or a running detail). A holder whose station differs is
+  "serving elsewhere".
+  - per office: plantilla items, filled, vacant, serving elsewhere (out),
+    from other offices (in), actually serving here (filled − out + in),
+    and in-service staff without an item, counted where they serve
+  - the holders serving elsewhere, with the order behind the move
+    (`EmployeeAssignments::stationsOn` now also returns `detailed_to_id`,
+    `moved_on`, `order_number`, `move_kind`)
+  - vacant items with grade and step-1 salary (the recruitment list)
+  - the Plantilla page (new views "Serving elsewhere", "Incomplete links"),
+    item page and Positions page show the same flags
+    (`Staffing::servingOf`); same permissions as the plantilla
+- **`php artisan imis:link-plantilla [--apply]`** links every in-service
+  staff member with an active account, a position title and no item to a
+  new item of that title in their account's office, as an incomplete link
+  (`Plantilla::linkFromAccount`): status only if their employee record
+  has a plantilla status; item number, step, nature and start date blank.
+  Previews unless `--apply`; re-running skips anyone holding an item;
+  audited (`plantilla_appointment.linked_from_accounts`). HR completes a
+  link with Correct on the item page; until then it can't be promoted or
+  given a step increment. `PlantillaItem::incumbency` picks the open
+  period by id, since an incomplete link has no start date.
+- **Salary Schedules** (`/admin/hr/salary-schedules`):
+  - the list, with the one in force marked
+  - the selected table (33 grades × 8 steps)
+  - Edit: type the amounts in, or **paste the table** copied from the
+    issuance or a spreadsheet (one line per grade; a leading grade
+    number and thousands separators are fine)
+  - New schedule: empty, or a copy of another. Delete.
+- **On the employee record and My Employee Record:** a "Plantilla" card
+  (`Components/HR/PlantillaHistory.vue`) lists the items held, with the
+  SG/step, status, period and salary. It is shown to `plantilla.view` and
+  to the person themselves, **not to supervisors**: salaries aren't
+  theirs to see.
+
+### Permissions and audit
+- `plantilla.view` reads; `plantilla.manage` also adds and edits items,
+  appoints, and maintains the schedules. Both open the admin area.
+  `PlantillaItemPolicy::appoint` keeps HR off their own appointment.
+- Audit events:
+  - `plantilla_item.created`, `updated`, `abolished`, `restored`
+  - `plantilla_appointment.appointed`, `step_increment`, `vacated`,
+    `corrected`, `removed`
+  - `salary_schedule.saved`, `deleted`
+- The morph map gains `plantilla_item`, `plantilla_appointment` and
+  `salary_schedule`.
+
+### Tests
+`tests/Feature/HR/PlantillaTest.php` (with made-up amounts).
+
+## Human Resources: Service Record — IMPLEMENTED (HR-5)
+
+The standard CSC Service Record, used while the office's own template is
+pending. **Nothing is stored**: `App\Support\HR\ServiceRecords::build()`
+assembles it from the plantilla periods (HR-4) and the reassignment
+history (HR-1b) each time.
+
+### Lines
+- **Columns:**
+  - service: from and to
+  - record of appointment: designation (the item's position title), status
+    and annual salary (12 × monthly)
+  - office entity: station/place of assignment and branch
+  - leave without pay
+  - separation: date and cause
+- **One or more lines per plantilla period.** A period is split where a
+  **reassignment** takes effect (the station changes) or a **new salary
+  schedule** does (the salary changes), as a service record shows them.
+  Step increments and promotions are their own periods already.
+- **Station:** `EmployeeAssignments::officeOn()` gives the office the
+  reassignment history puts them in on the line's first day, by full
+  name.
+- **Salary:** the schedule in force on the line's first day, × 12. It
+  shows blank where no amount was entered.
+- **Separation date and cause** are filled on a period's last line when
+  it ended: the end reason, e.g. "Promotion to …", "Retirement".
+- **Branch:** System Settings → Human Resources (default "National").
+- **Leave without pay:** left blank until HR-6 (Leave).
+
+### Pages
+- **HR:** the employee record → **Service Record**
+  (`/admin/hr/employees/{employee}/service-record`), with
+  `service_records.view`. "Print certified copy" opens
+  `…/service-record/print` (`HR/ServiceRecordPrint.vue`).
+- **The printable form:**
+  - 8.5 × 13 in landscape
+  - header with the organization name, then name and birth (from the
+    account and the PDS place of birth)
+  - the certification statement, the lines (padded to a full sheet),
+    "Nothing follows", and the date
+  - "Certified correct" over the certifying officer's name and position
+    (System Settings → Human Resources: `hr_certifying_officer_name`,
+    `hr_certifying_officer_position`)
+- **Employees:** Portal → **My Service Record** (`/my/service-record`) is
+  read-only. Its print is marked "Copy for reference, not certified",
+  with no signatory.
+
+### Access and audit
+- `service_records.view` opens the admin area. `EmployeePolicy::viewServiceRecord`
+  allows your own, or anyone's with the permission. **Supervisors never
+  see it**, because it shows salaries.
+- HR opening or printing someone else's is recorded as
+  `service_record.viewed` / `service_record.printed`.
+
+### Not yet
+- The office's own template (layout and wording). The legal citation
+  some forms carry in the footer was left out until it is confirmed.
+- Service before this office, from other agencies, is not modelled. It
+  comes with the office's template, if needed.
+
+### Tests
+`tests/Feature/HR/ServiceRecordTest.php`.
+
+## Human Resources: Leave foundations — IMPLEMENTED (HR-6a)
+
+HR-6 ports the legacy LMS (`../old-imis/leave`) in three parts:
+- **6a:** leave types, holidays, working days, the credit ledger, the
+  leave card, accrual and opening balances
+- **6b:** filing, the CS Form No. 6 approval chain, notifications, the
+  printable form, and leave without pay in the Service Record
+- **6c:** monetization and terminal leave, flexible work arrangements
+  (FWA) and field activity reports (FAR), reports, and the calendar
+
+Legacy's current tables (`lms_*`) exist only on the live server; their
+structure was read from the services. They matter only for HR-7's data
+import.
+
+### Decisions (2026-10-03)
+- **SPL and Solo Parent Leave are two separate leaves**, as CSC defines
+  them. Special Privilege Leave is 3 days a year. Solo Parent Leave needs
+  a valid Solo Parent ID. The legacy LMS treated "SPL" as the solo-parent
+  leave.
+- **Approvals (HR-6b):** HR certifies credits (`leave.certify`), the Head
+  of Agency approves (`leave.approve`), and HR can record an
+  officer-in-charge designation for a date range.
+- **The immediate supervisor is set per employee by HR**, as in legacy
+  ("no supervisor = no workflow"). Offices don't record a head.
+
+### Leave types (`leave_types`, `LeaveType`): policy as data
+- **Fields:**
+  - code and name
+  - route: `standard` (supervisor → HR → head) or `special` (HR → head)
+  - credits: `requires_balance`; `charged_to_id` (Mandatory/Forced
+    Leave uses Vacation Leave's credits); `monthly_accrual`;
+    `annual_grant`; `lapses_yearly`
+  - limits: `max_days_per_year`, `max_days_per_filing`
+  - eligibility: `sex`, `eligible_statuses` (HR-1 employment statuses,
+    none = everyone), `min_service_months`, `requires_solo_parent_id`
+  - filing rules: `advance_filing_days`, `allows_half_day`,
+    `counts_calendar_days` (maternity), `medical_certificate_after_days`,
+    `supporting_documents`
+  - also `monetizable`, `policy_reference`, `sort_order`, `is_active`
+- **`LeaveTypeSeeder`** adds the 14 CS Form No. 6 leaves:
+  - VL, FL, SL, ML, PL, SPL, SOLO, STUDY, VAWC, RL, SLBW, SEL, AL, LWOP
+  - VL and SL earn 1.25 days a month (plantilla statuses plus casual).
+    SPL grants 3 days each January and SOLO grants 7, both lapsing at
+    year end.
+  - Entitlements come from the statute in each type's policy reference.
+    **HR should confirm them against current CSC issuances**; all are
+    editable.
+  - The seeder is idempotent and never overwrites HR's edits. It runs
+    from `DatabaseSeeder`.
+
+### Holidays and working days
+- `holidays` (`Holiday`, `HolidayType`) are entered by HR from each
+  year's proclamations; none are seeded. Regular holidays and special
+  non-working days are days off; special working days are not.
+- `Support/HR/Leave/WorkingDays` counts weekdays between two dates,
+  skipping days off, as the legacy WorkingDayService did:
+  - a half day on one working day counts 0.5
+  - calendar-day leave counts every day
+  - HR-6c adds compressed-work-week rest days
+
+### The credit ledger (`leave_ledger_entries`, `LeaveLedgerEntry`)
+- **Append-only:** a balance is the sum of the entries up to a date, as
+  legacy `lms_credit_ledger` worked.
+  - kinds (`LedgerEntryKind`): opening, accrual, grant, deduction,
+    adjustment, lapse, monetization
+  - signed amounts, kept to 3 decimals
+  - `period_year`/`period_month` stop double posting
+  - a mistake is cancelled by a **reversing entry** (`reverses_id`); the
+    original stays on the card
+- **`Support/HR/Leave/LeaveCredits` is the only writer:**
+  - `accrueMonth()` posts the monthly accrual on the month's last day for
+    everyone in service and eligible. It is idempotent: a month already
+    posted is skipped, **even if it was reversed**, as in legacy.
+  - `startYear()` lapses last year's unused non-cumulative credits
+    (dated Dec 31), then posts this year's grants (dated Jan 1).
+  - `postManual()` posts opening balances and adjustments; opening
+    balances can't be negative, and the type must hold credits.
+  - `reverse()` cancels an entry; a reversal can't be reversed.
+  - `ineligibilityReasons()` checks sex, employment status, service and
+    the Solo Parent ID. HR-6b's filing reuses it.
+  - `card()` gives a year's lines with running balances per type, from
+    the balances brought forward.
+- **Schedule:** `imis:leave-accrual [--year --month]` runs on the 1st of
+  each month for the month before, and on January's run also starts the
+  year.
+- **Not yet:** pro-rating accrual for leave without pay. It needs
+  HR-6b's approved LWOP; `WorkingDays::weekdaysInMonth()` is the
+  legacy denominator.
+
+### Leave settings on the employee record
+`employees` gains `immediate_supervisor_id` (needed before filing opens
+in HR-6b), `is_solo_parent`, `solo_parent_id_number` (**encrypted**) and
+`solo_parent_id_expiry`. The ID number only reaches those who can edit
+it. The audit records field names only.
+
+### Pages
+- **Admin → Human Resources:**
+  - **Leave Credits** (`/admin/hr/leave`): everyone's balances per type
+    (DataTable with CSV and print), a warning for people with no
+    supervisor, and the **monthly accrual** and **start of the year**
+    runs.
+  - **Leave Types** (`/admin/hr/leave/types`): the policy table and its
+    editor.
+  - **Holidays** (`/admin/hr/leave/holidays`), by year.
+- **One person's leave** (`/admin/hr/employees/{employee}/leave`, linked
+  as "Leave" from the employee record):
+  - balances, and the year's card (`Components/HR/LeaveCard.vue`, with a
+    type filter)
+  - opening balances and adjustments, reversals, and leave settings
+- **Portal → My Leave** (`/my/leave`): your balances and card,
+  read-only.
+
+### Access and audit
+- `leave.view` reads everyone's leave; `leave.manage` also maintains it.
+  Both open the admin area. `EmployeePolicy::viewLeave` (own, or HR) and
+  `manageLeave` (HR, never your own card) apply per person.
+- Audit events:
+  - `leave_type.saved`, `holiday.saved`/`deleted`,
+    `leave_settings.updated`
+  - `leave_credit.posted`/`reversed`/`accrual_run`/`year_start_run`
+  - `leave_card.viewed` (HR opening someone's card)
+
+### Tests
+`tests/Feature/HR/LeaveFoundationTest.php`.
+
+## Human Resources: Leave filing and approval — IMPLEMENTED (HR-6b)
+
+Filing leave on CS Form No. 6 and its Section 7 approval chain. This
+ports the legacy LeaveApplicationServiceV2, LeavePolicyService and
+LeaveWorkflowService. `Support/HR/Leave/LeaveApplications` is the only
+writer.
+
+### Data
+- **`leave_applications`** (`LeaveApplication`):
+  - the reference number, `LV-YYYY-#####` (from the id)
+  - type, dates, half day (AM/PM), and days counted
+  - the 6.B detail (`LeaveDetail`: within the Philippines / abroad, in
+    hospital / out patient, specify illness, Master's / BAR review),
+    commutation and remarks
+  - status (`LeaveApplicationStatus`): for review, returned, approved,
+    disapproved, cancelled
+  - days with and without pay, set on approval
+  - an optional attachment on the private disk
+- **`leave_application_steps`** (`LeaveApplicationStep`): one row per
+  step per **round** (a resubmission starts a new round). Each records
+  the part (B/A/C), role, assignee (the supervisor), action
+  (`LeaveStepAction`), remarks, who acted and for whom (OIC), and HR's
+  frozen `certified_credits`.
+- **`leave_designations`** (`LeaveDesignation`): an officer-in-charge for
+  the Head of Agency for a date range.
+- **`notifications`**: Laravel's database notifications (the bell).
+
+### Filing rules (`preview()` / `file()`)
+- **Eligibility:** via `LeaveCredits::ineligibilityReasons` (sex,
+  employment status, service, Solo Parent ID).
+- **Supervisor:** standard leave needs an immediate supervisor set.
+- **Dates:** they must hold working days (calendar days for maternity).
+  A half day only where allowed, and for a single date. Advance filing
+  (VL/FL 5 days). Max days per filing and per year.
+- **No overlap** with another application under review, returned or
+  approved.
+- **Medical certificate** when the days exceed the type's threshold
+  (SL over 5).
+- **6.B details** ticked, and specified where the form asks.
+- **Credits:** for leave paid from credits, the balance less what open
+  applications on the same credits hold must cover the days. Legacy
+  blocked an over-filing too.
+- **Live preview:** the form shows the days, the credits, and every
+  issue as you type, through a partial reload of `preview` on
+  `GET /my/leave/apply`.
+
+### The chain (CS Form 6, Section 7)
+- **Routes:** standard leave goes supervisor (Part B) → HR (Part A) →
+  Head of Agency (Parts C/D). Special leave (ML, Study, RL, SLBW,
+  Adoption) goes HR → Head.
+- **Who acts** (`authority()`):
+  - the supervisor named on the employee's leave settings
+  - HR: anyone with `leave.certify`
+  - the Head: anyone with `leave.approve`, or an officer-in-charge
+    designated for that day (recorded as acting for the Head)
+  - **nobody on their own application**
+- **Actions:**
+  - recommended / not recommended (either goes on to HR; "not
+    recommended" also tells the employee, as in legacy)
+  - certified (the balances are frozen for 7.A) / insufficient credits
+    (disapproved)
+  - approved / disapproved
+  - returned, from any step
+- **Remarks** are required to disapprove, return, refuse for
+  insufficient credits, or not recommend.
+- **Returned:** the employee corrects and resubmits (a new round), or
+  cancels. An application under review or returned can be cancelled.
+- **Approval (7.C):**
+  - days with pay are as many as the credits allow; the Head may approve
+    fewer, never more. The rest is without pay; LWOP is all without pay.
+  - **the days with pay are deducted** from the credits the type draws
+    on (FL from VL), **dated the approval day**, as in legacy, so today's
+    balance already excludes approved leave still to come
+  - days without pay pro-rate that month's accrual (legacy formula:
+    rate × weekdays rendered / weekdays) and appear in the **Service
+    Record's** leave-without-pay column
+
+### Notifications (`LeaveApplicationUpdate`, database channel)
+- **Who is told:** the next actor(s) (the supervisor; all `leave.certify`
+  holders; all `leave.approve` holders plus the OIC on duty), and the
+  employee on a return, decision, or "not recommended".
+- **The bell** in the top bar shows the unread count and leads to
+  `/notifications`. Opening a notification marks it read and goes to its
+  page; links are in-app paths only.
+- No email yet. The legacy LeaveMailer emailed HRD on submission; that
+  can be added as a mail channel once mail is configured.
+
+### Pages
+- **Portal → Human Resources:**
+  - **File Leave** (`/my/leave/apply`; `?resubmit=` corrects a returned
+    one)
+  - **My Leave Applications**
+  - **Leave Approvals** (`/leave/approvals`), shown only to approvers
+    (the navigation `flag` `leaveApprover`: someone's supervisor, a
+    certifier or approver, or an OIC on duty), with the waiting queue
+    and recent actions
+- **One application** (`/leave/applications/{id}`, for the employee,
+  anyone on its chain, and HR):
+  - its details and every round of the chain
+  - the action form when the waiting step is yours
+  - cancel, or correct and resubmit
+  - the attachment, and **the printable CS Form No. 6**
+    (`…/form`, `HR/LeaveFormPrint.vue`, 8.5 × 13 in): 6.A–6.D from the
+    application; 7.A from HR's frozen credits (VL/SL total earned, less
+    this application, balance); 7.B–7.D from the steps. Each signatory
+    line names who acted in IMIS and when.
+- **Admin → Human Resources:** **Leave Applications** (all, by year and
+  status) and **OIC Designations**.
+
+### Access and audit
+- `LeaveApplicationPolicy`: view (the owner, the chain, HR while it's
+  open, `leave.view`/`leave.manage`) and update (the owner, while it's
+  open).
+- **New permissions:** `leave.certify` and `leave.approve`.
+- **Audit events:**
+  - `leave_application.filed`, `resubmitted`, `cancelled`, `acted`
+    (step, action, acting for)
+  - `viewed` / `attachment_viewed` (anyone but the employee)
+  - `leave_designation.saved`/`deleted`
+
+### Tests
+`tests/Feature/HR/LeaveApplicationTest.php`.
+
+## Human Resources: Monetization, flexible work, reports, calendar — IMPLEMENTED (HR-6c)
+
+This completes the port of the legacy LMS (HR-6).
+
+### Wellness Leave
+**Wellness Leave (`WL`)**, the newest CSC leave, is seeded **inactive and
+without entitlements**. HR enters its days and rules from the CSC
+circular on Leave Types, then activates it. The amounts weren't assumed.
+
+### Monetization and terminal leave (`Support/HR/Leave/LeaveMonetizations`)
+- **Table:** `leave_monetizations` (`LeaveMonetization`), with reference
+  `MON-YYYY-#####`, and balances and salary frozen at request time.
+- **Partial monetization** follows the legacy MonetizationService rules:
+  - at most 50 % of the VL balance (floored to 3 decimals)
+  - VL plus SL after it must stay at least 15 days
+  - once a calendar year (pending, approved or released all count)
+  - amount = monthly salary ÷ 22 × days, where the salary is the
+    current plantilla period's (HR-4)
+- **Terminal leave** is filed by HR for someone with a separation date,
+  for all remaining VL and SL.
+- **HR's steps:** approve (the days come off the ledger as
+  `monetization` entries), reject (with a reason), then mark released
+  once paid. The employee can cancel a pending request. Never on your
+  own request.
+
+### Flexible work (`Support/HR/Leave/FlexibleWork`)
+- **Arrangements** (`fwa_arrangements`, `FwaArrangement`): flexitime,
+  compressed work week (CWW), work from home, or a combination, with a
+  weekly schedule (each day office / work from home / off).
+  - No overlaps with a pending or approved arrangement.
+  - A CWW needs a rest day.
+  - HR approves or rejects, and can end one early; the employee can
+    cancel a pending one.
+- **Weekly field activity reports** (`fwa_reports`, `FwaReport`):
+  targets and accomplishments for a week (Monday to Friday), under an
+  arrangement in effect that week. They can be edited until HR
+  acknowledges them.
+- **Leave counting:** `WorkingDays::count(…, $employee)` skips the rest
+  days of an approved CWW in effect (legacy default: Friday off).
+  Filing leave uses it.
+
+### Reports (`Support/HR/Leave/LeaveReports`, Admin → Leave Reports)
+The legacy report types that aren't already a page: on leave on a day,
+utilization by type, **forced-leave compliance** (VL of 10 days or more,
+and fewer than 5 days of VL/FL taken this year), leave without pay, and
+manual credit entries (audit). The balance summary is Leave Credits; the
+register is Leave Applications. Each is a DataTable with print and CSV.
+
+### Calendar (Portal → Leave Calendar)
+A month grid of your leave and the holidays. Approved leave is solid;
+leave under review or returned is outlined.
+
+### Notifications, access and audit
+- **Notifications:** decisions on monetization, arrangements and early
+  ends notify the employee (`HrUpdate`, database channel).
+- **Permissions:** HR acts with `leave.manage` and reads with
+  `leave.view`.
+- **Audit events:** `leave_monetization.requested`/`decided`/`released`/`cancelled`,
+  `fwa.requested`/`decided`/`terminated`/`cancelled`, and
+  `fwa_report.submitted`/`acknowledged`.
+
+### Not carried over
+- **Automatic forfeiture of untaken forced leave:** legacy only
+  reported it, and so does the compliance report here.
+- **CS Form 6's "Other purpose: monetization / terminal leave" boxes:**
+  monetization has its own request instead.
+
+### Tests
+`tests/Feature/HR/LeaveExtrasTest.php`.
+
+## Phase HR-7 — Migration and cutover — IMPLEMENTED (import not yet run)
+
+The tools for switching off the legacy PRISM, LMS and ldms. The legacy
+`lms_*` tables exist only on the live server, so **the leave import has
+not been run against real data yet**. Its column names come from the
+legacy LMS code's own queries.
+
+### Leave import (`imis:import-legacy-leave`, `Support/Legacy/LegacyLeaveImporter`)
+- **Options:** `--connection=` (default: the legacy connection) and
+  `--dry-run`. Everything runs in one transaction, so a failure saves
+  nothing.
+- **Prerequisites:** run `imis:import-legacy` (sets `users.legacy_id`)
+  and HR's "Set up records for staff" first. People are matched by
+  legacy id, and only someone with an employee record is imported.
+  Leave types are matched by code.
+- **Parts:** each part is skipped and reported if its table is missing.
+  - `lms_employee_profiles` fills only blank fields: supervisor,
+    employment status, first day in service and solo-parent ID.
+  - `lms_holidays_v2` (active ones) and `lms_agency_designations`
+  - `lms_credit_ledger` is copied entry for entry, so balances carry
+    over exactly. Legacy already posted the deductions of approved leave.
+  - `lms_applications`: only decided ones (approved, rejected,
+    cancelled), with their `lms_workflow_steps`. Open ones are listed,
+    to be finished in legacy or re-filed.
+  - `lms_fwa_arrangements`, `lms_fwa_far` and `lms_monetization_requests`
+- **Re-running is safe:** every imported row keeps its legacy id
+  (`legacy_id` on holidays, ledger, applications, designations,
+  monetizations, arrangements and reports; migration
+  `2026_10_29_090000`), and rows already imported are skipped.
+- **Reference numbers** are prefixed `LMS-` so they never collide with
+  new ones.
+- **Attachments** (medical certificates) are not copied; their count is
+  reported.
+- **Legacy SPL** entries (legacy's solo-parent leave) come in as SPL and
+  are counted for HR to review.
+- **Audit:** `leave_credit.imported_from_legacy`, with the counts.
+
+### Readiness (Admin → Cutover Readiness, `/admin/hr/readiness`)
+`Support/HR/CutoverReadiness`: a checklist with counts only, no names.
+- **People:** employee records, legacy links, employment status, first
+  day in service
+- **Plantilla:** a current item, a salary schedule in force, the Service
+  Record officer
+- **Leave:** credits, the LMS import, this year's holidays, supervisors,
+  and someone holding `leave.certify` / `leave.approve`
+- **Cutover:** launchers still active, whether the legacy database is
+  reachable
+
+Each item is "To do" (blocking), "Check" (worth fixing) or "Ready", with
+a link to fix it. It needs `leave.manage`.
+
+### Retiring the launchers (`imis:retire-legacy-hr`)
+Sets the PRISM, LMS and LDMS portal entries inactive, audited as
+`application.status_changed`. Without `--apply` it only shows what it
+would do. Access grants stay on record, and an entry can be reactivated
+from System management. The legacy apps keep running until they are
+switched off on the legacy server.
+
+### Cutover order
+1. Get the live `lms_*` tables reachable through the legacy connection.
+2. Run `imis:import-legacy-leave --dry-run` and read the report.
+3. Run the import, then compare a few leave cards with the legacy LMS.
+4. Clear the "To do" items on Cutover Readiness.
+5. Run both systems in parallel for a period.
+6. Run `imis:retire-legacy-hr --apply`.
+
+### Tests
+`tests/Feature/HR/LegacyLeaveImportTest.php`, against fictional `lms_*`
+tables.
 
 ## Future Modular Architecture — PLANNED
 
@@ -1989,8 +3682,9 @@ no public page, since its own phase scope only called for admin
 management, the same admin-only shape Users & Roles (Phase 9) took.
 
 A future *public* (unauthenticated) portal variant of these directory
-pages would use `PublicLayout` instead of `PortalLayout` (the authenticated
-application shell as of Phase 3), the same way `Home` does today — the
+pages would need a new public layout instead of `PortalLayout` (the
+authenticated application shell as of Phase 3); the former `Home` page and
+its `PublicLayout` were removed, since `/` now goes to the login screen. The
 `Visibility::PublicVisibility` tier already established in Phase 4 exists
 for exactly this, even though no unauthenticated portal route uses it yet.
 

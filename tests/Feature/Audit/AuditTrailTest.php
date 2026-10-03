@@ -108,7 +108,7 @@ class AuditTrailTest extends TestCase
         $admin = $this->userWithPermissions('users.create');
 
         $this->actingAs($admin)->post('/users', [
-            'name' => 'New Person',
+            'first_name' => 'New', 'last_name' => 'Person',
             'email' => 'new.person@example.test',
             'role_ids' => [],
         ]);

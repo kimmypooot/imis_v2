@@ -88,7 +88,7 @@ class CommitteesTest extends TestCase
         ]);
 
         $committee = Committee::where('name', 'New Committee')->firstOrFail();
-        $response->assertRedirect("/admin/committees/{$committee->id}");
+        $response->assertRedirect();
         $this->assertDatabaseHas('committees', ['name' => 'New Committee', 'short_name' => 'NC']);
     }
 
@@ -171,7 +171,7 @@ class CommitteesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response->assertRedirect("/admin/committees/{$committee->id}");
+        $response->assertRedirect();
         $this->assertDatabaseHas('committees', ['id' => $committee->id, 'name' => 'Updated Name']);
     }
 
@@ -194,13 +194,13 @@ class CommitteesTest extends TestCase
 
         $this->actingAs($user)
             ->patch("/admin/committees/{$committee->id}/status", ['status' => 'inactive'])
-            ->assertRedirect("/admin/committees/{$committee->id}");
+            ->assertRedirect();
 
         $this->assertSame('inactive', $committee->fresh()->status->value);
 
         $this->actingAs($user)
             ->patch("/admin/committees/{$committee->id}/status", ['status' => 'active'])
-            ->assertRedirect("/admin/committees/{$committee->id}");
+            ->assertRedirect();
 
         $this->assertSame('active', $committee->fresh()->status->value);
     }

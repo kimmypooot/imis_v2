@@ -24,7 +24,7 @@ class CommitteeMemberController extends Controller
             $member,
         );
 
-        return to_route('admin.committees.show', $committee);
+        return back()->with('status', 'Member added.');
     }
 
     public function update(
@@ -44,7 +44,7 @@ class CommitteeMemberController extends Controller
             onlyIfChanged: true,
         );
 
-        return to_route('admin.committees.show', $committee);
+        return back()->with('status', 'Membership saved.');
     }
 
     public function updateStatus(
@@ -65,7 +65,7 @@ class CommitteeMemberController extends Controller
             onlyIfChanged: true,
         );
 
-        return to_route('admin.committees.show', $committee);
+        return back()->with('status', 'Membership updated.');
     }
 
     /**

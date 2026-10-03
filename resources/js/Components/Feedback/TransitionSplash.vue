@@ -1,13 +1,14 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useSplash } from '../../Composables/useSplash';
 
 /**
- * Renders the splash driven by useSplash(): CSC-navy field with a red
- * accent bar, the CSC logo on a white disc inside a pulsing ring, the
- * message, and an indeterminate progress bar — the legacy preloader's
- * look. Announced once through a polite live region; animations stop
- * under prefers-reduced-motion.
+ * Renders the splash driven by useSplash(): a port of the legacy
+ * IMISTransition (old-imis js/imis_transition.js). It has a frosted card
+ * over a pale gradient with floating blobs, the CSC seal inside two
+ * counter-rotating rings (navy outer, red inner), the message, greeting
+ * and note, and three dots that take turns lighting up red. Styles are
+ * the .imis-tr* classes in app.css. Announced through a polite live region.
  */
 const { splash } = useSplash();
 
@@ -18,63 +19,74 @@ const subtitleParts = computed(() => {
         return { before: splash.subtitle.replace(/,?\s*\{name\}/, ''), after: '', hasName: false };
     }
 
-    const [before, after = ''] = splash.subtitle.split('{name}');
+    const [before, ...rest] = splash.subtitle.split('{name}');
 
-    return { before, after, hasName: true };
+    return { before, after: rest.join('{name}'), hasName: true };
 });
+
+// The legacy dots: one lights up at a time, moving every 400ms.
+const activeDot = ref(0);
+let dotsTimer = null;
+
+const stopDots = () => window.clearInterval(dotsTimer);
+
+watch(
+    () => splash.visible,
+    (visible) => {
+        stopDots();
+        if (!visible) return;
+        activeDot.value = 0;
+        dotsTimer = window.setInterval(() => (activeDot.value = (activeDot.value + 1) % 3), 400);
+    },
+    { immediate: true },
+);
+
+onBeforeUnmount(stopDots);
+
+// Ring geometry from the legacy SVGs (24×24 viewBox): a grey track plus a
+// rotating arc with a dash gap.
+const rings = [
+    { cls: 'imis-tr__ring-outer', arc: 'imis-tr__arc--navy', r: 10, dash: '62.832', offset: '20', width: '2.5' },
+    { cls: 'imis-tr__ring-inner', arc: 'imis-tr__arc--red', r: 8, dash: '50.265', offset: '15', width: '1.5' },
+];
 </script>
 
 <template>
-    <Transition
-        enter-active-class="transition-opacity duration-200"
-        leave-active-class="transition-opacity duration-500"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-    >
-        <div
-            v-if="splash.visible"
-            class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-csc-blue px-6 text-center text-white"
-            role="status"
-            aria-live="polite"
-        >
-            <div class="absolute inset-x-0 top-0 h-1 bg-csc-red" aria-hidden="true" />
-
-            <div class="relative mb-8 flex h-28 w-28 items-center justify-center" aria-hidden="true">
-                <span class="absolute inset-3 rounded-full border-4 border-csc-red/60 motion-safe:animate-ping" />
-                <span class="absolute inset-4 rounded-full bg-white shadow-lg" />
-                <img src="/images/brand/csc-logo.png" alt="" class="relative h-14 w-auto" />
+    <Transition :name="splash.instant ? 'imis-tr-instant' : 'imis-tr'" :duration="{ enter: 450, leave: 300 }">
+        <div v-if="splash.visible" class="imis-tr" role="status" aria-live="polite" aria-busy="true">
+            <div aria-hidden="true">
+                <div class="imis-tr__blob imis-tr__blob--1" />
+                <div class="imis-tr__blob imis-tr__blob--2" />
+                <div class="imis-tr__blob imis-tr__blob--3" />
             </div>
 
-            <p class="text-xl font-semibold tracking-tight sm:text-2xl">{{ splash.title }}</p>
-            <!-- prettier-ignore -->
-            <p v-if="splash.subtitle" class="mt-2 text-base text-white/85">{{ subtitleParts.before }}<span v-if="subtitleParts.hasName" class="font-semibold text-white">{{ splash.name }}</span>{{ subtitleParts.after }}</p>
-            <p v-if="splash.note" class="mt-6 text-xs tracking-wide text-white/60 uppercase">{{ splash.note }}</p>
+            <div class="imis-tr__card">
+                <div class="imis-tr__rings" aria-hidden="true">
+                    <svg v-for="ring in rings" :key="ring.cls" :class="ring.cls" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" :r="ring.r" class="imis-tr__track" :stroke-width="ring.width" />
+                        <circle
+                            cx="12"
+                            cy="12"
+                            :r="ring.r"
+                            :class="ring.arc"
+                            :stroke-width="ring.width"
+                            stroke-linecap="round"
+                            :stroke-dasharray="ring.dash"
+                            :stroke-dashoffset="ring.offset"
+                        />
+                    </svg>
+                    <img src="/images/brand/csc-logo.png" alt="" class="imis-tr__logo" />
+                </div>
 
-            <div class="mt-4 h-1 w-48 overflow-hidden rounded-full bg-white/15" aria-hidden="true">
-                <div class="splash-bar h-full w-1/3 rounded-full bg-white/80" />
+                <div class="imis-tr__msg">{{ splash.title || 'Please wait' }}</div>
+                <!-- prettier-ignore -->
+                <div v-if="splash.subtitle" class="imis-tr__sub">{{ subtitleParts.before }}<span v-if="subtitleParts.hasName" class="imis-tr__name">{{ splash.name }}</span>{{ subtitleParts.after }}</div>
+                <div v-if="splash.note" class="imis-tr__note">{{ splash.note }}</div>
+
+                <div class="imis-tr__dots" aria-hidden="true">
+                    <span v-for="index in 3" :key="index" :class="{ 'is-active': activeDot === index - 1 }" />
+                </div>
             </div>
         </div>
     </Transition>
 </template>
-
-<style scoped>
-.splash-bar {
-    animation: splash-slide 1.1s ease-in-out infinite;
-}
-
-@keyframes splash-slide {
-    from {
-        transform: translateX(-100%);
-    }
-    to {
-        transform: translateX(300%);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .splash-bar {
-        animation: none;
-        width: 100%;
-    }
-}
-</style>

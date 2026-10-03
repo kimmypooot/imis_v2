@@ -1,18 +1,25 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Table from '../../../Components/UI/Table.vue';
-import Badge from '../../../Components/UI/Badge.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import AdminCard from '../../../Components/UI/AdminCard.vue';
+import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
-import TextInput from '../../../Components/Forms/TextInput.vue';
-import Select from '../../../Components/Forms/Select.vue';
+import ActionButton from '../../../Components/UI/ActionButton.vue';
+import StatusBadge from '../../../Components/UI/StatusBadge.vue';
+import Icon from '../../../Components/UI/Icon.vue';
+import RecordModal from '../../../Components/Admin/RecordModal.vue';
+import { committeeDefaults, committeeFields, committeeNullable } from '../../../Components/Admin/committeeFields';
 import { useAuthorization } from '../../../Composables/useAuthorization';
+import { confirm } from '../../../Composables/useDialog';
 
 defineOptions({ layout: AdminLayout });
 
+/**
+ * Committees (legacy "committee" dashboard category). Add / Edit in a
+ * modal; members are managed on each committee's page.
+ */
 const props = defineProps({
     committees: { type: Array, required: true },
     filters: { type: Object, required: true },
@@ -21,73 +28,81 @@ const props = defineProps({
 
 const { can } = useAuthorization();
 
-const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
+const columns = [
+    { key: 'name', label: 'Name' },
+    { key: 'active_members_count', label: 'Active members', align: 'center' },
+    { key: 'effective', label: 'Effective', value: (committee) => [committee.effective_from, committee.effective_until ?? 'present'].filter(Boolean).join(' – ') },
+    { key: 'status', label: 'Status', align: 'center' },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '7rem' },
+];
 
-const applyFilters = () => {
-    router.get('/admin/committees', { search: search.value, status: status.value }, {
-        preserveState: true,
-        replace: true,
+const modalOpen = ref(false);
+const editing = ref(null);
+
+const openAdd = () => {
+    editing.value = null;
+    modalOpen.value = true;
+};
+
+const openEdit = (committee) => {
+    editing.value = committee;
+    modalOpen.value = true;
+};
+
+const toggleStatus = async (committee) => {
+    const deactivating = committee.status === 'active';
+    const confirmed = await confirm({
+        title: deactivating ? `Deactivate ${committee.name}?` : `Activate ${committee.name}?`,
+        text: deactivating ? 'It will be hidden from the portal and the dashboard directory. Members are kept.' : 'It will appear again.',
+        tone: deactivating ? 'danger' : 'primary',
+        confirmText: deactivating ? 'Deactivate' : 'Activate',
     });
+
+    if (confirmed) router.patch(`/admin/committees/${committee.id}/status`, { status: deactivating ? 'inactive' : 'active' }, { preserveScroll: true });
 };
 </script>
 
 <template>
     <Head title="Committees" />
 
-    <PageHeader title="Committees" :breadcrumbs="[{ label: 'Administration', href: '/admin' }, { label: 'Committees' }]">
+    <PageHeader title="Committees" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Committees' }]" />
+
+    <AdminCard title="List of Committees" icon="users">
         <template v-if="can('committees.create')" #actions>
-            <Link href="/admin/committees/create">
-                <Button>New committee</Button>
-            </Link>
-        </template>
-    </PageHeader>
-
-    <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">
-        <div class="w-full max-w-xs">
-            <TextInput id="search" v-model="search" label="Search" placeholder="Name or short name" />
-        </div>
-        <div class="w-48">
-            <label for="status-filter" class="block text-sm font-medium text-text">Status</label>
-            <div class="mt-1">
-                <Select id="status-filter" v-model="status" placeholder="All statuses" :options="statusOptions" />
-            </div>
-        </div>
-        <Button type="submit" variant="secondary">Filter</Button>
-    </form>
-
-    <Table :empty="committees.length === 0">
-        <template #empty>
-            <EmptyState
-                title="No committees found"
-                description="Try a different search or filter, or create the first committee."
-            />
+            <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Committee</Button>
         </template>
 
-        <thead>
-            <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Status</th>
-                <th scope="col">Active members</th>
-                <th scope="col"><span class="sr-only">Actions</span></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="committee in committees" :key="committee.id">
-                <td>
-                    <div class="font-medium text-text">{{ committee.name }}</div>
-                    <div v-if="committee.short_name" class="text-text-muted">{{ committee.short_name }}</div>
-                </td>
-                <td>
-                    <Badge :tone="committee.status === 'active' ? 'success' : 'neutral'">{{ committee.status }}</Badge>
-                </td>
-                <td class="text-text-muted">{{ committee.active_members_count }}</td>
-                <td class="text-right">
-                    <Link :href="`/admin/committees/${committee.id}`" class="font-medium text-primary hover:text-primary-hover">
-                        View
-                    </Link>
-                </td>
-            </tr>
-        </tbody>
-    </Table>
+        <DataTable :columns="columns" :rows="committees" caption="Committees" export-name="imis-committees">
+            <template #cell-name="{ row }">
+                <div class="font-medium text-text">{{ row.name }}</div>
+                <div v-if="row.short_name" class="text-xs text-text-muted">{{ row.short_name }}</div>
+            </template>
+            <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+            <template #cell-actions="{ row }">
+                <div class="flex justify-center gap-1">
+                    <ActionButton icon="users" tone="neutral" :label="`Members of ${row.name}`" :href="`/admin/committees/${row.id}`" />
+                    <ActionButton v-if="can('committees.update')" icon="pencil" :label="`Edit ${row.name}`" @click="openEdit(row)" />
+                    <ActionButton
+                        v-if="can('committees.archive')"
+                        icon="power"
+                        :tone="row.status === 'active' ? 'danger' : 'success'"
+                        :label="`${row.status === 'active' ? 'Deactivate' : 'Activate'} ${row.name}`"
+                        @click="toggleStatus(row)"
+                    />
+                </div>
+            </template>
+        </DataTable>
+    </AdminCard>
+
+    <RecordModal
+        :open="modalOpen"
+        noun="Committee"
+        :record="editing"
+        :fields="committeeFields(statusOptions)"
+        :defaults="committeeDefaults"
+        :nullable="committeeNullable"
+        store-url="/admin/committees"
+        :update-url="(committee) => `/admin/committees/${committee.id}`"
+        @close="modalOpen = false"
+    />
 </template>

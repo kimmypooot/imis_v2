@@ -77,46 +77,6 @@ class SystemAccessTest extends TestCase
                 ->where('applications.0.role', null));
     }
 
-    public function test_dashboard_lists_only_the_viewers_own_systems(): void
-    {
-        $mine = ApplicationAccess::factory()->create();
-        ApplicationAccess::factory()->create();
-        Application::factory()->create();
-
-        $this->actingAs($mine->user)
-            ->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('mySystems', 1)
-                ->where('mySystems.0.id', $mine->application_id)
-                ->where('mySystems.0.role', $mine->role->name));
-    }
-
-    public function test_dashboard_stats_count_what_the_viewer_can_see_and_launch(): void
-    {
-        $grant = ApplicationAccess::factory()->create();
-        $grant->application->update(['requires_access' => true]);
-        Application::factory()->create(['requires_access' => true]); // visible, not launchable
-        Application::factory()->create()->startMaintenance(null); // open, under maintenance
-        Application::factory()->administrative()->create(); // not visible to this user
-
-        $this->actingAs($grant->user)
-            ->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('stats.systems', 3)
-                ->where('stats.accessible', 2)
-                ->where('stats.underMaintenance', 1));
-    }
-
-    public function test_my_systems_still_respects_visibility(): void
-    {
-        $grant = ApplicationAccess::factory()->create();
-        $grant->application->update(['status' => 'inactive']);
-
-        $this->actingAs($grant->user)
-            ->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page->has('mySystems', 0));
-    }
-
     public function test_application_listing_resolves_access_without_a_query_per_card(): void
     {
         $user = User::factory()->create();

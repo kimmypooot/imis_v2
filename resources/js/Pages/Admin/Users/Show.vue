@@ -66,11 +66,11 @@ const isGrantingSuperAdmin = computed(() => {
 
     <PageHeader
         :title="user.name"
-        :breadcrumbs="[{ label: 'Administration', href: '/admin' }, { label: 'Users', href: '/users' }, { label: user.name }]"
+        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Users', href: '/users' }, { label: user.name }]"
     >
-        <template v-if="can('users.update')" #actions>
-            <Link :href="`/users/${user.id}/edit`">
-                <Button variant="secondary">Edit account</Button>
+        <template #actions>
+            <Link href="/users">
+                <Button variant="secondary">Back to Users</Button>
             </Link>
         </template>
     </PageHeader>

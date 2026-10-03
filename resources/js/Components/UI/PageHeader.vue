@@ -18,13 +18,13 @@ defineProps({
 </script>
 
 <template>
+    <!-- Legacy IMIS ".pagetitle": bold navy title, breadcrumb underneath. -->
     <div class="mb-6">
-        <Breadcrumbs v-if="breadcrumbs.length" :items="breadcrumbs" class="mb-3" />
-
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h1 class="text-lg font-semibold text-text sm:text-xl">{{ title }}</h1>
-                <p v-if="description" class="mt-1 text-sm text-text-muted">{{ description }}</p>
+                <h1 class="text-xl font-semibold text-primary sm:text-2xl">{{ title }}</h1>
+                <Breadcrumbs v-if="breadcrumbs.length" :items="breadcrumbs" class="mt-1" />
+                <p v-if="description" class="mt-2 max-w-3xl text-sm text-text-muted">{{ description }}</p>
             </div>
 
             <div v-if="$slots.actions" class="flex shrink-0 items-center gap-2">

@@ -12,13 +12,17 @@ const state = reactive({
     subtitle: '',
     name: '',
     note: '',
+    // Skip the fade-in: used when the splash must cover a page that has
+    // just been rendered underneath it (after signing in), so that page
+    // never shows through the fade.
+    instant: false,
 });
 
 let hideTimer = null;
 
-const show = ({ title, subtitle = '', name = '', note = '' }) => {
+const show = ({ title, subtitle = '', name = '', note = '', instant = false }) => {
     window.clearTimeout(hideTimer);
-    Object.assign(state, { visible: true, title, subtitle, name, note });
+    Object.assign(state, { visible: true, title, subtitle, name, note, instant });
 };
 
 const hide = (delay = 0) => {

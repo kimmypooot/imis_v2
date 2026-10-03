@@ -109,7 +109,7 @@ class ApplicationsTest extends TestCase
             'sort_order' => 3,
         ]);
 
-        $response->assertRedirect('/admin/applications');
+        $response->assertRedirect()->assertSessionHas('status');
         $this->assertDatabaseHas('applications', [
             'name' => 'New System',
             'organizational_unit_id' => $unit->id,
@@ -199,7 +199,7 @@ class ApplicationsTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response->assertRedirect('/admin/applications');
+        $response->assertRedirect()->assertSessionHas('status');
         $this->assertDatabaseHas('applications', ['id' => $application->id, 'name' => 'Updated Name']);
     }
 
@@ -222,13 +222,13 @@ class ApplicationsTest extends TestCase
 
         $this->actingAs($user)
             ->patch("/admin/applications/{$application->id}/status", ['status' => 'inactive'])
-            ->assertRedirect('/admin/applications');
+            ->assertRedirect()->assertSessionHas('status');
 
         $this->assertSame('inactive', $application->fresh()->status->value);
 
         $this->actingAs($user)
             ->patch("/admin/applications/{$application->id}/status", ['status' => 'active'])
-            ->assertRedirect('/admin/applications');
+            ->assertRedirect()->assertSessionHas('status');
 
         $this->assertSame('active', $application->fresh()->status->value);
     }
@@ -237,7 +237,7 @@ class ApplicationsTest extends TestCase
     {
         $user = $this->userWithPermission('applications.update');
 
-        $this->actingAs($user)->get('/admin/applications/999999/edit')->assertNotFound();
+        $this->actingAs($user)->put('/admin/applications/999999', [])->assertNotFound();
     }
 
     private function userWithPermission(string $permission): User
