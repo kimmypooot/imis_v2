@@ -140,7 +140,7 @@ class Application extends Model
     {
         return ['accessGrants' => fn ($query) => $query
             ->where('user_id', $user?->getKey())
-            ->with('role:id,name,launch_url')];
+            ->with('role:id,name,code,launch_url')];
     }
 
     public function accessFor(?User $user): ?ApplicationAccess
@@ -153,7 +153,7 @@ class Application extends Model
             return $this->accessGrants->firstWhere('user_id', $user->getKey());
         }
 
-        return $this->accessGrants()->with('role:id,name,launch_url')->where('user_id', $user->getKey())->first();
+        return $this->accessGrants()->with('role:id,name,code,launch_url')->where('user_id', $user->getKey())->first();
     }
 
     /**

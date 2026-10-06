@@ -24,9 +24,19 @@ class SsoValidateController extends Controller
         $token = $request->input('token');
         $path = $request->input('path');
 
-        $user = is_string($token) && $token !== ''
-            ? $sso->redeem($token, is_string($path) ? $path : null)
-            : null;
+        $audience = $request->input('audience');
+        $valid = is_string($token) && $token !== '';
+
+        // A Laravel system under IMIS names itself; it gets its role back too.
+        if ($valid && is_string($audience) && $audience !== '') {
+            $hubUser = $sso->redeemHub($token, $audience);
+
+            return $hubUser
+                ? response()->json(['success' => true, 'user' => $hubUser])
+                : response()->json(['success' => false, 'message' => 'Invalid or expired sign-in token.'], 401);
+        }
+
+        $user = $valid ? $sso->redeem($token, is_string($path) ? $path : null) : null;
 
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'Invalid or expired sign-in token.'], 401);

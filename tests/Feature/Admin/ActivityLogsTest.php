@@ -76,14 +76,17 @@ class ActivityLogsTest extends TestCase
 
     // ── System launches ──────────────────────────────────────────────
 
-    public function test_launching_records_the_role_and_redirects_to_the_resolved_url(): void
+    public function test_launching_records_the_role_and_opens_the_splash_for_the_resolved_url(): void
     {
         $application = Application::factory()->create(['url' => 'https://otrs.example.test']);
         $role = ApplicationRole::factory()->for($application)->create(['name' => 'Encoder', 'launch_url' => 'https://otrs.example.test/encode']);
         $user = ApplicationAccess::factory()->forRole($role)->create()->user;
 
         $this->actingAs($user)->get("/applications/{$application->id}/launch")
-            ->assertRedirect('https://otrs.example.test/encode');
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Portal/Applications/Launching')
+                ->where('application.name', $application->name)
+                ->where('url', 'https://otrs.example.test/encode'));
 
         $this->assertDatabaseHas('system_access_logs', [
             'user_id' => $user->id,
@@ -93,6 +96,22 @@ class ActivityLogsTest extends TestCase
         ]);
     }
 
+    public function test_a_launch_first_paints_the_light_splash_not_the_navy_boot_screen(): void
+    {
+        $application = Application::factory()->create(['name' => 'Test System', 'url' => 'https://otrs.example.test']);
+        $user = User::factory()->create();
+
+        // A plain browser load (not an Inertia visit): what the new tab receives first.
+        $this->actingAs($user)->get("/applications/{$application->id}/launch")
+            ->assertOk()
+            ->assertSee('data-instant', false)
+            ->assertSee('Opening Test System')
+            ->assertDontSee('imis-preloader__logo-wrap', false);
+
+        // Any other page keeps the boot preloader.
+        auth()->logout();
+        $this->get('/login')->assertSee('imis-preloader__logo-wrap', false);
+    }
     public function test_launch_refuses_when_the_user_cannot_open_the_system(): void
     {
         $restricted = Application::factory()->create(['requires_access' => true, 'url' => 'https://x.example.test']);

@@ -28,6 +28,13 @@ return [
         // is never added to a URL on any other host.
         'hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('LEGACY_SSO_HOSTS', ''))))),
 
+        // Laravel systems built to sit under IMIS (e.g. PROCTAD), as
+        // host[:port] (comma-separated, e.g. proctad.cscro8.com). They get
+        // the same one-time token but need no legacy id, and redeem it at
+        // the same endpoint with their own `audience`, getting back their
+        // role in that system. Empty = off.
+        'hub_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('SSO_HUB_HOSTS', ''))))),
+
         // How long a token stays redeemable, in seconds.
         'ttl' => (int) env('LEGACY_SSO_TTL', 60),
 

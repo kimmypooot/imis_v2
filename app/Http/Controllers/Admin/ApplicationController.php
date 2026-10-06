@@ -67,7 +67,7 @@ class ApplicationController extends Controller
                 'listed_unit_ids' => $application->listedUnits->pluck('id'),
                 'listed_committee_ids' => $application->listedCommittees->pluck('id'),
                 'roles' => $application->roles->map(fn ($role) => [
-                    ...$role->only(['id', 'name', 'description', 'launch_url', 'sort_order']),
+                    ...$role->only(['id', 'name', 'code', 'description', 'launch_url', 'sort_order']),
                     'status' => $role->status->value,
                     'users_count' => $role->access_grants_count,
                 ]),

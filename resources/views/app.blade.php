@@ -23,6 +23,39 @@
         </style>
     </head>
     <body class="font-sans antialiased">
+        @php($launching = ($page['component'] ?? null) === 'Portal/Applications/Launching')
+
+        @if ($launching)
+            {{-- Opening a system from IMIS: no navy boot screen. The same light
+                 "Opening <system>" splash the page renders (Launching.vue) is
+                 drawn here already, so there is one screen from the first paint
+                 and the page takes over without a flash. app.js removes this at
+                 once (data-instant). --}}
+            <div id="boot-preloader" data-instant class="imis-tr" role="status" aria-live="polite" aria-busy="true">
+                <div class="imis-tr__card">
+                    <div class="imis-tr__rings" aria-hidden="true">
+                        <svg class="imis-tr__ring-outer" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" class="imis-tr__track" stroke-width="2.5" />
+                            <circle cx="12" cy="12" r="10" class="imis-tr__arc--navy" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="62.832" stroke-dashoffset="20" />
+                        </svg>
+                        <svg class="imis-tr__ring-inner" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="8" class="imis-tr__track" stroke-width="1.5" />
+                            <circle cx="12" cy="12" r="8" class="imis-tr__arc--red" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="50.265" stroke-dashoffset="15" />
+                        </svg>
+                        <img src="/images/brand/CSC-IMIS.png" class="imis-tr__logo" alt="" draggable="false">
+                    </div>
+                    <div class="imis-tr__msg">Opening {{ $page['props']['application']['name'] ?? 'system' }}</div>
+                    <div class="imis-tr__sub">Signing you in from IMIS</div>
+                    <div class="imis-tr__note">
+                        Not moving?
+                        @if (preg_match('#^https?://#i', (string) ($page['props']['url'] ?? '')))
+                            <a href="{{ $page['props']['url'] }}" class="font-medium text-csc-blue underline">Continue</a>
+                        @endif
+                    </div>
+                    <div class="imis-tr__dots" aria-hidden="true"><span class="is-active"></span><span></span><span></span></div>
+                </div>
+            </div>
+        @else
         {{-- Boot preloader: the legacy IMIS loading screen. Removed by app.js
              once the first page renders. --}}
         <div id="boot-preloader" class="imis-preloader" role="status" aria-live="polite" aria-busy="true" aria-label="IMIS is loading. Please wait.">
@@ -43,6 +76,7 @@
                 <div class="imis-preloader__bar"></div>
             </div>
         </div>
+        @endif
         @inertia
     </body>
 </html>

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * records which role a person holds in that system and, optionally, the
  * role-specific entry point they launch into.
  */
-#[Fillable(['name', 'description', 'launch_url', 'status', 'sort_order'])]
+#[Fillable(['name', 'code', 'description', 'launch_url', 'status', 'sort_order'])]
 class ApplicationRole extends Model
 {
     /** @use HasFactory<ApplicationRoleFactory> */

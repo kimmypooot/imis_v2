@@ -40,7 +40,12 @@ class LegacySsoTest extends TestCase
     /** Launches the system and returns the token on the redirect, if any. */
     private function launch(User $user, Application $system): ?string
     {
-        $location = $this->actingAs($user)->get("/applications/{$system->id}/launch")->assertRedirect()->headers->get('Location');
+        $location = null;
+        $this->actingAs($user)->get("/applications/{$system->id}/launch")
+            ->assertInertia(function (\Inertia\Testing\AssertableInertia $page) use (&$location) {
+                $page->component('Portal/Applications/Launching');
+                $location = $page->toArray()['props']['url'];
+            });
         parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
 
         return $query['sso_token'] ?? null;
@@ -130,5 +135,59 @@ class LegacySsoTest extends TestCase
 
         $this->assertSame(1, app(LegacySso::class)->prune());
         $this->assertSame(0, DB::table('sso_tokens')->count());
+    }
+
+    public function test_a_laravel_system_under_imis_signs_the_person_in_once_with_their_role(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['proctad.example.test:8001']]);
+        $system = $this->system('http://proctad.example.test:8001/sso');
+        $role = \App\Models\ApplicationRole::factory()->for($system)->create(['name' => 'Administrator (ESD)']);
+        $user = \App\Models\ApplicationAccess::factory()->forRole($role)->create()->user;
+
+        $token = $this->launch($user, $system);
+
+        $this->assertNotNull($token);
+        $this->redeem($token, ['audience' => 'other.example.test'])->assertUnauthorized();
+        $this->redeem($token, ['audience' => 'PROCTAD.example.test:8001'])
+            ->assertOk()
+            ->assertJsonPath('user.username', $user->username)
+            ->assertJsonPath('user.role', 'Administrator (ESD)');
+        $this->redeem($token, ['audience' => 'proctad.example.test:8001'])->assertUnauthorized();
+    }
+
+    public function test_a_laravel_system_gets_the_role_code_and_the_office_of_the_person(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['proctad.example.test']]);
+        $system = $this->system('https://proctad.example.test/sso');
+        $role = \App\Models\ApplicationRole::factory()->for($system)->create(['name' => 'Field Office Staff', 'code' => 'fo_admin']);
+        $office = \App\Models\OrganizationalUnit::factory()->create(['code' => 'LFO-I', 'unit_type' => \App\Enums\UnitType::FieldOffice]);
+        $section = \App\Models\OrganizationalUnit::factory()->create(['parent_id' => $office->id, 'unit_type' => \App\Enums\UnitType::Other]);
+        $user = \App\Models\ApplicationAccess::factory()->forRole($role)->create()->user;
+        $user->forceFill(['organizational_unit_id' => $section->id])->save();
+
+        $token = $this->launch($user, $system);
+
+        $this->redeem($token, ['audience' => 'proctad.example.test'])
+            ->assertOk()
+            ->assertJsonPath('user.role_code', 'fo_admin')
+            ->assertJsonPath('user.office_code', 'LFO-I')
+            ->assertJsonPath('user.office_type', 'field_office');
+    }
+
+    public function test_a_hub_token_cannot_be_redeemed_as_a_legacy_one_or_without_an_audience(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['proctad.example.test']]);
+        $token = $this->launch($this->person(), $this->system('https://proctad.example.test/sso'));
+
+        $this->redeem($token)->assertUnauthorized();
+        $this->redeem($token, ['path' => '/sso'])->assertUnauthorized();
+        $this->redeem($token, ['audience' => 'proctad.example.test'])->assertOk()->assertJsonPath('user.role', null);
+    }
+
+    public function test_a_legacy_token_cannot_be_redeemed_by_a_laravel_system(): void
+    {
+        $token = $this->launch($this->person(), $this->system('https://legacy.example.test/otrs'));
+
+        $this->redeem($token, ['audience' => 'legacy.example.test'])->assertUnauthorized();
     }
 }

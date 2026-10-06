@@ -2472,6 +2472,56 @@ record is audited as `employee.created`.
   the new `formatCalendarDate()`, so a birthday never shifts a day in
   timezones behind UTC.
 
+#### Laravel systems under IMIS (e.g. PROCTAD)
+
+IMIS is the hub: new systems are separate Laravel apps with their own
+database and deployment, listed here as an `Application`. The same token
+mechanism signs people in to them (the earlier "no SSO" notes in Phases
+4 and 18 predate this).
+
+- **Registering:** list the system's `host[:port]` in `SSO_HUB_HOSTS`
+  (`legacy.sso.hub_hosts`). A launch to such a host gets `sso_token=`,
+  with no legacy id needed; tokens are never added to other hosts.
+- **Audience:** the token is bound to `host:<host[:port]>`. The system
+  redeems it at `POST /api/v1/sso/validate` with `token` and its own
+  `audience`; a wrong audience, a legacy-style call (no audience), or a
+  legacy token redeemed with an audience all return 401.
+- **Response:** `id`, `username`, `fname`, `lname`, `mname`, `email`,
+  `position`, `role` (the person's `ApplicationRole` name in that system,
+  null if none), `role_code` (that role's stable `code`) and
+  `office_code` / `office_type` (their organizational unit, or the
+  nearest ancestor that is a regional support unit, field office or
+  satellite office).
+- **Role codes:** `application_roles.code` is an optional, per-system
+  unique machine key (`[a-z0-9_]`), edited next to the role in the
+  system's modal. A system maps IMIS roles onto its own by code, so
+  renaming a role's display name breaks nothing.
+- **The system's side:** it keeps no staff credentials. PROCTAD's
+  `GET /sso` (`Auth\ImisSsoController`, `IMIS_SSO_URL`) links the person
+  by `users.imis_user_id` (else once by username/email to an unlinked staff
+  account, never to a member), creates the account on first sign-in, and
+  rewrites its name, role (`role_code` = a PROCTAD `UserRole` value) and
+  field office on every sign-in. Offices are mapped through
+  `field_offices.imis_code` (IMIS unit code) and, for regional units, the
+  regional office. Staff cannot use a PROCTAD password or Google sign-in
+  (a Super Administrator keeps the password as break-glass); members
+  and external users stay in PROCTAD with Google.
+- **Recruitment Portal** (`../recruitment-system`, the "Online Recruitment
+  System" entry): the same mechanism, for HR staff and HRMPSB board
+  members only. Its `ImisSsoController` (`POST /api/sso`, after the
+  `/sso` splash page) takes `role_code` `admin` or `hrmpsb`; applicants
+  are external and keep their own sign-in and Google. It links by
+  `users.imis_user_id` (else once by email, never to an applicant) and
+  issues its own Sanctum token. Board designations (chairperson,
+  secretariat, …) stay in its own HRMPSB composition.
+- **Launch screen:** `ApplicationLaunchController` renders
+  `Portal/Applications/Launching` ("Opening <system>" over the IMIS logo)
+  before sending the browser on; `app.blade.php` draws the same screen
+  at first paint instead of the navy boot preloader, so there is no
+  second flash.
+- **Not done yet:** single logout, and ending a session in the system
+  immediately when access is revoked in IMIS (the next sign-in fails).
+
 ### Deploying
 1. Run `php artisan migrate`.
 2. Run `php artisan db:seed --class=RolePermissionSeeder`. It is

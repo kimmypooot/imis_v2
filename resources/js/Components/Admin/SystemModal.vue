@@ -65,7 +65,7 @@ const fields = (system) => ({
 
 const form = useForm(fields(props.system));
 const maintenanceForm = useForm({ under_maintenance: true, maintenance_message: '' });
-const roleForm = useForm({ name: '', description: '', launch_url: '', sort_order: 0 });
+const roleForm = useForm({ name: '', code: '', description: '', launch_url: '', sort_order: 0 });
 const editingRoleId = ref(null);
 
 watch(
@@ -103,7 +103,7 @@ function cancelRoleEdit() {
 const editRole = (role) => {
     editingRoleId.value = role.id;
     roleForm.clearErrors();
-    Object.assign(roleForm, { name: role.name, description: role.description ?? '', launch_url: role.launch_url ?? '', sort_order: role.sort_order });
+    Object.assign(roleForm, { name: role.name, code: role.code ?? '', description: role.description ?? '', launch_url: role.launch_url ?? '', sort_order: role.sort_order });
 };
 
 const saveRole = () => {
@@ -172,7 +172,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                 <span class="font-semibold text-text">{{ system.name }}</span>
                 <span v-if="system.short_name" class="text-text-muted">{{ system.short_name }}</span>
                 <StatusBadge :status="system.status" />
-                <StatusBadge v-if="system.under_maintenance" status="maintenance" label="Under maintenance" />
+                <StatusBadge v-if="system.under_maintenance" status="maintenance" label="Under Maintenance" />
                 <span class="text-xs text-text-muted">{{ system.users_count }} {{ system.users_count === 1 ? 'person has' : 'people have' }} access</span>
             </div>
         </template>
@@ -268,7 +268,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
 
                     <div class="overflow-x-auto rounded-md border border-border">
                         <table class="min-w-full text-[0.8125rem]">
-                            <thead class="bg-surface-muted text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                            <thead class="table-head">
                                 <tr>
                                     <th scope="col" class="px-3 py-2">Role name</th>
                                     <th scope="col" class="px-3 py-2">Launch URL</th>
@@ -314,6 +314,10 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                             <div>
                                 <TextInput id="role-name" v-model="roleForm.name" label="Role name" required :invalid="!!roleForm.errors.name" />
                                 <InputError :message="roleForm.errors.name" />
+                            </div>
+                            <div>
+                                <TextInput id="role-code" v-model="roleForm.code" label="Code (optional)" placeholder="e.g. esd_admin" :invalid="!!roleForm.errors.code" />
+                                <InputError :message="roleForm.errors.code" />
                             </div>
                             <div>
                                 <TextInput id="role-description" v-model="roleForm.description" label="Description" :invalid="!!roleForm.errors.description" />

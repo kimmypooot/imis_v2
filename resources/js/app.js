@@ -18,6 +18,13 @@ const dismissBootPreloader = () => {
 
     if (!preloader) return;
 
+    // The launch splash is drawn by the server and re-drawn identically by the
+    // page (Launching.vue): no hold, no fade.
+    if (preloader.hasAttribute('data-instant')) {
+        window.requestAnimationFrame(() => preloader.remove());
+        return;
+    }
+
     window.setTimeout(() => {
         preloader.classList.add('is-hidden');
         preloader.setAttribute('aria-busy', 'false');

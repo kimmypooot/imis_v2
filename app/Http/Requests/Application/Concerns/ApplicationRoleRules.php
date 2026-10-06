@@ -23,6 +23,13 @@ trait ApplicationRoleRules
                     ->where('application_id', $application->id)
                     ->ignore($ignore),
             ],
+            // Stable key for systems that map IMIS roles onto their own.
+            'code' => [
+                'nullable', 'string', 'max:50', 'regex:/^[a-z0-9_]+$/',
+                Rule::unique('application_roles', 'code')
+                    ->where('application_id', $application->id)
+                    ->ignore($ignore),
+            ],
             'description' => ['nullable', 'string', 'max:500'],
             // Same http/https restriction as the application's own URL, so a
             // role's launch link can never be a javascript:/data: URI.
