@@ -163,7 +163,7 @@ class LegacySsoTest extends TestCase
         $office = \App\Models\OrganizationalUnit::factory()->create(['code' => 'LFO-I', 'unit_type' => \App\Enums\UnitType::FieldOffice]);
         $section = \App\Models\OrganizationalUnit::factory()->create(['parent_id' => $office->id, 'unit_type' => \App\Enums\UnitType::Other]);
         $user = \App\Models\ApplicationAccess::factory()->forRole($role)->create()->user;
-        $user->forceFill(['organizational_unit_id' => $section->id])->save();
+        $user->forceFill(['organizational_unit_id' => $section->id, 'profile_photo_path' => 'profile-photos/x.jpg'])->save();
 
         $token = $this->launch($user, $system);
 
@@ -171,7 +171,8 @@ class LegacySsoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('user.role_code', 'fo_admin')
             ->assertJsonPath('user.office_code', 'LFO-I')
-            ->assertJsonPath('user.office_type', 'field_office');
+            ->assertJsonPath('user.office_type', 'field_office')
+            ->assertJsonPath('user.photo_url', \Illuminate\Support\Facades\Storage::disk('public')->url('profile-photos/x.jpg'));
     }
 
     public function test_a_hub_token_cannot_be_redeemed_as_a_legacy_one_or_without_an_audience(): void

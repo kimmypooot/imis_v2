@@ -127,6 +127,8 @@ class LegacySso
             'position' => (string) $user->position,
             'role' => $role?->name,
             'role_code' => $role?->code,
+            // Public URL of the header photo (an unguessable file name), or null.
+            'photo_url' => $user->profile_photo_url,
             'office_code' => $office?->code,
             'office_type' => $office?->unit_type->value,
         ];
