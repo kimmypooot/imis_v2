@@ -65,6 +65,16 @@ class Changelog extends Model
     }
 
     /**
+     * The IMIS version shown in the shell, About dialog and dashboard: the
+     * newest published release, so it always matches What's New. Falls back
+     * to `config('app.version')` (IMIS_VERSION) when nothing is published.
+     */
+    public static function currentVersion(): string
+    {
+        return static::latestPublished()?->version ?? config('app.version');
+    }
+
+    /**
      * Replaces the release's entries in the submitted order.
      *
      * @param  array<int, array{type: string, description: string}>  $items

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceSessionLimits;
+use App\Http\Middleware\EnsurePasswordIsCurrent;
 use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             EnforceSessionLimits::class,
+            EnsurePasswordIsCurrent::class,
             HandleInertiaRequests::class,
         ]);
 

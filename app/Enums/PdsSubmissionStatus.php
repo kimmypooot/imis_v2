@@ -16,7 +16,7 @@ enum PdsSubmissionStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Submitted => 'Awaiting verification',
+            self::Submitted => 'Awaiting Verification',
             self::Verified => 'Verified',
             self::Returned => 'Returned',
             self::Superseded => 'Superseded',

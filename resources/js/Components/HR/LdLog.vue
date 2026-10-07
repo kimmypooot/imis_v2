@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import AdminCard from '../UI/AdminCard.vue';
+import Card from '../UI/Card.vue';
 import DataTable from '../UI/DataTable.vue';
 import StatusBadge from '../UI/StatusBadge.vue';
 import Icon from '../UI/Icon.vue';
@@ -74,7 +74,7 @@ const columns = [
             {{ stats.pending }} of these {{ stats.pending === 1 ? 'is' : 'are' }} {{ pendingNote }}. Rejected trainings aren't counted.
         </p>
 
-        <AdminCard :title="`Training records — ${year}`" icon="clipboard">
+        <Card :title="`Training records — ${year}`" icon="clipboard">
             <div class="mb-4 flex flex-wrap gap-1" role="group" aria-label="Filter by month">
                 <button
                     type="button"
@@ -101,14 +101,14 @@ const columns = [
             <div class="mb-4 flex flex-wrap gap-3">
                 <div>
                     <label for="ld-filter-type" class="sr-only">Type</label>
-                    <select id="ld-filter-type" v-model="type" class="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                    <select id="ld-filter-type" v-model="type" class="rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
                         <option value="">All types</option>
                         <option v-for="option in typeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label for="ld-filter-modality" class="sr-only">Modality</label>
-                    <select id="ld-filter-modality" v-model="modality" class="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                    <select id="ld-filter-modality" v-model="modality" class="rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
                         <option value="">All modalities</option>
                         <option v-for="option in modalityOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
@@ -145,6 +145,6 @@ const columns = [
                     </div>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

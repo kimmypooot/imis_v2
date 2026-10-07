@@ -38,19 +38,15 @@ const button =
 </script>
 
 <template>
-    <article
-        class="group relative flex h-full min-h-50 overflow-hidden rounded-xl border-2 border-transparent bg-surface shadow-card transition duration-200 hover:border-success hover:shadow-card-hover motion-safe:hover:-translate-y-1.5"
-    >
-        <!-- Legacy top accent bar, drawn in on hover. -->
-        <span class="absolute inset-x-0 top-0 h-1 scale-x-0 bg-success transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
-
-        <div class="flex w-full gap-3.5 px-6 py-5">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-success-bg text-success" aria-hidden="true">
+    <!-- Not itself clickable (the button below is), so no hover effect on the card. -->
+    <article class="flex h-full rounded-lg border border-border bg-surface">
+        <div class="flex w-full gap-3.5 p-5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-success-bg text-success" aria-hidden="true">
                 <Icon :name="system.icon || 'grid'" />
             </span>
 
             <div class="flex min-w-0 flex-1 flex-col gap-1 pt-1.5">
-                <h3 class="text-[0.95rem] leading-snug font-semibold text-text">
+                <h3 class="text-base leading-snug font-semibold text-text">
                     <!-- Legacy "online" dot: shown only when the system can be opened. -->
                     <span
                         v-if="state.kind === 'launch'"
@@ -60,7 +56,7 @@ const button =
                     {{ system.name }}
                 </h3>
 
-                <p v-if="system.description" class="line-clamp-2 flex-1 text-[0.825rem] leading-snug text-text-muted">
+                <p v-if="system.description" class="line-clamp-2 flex-1 text-sm leading-snug text-text-muted">
                     {{ system.description }}
                 </p>
                 <div v-else class="flex-1" />
@@ -77,7 +73,7 @@ const button =
                     {{ state.kind === 'bypass' ? 'Access' : 'Access System' }}
                     <span
                         v-if="state.badge"
-                        class="rounded-full bg-white/20 px-2 py-px text-[0.64rem] leading-snug font-semibold tracking-wide uppercase"
+                        class="rounded-full bg-white/20 px-2 py-px text-xs leading-snug font-semibold tracking-wide uppercase"
                     >
                         {{ state.badge }}
                     </span>

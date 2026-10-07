@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -117,7 +117,7 @@ const field = 'mt-1 block w-full';
 
     <PageHeader
         :title="item.position_title"
-        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Plantilla', href: '/admin/hr/plantilla' }, { label: item.item_number || 'No item no.' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Plantilla', href: '/admin/hr/plantilla' }, { label: item.item_number || 'No item no.' }]"
     >
         <template v-if="canManage" #actions>
             <Button v-if="appointForm" variant="success" @click="open('appoint')"><Icon name="plus" size="sm" />Appoint</Button>
@@ -128,7 +128,7 @@ const field = 'mt-1 block w-full';
     </PageHeader>
 
     <div class="space-y-6">
-        <AdminCard title="Item" icon="grid">
+        <Card title="Item" icon="grid">
             <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <div><dt class="text-text-muted">Item number</dt><dd class="mt-0.5 font-medium text-text">{{ item.item_number || 'Not yet assigned' }}</dd></div>
                 <div><dt class="text-text-muted">Salary grade</dt><dd class="mt-0.5 font-medium text-text">{{ item.salary_grade ? `SG ${item.salary_grade}` : 'Not set' }}</dd></div>
@@ -136,7 +136,7 @@ const field = 'mt-1 block w-full';
                 <div><dt class="text-text-muted">Place of assignment</dt><dd class="mt-0.5 font-medium text-text">{{ item.office || '—' }}</dd></div>
                 <div>
                     <dt class="text-text-muted">Status</dt>
-                    <dd class="mt-0.5"><StatusBadge :status="tones[item.status]" :label="item.status.charAt(0).toUpperCase() + item.status.slice(1)" /></dd>
+                    <dd class="mt-0.5"><StatusBadge :status="tones[item.status]" :label="item.status" /></dd>
                 </div>
                 <div>
                     <dt class="text-text-muted">Incumbent</dt>
@@ -168,9 +168,9 @@ const field = 'mt-1 block w-full';
                     <dt class="text-text-muted">Remarks</dt><dd class="mt-0.5 whitespace-pre-line text-text">{{ item.remarks }}</dd>
                 </div>
             </dl>
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Holders" icon="users" subtitle="Every period of service on this item, newest first.">
+        <Card title="Holders" icon="users" description="Every period of service on this item, newest first.">
             <p v-if="history.length === 0" class="text-sm text-text-muted">Nobody has held this item yet.</p>
             <div v-else class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -205,13 +205,17 @@ const field = 'mt-1 block w-full';
                                     <button type="button" class="text-primary hover:underline" @click="open('correct', row)">Correct</button>
                                     <button type="button" class="text-danger hover:underline" @click="remove(row)">Remove</button>
                                 </div>
+                                <div v-else-if="row.can_correct" class="flex flex-wrap items-center justify-end gap-3 whitespace-nowrap">
+                                    <span class="text-xs text-text-muted">Your own</span>
+                                    <button type="button" class="text-primary hover:underline" @click="open('correct', row)">Correct</button>
+                                </div>
                                 <span v-else class="text-xs text-text-muted">Your own</span>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </AdminCard>
+        </Card>
     </div>
 
     <Modal :open="mode !== null" :title="titles[mode] ?? ''" :tone="mode === 'abolish' ? 'danger' : mode === 'appoint' ? 'success' : 'primary'" size="lg" @close="close">
@@ -231,6 +235,9 @@ const field = 'mt-1 block w-full';
                 </div>
             </template>
 
+            <p v-if="mode === 'correct' && target && !target.can_manage" class="rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text sm:col-span-2">
+                This is your own record. Correct it only where the data is wrong; the change is logged as a correction of your own record.
+            </p>
             <template v-if="mode === 'appoint' || mode === 'correct'">
                 <div>
                     <label for="action-status" class="block text-sm font-medium text-text">Status <span class="text-danger" aria-hidden="true">*</span></label>

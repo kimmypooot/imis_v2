@@ -18,7 +18,7 @@ class MyEmployeeRecordController extends Controller
 {
     public function show(Request $request, EmployeeAssignments $assignments, Plantilla $plantilla): Response
     {
-        $employee = $request->user()->employee()->with('user.organizationalUnit')->first();
+        $employee = $request->user()->employee()->with(['user.organizationalUnit', 'headDesignations.toUnit'])->first();
 
         return Inertia::render('Portal/MyEmployeeRecord', [
             'employee' => $employee ? EmployeeResource::make($employee) : null,

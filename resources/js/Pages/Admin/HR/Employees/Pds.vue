@@ -30,7 +30,7 @@ const props = defineProps({
 const base = computed(() => `/admin/hr/employees/${props.employee.id}/pds`);
 
 const breadcrumbs = computed(() => [
-    { label: 'Home', href: '/admin' },
+    { label: 'Human Resources', href: '/admin/hr' },
     { label: 'Employees', href: '/admin/hr/employees' },
     { label: props.employee.name, href: `/admin/hr/employees/${props.employee.id}` },
     { label: 'Personal Data Sheet' },

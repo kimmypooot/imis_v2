@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Enums\EmploymentStatus;
+use App\Enums\Sex;
 use App\Http\Controllers\Controller;
 use App\Models\LeaveType;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,7 @@ class LeaveTypeController extends Controller
                 ...$type->only($type->getFillable()),
                 'id' => $type->id,
                 'charged_to' => $type->chargedTo?->code,
+                'sex_label' => Sex::labelFor($type->sex),
                 'has_credits' => $type->hasCredits(),
             ]),
             'canManage' => $request->user()->can('manage', LeaveType::class),
@@ -71,12 +73,14 @@ class LeaveTypeController extends Controller
             'lapses_yearly' => ['boolean'],
             'max_days_per_year' => ['nullable', 'numeric', 'between:0,366'],
             'max_days_per_filing' => ['nullable', 'numeric', 'between:0,366'],
+            'max_consecutive_days' => ['nullable', 'integer', 'between:1,366'],
             'sex' => ['nullable', 'in:male,female'],
             'eligible_statuses' => ['nullable', 'array'],
             'eligible_statuses.*' => [Rule::enum(EmploymentStatus::class)],
             'min_service_months' => ['nullable', 'integer', 'between:0,600'],
             'requires_solo_parent_id' => ['boolean'],
             'advance_filing_days' => ['nullable', 'integer', 'between:0,365'],
+            'allows_emergency_filing' => ['boolean'],
             'allows_half_day' => ['boolean'],
             'counts_calendar_days' => ['boolean'],
             'medical_certificate_after_days' => ['nullable', 'integer', 'between:0,365'],

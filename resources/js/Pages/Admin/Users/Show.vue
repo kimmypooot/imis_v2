@@ -118,6 +118,7 @@ const isGrantingSuperAdmin = computed(() => {
                 :key="system.id"
                 :label="system.short_name ? `${system.name} (${system.short_name})` : system.name"
                 :error="accessForm.errors[`access.${index}.application_role_id`]"
+                :helper-text="system.via_designation ? 'Given by their Division Chief / Field Director designation. Changing it here makes it a regular grant.' : null"
             >
                 <Select
                     :id="`system-${system.id}`"
@@ -135,7 +136,9 @@ const isGrantingSuperAdmin = computed(() => {
         <ul v-else class="divide-y divide-border text-sm">
             <li v-for="system in systemAccess" :key="system.id" class="flex items-center justify-between py-2">
                 <span class="text-text">{{ system.name }}</span>
-                <Badge v-if="system.role_id" tone="info">{{ roleName(system) }}</Badge>
+                <Badge v-if="system.role_id" tone="info" :title="system.via_designation ? 'Given by their office designation' : undefined">
+                    {{ roleName(system) }}<template v-if="system.via_designation"> · by designation</template>
+                </Badge>
                 <span v-else class="text-text-muted">No access</span>
             </li>
         </ul>

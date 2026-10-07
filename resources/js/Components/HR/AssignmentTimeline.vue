@@ -1,5 +1,5 @@
 <script setup>
-import AdminCard from '../UI/AdminCard.vue';
+import Card from '../UI/Card.vue';
 import StatusBadge from '../UI/StatusBadge.vue';
 import Icon from '../UI/Icon.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
@@ -30,7 +30,7 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
 </script>
 
 <template>
-    <AdminCard title="Assignment history" icon="building" subtitle="Reassignments move the office; details and designations keep the mother unit.">
+    <Card title="Assignment history" icon="building" description="Reassignments move the office; details and designations keep the mother unit.">
         <template v-if="$slots.actions" #actions><slot name="actions" /></template>
 
         <dl class="mb-5 grid gap-3 rounded-md bg-surface-muted p-4 text-sm sm:grid-cols-3">
@@ -53,7 +53,7 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                 <dt class="text-text-muted">Designations</dt>
                 <dd class="mt-0.5 font-medium text-text">
                     <template v-if="assignments.current.designations.length">
-                        <span v-for="designation in assignments.current.designations" :key="designation.id" class="block">{{ designation.to_unit }}</span>
+                        <span v-for="designation in assignments.current.designations" :key="designation.id" class="block">{{ designation.to_unit }}<template v-if="designation.as_head"> ({{ designation.head_capacity_label }})</template></span>
                     </template>
                     <template v-else>—</template>
                 </dd>
@@ -73,6 +73,7 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
                             <StatusBadge :status="tones[entry.kind]" :label="entry.kind_label" />
+                            <StatusBadge v-if="entry.as_head" status="info" :label="entry.head_capacity_label" />
                             <StatusBadge v-if="entry.current" status="active" label="Current" />
                             <StatusBadge v-else-if="entry.upcoming" status="warning" label="Upcoming" />
                         </div>
@@ -91,6 +92,9 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                         <p v-else-if="entry.scan" class="mt-1 text-xs">
                             <a :href="entry.scan.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-primary hover:underline"><Icon name="eye" size="sm" />View scanned order</a>
                         </p>
+                        <p v-if="entry.supervision_handed_at" class="mt-1 text-xs text-text-muted">
+                            The office's staff were handed over to them as immediate supervisor<template v-if="entry.supervision_restored_at">, and given back their previous supervisors when it ended</template>.
+                        </p>
                         <p v-if="entry.remarks" class="mt-1 whitespace-pre-line text-sm text-text">{{ entry.remarks }}</p>
                     </div>
                     <div v-if="canManage" class="flex shrink-0 gap-3 text-sm">
@@ -104,5 +108,5 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                 </div>
             </li>
         </ol>
-    </AdminCard>
+    </Card>
 </template>

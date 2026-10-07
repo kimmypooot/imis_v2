@@ -72,7 +72,7 @@ const onKeydown = (event) => {
             maxlength="100"
             aria-keyshortcuts="/ Control+K Meta+K"
             placeholder="Search the portal…"
-            class="block w-full rounded-md border border-border bg-surface-muted py-2 pl-9 pr-9 text-sm text-text placeholder:text-text-muted focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-ring [&::-webkit-search-cancel-button]:hidden"
+            class="block w-full rounded-md border border-border-strong bg-surface-muted py-2 pl-9 pr-9 text-sm text-text placeholder:text-text-muted focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-ring [&::-webkit-search-cancel-button]:hidden"
             @keydown="onKeydown"
         />
         <button

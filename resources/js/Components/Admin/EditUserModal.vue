@@ -11,6 +11,9 @@ import TextInput from '../Forms/TextInput.vue';
 import InputError from '../Forms/InputError.vue';
 import CheckboxGroup from '../Forms/CheckboxGroup.vue';
 import PhotoPicker from '../Forms/PhotoPicker.vue';
+import PasswordInput from '../Forms/PasswordInput.vue';
+import PasswordRequirements from '../Forms/PasswordRequirements.vue';
+import Checkbox from '../Forms/Checkbox.vue';
 import UserProfileFields from './UserProfileFields.vue';
 import { confirm } from '../../Composables/useDialog';
 import { formatDateTime } from '../../Utils/datetime';
@@ -26,6 +29,8 @@ const props = defineProps({
     user: { type: Object, default: null },
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
+    designationOptions: { type: Array, default: () => [] },
+    passwordRequirements: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['close']);
@@ -47,11 +52,14 @@ const profileFields = (user) => ({
     sex: user?.sex ?? '',
     birthday: user?.birthday ?? '',
     organizational_unit_id: user?.organizational_unit_id ?? '',
+    office_designation: user?.office_designation ?? '',
     username: user?.username ?? '',
 });
 
 const form = useForm(profileFields(props.user));
 const rolesForm = useForm({ role_ids: [] });
+// Super Administrator override (user.can.set_password).
+const passwordForm = useForm({ password: '', password_confirmation: '', must_change_password: true, admin_password: '' });
 
 // Re-seed only when a different user is opened, so a save that reloads
 // the list doesn't wipe what's being typed elsewhere.
@@ -65,6 +73,8 @@ watch(
         rolesForm.defaults({ role_ids: props.user.roles.map((role) => role.id) });
         rolesForm.reset();
         rolesForm.clearErrors();
+        passwordForm.reset();
+        passwordForm.clearErrors();
         tab.value = 'profile';
     },
     { immediate: true },
@@ -76,6 +86,7 @@ const saveProfile = () => {
     form.transform((data) => ({
         ...data,
         organizational_unit_id: data.organizational_unit_id || null,
+        office_designation: data.office_designation || null,
         sex: data.sex || null,
         birthday: data.birthday || null,
     })).put(`/users/${props.user.id}`, {
@@ -136,6 +147,14 @@ const sendReset = async () => {
     if (confirmed) router.post(`/users/${props.user.id}/send-password-reset`, {}, { preserveScroll: true });
 };
 
+const setPassword = () => {
+    passwordForm.put(`/users/${props.user.id}/password`, {
+        preserveScroll: true,
+        onSuccess: () => passwordForm.reset(),
+        onError: () => passwordForm.reset('admin_password'),
+    });
+};
+
 const close = () => emit('close');
 </script>
 
@@ -175,7 +194,13 @@ const close = () => emit('close');
                                 </button>
                             </PhotoPicker>
 
-                            <UserProfileFields :form="form" :office-options="officeOptions" id-prefix="edit" />
+                            <UserProfileFields
+                                :form="form"
+                                :office-options="officeOptions"
+                                :designation-options="designationOptions"
+                                :can-designate="user.can.designation"
+                                id-prefix="edit"
+                            />
                         </fieldset>
                     </form>
                 </template>
@@ -229,10 +254,54 @@ const close = () => emit('close');
                         <div class="rounded-md border border-border p-4">
                             <p class="text-sm font-medium text-text">Password</p>
                             <p class="mt-1 text-xs text-text-muted">
-                                Administrators never see or set passwords. Send the user a secure link to choose a new one.
+                                Send the user a secure link to choose a new password. Their current one keeps working until they use it.
                             </p>
                             <Button class="mt-3" variant="secondary" :disabled="!canEdit" @click="sendReset">Send password reset link</Button>
                         </div>
+                        <form v-if="user.can.set_password" class="space-y-3 rounded-md border border-warning-border p-4" @submit.prevent="setPassword">
+                            <div>
+                                <p class="text-sm font-medium text-text">Set password (Super Administrator override)</p>
+                                <p class="mt-1 text-xs text-text-muted">
+                                    For when a reset link can't be used. Their open sessions are signed out, and the change is logged (never the password).
+                                </p>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <PasswordInput
+                                        id="set-password"
+                                        v-model="passwordForm.password"
+                                        label="New password"
+                                        autocomplete="new-password"
+                                        required
+                                        :invalid="!!passwordForm.errors.password"
+                                    />
+                                    <InputError :message="passwordForm.errors.password" />
+                                </div>
+                                <div>
+                                    <PasswordInput
+                                        id="set-password-confirmation"
+                                        v-model="passwordForm.password_confirmation"
+                                        label="Confirm new password"
+                                        autocomplete="new-password"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <PasswordRequirements v-if="!passwordForm.errors.password" id="set-password-helper" :requirements="passwordRequirements" />
+                            <Checkbox id="set-password-must-change" v-model="passwordForm.must_change_password" label="Require them to choose a new password at their next sign-in" />
+                            <div>
+                                <PasswordInput
+                                    id="set-password-admin"
+                                    v-model="passwordForm.admin_password"
+                                    label="Your password, to confirm"
+                                    autocomplete="current-password"
+                                    required
+                                    :invalid="!!passwordForm.errors.admin_password"
+                                />
+                                <InputError :message="passwordForm.errors.admin_password" />
+                            </div>
+                            <Button type="submit" variant="danger":loading="passwordForm.processing">Set password</Button>
+                        </form>
                         <dl class="grid gap-3 rounded-md border border-border p-4 text-sm sm:grid-cols-2">
                             <div>
                                 <dt class="text-xs text-text-muted">Last login</dt>

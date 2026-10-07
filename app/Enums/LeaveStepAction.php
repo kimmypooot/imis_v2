@@ -25,13 +25,13 @@ enum LeaveStepAction: string
     {
         return match ($this) {
             self::Pending => 'Pending',
-            self::Recommended => 'Recommended for approval',
-            self::NotRecommended => 'Recommended for disapproval',
-            self::Certified => 'Credits certified',
-            self::InsufficientCredits => 'Insufficient credits',
+            self::Recommended => 'Recommended for Approval',
+            self::NotRecommended => 'Recommended for Disapproval',
+            self::Certified => 'Credits Certified',
+            self::InsufficientCredits => 'Insufficient Credits',
             self::Approved => 'Approved',
             self::Disapproved => 'Disapproved',
-            self::Returned => 'Returned for correction',
+            self::Returned => 'Returned for Correction',
         };
     }
 

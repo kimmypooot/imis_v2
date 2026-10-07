@@ -35,11 +35,31 @@ class SystemAccessManager
             $access === null && $role === null => null,
             $access === null => $this->grant($application, $user, $role),
             $role === null => $this->revoke($access),
-            default => $this->change($access, $role),
+            default => $this->changeManually($access, $role),
         };
     }
 
-    public function grant(Application $application, User $user, ApplicationRole $role): ApplicationAccess
+    /**
+     * An admin's change from the access screens: the grant is theirs from
+     * now on, no longer one an office designation made.
+     */
+    private function changeManually(ApplicationAccess $access, ApplicationRole $role): void
+    {
+        if ($access->application_role_id === $role->id) {
+            return;
+        }
+
+        $this->change($access, $role);
+
+        if ($access->via_designation) {
+            $access->forceFill(['via_designation' => false, 'designation_previous_role_id' => null])->save();
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata  extra audit details (e.g. the designation behind it)
+     */
+    public function grant(Application $application, User $user, ApplicationRole $role, array $metadata = []): ApplicationAccess
     {
         $access = $application->accessGrants()->make([
             'user_id' => $user->id,
@@ -52,13 +72,16 @@ class SystemAccessManager
             "Granted {$user->name} access to {$application->name} as {$role->name}",
             $application,
             $user,
-            ['role' => $role->name],
+            ['role' => $role->name, ...$metadata],
         );
 
         return $access;
     }
 
-    public function change(ApplicationAccess $access, ApplicationRole $role): void
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    public function change(ApplicationAccess $access, ApplicationRole $role, array $metadata = []): void
     {
         $previous = $access->role;
 
@@ -74,11 +97,14 @@ class SystemAccessManager
             "Changed {$access->user->name}'s role in {$access->application->name} from {$previous->name} to {$role->name}",
             $access->application,
             $access->user,
-            ['from_role' => $previous->name, 'to_role' => $role->name],
+            ['from_role' => $previous->name, 'to_role' => $role->name, ...$metadata],
         );
     }
 
-    public function revoke(ApplicationAccess $access): void
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    public function revoke(ApplicationAccess $access, array $metadata = []): void
     {
         $access->delete();
 
@@ -87,7 +113,7 @@ class SystemAccessManager
             "Revoked {$access->user->name}'s access to {$access->application->name}",
             $access->application,
             $access->user,
-            ['role' => $access->role->name],
+            ['role' => $access->role->name, ...$metadata],
         );
     }
 

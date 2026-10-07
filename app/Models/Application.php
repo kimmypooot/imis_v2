@@ -32,11 +32,19 @@ class Application extends Model
     use HasFactory, HasPortalVisibility;
 
     /**
+     * The summary feed (`feed_url`, `feed_key`) is set only on Executive
+     * Dashboard → Settings, never by the general edit form; the key is
+     * encrypted with APP_KEY and never serialized.
+     */
+    protected $hidden = ['feed_key'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'feed_key' => 'encrypted',
             'status' => Status::class,
             'visibility' => Visibility::class,
             'external' => 'boolean',

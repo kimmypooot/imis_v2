@@ -25,7 +25,8 @@ class EmployeePolicy
 
     /**
      * Same rule as Employee::scopeVisibleTo(): your own record always, your
-     * office's with `view_unit`, anyone's with `view`.
+     * offices' with `view_unit` (your own, and any you head by
+     * designation), anyone's with `view`.
      */
     public function view(User $user, Employee $employee): bool
     {
@@ -33,9 +34,7 @@ class EmployeePolicy
             return true;
         }
 
-        return $user->organizational_unit_id !== null
-            && $user->hasPermission(PermissionName::EmployeesViewUnit->value)
-            && $employee->user()->value('organizational_unit_id') === $user->organizational_unit_id;
+        return in_array((int) $employee->user()->value('organizational_unit_id'), Employee::officesSupervisedBy($user), true);
     }
 
     /**
@@ -110,6 +109,15 @@ class EmployeePolicy
     public function viewServiceRecord(User $user, Employee $employee): bool
     {
         return $employee->user_id === $user->id || $user->hasPermission(PermissionName::ServiceRecordsView->value);
+    }
+
+    /**
+     * HR-5: adding service from another agency to someone's Service
+     * Record — HR, never their own (separation of duties).
+     */
+    public function manageServiceRecord(User $user, Employee $employee): bool
+    {
+        return $employee->user_id !== $user->id && $user->hasPermission(PermissionName::ServiceRecordsManage->value);
     }
 
     /**

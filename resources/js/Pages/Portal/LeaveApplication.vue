@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Button from '../../Components/UI/Button.vue';
 import Icon from '../../Components/UI/Icon.vue';
@@ -52,25 +52,26 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
         :breadcrumbs="isOwn ? [{ label: 'My Leave Applications', href: '/my/leave/applications' }, { label: application.reference_number }] : [{ label: 'Leave Approvals', href: '/leave/approvals' }, { label: application.reference_number }]"
     >
         <template #actions>
-            <a :href="`/leave/applications/${application.id}/form`" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-muted">
+            <Button variant="secondary" :href="`/leave/applications/${application.id}/form`" external>
                 <Icon name="printer" size="sm" />CS Form No. 6
-            </a>
-            <Link v-if="canUpdate && application.status === 'returned'" :href="`/my/leave/apply?resubmit=${application.id}`" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">
+            </Button>
+            <Button v-if="canUpdate && application.status === 'returned'" :href="`/my/leave/apply?resubmit=${application.id}`">
                 <Icon name="pencil" size="sm" />Correct and resubmit
-            </Link>
+            </Button>
             <Button v-if="canUpdate" variant="danger" @click="cancel">Cancel application</Button>
         </template>
     </PageHeader>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <div class="space-y-6 xl:col-span-2">
-            <AdminCard title="Application" icon="clipboard">
+            <Card title="Application" icon="clipboard">
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                     <div><dt class="text-text-muted">Employee</dt><dd class="mt-0.5 font-medium text-text">{{ application.name }}<span v-if="application.office" class="font-normal text-text-muted"> · {{ application.office }}</span></dd></div>
                     <div><dt class="text-text-muted">Status</dt><dd class="mt-0.5"><StatusBadge :status="leaveStatusTones[application.status]" :label="application.status_label" /></dd></div>
                     <div><dt class="text-text-muted">Type of leave</dt><dd class="mt-0.5 font-medium text-text">{{ application.type_name }}</dd></div>
                     <div><dt class="text-text-muted">Dates</dt><dd class="mt-0.5 text-text">{{ leaveDates(application, formatCalendarDate) }}</dd></div>
                     <div v-if="application.detail_label"><dt class="text-text-muted">Details</dt><dd class="mt-0.5 text-text">{{ application.detail_label }}<template v-if="application.detail_text">: {{ application.detail_text }}</template></dd></div>
+                    <div v-if="application.is_emergency"><dt class="text-text-muted">Filing</dt><dd class="mt-0.5 text-text">Emergency: filed upon return</dd></div>
                     <div><dt class="text-text-muted">Commutation</dt><dd class="mt-0.5 text-text">{{ application.commutation_requested ? 'Requested' : 'Not requested' }}</dd></div>
                     <div v-if="application.status === 'approved'" class="sm:col-span-2">
                         <dt class="text-text-muted">Approved for</dt>
@@ -84,15 +85,15 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                     <div><dt class="text-text-muted">Submitted</dt><dd class="mt-0.5 text-text">{{ application.submitted_at ? formatDateTime(application.submitted_at) : '—' }}</dd></div>
                     <div v-if="application.decided_at"><dt class="text-text-muted">Decided</dt><dd class="mt-0.5 text-text">{{ formatDateTime(application.decided_at) }}</dd></div>
                 </dl>
-            </AdminCard>
+            </Card>
 
-            <AdminCard v-if="action" :title="`Your action — ${action.role_label}`" icon="checkCircle" :subtitle="action.acting_for ? `As officer-in-charge for ${action.acting_for}` : null">
+            <Card v-if="action" :title="`Your action — ${action.role_label}`" icon="checkCircle" :description="action.acting_for ? `As officer-in-charge for ${action.acting_for}` : null">
                 <form class="space-y-4" @submit.prevent="submit">
                     <fieldset>
                         <legend class="sr-only">Action</legend>
                         <div class="flex flex-wrap gap-x-5 gap-y-2">
                             <label v-for="option in action.options" :key="option.value" class="inline-flex items-center gap-2 text-sm text-text">
-                                <input v-model="form.action" type="radio" :value="option.value" class="h-4 w-4 border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                                <input v-model="form.action" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                                 {{ option.label }}
                             </label>
                         </div>
@@ -107,7 +108,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                             step="0.5"
                             min="0"
                             :max="application.days"
-                            class="mt-1 block w-40 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                            class="mt-1 block w-40 rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                         />
                         <p class="mt-1 text-xs text-text-muted">Leave empty to approve as many days with pay as the credits allow; the rest is without pay.</p>
                         <InputError :message="form.errors.days_with_pay" />
@@ -123,10 +124,10 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         </Button>
                     </div>
                 </form>
-            </AdminCard>
+            </Card>
         </div>
 
-        <AdminCard title="Approval" icon="activity" subtitle="CS Form No. 6, Section 7.">
+        <Card title="Approval" icon="activity" description="CS Form No. 6, Section 7.">
             <div v-for="round in rounds" :key="round" class="mb-4 last:mb-0">
                 <p v-if="rounds.length > 1" class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">{{ round === rounds[0] ? 'Current submission' : `Submission ${round}` }}</p>
                 <ol class="space-y-3">
@@ -146,6 +147,6 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                     </li>
                 </ol>
             </div>
-        </AdminCard>
+        </Card>
     </div>
 </template>

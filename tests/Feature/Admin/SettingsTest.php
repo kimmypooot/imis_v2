@@ -63,7 +63,7 @@ class SettingsTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Admin/Settings/Index')
                 ->where('canUpdate', false)
-                ->has('groups', 4)
+                ->has('groups', 8)
                 ->where('groups.0.key', 'general')
                 ->where('groups.0.settings.0.key', 'organization_name')
                 ->where('groups.0.settings.0.editable', false));
@@ -177,6 +177,7 @@ class SettingsTest extends TestCase
             'url: javascript scheme' => ['contact', 'contact_website_url', 'javascript:alert(1)'],
             'url: ftp scheme' => ['contact', 'contact_website_url', 'ftp://csc.gov.ph'],
             'email: invalid' => ['contact', 'contact_email', 'not-an-email'],
+            'select: not an option' => ['human_resources', 'hr_certifying_officer_position', 'Regional Director'],
         ];
     }
 
@@ -203,6 +204,29 @@ class SettingsTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame('https://example.gov.ph/ro8', Settings::get('contact_website_url'));
+    }
+
+    public function test_certifying_officer_position_is_one_of_its_options_or_unset(): void
+    {
+        $editor = $this->editor();
+
+        $this->actingAs($editor)->get('/admin/settings')->assertInertia(fn ($page) => $page
+            ->where('groups.3.settings.1.type', 'select')
+            ->where('groups.3.settings.1.options', [
+                'Chief Human Resource Specialist, Human Resource Division',
+                'Director IV',
+                'Director III',
+            ]));
+
+        $this->actingAs($editor)
+            ->put('/admin/settings/human_resources', ['settings' => ['hr_certifying_officer_position' => 'Director IV']])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Director IV', Settings::get('hr_certifying_officer_position'));
+
+        $this->actingAs($editor)
+            ->put('/admin/settings/human_resources', ['settings' => ['hr_certifying_officer_position' => '']])
+            ->assertSessionHasNoErrors();
+        $this->assertNull(Settings::get('hr_certifying_officer_position'));
     }
 
     public function test_one_invalid_value_saves_nothing_in_the_group(): void
@@ -402,8 +426,10 @@ class SettingsTest extends TestCase
 
     public function test_no_defined_setting_looks_like_a_credential(): void
     {
+        // `password_policy_*` keys describe password rules, so only what
+        // follows the prefix is checked (as SettingRegistry::sync() does).
         foreach (array_keys(SettingRegistry::definitions()) as $key) {
-            $this->assertDoesNotMatchRegularExpression('/password|secret|token|api_?key|credential|^db_|^mail_/i', $key);
+            $this->assertDoesNotMatchRegularExpression('/password|secret|token|api_?key|credential|^db_|^mail_/i', str($key)->after('password_policy_')->value());
         }
     }
 

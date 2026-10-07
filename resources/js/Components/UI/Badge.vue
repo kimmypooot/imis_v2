@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { toneClasses, tones } from './tones';
 
 /**
  * Semantic status badge. Status is conveyed by the label text plus color,
@@ -10,17 +11,9 @@ const props = defineProps({
     tone: {
         type: String,
         default: 'neutral',
-        validator: (value) => ['success', 'warning', 'danger', 'info', 'neutral'].includes(value),
+        validator: (value) => tones.includes(value),
     },
 });
-
-const toneClasses = {
-    success: 'bg-success-bg text-success ring-1 ring-inset ring-success-border',
-    warning: 'bg-warning-bg text-warning ring-1 ring-inset ring-warning-border',
-    danger: 'bg-danger-bg text-danger ring-1 ring-inset ring-danger-border',
-    info: 'bg-info-bg text-info ring-1 ring-inset ring-info-border',
-    neutral: 'bg-surface-muted text-text-muted ring-1 ring-inset ring-border',
-};
 
 const classes = computed(() => toneClasses[props.tone]);
 </script>

@@ -19,11 +19,14 @@ const props = defineProps({
     open: { type: Boolean, required: true },
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
+    designationOptions: { type: Array, default: () => [] },
+    canDesignate: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['close']);
 
 const blank = () => ({
+    office_designation: '',
     first_name: '',
     middle_name: '',
     name_extension: '',
@@ -62,6 +65,7 @@ const submit = () => {
     form.transform((data) => ({
         ...data,
         organizational_unit_id: data.organizational_unit_id || null,
+        office_designation: data.office_designation || null,
         sex: data.sex || null,
         birthday: data.birthday || null,
         username: data.username || null,
@@ -82,7 +86,13 @@ const submit = () => {
                 @select="(file) => (form.profile_photo = file)"
             />
 
-            <UserProfileFields :form="form" :office-options="officeOptions" id-prefix="add" />
+            <UserProfileFields
+                :form="form"
+                :office-options="officeOptions"
+                :designation-options="designationOptions"
+                :can-designate="canDesignate"
+                id-prefix="add"
+            />
 
             <div>
                 <TextInput id="add-username" v-model="form.username" label="Username" autocomplete="off" :invalid="!!form.errors.username" />

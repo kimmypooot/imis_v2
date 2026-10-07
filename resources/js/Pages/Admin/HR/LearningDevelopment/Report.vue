@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 
@@ -66,11 +66,11 @@ const selectClass =
 
     <PageHeader
         title="Training Report"
-        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Training Report' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Training Report' }]"
     />
 
     <div class="space-y-6">
-        <AdminCard title="Filters" icon="funnel">
+        <Card title="Filters" icon="funnel">
             <div class="flex flex-wrap items-end gap-4">
                 <div>
                     <label for="report-year" class="mb-1 block text-xs font-medium text-text-muted">Year</label>
@@ -100,9 +100,9 @@ const selectClass =
                     Clear filters
                 </Link>
             </div>
-        </AdminCard>
+        </Card>
 
-        <AdminCard :title="title" icon="printer" subtitle="Approved trainings only, by surname and then most recent first.">
+        <Card :title="title" icon="printer" description="Approved trainings only, by surname and then most recent first.">
             <template #actions>
                 <p class="text-sm text-text-muted">
                     <span class="font-semibold text-text tabular-nums">{{ rows.length }}</span> {{ rows.length === 1 ? 'training' : 'trainings' }} ·
@@ -126,6 +126,6 @@ const selectClass =
                 <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }}</span></template>
                 <template #cell-date_to="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_to) }}</span></template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

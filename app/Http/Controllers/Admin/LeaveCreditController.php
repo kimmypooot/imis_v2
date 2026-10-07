@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\LeaveType;
 use App\Support\HR\Leave\LeaveCredits;
+use App\Support\HR\Leave\Supervisors;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,12 +21,12 @@ use Inertia\Response;
  */
 class LeaveCreditController extends Controller
 {
-    public function index(Request $request, LeaveCredits $credits): Response
+    public function index(Request $request, LeaveCredits $credits, Supervisors $supervisors): Response
     {
         $this->authorize('viewAny', LeaveType::class);
 
         $types = $credits->creditTypes();
-        $employees = Employee::query()->with(['user.organizationalUnit', 'immediateSupervisor:id,name'])->get()
+        $employees = Employee::query()->with(['user.organizationalUnit', 'immediateSupervisor:id,name,position'])->get()
             ->sortBy(fn (Employee $employee) => $employee->user->name, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
         $lastMonth = today()->subMonthNoOverflow();
@@ -36,9 +37,11 @@ class LeaveCreditController extends Controller
                 'id' => $employee->id,
                 'name' => $employee->user->name,
                 'office' => $employee->user->organizationalUnit?->short_name ?: $employee->user->organizationalUnit?->name,
-                'status' => $employee->employment_status?->label() ?? 'Not set',
+                'status' => $employee->employment_status?->label() ?? 'Not Set',
                 'separated' => $employee->isSeparated(),
-                'supervisor' => $employee->immediateSupervisor?->name,
+                'supervisor' => ($supervisor = $supervisors->for($employee))['name'],
+                'supervisor_position' => $supervisor['position'],
+                'supervisor_source' => $supervisor['source'],
                 'balances' => $credits->balances($employee)->pluck('balance', 'type_id'),
             ]),
             'defaults' => ['year' => $lastMonth->year, 'month' => $lastMonth->month, 'start_year' => (int) today()->year],

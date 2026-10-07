@@ -120,6 +120,22 @@ class LegacyImportTest extends TestCase
         $this->assertSame(User::where('username', 'jdcruz')->value('id'), $grant->granted_by);
     }
 
+    public function test_never_brings_back_a_system_built_into_imis(): void
+    {
+        $this->legacy->table('imis_projects')->insert([
+            'id' => 3, 'code_name' => 'PRISM', 'project_name' => 'Personnel Records', 'description' => 'Personnel', 'icon' => 'bi bi-person', 'guest_url' => null, 'is_active' => 1, 'is_public' => 0,
+        ]);
+        $this->legacy->table('imis_access_roles')->insert(['id' => 4, 'project_id' => 3, 'name' => 'Admin', 'project_url' => '/prism']);
+        $this->legacy->table('imis_system_access')->insert([
+            'id' => 3, 'user_id' => 2, 'project_id' => 3, 'role_id' => 4, 'granted_at' => '2026-05-01 00:00:00', 'granted_by' => null,
+        ]);
+
+        $this->import();
+
+        $this->assertFalse(Application::where('short_name', 'PRISM')->exists());
+        $this->assertSame(1, ApplicationAccess::where('user_id', User::where('username', 'asantos')->value('id'))->count());
+    }
+
     public function test_retires_unheld_roles_the_legacy_system_does_not_define(): void
     {
         $otrs = Application::factory()->create(['short_name' => 'OTRS']);

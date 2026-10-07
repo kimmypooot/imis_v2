@@ -12,8 +12,8 @@ import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
 import AnnouncementCard from '../../Components/Announcements/AnnouncementCard.vue';
+import PortalFooter from '../../Components/Portal/PortalFooter.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -38,8 +38,6 @@ const dismissWhatsNew = () => {
     whatsNewOpen.value = false;
     router.post('/whats-new/seen', {}, { preserveScroll: true, preserveState: true });
 };
-
-const hasContact = computed(() => Boolean(props.contact.email || props.contact.phone || props.contact.website));
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -92,8 +90,9 @@ const greeting = computed(() => {
 
         <SystemDirectory :directory="directory" :division="division" />
 
-        <PortalSection title="Services" view-all-href="/services">
-            <div v-if="services.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Like Announcements: only once a service has been added (the legacy home has no such section). -->
+        <PortalSection v-if="services.length" title="Services" view-all-href="/services">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <PortalCard
                     v-for="service in services"
                     :key="service.id"
@@ -103,28 +102,9 @@ const greeting = computed(() => {
                     :description="service.description"
                 />
             </div>
-            <EmptyState
-                v-else
-                icon="clipboard"
-                title="No services available yet"
-                description="Services registered in the directory will appear here."
-            />
         </PortalSection>
 
-        <PortalSection v-if="hasContact" title="Need help?" description="Contact the office for questions about IMIS.">
-            <ul class="space-y-1 text-sm text-text">
-                <li v-if="contact.email">
-                    Email: <a :href="`mailto:${contact.email}`" class="text-primary underline">{{ contact.email }}</a>
-                </li>
-                <li v-if="contact.phone">Phone: {{ contact.phone }}</li>
-                <li v-if="contact.website">
-                    Website:
-                    <a :href="contact.website" target="_blank" rel="noopener noreferrer" class="text-primary underline">
-                        {{ contact.website }}
-                    </a>
-                </li>
-            </ul>
-        </PortalSection>
+        <PortalFooter :contact="contact" />
     </div>
 
     <Modal v-if="whatsNew" :open="whatsNewOpen" title="What's New in IMIS" size="lg" @close="dismissWhatsNew">

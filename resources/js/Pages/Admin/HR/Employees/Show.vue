@@ -48,7 +48,7 @@ const removeAssignment = async (entry) => {
     }
 };
 const breadcrumbs = computed(() => [
-    { label: 'Home', href: '/admin' },
+    { label: 'Human Resources', href: '/admin/hr' },
     { label: 'Employees', href: '/admin/hr/employees' },
     { label: props.employee.user.name },
 ]);
@@ -121,6 +121,7 @@ const breadcrumbs = computed(() => [
         :url="assignmentsUrl"
         :current-office-id="employee.user.unit_id"
         :kind-options="assignmentForm.kindOptions"
+        :capacity-options="assignmentForm.capacityOptions"
         :office-options="assignmentForm.officeOptions"
         :scan-kilobytes="assignmentForm.scanKilobytes"
         @close="assignmentOpen = false"

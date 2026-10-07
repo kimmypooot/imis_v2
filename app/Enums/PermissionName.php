@@ -122,10 +122,17 @@ enum PermissionName: string
     // (never their own appointment).
     case PlantillaView = 'plantilla.view';
     case PlantillaManage = 'plantilla.manage';
+    // Override: correct any period's details (step, status, dates, …)
+    // when the record is wrong — their own included. Corrections only, no
+    // appointing or step increments; each is audited, own ones flagged.
+    case PlantillaCorrect = 'plantilla.correct';
 
     // HR-5: viewing and printing anyone's Service Record (HR). Everyone
     // reads and prints their own with no permission.
     case ServiceRecordsView = 'service_records.view';
+    // Adding, editing and removing Service Record lines by hand — service
+    // in another agency before the CSC (never on their own record).
+    case ServiceRecordsManage = 'service_records.manage';
 
     // HR-6 leave. `view` reads everyone's leave cards; `manage` maintains
     // leave types and holidays, employees' leave settings, opening
@@ -141,4 +148,22 @@ enum PermissionName: string
     // period. Nobody acts on their own application.
     case LeaveCertify = 'leave.certify';
     case LeaveApprove = 'leave.approve';
+
+    // HR-8 payroll. `view` reads payrolls, pay profiles, loans, payslips
+    // and payslip requests (monitoring); `manage` also maintains pay
+    // components, pay profiles and loans, and drafts, adjusts, finalizes
+    // and reopens payrolls (never their own pay). Payslip requests are
+    // decided by the head of HRD, which needs no permission
+    // (App\Support\HR\Payroll\PayslipApprovers); everyone requests their
+    // own payslips with no permission.
+    case PayrollView = 'payroll.view';
+    case PayrollManage = 'payroll.manage';
+
+    // Executive Dashboard (Exec-1 to Exec-3): `view` is top management
+    // seeing every module's and system's figures in one place — totals
+    // only, never a person's record; links into a module still follow
+    // that module's own permissions. `manage` connects systems' summary
+    // feeds, sets targets, and runs a collection on demand.
+    case ExecutiveView = 'executive.view';
+    case ExecutiveManage = 'executive.manage';
 }

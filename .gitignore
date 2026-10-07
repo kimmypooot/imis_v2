@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# HR source workbooks hold personal data (RA 10173): never commit them.
+/*.xlsx
+/*.xls

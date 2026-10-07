@@ -62,7 +62,7 @@ const remove = async (record) => {
 const approve = (record) => router.post(`/admin/hr/learning-development/reviews/${record.id}/approve`, {}, { preserveScroll: true });
 
 const breadcrumbs = computed(() => [
-    { label: 'Home', href: '/admin' },
+    { label: 'Human Resources', href: '/admin/hr' },
     { label: 'Learning & Development', href: '/admin/hr/learning-development' },
     // No link to the employee record: L&D officers may not hold employees.view.
     { label: props.employee.name },
@@ -82,7 +82,7 @@ const breadcrumbs = computed(() => [
             <select
                 id="ld-year"
                 :value="year"
-                class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 @change="changeYear($event.target.value)"
             >
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>

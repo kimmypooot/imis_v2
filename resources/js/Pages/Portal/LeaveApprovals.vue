@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveDates } from '../../Components/HR/leaveStatus';
@@ -44,7 +44,7 @@ const recentColumns = [
     <PageHeader title="Leave Approvals" description="Applications waiting for your recommendation, certification or approval." :breadcrumbs="[{ label: 'Leave Approvals' }]" />
 
     <div class="space-y-6">
-        <AdminCard :title="`Waiting for you (${queue.length})`" icon="checkCircle">
+        <Card :title="`Waiting for you (${queue.length})`" icon="checkCircle">
             <DataTable :columns="queueColumns" :rows="queue" caption="Leave applications waiting for you" export-name="imis-leave-queue" empty-text="Nothing is waiting for you.">
                 <template #cell-reference_number="{ row }">
                     <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
@@ -56,15 +56,15 @@ const recentColumns = [
                 <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-waiting_since="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.waiting_since) }}</span></template>
             </DataTable>
-        </AdminCard>
+        </Card>
 
-        <AdminCard v-if="recent.length" title="Recently acted on" icon="activity">
+        <Card v-if="recent.length" title="Recently acted on" icon="activity">
             <DataTable :columns="recentColumns" :rows="recent" caption="Leave applications you acted on" export-name="imis-leave-acted" :searchable="false">
                 <template #cell-reference_number="{ row }">
                     <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
                 </template>
                 <template #cell-acted_at="{ row }"><span class="whitespace-nowrap">{{ row.acted_at ? formatDateTime(row.acted_at) : '—' }}</span></template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

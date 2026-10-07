@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -45,10 +45,10 @@ const approve = (row) => {
 
     <PageHeader
         title="L&D Review"
-        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'L&D Review' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'L&D Review' }]"
     />
 
-    <AdminCard title="Awaiting Review" icon="checkCircle" subtitle="Trainings employees added to their own logs. Check the certificate when there is one.">
+    <Card title="Awaiting Review" icon="checkCircle" description="Trainings employees added to their own logs. Check the certificate when there is one.">
         <DataTable :columns="columns" :rows="pending" caption="L&D entries awaiting review" export-name="imis-ld-reviews">
             <template #cell-employee="{ row }">
                 <Link v-if="canViewLogs" :href="`/admin/hr/employees/${row.employee.id}/learning-development`" class="font-medium text-primary hover:underline">{{ row.employee.name }}</Link>
@@ -81,7 +81,7 @@ const approve = (row) => {
                 <span v-else class="text-xs text-text-muted" title="Another HRD officer reviews your own entries">Your entry</span>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <LdRejectModal :record="rejecting" @close="rejecting = null" />
 </template>

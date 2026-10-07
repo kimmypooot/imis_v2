@@ -3,7 +3,7 @@ import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -63,11 +63,11 @@ const selectClass =
     <PageHeader
         title="Reassignments"
         description="Who was assigned where, and the movements recorded between offices."
-        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Reassignments' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Reassignments' }]"
     />
 
     <div class="space-y-6">
-        <AdminCard title="Filters" icon="funnel">
+        <Card title="Filters" icon="funnel">
             <form class="flex flex-wrap items-end gap-4" @submit.prevent="apply">
                 <div>
                     <label for="filter-as-of" class="block text-xs font-medium text-text-muted">Stations as of</label>
@@ -97,9 +97,9 @@ const selectClass =
                 </div>
                 <Button type="submit">Apply</Button>
             </form>
-        </AdminCard>
+        </Card>
 
-        <AdminCard :title="`Stations as of ${formatCalendarDate(filters.as_of)}`" icon="building" subtitle="Office from the reassignment history; details shown separately. Separated employees are left out.">
+        <Card :title="`Stations as of ${formatCalendarDate(filters.as_of)}`" icon="building" description="Office from the reassignment history; details shown separately. Separated employees are left out.">
             <DataTable :columns="stationColumns" :rows="stations" row-key="employee_id" :caption="`Stations as of ${filters.as_of}`" :export-name="`imis-stations-${filters.as_of}`">
                 <template #cell-name="{ row }">
                     <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
@@ -107,12 +107,12 @@ const selectClass =
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-detailed_to="{ row }">{{ row.detailed_to || '—' }}</template>
             </DataTable>
-        </AdminCard>
+        </Card>
 
-        <AdminCard
+        <Card
             :title="`Movements, ${formatCalendarDate(filters.from)} – ${formatCalendarDate(filters.to)}`"
             icon="activity"
-            :subtitle="`${movements.length} recorded`"
+            :description="`${movements.length} recorded`"
         >
             <DataTable
                 :columns="movementColumns"
@@ -134,6 +134,6 @@ const selectClass =
                 </template>
                 <template #cell-order_date="{ row }"><span class="whitespace-nowrap">{{ row.order_date ? formatCalendarDate(row.order_date) : '—' }}</span></template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

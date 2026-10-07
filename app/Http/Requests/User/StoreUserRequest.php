@@ -52,6 +52,8 @@ class StoreUserRequest extends FormRequest
                     'Only a Super Administrator may assign the Super Administrator role.',
                 );
             }
+
+            $this->validateDesignation($validator, null);
         });
     }
 }

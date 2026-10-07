@@ -1,7 +1,7 @@
 import '../css/app.css';
 
 import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import TransitionSplash from './Components/Feedback/TransitionSplash.vue';
 import DialogHost from './Components/Feedback/DialogHost.vue';
@@ -50,4 +50,17 @@ createInertiaApp({
 
         dismissBootPreloader();
     },
+});
+
+/**
+ * Back/Forward restores a page from the browser's history snapshot, so a
+ * list shows the data it had when you left it — an employee you just
+ * separated still reads "In Service". Inertia fires `navigate` without a
+ * visit id only for that restore, so refresh the page's data then. Scroll
+ * position and the page's own state (tabs, filters) are kept.
+ */
+router.on('navigate', (event) => {
+    if (event.detail.visitId === undefined) {
+        router.reload({ preserveScroll: true });
+    }
 });

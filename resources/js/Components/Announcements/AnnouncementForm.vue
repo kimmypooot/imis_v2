@@ -69,7 +69,7 @@ defineEmits(['submit']);
                     type="datetime-local"
                     :required="publishDateRequired"
                     :aria-invalid="!!form.errors.publish_at"
-                    class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
             </FormGroup>
 
@@ -84,7 +84,7 @@ defineEmits(['submit']);
                     v-model="form.expires_at"
                     type="datetime-local"
                     :aria-invalid="!!form.errors.expires_at"
-                    class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
             </FormGroup>
         </div>

@@ -56,7 +56,7 @@ const onKeydown = (event, index) => {
             >
                 <Icon v-if="tab.icon" :name="tab.icon" size="sm" />
                 {{ tab.label }}
-                <span v-if="tab.badge" class="rounded-full bg-csc-red px-1.5 text-xs text-white">{{ tab.badge }}</span>
+                <span v-if="tab.badge" class="rounded-full bg-danger px-1.5 text-xs text-white">{{ tab.badge }}</span>
             </button>
         </div>
 

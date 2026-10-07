@@ -50,6 +50,12 @@ class LegacyImporter
     private const LEGACY_TIMEZONE = 'Asia/Manila';
 
     /**
+     * Legacy systems (by code name) built into IMIS and deleted here, so a
+     * re-import never brings their launchers back. Their grants are skipped.
+     */
+    public const RETIRED_SYSTEMS = ['PRISM'];
+
+    /**
      * Bootstrap Icons used by the legacy systems → the closest Icon.vue name.
      */
     private const ICONS = [
@@ -165,6 +171,12 @@ class LegacyImporter
             ->orderBy('display_order')->orderBy('id')->get()->groupBy('project_id');
 
         foreach ($this->legacy->table('imis_projects')->orderBy('id')->get()->values() as $index => $project) {
+            if (in_array($project->code_name, self::RETIRED_SYSTEMS, true)) {
+                $this->count('systems_retired');
+
+                continue;
+            }
+
             $system = Application::query()->where('short_name', $project->code_name)->first() ?? new Application;
             $this->count($system->exists ? 'systems_updated' : 'systems_created');
 

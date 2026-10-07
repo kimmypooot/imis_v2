@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -86,7 +86,7 @@ const field = 'mt-1 block w-full';
     <PageHeader
         :title="`Leave — ${employee.name}`"
         :breadcrumbs="[
-            { label: 'Home', href: '/admin' },
+            { label: 'Human Resources', href: '/admin/hr' },
             { label: 'Leave Credits', href: '/admin/hr/leave' },
             { label: employee.name, href: `/admin/hr/employees/${employee.id}` },
             { label: 'Leave' },
@@ -98,7 +98,7 @@ const field = 'mt-1 block w-full';
     </PageHeader>
 
     <div class="space-y-6">
-        <AdminCard title="Leave settings" icon="cog">
+        <Card title="Leave settings" icon="cog">
             <template v-if="canManage" #actions>
                 <Button variant="secondary" @click="openSettings"><Icon name="pencil" size="sm" />Edit</Button>
             </template>
@@ -107,6 +107,9 @@ const field = 'mt-1 block w-full';
                     <dt class="text-text-muted">Immediate supervisor</dt>
                     <dd class="mt-0.5 font-medium text-text">
                         {{ settings.supervisor || 'Not set' }}
+                        <p v-if="settings.supervisor_position" class="text-xs font-normal text-text-muted">
+                            {{ settings.supervisor_position }} · {{ settings.supervisor_source === 'set' ? 'set by HR' : 'by position and office' }}
+                        </p>
                         <p v-if="!settings.supervisor" class="text-xs font-normal text-warning">Needed before they can file leave (supervisor's recommendation).</p>
                     </dd>
                 </div>
@@ -118,14 +121,14 @@ const field = 'mt-1 block w-full';
                     <dt class="text-text-muted">Solo parent</dt>
                     <dd class="mt-0.5 text-text">
                         <template v-if="settings.is_solo_parent">
-                            <StatusBadge :status="settings.solo_parent_valid ? 'active' : 'expired'" :label="settings.solo_parent_valid ? 'Valid ID' : 'ID expired'" />
+                            <StatusBadge :status="settings.solo_parent_valid ? 'active' : 'expired'" :label="settings.solo_parent_valid ? 'Valid ID' : 'ID Expired'" />
                             <span v-if="settings.solo_parent_id_expiry" class="ml-2 text-xs text-text-muted">until {{ formatCalendarDate(settings.solo_parent_id_expiry) }}</span>
                         </template>
                         <template v-else>No</template>
                     </dd>
                 </div>
             </dl>
-        </AdminCard>
+        </Card>
 
         <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :can-reverse="canManage" @year="changeYear" @reverse="openReverse" />
     </div>
@@ -155,7 +158,7 @@ const field = 'mt-1 block w-full';
                     step="0.001"
                     required
                     :aria-invalid="!!entry.errors.amount"
-                    class="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
                 <p class="mt-1 text-xs text-text-muted">An adjustment can be negative (a deduction).</p>
                 <InputError :message="entry.errors.amount" />
@@ -190,13 +193,15 @@ const field = 'mt-1 block w-full';
         <form id="leave-settings-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitSettings">
             <div class="sm:col-span-2">
                 <label for="settings-supervisor" class="block text-sm font-medium text-text">Immediate supervisor</label>
-                <Select id="settings-supervisor" v-model="settingsForm.immediate_supervisor_id" :class="field" :options="manageOptions?.supervisorOptions ?? []" placeholder="— Not set —" :invalid="!!settingsForm.errors.immediate_supervisor_id" />
-                <p class="mt-1 text-xs text-text-muted">Recommends their leave applications (CS Form No. 6, Part B).</p>
+                <Select id="settings-supervisor" v-model="settingsForm.immediate_supervisor_id" :class="field" :options="manageOptions?.supervisorOptions ?? []" :placeholder="settings.supervisor_by_rule ? `— By position: ${settings.supervisor_by_rule} —` : '— Not set —'" :invalid="!!settingsForm.errors.immediate_supervisor_id" />
+                <p class="mt-1 text-xs text-text-muted">
+                    Recommends their leave applications (CS Form No. 6, Part B). Leave it empty to follow position and office: the Chief Human Resource Specialist for Regional Support Unit staff, the Director II for Field Office staff, the Director IV for ORD staff, the Director III, the Chief Human Resource Specialists and the Attorney VI, and the CSC Chairperson for the Director IV.
+                </p>
                 <InputError :message="settingsForm.errors.immediate_supervisor_id" />
             </div>
             <div class="sm:col-span-2">
                 <label class="inline-flex items-center gap-2 text-sm text-text">
-                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Solo parent (for Solo Parent Leave)
                 </label>
             </div>

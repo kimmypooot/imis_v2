@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Icon from '../../Components/UI/Icon.vue';
 import PdsEditor from '../../Components/HR/Pds/PdsEditor.vue';
@@ -30,7 +30,7 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
     />
 
     <div class="space-y-6">
-        <AdminCard>
+        <Card>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex items-start gap-4">
                     <img v-if="submission.photo_url" :src="submission.photo_url" alt="PDS photo as signed" class="h-28 w-22 rounded border border-border object-cover" />
@@ -51,7 +51,7 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
                     <Icon name="printer" size="sm" />Print<span class="sr-only"> (opens in a new tab)</span>
                 </a>
             </div>
-        </AdminCard>
+        </Card>
 
         <PdsEditor :schema="schema" :pds="submission.pds" readonly />
     </div>

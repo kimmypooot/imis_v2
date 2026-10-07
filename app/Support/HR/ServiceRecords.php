@@ -7,10 +7,13 @@ use App\Models\Employee;
 use App\Models\LeaveApplication;
 use App\Models\PlantillaAppointment;
 use App\Models\SalarySchedule;
+use App\Models\ServiceRecordEntry;
+use App\Models\User;
 use App\Support\HR\Plantilla\SalarySchedules;
 use App\Support\Settings\Settings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * HR-5: an employee's Service Record, in the standard CSC columns —
@@ -21,7 +24,9 @@ use Illuminate\Support\Collection;
  * (HR-4). A period is split into separate lines where the station changes
  * (a reassignment, HR-1b) or a new salary schedule takes effect, as a
  * service record shows them. Leave without pay comes from approved leave
- * applications (HR-6b).
+ * applications (HR-6b). Service in another agency, which no plantilla item
+ * here holds, is entered by HR as lines of its own (ServiceRecordEntry);
+ * this is their only writer.
  */
 class ServiceRecords
 {
@@ -80,9 +85,14 @@ class ServiceRecords
                     'leave_without_pay' => $lwop > 0 ? round($lwop, 3) : null,
                     'separation_date' => $last && $period->date_to ? $period->date_to->toDateString() : null,
                     'separation_cause' => $last && $period->date_to ? $period->end_reason : null,
+                    'source' => 'plantilla',
                 ];
             });
-        })->values();
+        })
+            // Service in other agencies, entered by HR, in date order with the rest.
+            ->concat($employee->serviceRecordEntries()->get()->map(fn (ServiceRecordEntry $entry) => $this->presentEntry($entry)))
+            ->sortBy('date_from')
+            ->values();
 
         $user = $employee->user;
 
@@ -99,16 +109,130 @@ class ServiceRecords
         ];
     }
 
+    // ── Lines entered by hand (other agencies) ──────────────────────
+
     /**
-     * Who certifies the printout (System Settings → Human Resources).
+     * @return array<string, array<int, mixed>>
+     */
+    public function entryRules(): array
+    {
+        return [
+            'date_from' => ['required', 'date', 'after:1900-01-01'],
+            'date_to' => ['required', 'date', 'after_or_equal:date_from', 'before_or_equal:today'],
+            'designation' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'string', 'max:50'],
+            'salary_grade' => ['nullable', 'integer', 'between:1,33'],
+            'step' => ['nullable', 'integer', 'between:1,'.SalarySchedules::STEPS],
+            'annual_salary' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+            'agency' => ['required', 'string', 'max:255'],
+            'station' => ['nullable', 'string', 'max:255'],
+            'branch' => ['required', 'string', 'max:50'],
+            'leave_without_pay' => ['nullable', 'numeric', 'min:0', 'max:9999'],
+            'separation_date' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'separation_cause' => ['nullable', 'required_with:separation_date', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function entryAttributes(): array
+    {
+        return ['date_from' => 'start date', 'date_to' => 'end date', 'salary_grade' => 'salary grade', 'annual_salary' => 'annual salary',
+            'leave_without_pay' => 'leave without pay', 'separation_date' => 'separation date', 'separation_cause' => 'cause of separation'];
+    }
+
+    /**
+     * Adds a line, or corrects one. The dates may not overlap the person's
+     * other service (plantilla periods or other lines).
+     *
+     * @param  array<string, mixed>  $data  validated
+     */
+    public function saveEntry(Employee $employee, array $data, User $actor, ?ServiceRecordEntry $entry = null): ServiceRecordEntry
+    {
+        $from = Carbon::parse($data['date_from']);
+        $to = Carbon::parse($data['date_to']);
+
+        if ($overlap = $this->overlapping($employee, $from, $to, $entry)) {
+            throw ValidationException::withMessages(['date_from' => "These dates overlap {$overlap}."]);
+        }
+
+        $entry ??= new ServiceRecordEntry;
+        $entry->fill(collect($data)->only($entry->getFillable())->all());
+        $entry->forceFill(['employee_id' => $employee->id, 'recorded_by' => $entry->recorded_by ?? $actor->id])->save();
+
+        return $entry;
+    }
+
+    public function removeEntry(ServiceRecordEntry $entry): void
+    {
+        $entry->delete();
+    }
+
+    /**
+     * A line as the Service Record shows it.
+     *
+     * @return array<string, mixed>
+     */
+    public function presentEntry(ServiceRecordEntry $entry): array
+    {
+        return [
+            'date_from' => $entry->date_from->toDateString(),
+            'date_to' => $entry->date_to->toDateString(),
+            'designation' => $entry->designation,
+            'item_number' => null,
+            'salary_grade' => $entry->salary_grade,
+            'step' => $entry->step,
+            'status' => $entry->status,
+            'annual_salary' => $entry->annual_salary !== null ? (float) $entry->annual_salary : null,
+            'station' => collect([$entry->agency, $entry->station])->filter()->implode(', '),
+            'branch' => $entry->branch,
+            'leave_without_pay' => $entry->leave_without_pay !== null ? (float) $entry->leave_without_pay : null,
+            'separation_date' => $entry->separation_date?->toDateString(),
+            'separation_cause' => $entry->separation_cause,
+            'source' => 'entry',
+            // For HR's edit form.
+            'entry' => [
+                'id' => $entry->id,
+                'agency' => $entry->agency,
+                'station' => $entry->station,
+                'annual_salary' => $entry->annual_salary,
+                'leave_without_pay' => $entry->leave_without_pay,
+                'remarks' => $entry->remarks,
+            ],
+        ];
+    }
+
+    /** What the dates run into, if anything ("the period as …"). */
+    private function overlapping(Employee $employee, Carbon $from, Carbon $to, ?ServiceRecordEntry $ignore): ?string
+    {
+        $period = $employee->plantillaAppointments()->with('item')->whereNotNull('date_from')
+            ->whereDate('date_from', '<=', $to)
+            ->where(fn ($query) => $query->whereNull('date_to')->orWhereDate('date_to', '>=', $from))
+            ->first();
+        if ($period) {
+            return "their plantilla period as {$period->item->position_title} (from {$period->date_from->toDateString()})";
+        }
+
+        $line = $employee->serviceRecordEntries()
+            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
+            ->whereDate('date_from', '<=', $to)->whereDate('date_to', '>=', $from)
+            ->first();
+
+        return $line ? "their service as {$line->designation} at {$line->agency}" : null;
+    }
+
+    /**
+     * Who certifies the printout (System Settings → Human Resources; the
+     * name defaults to the selected position's holder).
      *
      * @return array{name: ?string, position: ?string, organization: ?string}
      */
     public function certification(): array
     {
         return [
-            'name' => Settings::get('hr_certifying_officer_name'),
-            'position' => Settings::get('hr_certifying_officer_position'),
+            ...app(CertifyingOfficer::class)->current(),
             'organization' => Settings::get('organization_name'),
         ];
     }

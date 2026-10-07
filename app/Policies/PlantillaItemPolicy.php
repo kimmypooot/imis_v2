@@ -37,4 +37,13 @@ class PlantillaItemPolicy
     {
         return $employee->user_id !== $user->id && $this->manage($user);
     }
+
+    /**
+     * Correcting a period recorded wrong: whoever may appoint them, or —
+     * as an override, own record included — `plantilla.correct`.
+     */
+    public function correct(User $user, Employee $employee): bool
+    {
+        return $this->appoint($user, $employee) || $user->hasPermission(PermissionName::PlantillaCorrect->value);
+    }
 }

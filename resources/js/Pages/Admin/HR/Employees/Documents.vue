@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import Alert from '../../../../Components/Feedback/Alert.vue';
 import Modal from '../../../../Components/Feedback/Modal.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -52,7 +52,7 @@ const archive = () =>
 const restore = (document) => router.patch(`${base.value}/${document.id}/restore`, {}, { preserveScroll: true });
 
 const breadcrumbs = computed(() => [
-    { label: 'Home', href: '/admin' },
+    { label: 'Human Resources', href: '/admin/hr' },
     { label: 'Employees', href: '/admin/hr/employees' },
     { label: props.employee.name, href: `/admin/hr/employees/${props.employee.id}` },
     { label: '201 File' },
@@ -70,14 +70,14 @@ const breadcrumbs = computed(() => [
     </Alert>
 
     <div class="space-y-6">
-        <AdminCard v-if="canManage" title="Add a document" icon="plus">
+        <Card v-if="canManage" title="Add a document" icon="plus">
             <DocumentUploadForm :url="base" :type-options="typeOptions" :max-kilobytes="maxKilobytes" />
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Documents" icon="clipboard" :subtitle="`${active.length} current`">
+        <Card title="Documents" icon="clipboard" :description="`${active.length} current`">
             <template v-if="archived.length" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Show archived ({{ archived.length }})
                 </label>
             </template>
@@ -92,9 +92,9 @@ const breadcrumbs = computed(() => [
                     </button>
                 </template>
             </DocumentList>
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Verified PDS history" icon="checkCircle" subtitle="Each verified Personal Data Sheet, exactly as signed.">
+        <Card title="Verified PDS history" icon="checkCircle" description="Each verified Personal Data Sheet, exactly as signed.">
             <p v-if="pdsHistory.length === 0" class="text-sm text-text-muted">No verified PDS yet.</p>
             <ul v-else class="divide-y divide-border text-sm">
                 <li v-for="item in pdsHistory" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
@@ -107,7 +107,7 @@ const breadcrumbs = computed(() => [
                     </span>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
     </div>
 
     <Modal :open="archiving !== null" title="Archive this document?" icon="exclamation" tone="danger" @close="archiving = null">

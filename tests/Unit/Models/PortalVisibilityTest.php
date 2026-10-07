@@ -58,6 +58,21 @@ class PortalVisibilityTest extends TestCase
         $this->assertTrue($application->isVisibleTo($user));
     }
 
+    public function test_administrative_entry_is_visible_to_hr_staff_too(): void
+    {
+        $application = Application::factory()->administrative()->create();
+
+        $user = User::factory()->create();
+        $role = Role::factory()->create();
+        $role->permissions()->attach(
+            Permission::query()->firstOrCreate(['name' => 'leave.view'], ['display_name' => 'Leave view']),
+        );
+        $user->roles()->attach($role);
+
+        $this->assertTrue($application->isVisibleTo($user));
+        $this->assertCount(1, Application::query()->visibleTo($user)->get());
+    }
+
     public function test_inactive_entry_is_never_visible_regardless_of_visibility_tier(): void
     {
         $application = Application::factory()->inactive()->create([

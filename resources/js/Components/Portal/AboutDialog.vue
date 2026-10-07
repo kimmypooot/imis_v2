@@ -37,8 +37,8 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
     <Modal :open="open" title="About IMIS" size="xl" @close="$emit('close')">
         <div class="space-y-8">
             <!-- Identity -->
-            <div class="flex flex-col items-center gap-4 rounded-xl bg-linear-to-br from-csc-blue to-csc-blue-dark px-6 py-8 text-center text-white sm:flex-row sm:text-left">
-                <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white shadow" aria-hidden="true">
+            <div class="flex flex-col items-center gap-4 rounded-lg bg-primary px-6 py-8 text-center text-white sm:flex-row sm:text-left">
+                <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white" aria-hidden="true">
                     <img src="/images/brand/csc-logo.png" alt="" class="h-11 w-auto" />
                 </span>
                 <div>

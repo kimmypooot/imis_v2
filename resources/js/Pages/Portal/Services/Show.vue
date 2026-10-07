@@ -1,4 +1,5 @@
 <script setup>
+import Button from '../../../Components/UI/Button.vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
@@ -66,16 +67,10 @@ const details = computed(() =>
                     </p>
 
                     <div class="mt-5">
-                        <a
-                            v-if="service.external_url"
-                            :href="service.external_url"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
-                        >
+                        <Button v-if="service.external_url" :href="service.external_url" external>
                             Access service
                             <ExternalLinkIndicator />
-                        </a>
+                        </Button>
                         <p v-else class="text-sm text-text-muted">
                             This service does not yet have an online action configured.
                         </p>

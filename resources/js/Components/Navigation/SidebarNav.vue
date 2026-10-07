@@ -18,7 +18,9 @@ import { useAuthorization } from '../../Composables/useAuthorization';
  * - `admin`: the legacy NiceAdmin sidebar — white, with collapsible groups
  *   ("User Management", "System Administration") whose children are
  *   marked with a dot, expanded automatically when they hold the current
- *   page.
+ *   page. A group may also hold sections ({ section: label, icon?, items })
+ *   — collapsible categories one level down (Human Resources → Leave),
+ *   opened the same way. The portal variant lists a section's links flat.
  */
 const props = defineProps({
     items: {
@@ -57,10 +59,29 @@ const isPermitted = (item) => {
  * visible inside them are dropped rather than rendered as an empty header.
  * A `localOnly` group (Developer) shows only when the app runs locally.
  */
+const groupChildren = (group) =>
+    group.items.reduce((list, child) => {
+        if (!child.section) {
+            if (isPermitted(child)) list.push({ type: 'link', ...child });
+
+            return list;
+        }
+
+        const visible = child.items.filter(isPermitted).map((link) => ({ type: 'link', ...link }));
+        if (!visible.length) return list;
+
+        // Sections only collapse in the admin sidebar; elsewhere their links sit flat.
+        props.variant === 'admin'
+            ? list.push({ type: 'section', label: child.section, icon: child.icon, key: `${group.group}/${child.section}`, items: visible })
+            : list.push(...visible);
+
+        return list;
+    }, []);
+
 const entries = computed(() =>
     props.items.reduce((acc, item) => {
         if (item.group) {
-            const visible = item.localOnly && !page.props.app?.local ? [] : item.items.filter(isPermitted);
+            const visible = item.localOnly && !page.props.app?.local ? [] : groupChildren(item);
 
             if (visible.length) {
                 acc.push({ type: 'group', label: item.group, icon: item.icon, items: visible });
@@ -82,20 +103,41 @@ const groupId = (group) => `nav-group-${group.label.toLowerCase().replace(/[^a-z
 
 const currentPath = computed(() => page.url.split('?')[0]);
 
-// Exact match for section roots (e.g. /admin), prefix match otherwise.
-const isActive = (href) =>
-    currentPath.value === href || (href !== '/admin' && href !== '/dashboard' && currentPath.value.startsWith(`${href}/`));
+// Exact match for area roots (dashboards), prefix match otherwise — and
+// only the most specific match is active, so /admin/hr/leave/types
+// lights up Leave Types, not Leave Credits (/admin/hr/leave) as well.
+const ROOTS = ['/dashboard', '/admin', '/admin/hr'];
+const matches = (href) => currentPath.value === href || (!ROOTS.includes(href) && currentPath.value.startsWith(`${href}/`));
+const hrefsIn = (items) => items.flatMap((item) => (item.items ? hrefsIn(item.items) : item.href ? [item.href] : []));
+const activeHref = computed(() =>
+    hrefsIn(props.items)
+        .filter(matches)
+        .reduce((best, href) => (href.length > (best?.length ?? 0) ? href : best), null),
+);
+const isActive = (href) => href === activeHref.value;
 
+// A group or section opens by itself when it holds the current page; a
+// click overrides that until the next full page load.
+const holdsActive = (entry) => entry.items.some((item) => (item.type === 'section' ? holdsActive(item) : isActive(item.href)));
 const expanded = reactive({});
-const isExpanded = (group) => expanded[group.label] ?? group.items.some((item) => isActive(item.href));
-const toggle = (group) => (expanded[group.label] = !isExpanded(group));
+const keyOf = (entry) => entry.key ?? entry.label;
+const isExpanded = (entry) => expanded[keyOf(entry)] ?? holdsActive(entry);
+const toggle = (entry) => (expanded[keyOf(entry)] = !isExpanded(entry));
+const sectionId = (section) => `nav-section-${section.key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
+// A navy focus ring would vanish on the navy portal sidebar, so it gets a white one.
 const linkClass = (href) => {
     if (props.variant === 'admin') {
-        return isActive(href) ? 'bg-info-bg text-primary' : 'text-text hover:bg-info-bg/60 hover:text-primary';
+        return [
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            isActive(href) ? 'bg-info-bg text-primary' : 'text-text hover:bg-info-bg/60 hover:text-primary',
+        ];
     }
 
-    return isActive(href) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white';
+    return [
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white',
+        isActive(href) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
+    ];
 };
 </script>
 
@@ -127,8 +169,9 @@ const linkClass = (href) => {
                     <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(entry) }" />
                 </button>
                 <ul v-show="isExpanded(entry)" class="mt-0.5 space-y-0.5">
-                    <li v-for="item in entry.items" :key="item.href">
+                    <li v-for="item in entry.items" :key="item.type === 'section' ? item.key : item.href">
                         <Link
+                            v-if="item.type === 'link'"
                             :href="item.href"
                             class="flex items-center gap-3 rounded-md py-1.5 pr-3 pl-9 text-sm transition-colors"
                             :class="linkClass(item.href)"
@@ -142,13 +185,47 @@ const linkClass = (href) => {
                             />
                             {{ item.label }}
                         </Link>
+
+                        <!-- A category inside the group (e.g. Human Resources → Leave) -->
+                        <template v-else>
+                            <button
+                                type="button"
+                                class="flex w-full items-center gap-2 rounded-md py-1.5 pr-3 pl-9 text-left text-xs font-semibold tracking-wide uppercase transition-colors hover:bg-info-bg/60 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                                :class="holdsActive(item) ? 'text-primary' : 'text-text-muted'"
+                                :aria-expanded="isExpanded(item)"
+                                :aria-controls="sectionId(item)"
+                                @click="toggle(item)"
+                            >
+                                <Icon :name="item.icon || 'grid'" size="sm" />
+                                <span class="flex-1">{{ item.label }}</span>
+                                <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(item) }" />
+                            </button>
+                            <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
+                                <li v-for="link in item.items" :key="link.href">
+                                    <Link
+                                        :href="link.href"
+                                        class="flex items-center gap-2.5 rounded-md py-1.5 pr-3 pl-12 text-sm transition-colors"
+                                        :class="linkClass(link.href)"
+                                        :aria-current="isActive(link.href) ? 'page' : undefined"
+                                        @click="$emit('navigate')"
+                                    >
+                                        <span
+                                            class="h-1.5 w-1.5 shrink-0 rounded-full border"
+                                            :class="isActive(link.href) ? 'border-primary bg-primary' : 'border-current'"
+                                            aria-hidden="true"
+                                        />
+                                        {{ link.label }}
+                                    </Link>
+                                </li>
+                            </ul>
+                        </template>
                     </li>
                 </ul>
             </div>
 
             <!-- Portal: group as a heading -->
             <div v-else role="group" :aria-labelledby="groupId(entry)" class="mt-4 first:mt-0">
-                <p :id="groupId(entry)" class="px-3 pb-1 text-xs font-semibold tracking-wide text-white/50 uppercase">
+                <p :id="groupId(entry)" class="px-3 pb-1 text-xs font-semibold tracking-wide text-white/70 uppercase">
                     {{ entry.label }}
                 </p>
                 <Link

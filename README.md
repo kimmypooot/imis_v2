@@ -184,6 +184,12 @@ for the full route table and design decisions. Key points:
   by `imis:expire-sessions`, which the scheduler runs every five minutes,
   so production needs the usual cron entry:
   `* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1`.
+- **Health check**: Admin → System Health (needs `settings.view`) or
+  `php artisan imis:health` (exits non-zero on a failure; add `--strict`
+  to fail on warnings too). It covers APP_KEY, debug mode, HTTPS,
+  database, migrations, cache, private storage, disk space, failed jobs,
+  mail, the legacy bridge, and whether the scheduler is running. Run it
+  after every deploy.
 
 ## 11. Authorization
 
@@ -277,9 +283,11 @@ for the full breakdown. Key points:
 - **Administration entry point**: the `access-admin` Gate ability
   (`AppServiceProvider::ADMIN_ACCESS_PERMISSIONS`) is true for anyone
   holding *any* of `roles.view`/`permissions.view`/`users.view`/
-  `organizational_units.view`. It gates the Administration nav entry,
-  `/admin`, and `administrative`-visibility directory entries — never a
-  hardcoded email or user ID.
+  `organizational_units.view`. It gates the Administration nav entry and
+  `/admin`. Human Resources is a separate area: `access-hr`
+  (`HR_ACCESS_PERMISSIONS`) gates the HR Management entry and `/admin/hr`.
+  Either one shows `administrative`-visibility directory entries. Neither
+  uses a hardcoded email or user ID.
 - **No fake data**: only the real CSC RO VIII offices are seeded; systems,
   accounts and access come from the legacy import, and services are
   created by administrators. The dashboard shows real (possibly empty) query results, never invented
@@ -377,7 +385,7 @@ app/
     Policies/             RolePolicy, PermissionPolicy, UserPolicy,
                           OrganizationalUnitPolicy, ServicePolicy
     Providers/            AppServiceProvider (Gate/authorization wiring,
-                          access-admin ability)
+                          access-admin and access-hr abilities)
     Support/              PermissionCache
 resources/
     css/app.css           Tailwind entry + design tokens

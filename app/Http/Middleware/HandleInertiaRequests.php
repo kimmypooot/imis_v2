@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Changelog;
 use App\Support\HR\Leave\LeaveApplications;
+use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\Security\SessionLimits;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
@@ -63,7 +65,7 @@ class HandleInertiaRequests extends Middleware
                     : [],
             ],
             'app' => [
-                'version' => config('app.version'),
+                'version' => fn () => Changelog::currentVersion(),
                 // Shows the sidebar's Developer group (its routes exist only locally).
                 'local' => app()->environment('local'),
             ],
@@ -71,6 +73,8 @@ class HandleInertiaRequests extends Middleware
             'flags' => fn () => $user ? [
                 // HR-6b: a supervisor, HR certifier, the Head or an OIC.
                 'leaveApprover' => app(LeaveApplications::class)->isApprover($user),
+                // HR-8: the head of HRD, or someone designated head of HRD.
+                'payslipApprover' => app(PayslipApprovers::class)->isApprover($user),
             ] : [],
             // The top-bar bell.
             'notifications' => fn () => $user ? ['unread' => $user->unreadNotifications()->count()] : null,

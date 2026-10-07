@@ -17,8 +17,8 @@ class LeaveType extends Model
 {
     protected $fillable = [
         'code', 'name', 'description', 'workflow', 'requires_balance', 'charged_to_id', 'monthly_accrual', 'annual_grant',
-        'lapses_yearly', 'max_days_per_year', 'max_days_per_filing', 'sex', 'eligible_statuses', 'min_service_months',
-        'requires_solo_parent_id', 'advance_filing_days', 'allows_half_day', 'counts_calendar_days',
+        'lapses_yearly', 'max_days_per_year', 'max_days_per_filing', 'max_consecutive_days', 'sex', 'eligible_statuses', 'min_service_months',
+        'requires_solo_parent_id', 'advance_filing_days', 'allows_emergency_filing', 'allows_half_day', 'counts_calendar_days',
         'medical_certificate_after_days', 'supporting_documents', 'monetizable', 'policy_reference', 'sort_order', 'is_active',
     ];
 
@@ -35,6 +35,8 @@ class LeaveType extends Model
             'min_service_months' => 'integer',
             'requires_solo_parent_id' => 'boolean',
             'advance_filing_days' => 'integer',
+            'allows_emergency_filing' => 'boolean',
+            'max_consecutive_days' => 'integer',
             'allows_half_day' => 'boolean',
             'counts_calendar_days' => 'boolean',
             'medical_certificate_after_days' => 'integer',

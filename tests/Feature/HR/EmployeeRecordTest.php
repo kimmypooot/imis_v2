@@ -43,6 +43,19 @@ class EmployeeRecordTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Admin/HR/Employees/Index')->has('employees', 3));
     }
 
+    public function test_sex_is_shown_by_its_label(): void
+    {
+        $female = Employee::factory()->for(User::factory()->state(['sex' => 'female']))->create();
+        $unrecorded = Employee::factory()->for(User::factory()->state(['sex' => null]))->create();
+        $hr = $this->userWith('employees.view');
+
+        $this->actingAs($hr)->get("/admin/hr/employees/{$female->id}")->assertInertia(fn (Assert $page) => $page
+            ->where('employee.user.sex', 'female')
+            ->where('employee.user.sex_label', 'Female'));
+        $this->actingAs($hr)->get("/admin/hr/employees/{$unrecorded->id}")->assertInertia(fn (Assert $page) => $page
+            ->where('employee.user.sex_label', null));
+    }
+
     public function test_a_supervisor_sees_only_their_own_office(): void
     {
         [$office, $elsewhere] = OrganizationalUnit::factory()->count(2)->create();
@@ -228,7 +241,7 @@ class EmployeeRecordTest extends TestCase
         }
 
         $this->actingAs($hr)->get("/admin/hr/employees/{$ana->employee->id}")
-            ->assertInertia(fn (Assert $page) => $page->where('employee.employment_status_label', 'Not set'));
+            ->assertInertia(fn (Assert $page) => $page->where('employee.employment_status_label', 'Not Set'));
     }
 
     public function test_bulk_setup_only_accepts_current_candidates(): void

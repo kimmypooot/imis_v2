@@ -1,16 +1,15 @@
 # HR Module — Checkpoint
 
-**Updated:** 2026-10-03 (after HR-3c).
+**Updated:** 2026-10-03 (after HR-7, Positions, Staffing and the plantilla spreadsheet).
 **Branch:** `feature/imis-portal-legacy-parity`.
 
 This is a hand-off note for continuing the Human Resources (HR) module in
 a new session. Read it together with `CLAUDE.md` and the HR sections of
 `docs/architecture.md`, which describe in detail what is built.
 
-> **Uncommitted work.** Everything from HR-1 to HR-3c, plus the portal,
-> admin and legacy-bridge changes, is still uncommitted (about 240
-> changed or new files). Commit, or at least stash, before starting the
-> next phase.
+> **Committed.** HR-1 to HR-7 and the portal, admin and legacy-bridge
+> work are in commit `f4ccaa9` (not pushed). Work after that commit is
+> in the working tree.
 
 ---
 
@@ -30,15 +29,16 @@ a new session. Read it together with `CLAUDE.md` and the HR sections of
 | HR-5 | Service Record | ✅ Done, in the standard CSC columns (the user agreed). Adjust when the office's template arrives. |
 | HR-6a | Leave foundations: types, holidays, working days, credit ledger, accrual, leave card | ✅ Done |
 | HR-6b | Filing (CS Form 6), supervisor → HR → head approval, OIC designations, notifications, printable form, LWOP | ✅ Done |
-| HR-6c | Monetization/terminal leave, FWA and FAR, reports, calendar (+ Wellness Leave, inactive) | ✅ Done |
+| HR-6c | Monetization/terminal leave, FWA and FAR, reports, calendar, Wellness Leave (CSC MC No. 01, s. 2026) | ✅ Done |
 | **HR-7** | Data migration and cutover | ✅ Tools built (`imis:import-legacy-leave`, Cutover Readiness, `imis:retire-legacy-hr`); migrated locally. ⏳ **The import has not been run on real data**: the `lms_*` tables are only on the live server. Its columns come from the legacy code, so check them with a `--dry-run` first. |
+| HR-8 | Payroll and payslips: pay components, pay profiles, loans, monthly payrolls (15th/30th), payslip requests approved by the head of HRD | ✅ Done. Rates seeded from current law: HR should verify them. Not run on real data yet. |
 
-**Tests:** the suite has 704 tests, all passing. HR tests are in
+**Tests:** the suite has 768 tests, all passing. HR tests are in
 `tests/Feature/HR/`.
 
-**Local setup:** all migrations up to
-`2026_10_23_090000_add_learning_development_fields` have been run, and
-`RolePermissionSeeder` has been re-seeded.
+**Local setup:** every migration has been run (latest:
+`2026_10_29_090000_create_positions_table`), and `RolePermissionSeeder`
+has been re-seeded.
 
 ---
 
@@ -108,7 +108,7 @@ a new session. Read it together with `CLAUDE.md` and the HR sections of
 - **Frontend:**
   - Pages render props and dispatch Inertia requests. Options always
     come from the backend (enums' `options()`).
-  - Reuse `AdminCard`, `DataTable` (client mode has CSV and print),
+  - Reuse `Card`, `DataTable` (client mode has CSV and print),
     `RecordModal`/`SchemaForm`, `Modal`, `StatusBadge`, `ActionButton`
     and `confirm()`.
   - For file uploads on edits, use **POST + `_method: 'put'`** with
@@ -217,6 +217,16 @@ The original plan, for reference:
 - **Deploying:** `php artisan migrate`, re-run `RolePermissionSeeder`
   (adds `employees.reassign`), grant it to the HR role, and make sure
   cron runs `schedule:run`.
+- **Head-of-office designations (2026-10-04):** for the Field Director
+  who heads two field offices for want of a second Director II item.
+  Record a *designation* to the second office with Capacity
+  "Officer-in-Charge" or "Caretaker" (both head the office), usually with
+  no end date. While it runs, the director (with the
+  Supervisor role) sees that office's staff records. Optionally the
+  office's staff take them as immediate supervisor, and get their
+  previous supervisors back when it ends. The Staffing page lists
+  offices headed by designation. Deploying: `php artisan migrate`. See
+  `docs/architecture.md`, "Head-of-office designations".
 
 ### HR-4 — done (see `docs/architecture.md`, "Plantilla")
 Built on the user's go-ahead (2026-10-03) without the office's format:
@@ -240,7 +250,42 @@ Built on the user's go-ahead (2026-10-03) without the office's format:
   dates, and the NBC No. 601 amounts. The place of assignment was taken
   from each account's office, so anyone already serving elsewhere on an
   older reassignment order needs their item's place corrected, or the
-  order recorded in the reassignment history.
+  order recorded in the reassignment history. HR completes all of this
+  at once with **Plantilla → Complete from spreadsheet**
+  (`/admin/hr/plantilla-sheet`).
+- **The office's format arrived (2026-10-04):** the certified *Plantilla
+  of Personnel as of 1 October 2026* workbook. `imis:import-plantilla`
+  reads it. Decisions (user, 2026-10-04): keep IMIS's full position
+  titles; the sheet wins on sex, birthday and middle name; infer nature
+  and start date from the last-promotion date; leave "FO No. 6 Leyte"
+  unmapped (place of assignment unchanged) until HR says which office.
+  Applied to the local database the same day: 8 vacant items created,
+  53 items numbered and placed, 53 periods completed, 10 accounts
+  corrected. 50 of 55 filled items are now complete. Left for HR:
+  - two rows with step "19" (Accountant III, a Senior HRS): enter the step;
+  - the Attorney III's last promotion is dated 2 Dec 2026 (future): check
+    the sheet, then set nature and start date;
+  - ~~an Admin. Officer II promotion not yet recorded in IMIS~~ —
+    recorded locally (2026-10-05): Elizar T. Casinillo, Promotion to
+    ADOF2-37-2005 from 10 Sep 2026; the Admin. Assistant III period was
+    completed as Original from 10 Jan 2020 (step 1 assumed). His old
+    item is ADAS3-57-2005 (user): the period was moved onto it and the
+    unnumbered duplicate item (created when the account was linked)
+    deleted. Do the same on the live server;
+  - grades that disagree with the Positions list: Administrative Officer
+    IV (sheet SG 15, IMIS 14) and Special Investigator III (sheet 18,
+    IMIS 19);
+  - the OAC-SAS-sourced Supervising HRS item (Biliran) has no item
+    number of its own;
+  - duplicate Director II accounts (Dela Cruz, Uy) without employee records;
+  - in service in IMIS but not on the plantilla: four inactive accounts
+    (separations not recorded; one transferred to the Supreme Court
+    effective 1 Oct 2026) and the Computer Technician (not a plantilla
+    item?);
+  - typed dates "03/09/2026" were read as 9 March 2026 and "8/3/2026" as
+    3 August 2026; confirm with HR.
+  On the live server: copy the workbook there (never into git: personal
+  data), run the preview, then `--apply`.
 
 The original plan, for reference:
 
@@ -359,22 +404,25 @@ the live `lms_*` tables. The original plan:
   - remaining legacy `first_day` dates (only 2 of 61 are set)
 - **Reconcile** counts and balances before switching.
 - **Run old and new in parallel** for a period, then retire the
-  PRISM (`imis_projects` id 22), LMS (id 23) and ldms launcher entries
-  from the Systems Directory.
+  LMS (`imis_projects` id 23) and ldms launcher entries from the
+  Systems Directory. PRISM (id 22) is already deleted (migration
+  `2026_10_31_090000_remove_prism_launcher`, user's decision 2026-10-03).
 
 ---
 
 ## 5. Deploying to the live server (everything so far)
 1. `php artisan migrate`
-2. `php artisan db:seed --class=RolePermissionSeeder`
+2. `php artisan db:seed --class=RolePermissionSeeder`, and (HR-8) `php artisan db:seed --class=PayComponentSeeder`; grant `payroll.view`/`payroll.manage` to the HR Officer role under Roles (existing roles are not changed by `HrRoleSeeder`).
 3. `npm run build`, or deploy the built `public/build`.
-4. Assign the new permissions to an HR role:
-   - `employees.*`
-   - `pds.view`, `pds.update`, `pds.verify`
-   - `employee_documents.view`, `employee_documents.manage`
-   - `ld.view`, `ld.manage`, `ld.approve`
+4. Run `php artisan db:seed --class=HrRoleSeeder` to create the starter
+   **HR Officer**, **Top Management**, **Head of Agency** and
+   **Supervisor** roles. It only creates missing ones. Then assign them
+   to people under Users: the HRD Chief → HR Officer; the Director IV →
+   Top Management and Head of Agency; the Director III → Top Management.
+   (Done on the local database on 2026-10-03.)
 5. As HR, run **Employees → Set up records for staff** once.
-6. **Back up `APP_KEY`.** It decrypts PDS IDs, answers and snapshots.
+6. Run `php artisan imis:health` and clear any failures.
+7. **Back up `APP_KEY`.** It decrypts PDS IDs, answers and snapshots.
    Also add `storage/app/private` to backups, because it holds 201
    files, PDS photos and certificates.
 

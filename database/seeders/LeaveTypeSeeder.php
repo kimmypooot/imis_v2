@@ -45,10 +45,7 @@ class LeaveTypeSeeder extends Seeder
             ['code' => 'SEL', 'name' => 'Special Emergency (Calamity) Leave', 'max_days_per_year' => 5, 'policy_reference' => 'CSC issuances on special emergency (calamity) leave'],
             ['code' => 'AL', 'name' => 'Adoption Leave', 'workflow' => 'special', 'allows_half_day' => false, 'policy_reference' => 'Domestic adoption laws (RA 8552, as amended)'],
             ['code' => 'LWOP', 'name' => 'Leave Without Pay', 'policy_reference' => $omnibus],
-            // The newest CSC leave. Seeded inactive with no entitlements: HR
-            // fills in the days and rules from the circular, then activates it.
-            ['code' => 'WL', 'name' => 'Wellness Leave', 'is_active' => false,
-                'description' => 'Enter the entitlement and rules from the CSC circular before activating.'],
+            ['code' => 'WL', ...self::wellnessLeave()],
         ];
 
         foreach ($types as $order => $type) {
@@ -65,5 +62,37 @@ class LeaveTypeSeeder extends Seeder
                 'sort_order' => $order + 1,
             ]);
         }
+    }
+
+    /**
+     * Wellness Leave: CSC MC No. 01, s. 2026 (CSC Resolution No. 2501292),
+     * effective 1 January 2026. Also applied by the migration that added
+     * its rules, to a WL type HR hadn't filled in yet.
+     *
+     * @return array<string, mixed>
+     */
+    public static function wellnessLeave(): array
+    {
+        return [
+            'name' => 'Wellness Leave',
+            'description' => 'Up to 5 days a year for mental health care, physical wellness activities or a general break from work. '
+                .'Separate from VL, SL and SPL, and available from the date of assumption of duty. At most 3 days in a row; '
+                .'file 5 days ahead, or on your return in an emergency. No reason needs to be given, and anything about a mental health condition is confidential (Data Privacy Act).',
+            'workflow' => 'standard',
+            'requires_balance' => true,
+            'annual_grant' => 5,
+            'lapses_yearly' => true,
+            'max_days_per_year' => 5,
+            'max_consecutive_days' => 3,
+            // 1.a: every appointment status. Contract of Service and Job
+            // Order workers only as their contracts provide (1.c).
+            'eligible_statuses' => ['permanent', 'temporary', 'coterminous', 'casual', 'contractual'],
+            'min_service_months' => 0,
+            'advance_filing_days' => 5,
+            'allows_emergency_filing' => true,
+            'monetizable' => false,
+            'policy_reference' => 'CSC MC No. 01, s. 2026 (CSC Resolution No. 2501292), effective 1 January 2026',
+            'is_active' => true,
+        ];
     }
 }

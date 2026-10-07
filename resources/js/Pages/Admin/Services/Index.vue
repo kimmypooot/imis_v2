@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -99,7 +99,7 @@ const toggleStatus = async (service) => {
 
     <PageHeader title="Services" description="The CSC RO VIII services directory shown in the portal." :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Services' }]" />
 
-    <AdminCard title="List of Services" icon="clipboard">
+    <Card title="List of Services" icon="clipboard">
         <template v-if="can('services.create')" #actions>
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Service</Button>
         </template>
@@ -124,7 +124,7 @@ const toggleStatus = async (service) => {
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         :open="modalOpen"

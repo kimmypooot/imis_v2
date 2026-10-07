@@ -36,6 +36,7 @@ class Employee extends Model
         'employee_number',
         'employment_status',
         'original_appointment_date',
+        'csc_entry_date',
         'separation_date',
         'separation_reason',
         'remarks',
@@ -46,6 +47,7 @@ class Employee extends Model
         return [
             'employment_status' => EmploymentStatus::class,
             'original_appointment_date' => 'date:Y-m-d',
+            'csc_entry_date' => 'date:Y-m-d',
             'separation_date' => 'date:Y-m-d',
             // HR-6 leave settings (written by LeaveCredits::updateSettings).
             'is_solo_parent' => 'boolean',
@@ -60,6 +62,33 @@ class Employee extends Model
     public function immediateSupervisor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'immediate_supervisor_id');
+    }
+
+    /**
+     * The offices they head today by designation, in a concurrent capacity
+     * (besides their own office).
+     */
+    public function headDesignations(): HasMany
+    {
+        return $this->hasMany(EmployeeAssignment::class)->headingOn()->orderBy('effective_date');
+    }
+
+    /**
+     * The offices they head today by designation, and as what ("OIC",
+     * "Caretaker"). Needs headDesignations.toUnit, eager-loaded where many
+     * are listed.
+     *
+     * @return array<int, array{office: string, capacity: string}>
+     */
+    public function concurrentOffices(): array
+    {
+        return $this->headDesignations
+            ->filter(fn (EmployeeAssignment $designation) => $designation->toUnit !== null)
+            ->map(fn (EmployeeAssignment $designation) => [
+                'office' => $designation->toUnit->short_name ?: $designation->toUnit->name,
+                'capacity' => $designation->capacity()->shortLabel(),
+            ])
+            ->unique('office')->values()->all();
     }
 
     /**
@@ -136,11 +165,41 @@ class Employee extends Model
     }
 
     /**
+     * HR-5: Service Record lines entered by hand (other agencies).
+     */
+    public function serviceRecordEntries(): HasMany
+    {
+        return $this->hasMany(ServiceRecordEntry::class);
+    }
+
+    /** Casual / contractual / Job Order / Contract of Service periods (the Non-Plantilla page). */
+    public function nonPlantillaContracts(): HasMany
+    {
+        return $this->hasMany(NonPlantillaContract::class);
+    }
+
+    /**
      * HR-1b: movements between offices (reassignments, details, …).
      */
     public function assignments(): HasMany
     {
         return $this->hasMany(EmployeeAssignment::class);
+    }
+
+    /**
+     * HR-8: recurring allowances and deductions on their pay profile.
+     */
+    public function payItems(): HasMany
+    {
+        return $this->hasMany(EmployeePayItem::class);
+    }
+
+    /**
+     * HR-8: loans repaid through payroll.
+     */
+    public function loans(): HasMany
+    {
+        return $this->hasMany(EmployeeLoan::class);
     }
 
     /**
@@ -159,8 +218,8 @@ class Employee extends Model
 
     /**
      * The records a viewer may see: everyone's with `employees.view`, their
-     * own office's with `employees.view_unit`, and always their own. The
-     * policy applies the same rule to a single record.
+     * offices' with `employees.view_unit` (officesSupervisedBy), and always
+     * their own. The policy applies the same rule to a single record.
      *
      * @param  Builder<self>  $query
      */
@@ -173,9 +232,28 @@ class Employee extends Model
         $query->where(function (Builder $query) use ($viewer) {
             $query->where('user_id', $viewer->id);
 
-            if ($viewer->organizational_unit_id && $viewer->hasPermission(PermissionName::EmployeesViewUnit->value)) {
-                $query->orWhereHas('user', fn (Builder $user) => $user->where('organizational_unit_id', $viewer->organizational_unit_id));
+            $offices = self::officesSupervisedBy($viewer);
+            if ($offices !== []) {
+                $query->orWhereHas('user', fn (Builder $user) => $user->whereIn('organizational_unit_id', $offices));
             }
         });
+    }
+
+    /**
+     * The offices whose staff a supervisor (`employees.view_unit`) sees:
+     * their own, plus any they head today by designation in a concurrent
+     * capacity (EmployeeAssignment::officesHeadedBy) — that one closes
+     * by itself when the designation ends.
+     *
+     * @return array<int, int>
+     */
+    public static function officesSupervisedBy(User $viewer): array
+    {
+        if (! $viewer->hasPermission(PermissionName::EmployeesViewUnit->value)) {
+            return [];
+        }
+
+        return collect([$viewer->organizational_unit_id, ...EmployeeAssignment::officesHeadedBy($viewer)])
+            ->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
     }
 }

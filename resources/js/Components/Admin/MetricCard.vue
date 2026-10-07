@@ -3,8 +3,10 @@ import Icon from '../UI/Icon.vue';
 
 /**
  * The legacy admin "metric-card": a label, one big number, a sub-line,
- * an optional progress bar, a colored left accent and icon chip. The
- * number is the content — no chart needed for a single figure.
+ * an optional progress bar, and a tinted icon chip, on a flat bordered
+ * card. The number is the content — no chart needed for a single figure.
+ * Pick `warning` only when the figure calls for attention (vacancies,
+ * retirements), not for variety.
  */
 defineProps({
     label: { type: String, required: true },
@@ -15,15 +17,15 @@ defineProps({
 });
 
 const accents = {
-    primary: { border: 'border-l-primary', chip: 'bg-info-bg text-primary', bar: 'bg-primary' },
-    success: { border: 'border-l-success', chip: 'bg-success-bg text-success', bar: 'bg-success' },
-    warning: { border: 'border-l-warning', chip: 'bg-warning-bg text-warning', bar: 'bg-warning' },
-    info: { border: 'border-l-csc-blue-light', chip: 'bg-info-bg text-csc-blue-light', bar: 'bg-csc-blue-light' },
+    primary: { chip: 'bg-info-bg text-primary', bar: 'bg-primary' },
+    success: { chip: 'bg-success-bg text-success', bar: 'bg-success' },
+    warning: { chip: 'bg-warning-bg text-warning', bar: 'bg-warning' },
+    info: { chip: 'bg-info-bg text-csc-blue-light', bar: 'bg-csc-blue-light' },
 };
 </script>
 
 <template>
-    <section class="h-full rounded-lg border-l-4 bg-surface p-4 shadow-sm ring-1 ring-border/60" :class="accents[tone].border">
+    <section class="h-full rounded-lg border border-border bg-surface p-4">
         <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
                 <h3 class="text-xs font-semibold tracking-wide text-text-muted uppercase">{{ label }}</h3>

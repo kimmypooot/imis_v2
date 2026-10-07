@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import AdminCard from '../../UI/AdminCard.vue';
+import Card from '../../UI/Card.vue';
 import StatusBadge from '../../UI/StatusBadge.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 import { pdsStates } from './pdsStates';
@@ -33,7 +33,7 @@ const text = computed(() =>
 </script>
 
 <template>
-    <AdminCard title="Status" icon="checkCircle">
+    <Card title="Status" icon="checkCircle">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 space-y-1">
                 <StatusBadge :status="state.badge" :label="state.label" />
@@ -50,5 +50,5 @@ const text = computed(() =>
                 <slot :can-sign="state.canSign" />
             </div>
         </div>
-    </AdminCard>
+    </Card>
 </template>

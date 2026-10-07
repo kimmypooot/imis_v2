@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import MetricCard from '../../../../Components/Admin/MetricCard.vue';
 import SimpleChart from '../../../../Components/Charts/SimpleChart.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -50,14 +50,14 @@ const dateRange = (row) =>
 
     <PageHeader
         title="L&D Dashboard"
-        :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'L&D Dashboard' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'L&D Dashboard' }]"
     >
         <template #actions>
             <label class="sr-only" for="ld-dashboard-year">Year</label>
             <select
                 id="ld-dashboard-year"
                 :value="year"
-                class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 @change="changeYear($event.target.value)"
             >
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
@@ -85,14 +85,14 @@ const dateRange = (row) =>
                 </template>
                 <template v-else>None recorded in {{ year - 1 }}</template>
             </MetricCard>
-            <MetricCard label="Training hours" :value="hours(stats.hours)" icon="clock" tone="warning">
+            <MetricCard label="Training hours" :value="hours(stats.hours)" icon="clock" tone="primary">
                 {{ stats.trainings ? `${hours(stats.hours / stats.trainings)} hours per training` : 'No trainings yet' }}
             </MetricCard>
             <MetricCard label="Offices" :value="stats.offices" icon="building" tone="info">offices with employees</MetricCard>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-12">
-            <AdminCard title="Monthly activity" :subtitle="`Trainings by start month, ${year}`" icon="activity" class="xl:col-span-8">
+            <Card title="Monthly activity" :description="`Trainings by start month, ${year}`" icon="activity" class="xl:col-span-8">
                 <SimpleChart
                     type="line"
                     :labels="MONTHS"
@@ -100,8 +100,8 @@ const dateRange = (row) =>
                     label="Trainings"
                     :summary="`Approved trainings per month in ${year}; ${stats.trainings} in total.`"
                 />
-            </AdminCard>
-            <AdminCard title="By type" subtitle="PDS types of intervention" icon="chartBar" class="xl:col-span-4">
+            </Card>
+            <Card title="By type" description="PDS types of intervention" icon="chartBar" class="xl:col-span-4">
                 <SimpleChart
                     type="bar"
                     :labels="types.map((type) => type.label)"
@@ -110,11 +110,11 @@ const dateRange = (row) =>
                     :height="Math.max(160, types.length * 38)"
                     :summary="`Approved trainings in ${year} by type of intervention.`"
                 />
-            </AdminCard>
+            </Card>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-12">
-            <AdminCard title="Top employees" subtitle="Most training hours" icon="users" class="xl:col-span-5">
+            <Card title="Top employees" description="Most training hours" icon="users" class="xl:col-span-5">
                 <p v-if="top.length === 0" class="text-sm text-text-muted">No approved trainings in {{ year }}.</p>
                 <ol v-else class="divide-y divide-border">
                     <li v-for="(person, index) in top" :key="person.id" class="flex items-center gap-3 py-2.5">
@@ -126,9 +126,9 @@ const dateRange = (row) =>
                         <span class="text-sm font-semibold text-text tabular-nums">{{ hours(person.hours) }} h</span>
                     </li>
                 </ol>
-            </AdminCard>
+            </Card>
 
-            <AdminCard title="Recent trainings" subtitle="Last recorded" icon="clipboard" class="xl:col-span-7">
+            <Card title="Recent trainings" description="Last recorded" icon="clipboard" class="xl:col-span-7">
                 <p v-if="recent.length === 0" class="text-sm text-text-muted">No approved trainings in {{ year }}.</p>
                 <ul v-else class="divide-y divide-border">
                     <li v-for="row in recent" :key="row.id" class="py-2.5">
@@ -142,7 +142,7 @@ const dateRange = (row) =>
                         </div>
                     </li>
                 </ul>
-            </AdminCard>
+            </Card>
         </div>
     </div>
 </template>

@@ -9,6 +9,7 @@ use App\Http\Requests\Application\UpdateApplicationRoleRequest;
 use App\Http\Requests\Application\UpdateApplicationRoleStatusRequest;
 use App\Models\Application;
 use App\Models\ApplicationRole;
+use App\Support\SystemAccess\OfficeAdminAccess;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -28,6 +29,9 @@ class ApplicationRoleController extends Controller
             ['role_id' => $role->id, 'role' => $role->name],
         );
 
+        // A new admin role: the office's Division Chief / Field Director gets it.
+        app(OfficeAdminAccess::class)->syncApplication($application);
+
         return back()->with('status', "Role {$role->name} added.");
     }
 
@@ -43,6 +47,8 @@ class ApplicationRoleController extends Controller
             $application,
             $applicationRole,
         );
+
+        app(OfficeAdminAccess::class)->syncApplication($application);
 
         return back()->with('status', "Role {$applicationRole->name} saved.");
     }
@@ -62,6 +68,8 @@ class ApplicationRoleController extends Controller
             $application,
             $applicationRole,
         );
+
+        app(OfficeAdminAccess::class)->syncApplication($application);
 
         return back()->with('status', "Role {$applicationRole->name} ".strtolower($this->activationVerb($applicationRole->status)).'.');
     }

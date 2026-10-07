@@ -293,6 +293,55 @@ class LeaveCredits
             }
         });
 
+        // Run during the year: also whoever joined since January 1.
+        if ($year === today()->year && today()->gt($january)) {
+            $due = $this->grantDue($actor);
+            $counts['granted'] += $due['granted'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * This year's annual grants (SPL, Solo Parent, Wellness Leave, …) for
+     * anyone in service today who doesn't have them yet: people who
+     * assumed duty after January 1, and leave types switched on mid-year.
+     * CSC makes these available from the date of assumption of duty (e.g.
+     * MC No. 01, s. 2026, 2). Dated January 1, or the first day in service
+     * if later. Re-running is safe; the monthly accrual run calls it.
+     *
+     * @return array{granted: int, already: int, not_eligible: int}
+     */
+    public function grantDue(?User $actor = null): array
+    {
+        $counts = ['granted' => 0, 'already' => 0, 'not_eligible' => 0];
+        $today = today();
+        $year = $today->year;
+        $january = Carbon::create($year, 1, 1);
+        $types = LeaveType::query()->active()->where('annual_grant', '>', 0)->get();
+
+        DB::transaction(function () use ($types, $today, $year, $january, $actor, &$counts) {
+            foreach ($this->inServiceDuring($today, $today) as $employee) {
+                foreach ($types as $type) {
+                    if ($this->alreadyPosted($employee, $type, LedgerEntryKind::Grant, $year)) {
+                        $counts['already']++;
+
+                        continue;
+                    }
+                    if (! $this->eligible($employee, $type, $today)) {
+                        $counts['not_eligible']++;
+
+                        continue;
+                    }
+
+                    $started = $employee->original_appointment_date;
+                    $date = $started && $started->gt($january) ? $started->copy() : $january;
+                    $this->post($employee, $type, LedgerEntryKind::Grant, (float) $type->annual_grant, $date, "{$type->code} for {$year}", $actor, $year);
+                    $counts['granted']++;
+                }
+            }
+        });
+
         return $counts;
     }
 

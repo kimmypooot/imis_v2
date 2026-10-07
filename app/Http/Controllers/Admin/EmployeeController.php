@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AssignmentKind;
 use App\Enums\AuditEvent;
 use App\Enums\EmploymentStatus;
+use App\Enums\HeadCapacity;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\BulkStoreEmployeesRequest;
 use App\Http\Requests\Employee\StoreEmployeeRequest;
@@ -39,9 +40,9 @@ class EmployeeController extends Controller
 
         $employees = Employee::query()
             ->visibleTo($viewer)
-            ->with('user.organizationalUnit')
+            ->with(['user.organizationalUnit', 'headDesignations.toUnit'])
             ->get()
-            ->sortBy(fn (Employee $employee) => $employee->user->name, SORT_NATURAL | SORT_FLAG_CASE)
+            ->sortBy(fn (Employee $employee) => $employee->user->list_name, SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
 
         return Inertia::render('Admin/HR/Employees/Index', [
@@ -91,7 +92,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('view', $employee);
 
-        $employee->load('user.organizationalUnit');
+        $employee->load(['user.organizationalUnit', 'headDesignations.toUnit']);
 
         // The access trail: every time someone other than the employee
         // opens their record.
@@ -113,6 +114,7 @@ class EmployeeController extends Controller
                 : null,
             'assignmentForm' => $canReassign ? [
                 'kindOptions' => AssignmentKind::options(),
+                'capacityOptions' => HeadCapacity::options(),
                 'officeOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get()
                     ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
                 'scanKilobytes' => EmployeeDocuments::MAX_KILOBYTES,

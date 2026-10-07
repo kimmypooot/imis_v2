@@ -167,7 +167,7 @@ onBeforeUnmount(() => {
         </a>
 
         <header
-            class="fixed inset-x-0 top-0 z-40 flex h-16 items-center gap-2 border-b border-border bg-surface/95 px-3 shadow-xs backdrop-blur sm:px-4"
+            class="fixed inset-x-0 top-0 z-40 flex h-16 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4"
         >
             <button
                 ref="menuButtonRef"
@@ -242,14 +242,16 @@ onBeforeUnmount(() => {
             aria-label="Navigation menu"
             :inert="!sidebarOpen"
         >
-            <div class="min-h-0 flex-1 overflow-y-auto py-4">
+            <div class="min-h-0 flex-1 overflow-y-auto py-4" :class="{ 'scrollbar-on-dark': variant !== 'admin' }">
+                <!-- Above the links, e.g. AdminLayout's area switcher. -->
+                <slot name="sidebar-header" />
                 <SidebarNav :items="navItems" :variant="variant" />
             </div>
 
             <!-- Version and agency, as in the legacy About footer. -->
             <footer
                 class="shrink-0 border-t px-6 py-3 text-xs leading-relaxed"
-                :class="variant === 'admin' ? 'border-border text-text-muted' : 'border-white/10 text-white/50'"
+                :class="variant === 'admin' ? 'border-border text-text-muted' : 'border-white/10 text-white/70'"
             >
                 <p class="font-medium">IMIS v{{ page.props.app?.version }}</p>
                 <p>CSC Regional Office VIII</p>

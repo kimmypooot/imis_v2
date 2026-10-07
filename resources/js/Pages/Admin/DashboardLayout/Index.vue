@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import Icon from '../../../Components/UI/Icon.vue';
@@ -86,7 +86,7 @@ const save = () => {
             and {{ unplaced.length === 1 ? 'appears' : 'appear' }} under “Other Systems”: {{ unplaced.map((system) => system.short_name || system.name).join(', ') }}.
         </Alert>
 
-        <AdminCard v-for="category in categories" :key="category.key" :title="category.label" icon="building">
+        <Card v-for="category in categories" :key="category.key" :title="category.label" icon="building">
             <template #actions>
                 <Link
                     :href="category.key === 'committees' ? '/admin/committees' : '/admin/organizational-units'"
@@ -118,7 +118,7 @@ const save = () => {
                     </Button>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 
     <Modal :open="editing !== null" :title="editing ? `Systems under ${editing.name}` : ''" tone="primary" icon="grid" size="lg" @close="editing = null">
@@ -129,7 +129,7 @@ const save = () => {
                 v-model="search"
                 type="search"
                 placeholder="Search systems…"
-                class="block w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
             />
         </template>
 
@@ -138,7 +138,7 @@ const save = () => {
                 <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-surface-muted" :class="{ 'cursor-not-allowed opacity-80': isOwned(system) }">
                     <input
                         type="checkbox"
-                        class="h-4 w-4 rounded border-border text-primary focus:ring-focus-ring"
+                        class="h-4 w-4 rounded border-border-strong text-primary focus:ring-focus-ring"
                         :checked="isOn(system)"
                         :disabled="isOwned(system)"
                         @change="toggle(system)"

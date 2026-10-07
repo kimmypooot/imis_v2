@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\Account;
 
+use App\Rules\NotRecentPassword;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
 /**
  * Self-service password change (the legacy "Change Password" menu item).
  * The current password is re-checked server-side; the new one follows the
- * same policy as password resets (Password::defaults()).
+ * same policy as password resets (Password::defaults(), from System
+ * Settings → Security) and can't be a recently used one.
  */
 class UpdatePasswordRequest extends FormRequest
 {
@@ -24,7 +26,7 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', 'confirmed', 'different:current_password', Password::defaults()],
+            'password' => ['required', 'string', 'confirmed', 'different:current_password', Password::defaults(), new NotRecentPassword($this->user())],
         ];
     }
 

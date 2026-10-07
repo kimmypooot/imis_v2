@@ -30,6 +30,7 @@ class LeaveApplication extends Model
             'days_without_pay' => 'decimal:3',
             'detail' => LeaveDetail::class,
             'commutation_requested' => 'boolean',
+            'is_emergency' => 'boolean',
             'status' => LeaveApplicationStatus::class,
             'current_step' => 'integer',
             'submitted_at' => 'datetime',

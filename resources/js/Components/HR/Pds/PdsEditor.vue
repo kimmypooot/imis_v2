@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import AdminCard from '../../UI/AdminCard.vue';
+import Card from '../../UI/Card.vue';
 import Tabs from '../../UI/Tabs.vue';
 import PdsSectionForm from './PdsSectionForm.vue';
 import PdsRowsForm from './PdsRowsForm.vue';
@@ -46,7 +46,7 @@ const identity = computed(() => [
     ['Middle name', props.pds.identity.middle_name],
     ['Name extension', props.pds.identity.name_extension],
     ['3. Date of birth', props.pds.identity.date_of_birth ? formatCalendarDate(props.pds.identity.date_of_birth) : null],
-    ['5. Sex at birth', props.pds.identity.sex_at_birth ? props.pds.identity.sex_at_birth[0].toUpperCase() + props.pds.identity.sex_at_birth.slice(1) : null],
+    ['5. Sex at birth', props.pds.identity.sex_at_birth === 'female' ? 'Female' : props.pds.identity.sex_at_birth === 'male' ? 'Male' : null],
     ['15. Agency employee no.', props.pds.identity.agency_employee_no],
 ]);
 
@@ -76,10 +76,10 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="space-y-6">
-        <AdminCard
+        <Card
             title="Name and identity"
             icon="user"
-            :subtitle="highlight.includes('identity') ? 'Changed since the last verified PDS.' : 'From the IMIS account and employee record. Ask HR to correct these.'"
+            :description="highlight.includes('identity') ? 'Changed since the last verified PDS.' : 'From the IMIS account and employee record. Ask HR to correct these.'"
         >
             <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <div v-for="[label, value] in identity" :key="label">
@@ -87,9 +87,9 @@ onBeforeUnmount(() => {
                     <dd class="mt-0.5 font-medium text-text">{{ value || '—' }}</dd>
                 </div>
             </dl>
-        </AdminCard>
+        </Card>
 
-        <AdminCard>
+        <Card>
             <Tabs v-model="tab" :tabs="tabs">
                 <template v-for="item in schema.tabs" :key="item.key" #[item.key]>
                     <div class="space-y-4">
@@ -120,6 +120,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Tabs>
-        </AdminCard>
+        </Card>
     </div>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import Button from '../../../Components/UI/Button.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
@@ -62,16 +63,10 @@ defineProps({
                 </Alert>
 
                 <div class="mt-5">
-                    <a
-                        v-if="application.url"
-                        :href="`/applications/${application.id}/launch`"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
-                    >
+                    <Button v-if="application.url" :href="`/applications/${application.id}/launch`" external>
                         Open application
                         <ExternalLinkIndicator />
-                    </a>
+                    </Button>
                     <template v-else-if="application.under_maintenance" />
                     <p v-else-if="application.requires_access && !application.role" class="text-sm text-text-muted">
                         Access to this application is assigned by an administrator, and you don't have a role in it

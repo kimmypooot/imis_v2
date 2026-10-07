@@ -39,15 +39,16 @@ defineProps({
 </template>
 
 <style scoped>
+@reference '../../../css/app.css';
+
+/* Same header as every list table (the `table-head` utility in app.css). */
 .table-styled :deep(thead) {
-    background-color: var(--color-surface-muted);
-    color: var(--color-text-muted);
+    @apply table-head;
     border-bottom: 1px solid var(--color-border);
 }
 
 .table-styled :deep(th) {
     padding: 0.75rem 1rem;
-    font-weight: 500;
 }
 
 .table-styled :deep(td) {

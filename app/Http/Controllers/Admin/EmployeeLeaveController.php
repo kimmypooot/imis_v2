@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\LeaveLedgerEntry;
 use App\Models\User;
 use App\Support\HR\Leave\LeaveCredits;
+use App\Support\HR\Leave\Supervisors;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,10 +23,12 @@ use Inertia\Response;
  */
 class EmployeeLeaveController extends Controller
 {
-    public function show(Request $request, Employee $employee, LeaveCredits $credits): Response
+    public function show(Request $request, Employee $employee, LeaveCredits $credits, Supervisors $supervisors): Response
     {
         $this->authorize('viewLeave', $employee);
-        $employee->load(['user', 'immediateSupervisor:id,name']);
+        $employee->load(['user', 'immediateSupervisor:id,name,position']);
+        $supervisor = $supervisors->for($employee);
+        $rule = $supervisors->byRule($employee);
 
         $year = $request->integer('year', (int) today()->year);
         $year = $year >= 1990 && $year <= 2100 ? $year : (int) today()->year;
@@ -37,11 +40,14 @@ class EmployeeLeaveController extends Controller
         $canManage = $request->user()->can('manageLeave', $employee);
 
         return Inertia::render('Admin/HR/Employees/Leave', [
-            'employee' => ['id' => $employee->id, 'name' => $employee->user->name, 'status' => $employee->employment_status?->label() ?? 'Not set'],
+            'employee' => ['id' => $employee->id, 'name' => $employee->user->name, 'status' => $employee->employment_status?->label() ?? 'Not Set'],
             ...$credits->cardPage($employee, $year),
             'settings' => [
                 'immediate_supervisor_id' => $employee->immediate_supervisor_id,
-                'supervisor' => $employee->immediateSupervisor?->name,
+                'supervisor' => $supervisor['name'],
+                'supervisor_position' => $supervisor['position'],
+                'supervisor_source' => $supervisor['source'],
+                'supervisor_by_rule' => $rule ? trim($rule['name'].', '.$rule['position'], ', ') : null,
                 'is_solo_parent' => $employee->is_solo_parent,
                 // The ID number itself only reaches those who may edit it.
                 'solo_parent_id_number' => $canManage ? $employee->solo_parent_id_number : null,

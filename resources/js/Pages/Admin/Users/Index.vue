@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -29,6 +29,9 @@ const props = defineProps({
     statusOptions: { type: Array, required: true },
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
+    designationOptions: { type: Array, default: () => [] },
+    canDesignate: { type: Boolean, default: false },
+    passwordRequirements: { type: Array, default: () => [] },
 });
 
 const { can } = useAuthorization();
@@ -54,8 +57,12 @@ const rows = computed(() =>
 const columns = [
     { key: 'name', label: 'Name', value: (user) => `${user.name} ${user.email}` },
     { key: 'username', label: 'Username' },
-    { key: 'office', label: 'Office / Division', value: (user) => user.office_name ?? '' },
-    { key: 'position', label: 'Position' },
+    {
+        key: 'office',
+        label: 'Office / Division',
+        value: (user) => [user.office_name, ...user.concurrent_offices.map((office) => `${office.capacity} of ${office.office}`)].filter(Boolean).join('; '),
+    },
+    { key: 'position', label: 'Position', value: (user) => [user.position, user.designation_label].filter(Boolean).join(' — ') },
     { key: 'roles', label: 'IMIS Role', align: 'center', value: (user) => user.roles.map((role) => role.display_name).join(', ') },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '7rem' },
 ];
@@ -82,7 +89,7 @@ const toggleStatus = async (user) => {
 
     <PageHeader title="User Management" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Users' }]" />
 
-    <AdminCard title="List of Users" icon="users">
+    <Card title="List of Users" icon="users">
         <template v-if="can('users.create')" #actions>
             <Button variant="success" class="rounded-full" @click="adding = true">
                 <Icon name="userPlus" size="sm" />
@@ -123,6 +130,15 @@ const toggleStatus = async (user) => {
                     </template>
                     <template #cell-office="{ row }">
                         <span :title="row.office_name">{{ row.office || '—' }}</span>
+                        <div v-if="row.concurrent_offices.length" class="text-xs text-text-muted">{{ row.concurrent_offices.map((office) => `${office.capacity} of ${office.office}`).join(', ') }}</div>
+                    </template>
+                    <template #cell-position="{ row }">
+                        {{ row.position || '—' }}
+                        <div v-if="row.designation_label">
+                            <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success" :title="`Overall admin of ${row.office_name}'s systems`">
+                                {{ row.designation_label }}
+                            </span>
+                        </div>
                     </template>
                     <template #cell-roles="{ row }">
                         <div class="flex flex-wrap justify-center gap-1">
@@ -148,14 +164,23 @@ const toggleStatus = async (user) => {
                 </DataTable>
             </template>
         </Tabs>
-    </AdminCard>
+    </Card>
 
-    <AddUserModal :open="adding" :role-options="roleOptions" :office-options="officeOptions" @close="adding = false" />
+    <AddUserModal
+        :open="adding"
+        :role-options="roleOptions"
+        :office-options="officeOptions"
+        :designation-options="designationOptions"
+        :can-designate="canDesignate"
+        @close="adding = false"
+    />
     <EditUserModal
         :open="editing !== null"
         :user="editing"
         :role-options="roleOptions"
         :office-options="officeOptions"
+        :designation-options="designationOptions"
+        :password-requirements="passwordRequirements"
         @close="editingId = null"
     />
 </template>

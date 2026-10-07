@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Icon from '../../Components/UI/Icon.vue';
 import ServiceRecordTable from '../../Components/HR/ServiceRecordTable.vue';
@@ -40,9 +40,9 @@ defineProps({
         </template>
     </PageHeader>
 
-    <AdminCard v-if="hasRecord" title="Service" icon="clipboard">
+    <Card v-if="hasRecord" title="Service" icon="clipboard">
         <ServiceRecordTable :lines="lines" />
-    </AdminCard>
+    </Card>
     <EmptyState
         v-else
         icon="clipboard"

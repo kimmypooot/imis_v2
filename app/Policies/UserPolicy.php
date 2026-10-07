@@ -57,6 +57,17 @@ class UserPolicy
     }
 
     /**
+     * Setting someone's password directly is a Super Administrator
+     * override (they pass through Gate::before); everyone else sends a
+     * reset link instead. SetUserPasswordRequest also refuses it on
+     * one's own account, which goes through Change Password.
+     */
+    public function setPassword(User $user, User $target): bool
+    {
+        return false;
+    }
+
+    /**
      * Granting/changing/revoking this user's roles inside external
      * systems. Besides the protected-target rule, a non-super-admin may
      * never change their *own* system access — holding

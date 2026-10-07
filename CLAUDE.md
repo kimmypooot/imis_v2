@@ -15,7 +15,12 @@ Key conventions:
   provide before adding a package.
 
 Phases 1–19 are implemented — `docs/architecture.md` has one section per
-phase and is the source of truth for what exists. In particular:
+phase and is the source of truth for what exists. Admin-1 (security
+policy, automatic backups, log retention, all in System Settings) is done.
+Admin-2 (privacy notice, "who accessed my record") and Admin-3 (account
+lifecycle, permission preview, notification settings, scheduled-task
+controls, bulk user import, email templates, branding) are next. In
+particular:
 - Authentication is session-based and signs in by **username** (legacy
   IMIS convention), not email; password resets still go by email. Don't
   re-scaffold login, password reset, or email verification — extend the
@@ -41,8 +46,9 @@ phase and is the source of truth for what exists. In particular:
   accrual, leave card) 6b (filing on CS Form 6, supervisor → HR →
   Head approval with OIC designations, notifications/bell, printable
   form, LWOP) and 6c (monetization/terminal leave, flexible work and
-  weekly reports, leave reports, calendar) are done. Wellness Leave is
-  seeded inactive until HR enters its terms. HR-7's cutover tools are
+  weekly reports, leave reports, calendar) are done. Wellness Leave
+  follows CSC MC No. 01, s. 2026 (5 days/year, max 3 in a row, emergency
+  filing on return). HR-7's cutover tools are
   built (`imis:import-legacy-leave`, Cutover Readiness page,
   `imis:retire-legacy-hr`), but the leave import hasn't run on real
   data: the `lms_*` tables are only on the live server. HR
@@ -50,7 +56,16 @@ phase and is the source of truth for what exists. In particular:
   access by someone other than the employee is audited. PDS identity
   numbers, items 34–40 and signed submissions are encrypted with
   `APP_KEY`, so that key must never be lost or changed carelessly.
+  HR-8 (payroll: pay components, pay profiles, loans, monthly payrolls
+  released on the 15th/30th, payslips requested by staff and approved by
+  the head of HRD) is done; it has no legacy counterpart.
   Progress and next steps: `docs/hr-checkpoint.md`.
+- The Executive Dashboard (`/executive`, Exec-1 to Exec-3) is done:
+  scheduled snapshots of every module, connected systems' summary feeds
+  (contract in `docs/executive-feed.md`), targets, alerts and a weekly
+  summary. Which figures and targets top management tracks is not agreed
+  yet: the built-in figures are starters and targets are data. No system
+  serves a feed yet; Exec-4 (legacy PHP systems, CTS) is next.
 
 The legacy PHP IMIS this replaces lives at `../old-imis` (reference only —
 never edit it). Match its behavior when carrying a feature over.

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OfficeDesignation;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'name', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id',
-    'username', 'email', 'password', 'status',
+    'office_designation', 'username', 'email', 'password', 'status',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
@@ -40,9 +41,12 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'office_designation' => OfficeDesignation::class,
             'birthday' => 'date',
             'last_login_at' => 'datetime',
             'previous_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -57,7 +61,44 @@ class User extends Authenticatable implements MustVerifyEmail
             if ($user->first_name !== null && $user->isDirty(['first_name', 'middle_name', 'last_name', 'name_extension'])) {
                 $user->name = self::composeName($user->first_name, $user->middle_name, $user->last_name, $user->name_extension);
             }
+
+            // Division Chief / Field Director belongs to the office: moving
+            // (e.g. a reassignment) ends it unless it's set again with the move.
+            if ($user->exists && $user->isDirty('organizational_unit_id') && ! $user->isDirty('office_designation')) {
+                $user->office_designation = null;
+            }
+
+            // Password expiry counts from here (System Settings → Security).
+            if ($user->isDirty('password')) {
+                $user->password_changed_at = now();
+
+                // Choosing a password of their own clears a Super
+                // Administrator's override; the override sets both at once.
+                if (! $user->isDirty('must_change_password')) {
+                    $user->must_change_password = false;
+                }
+            }
         });
+
+        // Keep the replaced hash so it can't be chosen again
+        // (password_policy_history). Only the newest MAX are kept.
+        static::updated(function (User $user) {
+            $previous = $user->getOriginal('password');
+
+            if (! $user->wasChanged('password') || blank($previous)) {
+                return;
+            }
+
+            $user->passwordHistories()->create(['password' => $previous]);
+
+            $keep = $user->passwordHistories()->latest('id')->limit(PasswordHistory::MAX)->pluck('id');
+            $user->passwordHistories()->whereNotIn('id', $keep)->delete();
+        });
+    }
+
+    public function passwordHistories(): HasMany
+    {
+        return $this->hasMany(PasswordHistory::class);
     }
 
     public static function composeName(?string $first, ?string $middle, ?string $last, ?string $extension = null): string
@@ -82,6 +123,23 @@ class User extends Authenticatable implements MustVerifyEmail
     public function employee(): HasOne
     {
         return $this->hasOne(Employee::class);
+    }
+
+    /**
+     * Surname first, for lists sorted by surname: "Dela Cruz, Juan T. Jr."
+     * Falls back to the display name when the name parts aren't set.
+     */
+    protected function listName(): Attribute
+    {
+        return Attribute::get(function () {
+            if (blank($this->last_name)) {
+                return $this->name;
+            }
+
+            $given = self::composeName($this->first_name, $this->middle_name, null, $this->name_extension);
+
+            return collect([trim($this->last_name), $given])->filter()->implode(', ');
+        });
     }
 
     /**

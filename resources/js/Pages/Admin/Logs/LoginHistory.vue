@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import LogFilters from '../../../Components/Admin/LogFilters.vue';
@@ -19,7 +19,7 @@ defineProps({
     query: { type: Object, required: true },
 });
 
-const statusLabels = { active: 'Active', logged_out: 'Logged out', expired: 'Expired', ended: 'Ended by admin' };
+const statusLabels = { active: 'Active', logged_out: 'Logged Out', expired: 'Expired', ended: 'Ended by Admin' };
 const statusTones = { active: 'active', logged_out: 'logged_out', expired: 'expired', ended: 'inactive' };
 
 const columns = [
@@ -37,7 +37,7 @@ const columns = [
 
     <PageHeader title="Login History" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Login History' }]" />
 
-    <AdminCard title="Sign-ins" icon="clock">
+    <Card title="Sign-ins" icon="clock">
         <DataTable
             :columns="columns"
             :paginator="logins"
@@ -59,5 +59,5 @@ const columns = [
                 <span :title="row.user_agent">{{ row.browser }}</span>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

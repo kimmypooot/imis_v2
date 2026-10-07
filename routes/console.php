@@ -23,3 +23,17 @@ Schedule::command('imis:apply-reassignments')->dailyAt('00:10')->withoutOverlapp
 // sign-in tokens. Both are no-ops while the bridge and SSO are off.
 Schedule::command('imis:sync-legacy')->hourly()->withoutOverlapping();
 Schedule::call(fn () => app(LegacySso::class)->prune())->daily()->name('prune-sso-tokens');
+
+// System Settings → Automatic Backups: a backup kept on the server, then
+// old ones deleted. Skipped while the setting is off. Office time (the
+// app itself runs on UTC).
+Schedule::command('imis:backup --if-enabled')->dailyAt('02:00')->timezone('Asia/Manila')->withoutOverlapping();
+
+// System Settings → Log Retention: delete logs past their period.
+Schedule::command('imis:prune-logs')->dailyAt('03:00')->timezone('Asia/Manila')->withoutOverlapping();
+
+// Executive Dashboard: figures from IMIS's modules and connected systems'
+// summary feeds, then the weekly summary for top management (skipped
+// unless turned on in System Settings → Executive Dashboard).
+Schedule::command('imis:collect-metrics')->everyThirtyMinutes()->withoutOverlapping();
+Schedule::command('imis:executive-digest')->weeklyOn(1, '07:00')->timezone('Asia/Manila')->withoutOverlapping();

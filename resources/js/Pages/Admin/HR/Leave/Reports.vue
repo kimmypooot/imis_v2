@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
@@ -74,7 +74,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
 <template>
     <Head title="Leave Reports" />
 
-    <PageHeader title="Leave Reports" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Leave Reports' }]">
+    <PageHeader title="Leave Reports" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Reports' }]">
         <template #actions>
             <label class="sr-only" for="report-kind">Report</label>
             <select id="report-kind" :value="filters.report" :class="selectClass" @change="apply({ report: $event.target.value })">
@@ -98,7 +98,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
         and the applications register is <Link href="/admin/hr/leave/applications" class="text-primary hover:underline">Leave Applications</Link>.
     </p>
 
-    <AdminCard :title="title" icon="printer" :subtitle="subtitle">
+    <Card :title="title" icon="printer" :description="subtitle">
         <DataTable :key="filters.report" :columns="columns" :rows="rows" :caption="`${title}, ${subtitle}`" :export-name="`imis-leave-${filters.report}`" empty-text="Nothing to report.">
             <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ range(row) }}</span></template>
             <template #cell-posted_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.posted_at) }}</span></template>
@@ -106,5 +106,5 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                 <span class="tabular-nums">{{ days(row[key]) }}</span>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

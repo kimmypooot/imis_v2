@@ -62,7 +62,7 @@ const submit = () =>
                 accept="application/pdf,image/jpeg,image/png"
                 required
                 aria-describedby="doc-file-help"
-                class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
+                class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
                 @change="form.file = $event.target.files[0] ?? null"
             />
             <p id="doc-file-help" class="mt-1 text-xs text-text-muted">PDF, JPG or PNG, up to {{ Math.round(maxKilobytes / 1024) }} MB. Stored privately.</p>

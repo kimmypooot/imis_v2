@@ -70,7 +70,7 @@ const submit = () => {
                 <p v-if="record?.certificate && !form.remove_certificate" class="mt-1 text-sm text-text">
                     Current: {{ record.certificate.name }}
                     <label class="ml-3 inline-flex items-center gap-1.5 text-danger">
-                        <input v-model="form.remove_certificate" type="checkbox" class="h-4 w-4 rounded border-border text-danger focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.remove_certificate" type="checkbox" class="h-4 w-4 rounded border-border-strong text-danger focus:ring-2 focus:ring-focus-ring" />
                         Remove
                     </label>
                 </p>
@@ -80,7 +80,7 @@ const submit = () => {
                     type="file"
                     accept="application/pdf,image/jpeg,image/png"
                     aria-describedby="ld-certificate-help"
-                    class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
+                    class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
                     @change="form.certificate = $event.target.files[0] ?? null"
                 />
                 <p id="ld-certificate-help" class="mt-1 text-xs text-text-muted">

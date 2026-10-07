@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
@@ -87,7 +87,7 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
     <PageHeader title="Announcement Management" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Announcements' }]" />
 
     <div class="grid items-start gap-6 xl:grid-cols-12">
-        <AdminCard v-if="canWrite" :title="isEditing ? 'Edit Announcement' : 'Create Announcement'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
+        <Card v-if="canWrite" :title="isEditing ? 'Edit Announcement' : 'Create Announcement'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
             <template #actions>
                 <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="isEditing ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'">
                     {{ isEditing ? 'Editing' : 'New draft' }}
@@ -103,9 +103,9 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
                 :publish-date-required="isEditing && current.status === 'published'"
                 @submit="submit"
             />
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="All Announcements" icon="megaphone" :class="canWrite ? 'xl:col-span-7' : 'xl:col-span-12'">
+        <Card title="All Announcements" icon="megaphone" :class="canWrite ? 'xl:col-span-7' : 'xl:col-span-12'">
             <DataTable
                 :columns="columns"
                 :paginator="announcements"
@@ -134,6 +134,6 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
                     </div>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

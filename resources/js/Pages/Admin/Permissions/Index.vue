@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 
 defineOptions({ layout: AdminLayout });
@@ -39,11 +39,11 @@ const columns = [
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Permissions' }]"
     />
 
-    <AdminCard title="All Permissions" icon="key">
+    <Card title="All Permissions" icon="key">
         <DataTable :columns="columns" :rows="permissions" caption="Permissions" export-name="imis-permissions" :default-sort="{ key: 'group', direction: 'asc' }" :default-page-size="50">
             <template #cell-name="{ row }">
                 <code class="text-xs text-text-muted">{{ row.name }}</code>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

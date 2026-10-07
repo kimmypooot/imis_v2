@@ -16,8 +16,8 @@ enum LeaveApplicationStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::ForReview => 'For review',
-            self::Returned => 'Returned for correction',
+            self::ForReview => 'For Review',
+            self::Returned => 'Returned for Correction',
             self::Approved => 'Approved',
             self::Disapproved => 'Disapproved',
             self::Cancelled => 'Cancelled',

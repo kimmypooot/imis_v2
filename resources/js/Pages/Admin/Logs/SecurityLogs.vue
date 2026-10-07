@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import LogFilters from '../../../Components/Admin/LogFilters.vue';
@@ -36,10 +36,10 @@ const columns = [
     <PageHeader title="Security Audit Logs" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Security Logs' }]" />
 
     <div class="grid gap-6 xl:grid-cols-3">
-        <AdminCard title="Top failing IPs" subtitle="Failed sign-ins in the last 7 days" icon="shield" class="xl:col-span-1">
+        <Card title="Top failing IPs" description="Failed sign-ins in the last 7 days" icon="shield" class="xl:col-span-1">
             <table class="w-full text-[0.8125rem]">
                 <caption class="sr-only">IP addresses with the most failed sign-ins in the last 7 days</caption>
-                <thead class="bg-surface-muted text-left text-xs font-semibold text-text-muted uppercase">
+                <thead class="table-head">
                     <tr>
                         <th scope="col" class="px-3 py-2">IP address</th>
                         <th scope="col" class="px-3 py-2 text-right">Attempts</th>
@@ -59,9 +59,9 @@ const columns = [
                     </tr>
                 </tbody>
             </table>
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="All security events" icon="exclamation" class="xl:col-span-2">
+        <Card title="All security events" icon="exclamation" class="xl:col-span-2">
             <DataTable
                 :columns="columns"
                 :paginator="events"
@@ -83,6 +83,6 @@ const columns = [
                     <span class="line-clamp-2 max-w-xs text-text-muted">{{ row.description }}</span>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

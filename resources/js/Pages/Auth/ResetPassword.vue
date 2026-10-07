@@ -4,6 +4,7 @@ import AuthLayout from '../../Layouts/AuthLayout.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import PasswordInput from '../../Components/Forms/PasswordInput.vue';
 import InputError from '../../Components/Forms/InputError.vue';
+import PasswordRequirements from '../../Components/Forms/PasswordRequirements.vue';
 import Button from '../../Components/UI/Button.vue';
 
 defineOptions({ layout: AuthLayout });
@@ -16,6 +17,10 @@ const props = defineProps({
     token: {
         type: String,
         required: true,
+    },
+    passwordRequirements: {
+        type: Array,
+        default: () => [],
     },
 });
 
@@ -62,6 +67,7 @@ const submit = () => {
                 required
                 :invalid="!!form.errors.password"
             />
+            <PasswordRequirements v-if="!form.errors.password" :requirements="passwordRequirements" />
             <InputError :message="form.errors.password" />
         </div>
 

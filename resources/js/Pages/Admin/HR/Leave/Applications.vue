@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -42,7 +42,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
 <template>
     <Head title="Leave Applications" />
 
-    <PageHeader title="Leave Applications" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Leave Applications' }]">
+    <PageHeader title="Leave Applications" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Applications' }]">
         <template #actions>
             <label class="sr-only" for="apps-year">Year</label>
             <select id="apps-year" :value="filters.year" :class="selectClass" @change="apply({ year: $event.target.value })">
@@ -56,7 +56,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
         </template>
     </PageHeader>
 
-    <AdminCard :title="`Applications — ${filters.year}`" icon="clipboard">
+    <Card :title="`Applications — ${filters.year}`" icon="clipboard">
         <DataTable :columns="columns" :rows="applications" caption="Leave applications" :export-name="`imis-leave-applications-${filters.year}`" empty-text="No applications.">
             <template #cell-reference_number="{ row }">
                 <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
@@ -68,5 +68,5 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
             <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
             <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

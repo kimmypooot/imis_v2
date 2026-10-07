@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\AuditEvent;
 use App\Models\Application;
 use App\Models\ApplicationAccess;
 use App\Models\ApplicationRole;
@@ -12,6 +13,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Audit\AuditLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -109,6 +111,17 @@ class AdminDashboardTest extends TestCase
             ->where('dashboard.loginTrend', null)
             ->where('dashboard.recentActivity', null)
             ->whereNot('dashboard.roleCounts', null));
+    }
+
+    public function test_recent_activity_shows_the_actor_name_without_the_email(): void
+    {
+        $viewer = $this->userWithPermissions(['audit_logs.view']);
+        $actor = User::factory()->create(['name' => 'Juan Dela Cruz', 'email' => 'jdcruz@example.test']);
+        app(AuditLogger::class)->recordFor($actor, AuditEvent::UserUpdated, 'Updated a user');
+
+        $this->actingAs($viewer)->get('/admin')->assertInertia(fn ($page) => $page
+            ->where('dashboard.recentActivity.0.actor', 'Juan Dela Cruz')
+            ->where('dashboard.recentActivity.0.actor_label', 'Juan Dela Cruz <jdcruz@example.test>'));
     }
 
     public function test_dashboard_reports_real_counts(): void

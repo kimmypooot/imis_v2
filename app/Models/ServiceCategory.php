@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Deliberately minimal taxonomy — name/slug/description/status/sort_order
  * only, per the phase's own "avoid over-engineering taxonomy" instruction.
- * No admin CRUD screens exist for it yet; categories are seeded and
- * selected from a dropdown when managing a Service.
+ * Managed under Admin → Service Categories and picked from a dropdown when
+ * managing a Service.
  */
 #[Fillable(['name', 'slug', 'description', 'status', 'sort_order'])]
 class ServiceCategory extends Model
@@ -36,6 +36,14 @@ class ServiceCategory extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', Status::Active);
+    }
+
+    /**
+     * Display order: `sort_order`, then name.
+     */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderBy('sort_order')->orderBy('name');
     }
 
     public function services(): HasMany

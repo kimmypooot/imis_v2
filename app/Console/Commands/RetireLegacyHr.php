@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 /**
  * HR-7 cutover: once the built-in HR module has replaced them, takes the
- * legacy PRISM, LMS and ldms launchers off the portal (inactive, so their
+ * legacy LMS and ldms launchers off the portal (inactive, so their
  * access grants stay on record and the step can be undone from System
  * management). Shows what it would do unless `--apply` is given.
  *
@@ -20,12 +20,12 @@ use Illuminate\Console\Command;
 class RetireLegacyHr extends Command
 {
     /** Launcher short names the HR module replaces. */
-    public const SYSTEMS = ['PRISM', 'LMS', 'LDMS'];
+    public const SYSTEMS = ['LMS', 'LDMS'];
 
     protected $signature = 'imis:retire-legacy-hr
         {--apply : Deactivate the launchers (otherwise only shows what would change)}';
 
-    protected $description = 'Deactivate the PRISM, LMS and ldms portal launchers replaced by the HR module';
+    protected $description = 'Deactivate the LMS and ldms portal launchers replaced by the HR module';
 
     public function handle(AuditLogger $audit): int
     {

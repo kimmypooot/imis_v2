@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import Alert from '../../../../Components/Feedback/Alert.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -41,7 +41,7 @@ const changedLabels = computed(() =>
 const badge = { submitted: 'info', verified: 'active', returned: 'inactive', superseded: 'draft' };
 
 const breadcrumbs = computed(() => [
-    { label: 'Home', href: '/admin' },
+    { label: 'Human Resources', href: '/admin/hr' },
     { label: 'PDS Verification', href: '/admin/hr/pds-verifications' },
     { label: props.employee.name },
 ]);
@@ -54,7 +54,7 @@ const breadcrumbs = computed(() => [
 
     <div class="space-y-6">
         <div class="grid gap-6 lg:grid-cols-3">
-            <AdminCard title="Signature" icon="pencil" class="lg:col-span-2">
+            <Card title="Signature" icon="pencil" class="lg:col-span-2">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="space-y-1 text-sm">
                         <StatusBadge :status="badge[submission.status]" :label="submission.status_label" />
@@ -74,12 +74,12 @@ const breadcrumbs = computed(() => [
                         <Icon name="printer" size="sm" />Print<span class="sr-only"> (opens in a new tab)</span>
                     </a>
                 </div>
-            </AdminCard>
+            </Card>
 
-            <AdminCard title="Photo" icon="camera">
+            <Card title="Photo" icon="camera">
                 <img v-if="submission.photo_url" :src="submission.photo_url" alt="PDS photo as signed" class="h-36 w-28 rounded border border-border object-cover" />
                 <p v-else class="text-sm text-warning">No photo was attached.</p>
-            </AdminCard>
+            </Card>
         </div>
 
         <Alert v-if="changedSections === null" tone="info">This is the employee's first PDS submission — review every section.</Alert>
@@ -91,7 +91,7 @@ const breadcrumbs = computed(() => [
 
         <PdsEditor :schema="schema" :pds="submission.pds" readonly :highlight="changedSections ?? []" />
 
-        <AdminCard v-if="canReview" title="Decision" icon="checkCircle">
+        <Card v-if="canReview" title="Decision" icon="checkCircle">
             <div class="space-y-3">
                 <div>
                     <label for="pds-review-remarks" class="block text-sm font-medium text-text">
@@ -109,7 +109,7 @@ const breadcrumbs = computed(() => [
                     </Button>
                 </div>
             </div>
-        </AdminCard>
+        </Card>
         <Alert v-else-if="submission.status === 'submitted'" tone="info">
             You can't review this submission (it's your own, or you don't have PDS verification access).
         </Alert>

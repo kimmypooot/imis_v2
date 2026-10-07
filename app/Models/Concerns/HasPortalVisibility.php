@@ -30,7 +30,7 @@ trait HasPortalVisibility
             if ($user) {
                 $query->orWhere('visibility', Visibility::Authenticated);
 
-                if ($user->can('access-admin')) {
+                if (self::seesAdministrative($user)) {
                     $query->orWhere('visibility', Visibility::Administrative);
                 }
             }
@@ -46,7 +46,16 @@ trait HasPortalVisibility
         return match ($this->visibility) {
             Visibility::PublicVisibility => true,
             Visibility::Authenticated => $user !== null,
-            Visibility::Administrative => $user !== null && $user->can('access-admin'),
+            Visibility::Administrative => $user !== null && self::seesAdministrative($user),
         };
+    }
+
+    /**
+     * Administrative-tier entries are for staff with a management area:
+     * system administration or Human Resources.
+     */
+    private static function seesAdministrative(User $user): bool
+    {
+        return $user->canAny(['access-admin', 'access-hr']);
     }
 }

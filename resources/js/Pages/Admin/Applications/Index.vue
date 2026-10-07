@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -85,7 +85,7 @@ const toggleStatus = async (system) => {
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Systems' }]"
     />
 
-    <AdminCard title="Registered Systems" icon="grid">
+    <Card title="Registered Systems" icon="grid">
         <template v-if="can('applications.create')" #actions>
             <Button variant="success" class="rounded-full" @click="openAdd">
                 <Icon name="plus" size="sm" />
@@ -139,7 +139,7 @@ const toggleStatus = async (system) => {
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <SystemModal :open="modalOpen" :system="editing" :options="options" @close="modalOpen = false" />
 </template>

@@ -61,8 +61,13 @@ class LeaveFoundationTest extends TestCase
 
         $this->assertSame('14.00', LeaveType::query()->where('code', 'PL')->value('max_days_per_filing'));
         $this->assertSame(15, LeaveType::query()->count());
-        // Wellness Leave waits, inactive, for HR to enter its terms.
-        $this->assertFalse(LeaveType::query()->where('code', 'WL')->sole()->is_active);
+        // Wellness Leave, CSC MC No. 01, s. 2026.
+        $wellness = LeaveType::query()->where('code', 'WL')->sole();
+        $this->assertTrue($wellness->is_active);
+        $this->assertSame('5.000', $wellness->annual_grant);
+        $this->assertSame(3, $wellness->max_consecutive_days);
+        $this->assertTrue($wellness->allows_emergency_filing);
+        $this->assertNotContains('job_order', $wellness->eligible_statuses);
     }
 
     public function test_working_days_skip_weekends_and_days_off_but_not_special_working_days(): void

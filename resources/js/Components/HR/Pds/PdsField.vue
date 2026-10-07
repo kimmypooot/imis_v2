@@ -42,7 +42,7 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
                     type="radio"
                     :name="id"
                     :checked="modelValue === option.value"
-                    class="h-4 w-4 border-border text-primary focus:ring-2 focus:ring-focus-ring"
+                    class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                     @change="emit('update:modelValue', option.value)"
                 />
                 {{ option.label }}
@@ -60,7 +60,7 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
                 :checked="!!modelValue"
                 :disabled="disabled"
                 :aria-describedby="describedBy"
-                class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring"
+                class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                 @change="emit('update:modelValue', $event.target.checked)"
             />
             {{ field.label }}

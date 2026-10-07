@@ -10,6 +10,7 @@ use App\Http\Requests\OrganizationalUnit\StoreOrganizationalUnitRequest;
 use App\Http\Requests\OrganizationalUnit\UpdateOrganizationalUnitRequest;
 use App\Http\Requests\OrganizationalUnit\UpdateOrganizationalUnitStatusRequest;
 use App\Models\OrganizationalUnit;
+use App\Support\HR\OfficeHeads;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,7 +18,7 @@ use Inertia\Response;
 
 class OrganizationalUnitController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, OfficeHeads $heads): Response
     {
         $this->authorize('viewAny', OrganizationalUnit::class);
 
@@ -37,7 +38,15 @@ class OrganizationalUnitController extends Controller
             ->get();
 
         return Inertia::render('Admin/OrganizationalUnits/Index', [
-            'organizationalUnits' => $units,
+            // Who heads each office today (by position, or by designation).
+            'organizationalUnits' => $units->map(fn (OrganizationalUnit $unit) => [
+                ...$unit->toArray(),
+                'head' => ($head = $heads->all()[$unit->id] ?? null) ? [
+                    'name' => $head['user']->name,
+                    'position' => $head['user']->position,
+                    'capacity' => $head['capacity']?->label(),
+                ] : null,
+            ]),
             'filters' => $request->only(['search', 'status', 'unit_type']),
             'statusOptions' => Status::options(),
             'unitTypeOptions' => UnitType::options(),

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Security\SecurityPolicy;
 use App\Support\Usernames;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -70,7 +70,7 @@ class UsernameLoginTest extends TestCase
         }
 
         $this->get('/login')->assertInertia(fn (Assert $page) => $page
-            ->where('lockoutSeconds', fn ($seconds) => $seconds > 60 && $seconds <= LoginRequest::LOCKOUT_SECONDS));
+            ->where('lockoutSeconds', fn ($seconds) => $seconds > 60 && $seconds <= SecurityPolicy::lockoutSeconds()));
     }
 
     // ── Turnstile ────────────────────────────────────────────────────

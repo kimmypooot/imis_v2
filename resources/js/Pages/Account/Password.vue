@@ -6,9 +6,19 @@ import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
 import PasswordInput from '../../Components/Forms/PasswordInput.vue';
 import InputError from '../../Components/Forms/InputError.vue';
-import HelperText from '../../Components/Forms/HelperText.vue';
+import PasswordRequirements from '../../Components/Forms/PasswordRequirements.vue';
+import Alert from '../../Components/Feedback/Alert.vue';
 
 defineOptions({ layout: PortalLayout });
+
+defineProps({
+    requirements: { type: Array, default: () => [] },
+    // Sent here by password expiry (System Settings → Security).
+    expired: { type: Boolean, default: false },
+    expiryDays: { type: Number, default: 0 },
+    // Sent here because a Super Administrator set their password.
+    setByAdmin: { type: Boolean, default: false },
+});
 
 const form = useForm({
     current_password: '',
@@ -34,6 +44,13 @@ const submit = () => {
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Change password' }]"
     />
 
+    <Alert v-if="setByAdmin" tone="warning" class="mb-4 max-w-lg">
+        An administrator set your password. Choose a new one of your own to continue using IMIS; use the one you were given as your current password.
+    </Alert>
+    <Alert v-else-if="expired" tone="warning" class="mb-4 max-w-lg">
+        Your password is more than {{ expiryDays }} days old. Choose a new one to continue using IMIS.
+    </Alert>
+
     <Card class="max-w-lg">
         <form class="space-y-5" @submit.prevent="submit">
             <div>
@@ -57,9 +74,7 @@ const submit = () => {
                     required
                     :invalid="!!form.errors.password"
                 />
-                <HelperText v-if="!form.errors.password" id="password-helper">
-                    At least 8 characters, with both letters and numbers.
-                </HelperText>
+                <PasswordRequirements v-if="!form.errors.password" id="password-helper" :requirements="requirements" />
                 <InputError :message="form.errors.password" />
             </div>
 

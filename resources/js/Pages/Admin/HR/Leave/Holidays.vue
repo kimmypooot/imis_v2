@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -60,17 +60,17 @@ const columns = [
 <template>
     <Head title="Holidays" />
 
-    <PageHeader title="Holidays" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Holidays' }]">
+    <PageHeader title="Holidays" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Holidays' }]">
         <template #actions>
             <label class="sr-only" for="holiday-year">Year</label>
-            <select id="holiday-year" :value="year" class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" @change="changeYear($event.target.value)">
+            <select id="holiday-year" :value="year" class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" @change="changeYear($event.target.value)">
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
             </select>
             <Button v-if="canManage" variant="success" @click="edit()"><Icon name="plus" size="sm" />Add holiday</Button>
         </template>
     </PageHeader>
 
-    <AdminCard :title="`Holidays — ${year}`" icon="calendar" subtitle="From the year's proclamations. Days off are skipped when counting leave days.">
+    <Card :title="`Holidays — ${year}`" icon="calendar" description="From the year's proclamations. Days off are skipped when counting leave days.">
         <DataTable :columns="columns" :rows="holidays" :caption="`Holidays ${year}`" :export-name="`imis-holidays-${year}`" :empty-text="`No holidays entered for ${year} yet.`">
             <template #cell-date="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date) }}</span></template>
             <template #cell-type_label="{ row }"><StatusBadge :status="row.day_off ? 'info' : 'draft'" :label="row.type_label" /></template>
@@ -82,7 +82,7 @@ const columns = [
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         v-if="canManage"

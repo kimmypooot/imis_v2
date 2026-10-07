@@ -7,6 +7,7 @@ use App\Enums\SettingGroup;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Support\HR\CertifyingOfficer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,7 +79,23 @@ class SettingController extends Controller
             'required' => (bool) ($setting->constraints['required'] ?? false),
             'min' => $setting->constraints['min'] ?? null,
             'max' => $setting->constraints['max'] ?? null,
+            'options' => $setting->constraints['options'] ?? null,
+            'placeholders' => $this->placeholders($setting->key),
             'updated_at' => $setting->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * What an empty field falls back to, keyed by another setting's value
+     * in the same group, so the form can show it as a placeholder.
+     *
+     * @return array{setting: string, values: array<string, ?string>}|null
+     */
+    private function placeholders(string $key): ?array
+    {
+        return match ($key) {
+            'hr_certifying_officer_name' => ['setting' => 'hr_certifying_officer_position', 'values' => app(CertifyingOfficer::class)->holders()],
+            default => null,
+        };
     }
 }

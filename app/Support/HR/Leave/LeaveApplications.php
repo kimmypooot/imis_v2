@@ -54,6 +54,7 @@ class LeaveApplications
     public function __construct(
         private readonly LeaveCredits $credits,
         private readonly WorkingDays $workingDays,
+        private readonly Supervisors $supervisors,
     ) {}
 
     // ── Filing ───────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ class LeaveApplications
             'detail' => ['nullable', Rule::enum(LeaveDetail::class)],
             'detail_text' => ['nullable', 'string', 'max:500'],
             'commutation_requested' => ['boolean'],
+            'is_emergency' => ['boolean'],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.self::ATTACHMENT_KILOBYTES],
         ];
@@ -128,7 +130,7 @@ class LeaveApplications
         }
 
         $type = LeaveType::query()->findOrFail($data['leave_type_id']);
-        $supervisor = $type->workflow === 'standard' ? $employee->immediate_supervisor_id : null;
+        $supervisor = $type->workflow === 'standard' ? $this->supervisors->idFor($employee) : null;
 
         return DB::transaction(function () use ($employee, $data, $actor, $resubmitting, $type, $preview, $supervisor) {
             $application = $resubmitting ?? new LeaveApplication;
@@ -147,6 +149,7 @@ class LeaveApplications
                 'detail' => $detail,
                 'detail_text' => $detail?->needsText() || $detail === null ? ($data['detail_text'] ?? null) : null,
                 'commutation_requested' => (bool) ($data['commutation_requested'] ?? false),
+                'is_emergency' => $this->filedLate($type, Carbon::parse($data['date_from'])) && $this->emergency($type, $data),
                 'remarks' => $data['remarks'] ?? null,
                 'status' => LeaveApplicationStatus::ForReview,
                 'filed_by' => $actor->id,
@@ -304,6 +307,7 @@ class LeaveApplications
     {
         return $user->hasAnyPermission([PermissionName::LeaveCertify->value, PermissionName::LeaveApprove->value])
             || Employee::query()->where('immediate_supervisor_id', $user->id)->exists()
+            || $this->supervisors->supervisesByRule($user)
             || LeaveDesignation::query()->activeOn()->where('designee_id', $user->id)->exists();
     }
 
@@ -336,6 +340,7 @@ class LeaveApplications
             'detail_label' => $application->detail?->label(),
             'detail_text' => $application->detail_text,
             'commutation_requested' => $application->commutation_requested,
+            'is_emergency' => $application->is_emergency,
             'remarks' => $application->remarks,
             'status' => $application->status->value,
             'status_label' => $application->status->label(),
@@ -375,6 +380,64 @@ class LeaveApplications
 
     // ── Internals ────────────────────────────────────────────────────
 
+    /** Within the advance-filing period (or after the start): too late unless an emergency. */
+    private function filedLate(LeaveType $type, Carbon $from): bool
+    {
+        return $type->advance_filing_days > 0 && today()->gt($from->copy()->subDays($type->advance_filing_days));
+    }
+
+    /**
+     * Ticked "Emergency", on a leave that allows filing on return (e.g.
+     * Wellness Leave, CSC MC No. 01, s. 2026, 3.e).
+     *
+     * @param  array<string, mixed>  $input
+     */
+    private function emergency(LeaveType $type, array $input): bool
+    {
+        return $type->allows_emergency_filing && filter_var($input['is_emergency'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Days of the same leave, pending or approved, running straight into
+     * these dates on either side (no working day between), for the
+     * "days in a row" cap.
+     */
+    private function adjoiningDays(Employee $employee, LeaveType $type, Carbon $from, Carbon $to, ?LeaveApplication $ignore): float
+    {
+        $total = 0.0;
+
+        foreach ([-1, 1] as $direction) {
+            $edge = $direction < 0 ? $from->copy() : $to->copy();
+            for ($hops = 0; $hops < 10; $hops++) {
+                $next = $this->nextWorkingDay($edge, $direction, $type, $employee);
+                $neighbour = LeaveApplication::query()->holdingDays()
+                    ->where('employee_id', $employee->id)->where('leave_type_id', $type->id)
+                    ->whereDate($direction < 0 ? 'date_to' : 'date_from', $next)
+                    ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->first();
+                if (! $neighbour) {
+                    break;
+                }
+                $total += (float) $neighbour->days;
+                $edge = $direction < 0 ? $neighbour->date_from->copy() : $neighbour->date_to->copy();
+            }
+        }
+
+        return $total;
+    }
+
+    private function nextWorkingDay(Carbon $day, int $direction, LeaveType $type, Employee $employee): Carbon
+    {
+        $candidate = $day->copy();
+        for ($i = 0; $i < 31; $i++) {
+            $candidate->addDays($direction);
+            if ($this->workingDays->count($candidate, $candidate, false, $type->counts_calendar_days, $employee) > 0) {
+                return $candidate;
+            }
+        }
+
+        return $candidate;
+    }
+
     /**
      * @param  array<string, mixed>  $input
      * @param  ?array{code: string, balance: float, pending: float, available: float}  $credit
@@ -387,8 +450,10 @@ class LeaveApplications
         if ($reasons = $this->credits->ineligibilityReasons($employee, $type, $from)) {
             $issues['leave_type_id'] = implode(' ', $reasons);
         }
-        if ($type->workflow === 'standard' && ! $employee->immediate_supervisor_id) {
-            $issues['leave_type_id'] = 'Your immediate supervisor isn\'t set yet. Ask HR to set it before filing.';
+        if ($type->workflow === 'standard' && ! ($supervisor = $this->supervisors->for($employee))['id']) {
+            $issues['leave_type_id'] = $supervisor['source'] === 'external'
+                ? "Your leave is recommended by the {$supervisor['position']}, outside IMIS; file it with HR."
+                : 'Your immediate supervisor isn\'t set yet. Ask HR to set it before filing.';
         }
         if ($halfDay && ! $type->allows_half_day) {
             $issues['is_half_day'] = "{$type->name} can't be taken by the half day.";
@@ -398,11 +463,23 @@ class LeaveApplications
         if ($days <= 0) {
             $issues['date_to'] = 'Those dates have no working days.';
         }
-        if ($type->advance_filing_days > 0 && today()->gt($from->copy()->subDays($type->advance_filing_days))) {
-            $issues['date_from'] = "{$type->name} must be filed at least {$type->advance_filing_days} days ahead.";
+        if ($this->filedLate($type, $from)) {
+            if (! $this->emergency($type, $input)) {
+                $issues['date_from'] = "{$type->name} must be filed at least {$type->advance_filing_days} days ahead."
+                    .($type->allows_emergency_filing ? ' In an emergency, tick "Emergency" and file on your return.' : '');
+            } elseif ($from->gt(today())) {
+                $issues['date_from'] = 'An emergency filing is made on your return, once the leave has started.';
+            }
         }
         if ($type->max_days_per_filing !== null && $days > (float) $type->max_days_per_filing) {
             $issues['date_to'] = "{$type->name} is at most ".(float) $type->max_days_per_filing.' days per filing.';
+        }
+        if ($type->max_consecutive_days !== null) {
+            $run = $days + $this->adjoiningDays($employee, $type, $from, $to, $ignore);
+            if ($run > $type->max_consecutive_days) {
+                $issues['date_to'] = "{$type->name} is at most {$type->max_consecutive_days} days in a row"
+                    .($run > $days ? ", counting the {$type->name} right before or after these dates" : '').'.';
+            }
         }
         if ($type->max_days_per_year !== null) {
             $taken = (float) LeaveApplication::query()->holdingDays()

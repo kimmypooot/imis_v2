@@ -9,6 +9,7 @@ use App\Models\LeaveApplication;
 use App\Models\LeaveType;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Leave\LeaveCredits;
+use App\Support\HR\Leave\Supervisors;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,20 +51,22 @@ class MyLeaveApplicationController extends Controller
                 'allows_half_day' => $type->allows_half_day,
                 'counts_calendar_days' => $type->counts_calendar_days,
                 'advance_filing_days' => $type->advance_filing_days,
+                'allows_emergency_filing' => $type->allows_emergency_filing,
+                'description' => $type->description,
                 'medical_certificate_after_days' => $type->medical_certificate_after_days,
                 'supporting_documents' => $type->supporting_documents,
                 'ineligible' => $credits->ineligibilityReasons($employee, $type),
             ]),
             'detailOptions' => LeaveDetail::optionsByCode(),
             'balances' => $credits->balances($employee),
-            'supervisor' => $employee->immediateSupervisor?->name,
+            'supervisor' => app(Supervisors::class)->for($employee)['name'],
             'resubmitting' => $returned ? [
                 ...$applications->present($returned),
                 'returned_remarks' => $returned->steps()->where('action', 'returned')->latest('acted_at')->value('remarks'),
             ] : null,
             // Recomputed as the dates change (partial reload of `preview`).
             'preview' => fn () => $request->filled(['leave_type_id', 'date_from'])
-                ? $applications->preview($employee, $request->only(['leave_type_id', 'date_from', 'date_to', 'is_half_day', 'detail', 'detail_text']), $returned)
+                ? $applications->preview($employee, $request->only(['leave_type_id', 'date_from', 'date_to', 'is_half_day', 'is_emergency', 'detail', 'detail_text']), $returned)
                 : null,
             'attachmentKilobytes' => LeaveApplications::ATTACHMENT_KILOBYTES,
         ]);
@@ -116,6 +119,6 @@ class MyLeaveApplicationController extends Controller
         $employee = $request->user()->employee;
         abort_unless($employee, 403, 'HR hasn\'t set up your employee record yet.');
 
-        return $employee->load(['user', 'immediateSupervisor:id,name']);
+        return $employee->load(['user', 'immediateSupervisor:id,name,position']);
     }
 }

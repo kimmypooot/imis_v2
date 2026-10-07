@@ -4,8 +4,8 @@ import { useSplash } from '../../Composables/useSplash';
 
 /**
  * Renders the splash driven by useSplash(): a port of the legacy
- * IMISTransition (old-imis js/imis_transition.js). It has a frosted card
- * over a pale gradient with floating blobs, the CSC seal inside two
+ * IMISTransition (old-imis js/imis_transition.js), flattened: a plain
+ * white card on the muted page background, the CSC seal inside two
  * counter-rotating rings (navy outer, red inner), the message, greeting
  * and note, and three dots that take turns lighting up red. Styles are
  * the .imis-tr* classes in app.css. Announced through a polite live region.
@@ -54,12 +54,6 @@ const rings = [
 <template>
     <Transition :name="splash.instant ? 'imis-tr-instant' : 'imis-tr'" :duration="{ enter: 450, leave: 300 }">
         <div v-if="splash.visible" class="imis-tr" role="status" aria-live="polite" aria-busy="true">
-            <div aria-hidden="true">
-                <div class="imis-tr__blob imis-tr__blob--1" />
-                <div class="imis-tr__blob imis-tr__blob--2" />
-                <div class="imis-tr__blob imis-tr__blob--3" />
-            </div>
-
             <div class="imis-tr__card">
                 <div class="imis-tr__rings" aria-hidden="true">
                     <svg v-for="ring in rings" :key="ring.cls" :class="ring.cls" viewBox="0 0 24 24" fill="none">

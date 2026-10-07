@@ -1,4 +1,5 @@
 <script setup>
+import Button from '../UI/Button.vue';
 import { ref, useId } from 'vue';
 import { router } from '@inertiajs/vue3';
 
@@ -44,17 +45,17 @@ const clear = () => {
 <template>
     <form class="flex flex-wrap items-center gap-2 text-sm" @submit.prevent="apply">
         <label :for="`${id}-from`" class="text-text-muted">From</label>
-        <input :id="`${id}-from`" v-model="from" type="date" class="rounded-md border border-border bg-surface px-2 py-1 text-sm" />
+        <input :id="`${id}-from`" v-model="from" type="date" class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm" />
         <label :for="`${id}-to`" class="text-text-muted">to</label>
-        <input :id="`${id}-to`" v-model="to" type="date" class="rounded-md border border-border bg-surface px-2 py-1 text-sm" />
+        <input :id="`${id}-to`" v-model="to" type="date" class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm" />
         <template v-if="select">
             <label :for="`${id}-extra`" class="sr-only">{{ select.label }}</label>
-            <select :id="`${id}-extra`" v-model="extra" class="max-w-48 rounded-md border border-border bg-surface px-2 py-1 text-sm">
+            <select :id="`${id}-extra`" v-model="extra" class="max-w-48 rounded-md border border-border-strong bg-surface px-2 py-1 text-sm">
                 <option value="">{{ select.label }}</option>
                 <option v-for="option in select.options" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
         </template>
-        <button type="submit" class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-hover">Apply</button>
+        <Button type="submit" size="sm">Apply</Button>
         <button v-if="from || to || extra" type="button" class="text-xs text-primary hover:underline" @click="clear">Clear</button>
     </form>
 </template>

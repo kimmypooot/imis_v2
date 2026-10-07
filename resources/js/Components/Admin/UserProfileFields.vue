@@ -3,16 +3,36 @@ import TextInput from '../Forms/TextInput.vue';
 import InputError from '../Forms/InputError.vue';
 import FormGroup from '../Forms/FormGroup.vue';
 import Select from '../Forms/Select.vue';
+import { computed, watch } from 'vue';
 
 /**
  * The legacy Add/Edit User profile fields, shared by both modals. Binds
  * straight to the parent's Inertia form (`form.first_name`, …) so errors
  * come back on the same keys.
  */
-defineProps({
+const props = defineProps({
     form: { type: Object, required: true },
     officeOptions: { type: Array, required: true },
     idPrefix: { type: String, required: true },
+    // Division Chief / Field Director: the labels, and whether this viewer may set it.
+    designationOptions: { type: Array, default: () => [] },
+    canDesignate: { type: Boolean, default: false },
+});
+
+// The designation the chosen office takes (RSU → Division Chief, field/satellite → Field Director).
+const officeDesignation = computed(() => {
+    const office = props.officeOptions
+        .flatMap((group) => group.options ?? [group])
+        .find((option) => String(option.value) === String(props.form.organizational_unit_id));
+
+    return props.designationOptions.find((option) => option.value === office?.designation) ?? null;
+});
+
+// Another type of office: the designation no longer fits.
+watch(officeDesignation, (designation) => {
+    if (props.form.office_designation && props.form.office_designation !== designation?.value) {
+        props.form.office_designation = '';
+    }
 });
 
 const sexOptions = [
@@ -63,6 +83,21 @@ const sexOptions = [
                 :id="`${idPrefix}-office`"
                 v-model="form.organizational_unit_id"
                 :options="[{ value: '', label: '— Not set —' }, ...officeOptions]"
+            />
+        </FormGroup>
+        <FormGroup
+            v-if="officeDesignation"
+            :id="`${idPrefix}-designation`"
+            label="Designation"
+            :error="form.errors.office_designation"
+            :helper-text="`The ${officeDesignation.label} is overall admin of the office's systems. One per office.`"
+            class="sm:col-span-2"
+        >
+            <Select
+                :id="`${idPrefix}-designation`"
+                v-model="form.office_designation"
+                :options="[{ value: '', label: '— None —' }, officeDesignation]"
+                :disabled="!canDesignate"
             />
         </FormGroup>
     </div>

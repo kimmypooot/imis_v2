@@ -1,12 +1,13 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import AdminCard from '../UI/AdminCard.vue';
+import Card from '../UI/Card.vue';
 import Badge from '../UI/Badge.vue';
 import Button from '../UI/Button.vue';
 import Icon from '../UI/Icon.vue';
 import InputLabel from '../Forms/InputLabel.vue';
 import HelperText from '../Forms/HelperText.vue';
 import InputError from '../Forms/InputError.vue';
+import Select from '../Forms/Select.vue';
 
 /**
  * One settings group, saved as a single form. Only editable settings are
@@ -32,6 +33,20 @@ const form = useForm({
 
 const inputTypes = { string: 'text', integer: 'number', url: 'url', email: 'email' };
 
+// An optional select can be left unset (stored as null).
+const selectOptions = (setting) => [
+    ...(setting.required ? [] : [{ value: '', label: '— Not set —' }]),
+    ...(setting.options ?? []).map((option) => ({ value: option, label: option })),
+];
+
+// What an empty field falls back to, following another setting's
+// current (unsaved) value, e.g. the holder of the selected position.
+const placeholderFor = (setting) => {
+    const source = setting.placeholders;
+    const fallback = source ? source.values?.[form.settings[source.setting]] : null;
+    return fallback ? `${fallback} (from the Plantilla)` : undefined;
+};
+
 const fieldId = (setting) => `setting-${setting.key}`;
 const errorFor = (setting) => form.errors[`settings.${setting.key}`];
 const describedBy = (setting) => (setting.description && !errorFor(setting) ? `${fieldId(setting)}-helper` : undefined);
@@ -49,7 +64,7 @@ const inputClass =
 </script>
 
 <template>
-    <AdminCard :title="group.label" :subtitle="group.description" icon="cog">
+    <Card :title="group.label" :description="group.description" icon="cog">
         <form :aria-label="`${group.label} settings`" class="space-y-5" @submit.prevent="submit">
             <div v-for="setting in group.settings" :key="setting.key">
                 <!-- Protected: value only, never an input. -->
@@ -75,7 +90,7 @@ const inputClass =
                             type="checkbox"
                             :disabled="!canUpdate"
                             :aria-describedby="describedBy(setting)"
-                            class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring"
+                            class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                         />
                         {{ setting.label }}
                     </label>
@@ -88,8 +103,18 @@ const inputClass =
                 <template v-else>
                     <InputLabel :for="fieldId(setting)" :required="setting.required">{{ setting.label }}</InputLabel>
                     <div class="mt-1">
+                        <Select
+                            v-if="setting.type === 'select'"
+                            :id="fieldId(setting)"
+                            v-model="form.settings[setting.key]"
+                            :options="selectOptions(setting)"
+                            :required="setting.required"
+                            :disabled="!canUpdate"
+                            :invalid="!!errorFor(setting)"
+                            :aria-describedby="describedBy(setting)"
+                        />
                         <textarea
-                            v-if="setting.type === 'text'"
+                            v-else-if="setting.type === 'text'"
                             :id="fieldId(setting)"
                             v-model="form.settings[setting.key]"
                             :rows="3"
@@ -108,6 +133,7 @@ const inputClass =
                             :min="setting.type === 'integer' ? setting.min : undefined"
                             :max="setting.type === 'integer' ? setting.max : undefined"
                             :maxlength="setting.type === 'string' ? setting.max ?? 255 : undefined"
+                            :placeholder="placeholderFor(setting)"
                             :required="setting.required"
                             :disabled="!canUpdate"
                             :aria-invalid="!!errorFor(setting)"
@@ -134,5 +160,5 @@ const inputClass =
                 </p>
             </div>
         </form>
-    </AdminCard>
+    </Card>
 </template>

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -36,6 +36,7 @@ const columns = [
     { key: 'name', label: 'Name' },
     { key: 'code', label: 'Code', align: 'center' },
     { key: 'unit_type', label: 'Type', value: (unit) => typeLabel(unit.unit_type) },
+    { key: 'head', label: 'Head', value: (unit) => (unit.head ? [unit.head.name, unit.head.capacity ?? unit.head.position].filter(Boolean).join(', ') : '') },
     { key: 'parent', label: 'Parent', value: (unit) => unit.parent?.name ?? '' },
     { key: 'sort_order', label: 'Order', align: 'center' },
     { key: 'status', label: 'Status', align: 'center' },
@@ -105,7 +106,7 @@ const toggleStatus = async (unit) => {
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Organizational Units' }]"
     />
 
-    <AdminCard title="List of Offices" icon="building">
+    <Card title="List of Offices" icon="building">
         <template v-if="can('organizational_units.create')" #actions>
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Office</Button>
         </template>
@@ -117,6 +118,16 @@ const toggleStatus = async (unit) => {
             </template>
             <template #cell-code="{ row }">
                 <span class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.code }}</span>
+            </template>
+            <template #cell-head="{ row }">
+                <template v-if="row.head">
+                    <div class="text-text">{{ row.head.name }}</div>
+                    <div class="text-xs text-text-muted">
+                        <template v-if="row.head.capacity">{{ row.head.capacity }}<template v-if="row.head.position"> ({{ row.head.position }})</template></template>
+                        <template v-else>{{ row.head.position }}</template>
+                    </div>
+                </template>
+                <span v-else class="text-text-muted">—</span>
             </template>
             <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
             <template #cell-actions="{ row }">
@@ -132,7 +143,7 @@ const toggleStatus = async (unit) => {
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         :open="modalOpen"

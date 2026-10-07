@@ -96,7 +96,7 @@ class ServiceController extends Controller
                 fn (Visibility $case) => ['value' => $case->value, 'label' => ucfirst($case->value)],
                 Visibility::cases(),
             ),
-            'categoryOptions' => ServiceCategory::query()->active()->orderBy('name')->get(['id', 'name']),
+            'categoryOptions' => ServiceCategory::query()->active()->ordered()->get(['id', 'name']),
             'organizationalUnitOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get(['id', 'name']),
         ];
     }

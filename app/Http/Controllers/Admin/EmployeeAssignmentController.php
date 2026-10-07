@@ -15,7 +15,8 @@ use Illuminate\Http\Request;
  * HR-1b: HR records an employee's movements between offices
  * (`employees.reassign`, never their own). The history shows on the
  * employee record; EmployeeAssignments decides when the account's office
- * moves (reassignments only).
+ * moves (reassignments only) and, for a designation as head of office,
+ * when the office's staff are handed over to the designee and back.
  */
 class EmployeeAssignmentController extends Controller
 {
@@ -32,10 +33,16 @@ class EmployeeAssignmentController extends Controller
             AuditEvent::EmployeeAssignmentRecorded,
             "Recorded the {$assignment->label} to {$assignment->toUnit?->name}",
             $assignment,
-            array_filter(['kind' => $assignment->kind->value, 'effective_date' => $assignment->effective_date->toDateString(), 'office_moved' => $result['office']]),
+            array_filter([
+                'kind' => $assignment->kind->value,
+                'as_head' => $assignment->as_head ?: null,
+                'effective_date' => $assignment->effective_date->toDateString(),
+                'office_moved' => $result['office'],
+                'supervision' => $result['supervision'],
+            ]),
         );
 
-        return back()->with('status', $this->message("{$assignment->kind->label()} recorded.", $result['office']));
+        return back()->with('status', $this->message("{$assignment->kind->label()} recorded.", $result['office'], $result['supervision']));
     }
 
     public function update(Request $request, Employee $employee, EmployeeAssignment $assignment, EmployeeAssignments $assignments): RedirectResponse
@@ -46,32 +53,32 @@ class EmployeeAssignmentController extends Controller
         $result = $assignments->update($assignment, $this->validated($request, $employee, $assignments), $request->user());
 
         $this->auditScan($result['document']);
-        if ($result['changed'] !== [] || $result['office']) {
+        if ($result['changed'] !== [] || $result['office'] || $result['supervision']) {
             $this->audit()->record(
                 AuditEvent::EmployeeAssignmentUpdated,
                 "Corrected the {$assignment->label}",
                 $assignment,
-                array_filter(['fields' => $result['changed'], 'office_moved' => $result['office']]),
+                array_filter(['fields' => $result['changed'], 'office_moved' => $result['office'], 'supervision' => $result['supervision']]),
             );
         }
 
-        return back()->with('status', $this->message("{$assignment->kind->label()} saved.", $result['office']));
+        return back()->with('status', $this->message("{$assignment->kind->label()} saved.", $result['office'], $result['supervision']));
     }
 
     public function destroy(Request $request, Employee $employee, EmployeeAssignment $assignment, EmployeeAssignments $assignments): RedirectResponse
     {
         $this->authorize('reassign', $employee);
 
-        $office = $assignments->delete($assignment);
+        $result = $assignments->delete($assignment);
 
         $this->audit()->record(
             AuditEvent::EmployeeAssignmentDeleted,
             "Removed the {$assignment->label}",
             $assignment,
-            array_filter(['kind' => $assignment->kind->value, 'office_moved' => $office]),
+            array_filter(['kind' => $assignment->kind->value, 'office_moved' => $result['office'], 'supervision' => $result['supervision']]),
         );
 
-        return back()->with('status', $this->message("{$assignment->kind->label()} removed.", $office));
+        return back()->with('status', $this->message("{$assignment->kind->label()} removed.", $result['office'], $result['supervision']));
     }
 
     /**
@@ -91,9 +98,20 @@ class EmployeeAssignmentController extends Controller
 
     /**
      * @param  ?array{from: ?string, to: ?string}  $office
+     * @param  ?array<string, mixed>  $supervision  a head-of-office handover or give-back
      */
-    private function message(string $done, ?array $office): string
+    private function message(string $done, ?array $office, ?array $supervision = null): string
     {
-        return $office ? "{$done} Office changed from ".($office['from'] ?? 'none')." to {$office['to']}." : $done;
+        $message = $office ? "{$done} Office changed from ".($office['from'] ?? 'none')." to {$office['to']}." : $done;
+
+        if ($supervision) {
+            $staff = fn (int $count) => $count.' '.($count === 1 ? 'staff member' : 'staff');
+            $message .= $supervision['action'] === 'handed'
+                ? " They are now the immediate supervisor of {$staff($supervision['count'])} of {$supervision['office']}."
+                : " Previous immediate supervisors given back to {$staff($supervision['count'])} of {$supervision['office']}."
+                    .($supervision['kept'] ? " {$staff($supervision['kept'])} kept the supervisor HR set since." : '');
+        }
+
+        return $message;
     }
 }

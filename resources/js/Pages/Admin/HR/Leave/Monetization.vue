@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -69,13 +69,13 @@ const columns = [
 <template>
     <Head title="Leave Monetization" />
 
-    <PageHeader title="Leave Monetization" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Leave Monetization' }]">
+    <PageHeader title="Leave Monetization" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Monetization' }]">
         <template v-if="canManage" #actions>
             <Button variant="success" @click="terminalOpen = true"><Icon name="plus" size="sm" />File terminal leave</Button>
         </template>
     </PageHeader>
 
-    <AdminCard title="Requests" icon="database">
+    <Card title="Requests" icon="database">
         <template #actions>
             <div class="flex flex-wrap gap-1" role="group" aria-label="Status">
                 <button
@@ -108,7 +108,7 @@ const columns = [
                 <span v-else-if="row.own" class="text-xs text-text-muted">Your own</span>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <Modal :open="deciding !== null" :title="decision.decision === 'approved' ? 'Approve request' : 'Reject request'" :tone="decision.decision === 'approved' ? 'success' : 'danger'" @close="deciding = null">
         <form id="mon-decision-form" class="space-y-3" @submit.prevent="submitDecision">

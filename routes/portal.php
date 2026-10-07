@@ -5,6 +5,8 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
 use App\Http\Controllers\EmployeeDocumentFileController;
+use App\Http\Controllers\ExecutiveDashboardController;
+use App\Http\Controllers\ExecutiveSettingsController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\My201FileController;
@@ -14,10 +16,13 @@ use App\Http\Controllers\MyLearningDevelopmentController;
 use App\Http\Controllers\MyLeaveApplicationController;
 use App\Http\Controllers\MyLeaveController;
 use App\Http\Controllers\MyMonetizationController;
+use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
 use App\Http\Controllers\MyServiceRecordController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationalUnitController;
+use App\Http\Controllers\PayslipApprovalController;
+use App\Http\Controllers\PayslipController;
 use App\Http\Controllers\PdsPhotoController;
 use App\Http\Controllers\PdsSubmissionPrintController;
 use App\Http\Controllers\PortalController;
@@ -104,6 +109,16 @@ Route::middleware('auth')->group(function () {
     Route::post('my/flexible-work/{arrangement}/cancel', [MyFlexibleWorkController::class, 'cancel'])->name('my.fwa.cancel');
     Route::post('my/flexible-work/reports', [MyFlexibleWorkController::class, 'report'])->middleware('throttle:20,1')->name('my.fwa.report');
 
+    // HR-8: your payslips (requested, then approved by the head of HRD),
+    // the head of HRD's approvals, and one printable payslip (yours once
+    // approved, or anyone's for payroll staff — PayrollRunPolicy).
+    Route::get('my/payslips', [MyPayslipController::class, 'index'])->name('my.payslips');
+    Route::post('my/payslips', [MyPayslipController::class, 'store'])->middleware('throttle:10,1')->name('my.payslips.store');
+    Route::post('my/payslips/{payslipRequest}/cancel', [MyPayslipController::class, 'cancel'])->name('my.payslips.cancel');
+    Route::get('payslips/approvals', [PayslipApprovalController::class, 'index'])->name('payslips.approvals');
+    Route::post('payslips/approvals/{payslipRequest}', [PayslipApprovalController::class, 'decide'])->middleware('throttle:60,1')->name('payslips.approvals.decide');
+    Route::get('payslips/{entry}', [PayslipController::class, 'show'])->name('payslips.show');
+
     // Your notifications (the top-bar bell).
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -138,4 +153,20 @@ Route::middleware('auth')->group(function () {
 
     Route::get('organizational-units', [OrganizationalUnitController::class, 'index'])->name('organizational-units.index');
     Route::get('organizational-units/{organizationalUnit}', [OrganizationalUnitController::class, 'show'])->name('organizational-units.show');
+
+    // Executive Dashboard: top management's view of every module and
+    // connected system (Exec-1 to Exec-3), and its settings.
+    Route::middleware('permission:executive.view')->group(function () {
+        Route::get('executive', [ExecutiveDashboardController::class, 'index'])->name('executive.index');
+        Route::get('executive/print', [ExecutiveDashboardController::class, 'print'])->name('executive.print');
+    });
+
+    Route::middleware('permission:executive.manage')->group(function () {
+        Route::get('executive/settings', [ExecutiveSettingsController::class, 'index'])->name('executive.settings');
+        Route::put('executive/feeds/{application}', [ExecutiveSettingsController::class, 'updateFeed'])->name('executive.feeds.update');
+        Route::post('executive/feeds/{application}/key', [ExecutiveSettingsController::class, 'generateKey'])->name('executive.feeds.key');
+        Route::put('executive/targets', [ExecutiveSettingsController::class, 'saveTarget'])->name('executive.targets.save');
+        Route::delete('executive/targets/{target}', [ExecutiveSettingsController::class, 'destroyTarget'])->name('executive.targets.destroy');
+        Route::post('executive/collect', [ExecutiveSettingsController::class, 'collect'])->middleware('throttle:6,1')->name('executive.collect');
+    });
 });

@@ -21,11 +21,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Shown on the login screen and in the About dialog, like the legacy
-    | IMIS_VERSION constant. 2.x is the Laravel/Vue rebuild.
+    | IMIS_VERSION constant. The newest published What's New release takes
+    | precedence (Changelog::currentVersion()); this is the fallback.
     |
     */
 
-    'version' => env('IMIS_VERSION', '2.0.0'),
+    'version' => env('IMIS_VERSION', '2.7.0'),
 
     /*
     |--------------------------------------------------------------------------

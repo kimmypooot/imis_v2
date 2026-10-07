@@ -1,9 +1,10 @@
 <script setup>
+import Button from '../../../Components/UI/Button.vue';
 import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import Select from '../../../Components/Forms/Select.vue';
@@ -82,7 +83,7 @@ const columns = [
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Admin Audit Log' }]"
     />
 
-    <AdminCard title="All Admin Actions" icon="clipboard">
+    <Card title="All Admin Actions" icon="clipboard">
         <form class="mb-4 grid gap-3 rounded-md bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-6" @submit.prevent="applyFilters">
             <div class="lg:col-span-2">
                 <label for="filter-event" class="mb-1 block text-xs font-medium text-text-muted">Action</label>
@@ -98,14 +99,14 @@ const columns = [
             </div>
             <div class="lg:col-span-2">
                 <label for="filter-from" class="mb-1 block text-xs font-medium text-text-muted">From</label>
-                <input id="filter-from" v-model="fromDate" type="date" class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm" />
+                <input id="filter-from" v-model="fromDate" type="date" class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm" />
             </div>
             <div class="lg:col-span-2">
                 <label for="filter-to" class="mb-1 block text-xs font-medium text-text-muted">To</label>
-                <input id="filter-to" v-model="toDate" type="date" class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm" />
+                <input id="filter-to" v-model="toDate" type="date" class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm" />
             </div>
             <div class="flex items-end gap-2 lg:col-span-2">
-                <button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover">Apply filters</button>
+                <Button type="submit">Apply filters</Button>
                 <button type="button" class="rounded-md px-3 py-2 text-sm text-primary hover:underline" @click="reset">Reset</button>
             </div>
         </form>
@@ -130,5 +131,5 @@ const columns = [
                 <ActionButton icon="eye" tone="neutral" :label="`View entry ${row.id}`" :href="`/admin/audit-logs/${row.id}`" />
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

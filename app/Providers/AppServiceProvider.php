@@ -11,6 +11,8 @@ use App\Models\CommitteeMember;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\EmployeeDocument;
+use App\Models\EmployeeLoan;
+use App\Models\EmployeePayItem;
 use App\Models\FwaArrangement;
 use App\Models\FwaReport;
 use App\Models\Holiday;
@@ -20,6 +22,10 @@ use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveMonetization;
 use App\Models\LeaveType;
 use App\Models\OrganizationalUnit;
+use App\Models\PayComponent;
+use App\Models\PayrollEntry;
+use App\Models\PayrollRun;
+use App\Models\PayslipRequest;
 use App\Models\Pds\PdsLearningDevelopment;
 use App\Models\Pds\PdsSubmission;
 use App\Models\Permission;
@@ -35,6 +41,10 @@ use App\Policies\PdsLearningDevelopmentPolicy;
 use App\Policies\PdsSubmissionPolicy;
 use App\Support\Audit\AuthenticationAuditSubscriber;
 use App\Support\Legacy\LegacyBridge;
+use App\Support\Security\SecurityPolicy;
+use App\Support\System\ScheduleMonitor;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Cache;
@@ -55,20 +65,29 @@ class AppServiceProvider extends ServiceProvider
     public const PERMISSION_CACHE_KEY = 'authorization.permission-names';
 
     /**
-     * The permissions that qualify a user as an "administrative" user for
-     * portal purposes — showing the Administration nav entry, reaching
-     * `/admin`, and seeing `administrative`-visibility directory entries.
-     * Centralized here so that concept has exactly one definition instead
-     * of being re-derived per controller/component.
+     * The permissions that qualify a user for system administration — the
+     * Administration nav entry and `/admin` (`access-admin`). Centralized
+     * here so that concept has exactly one definition instead of being
+     * re-derived per controller/component. `administrative`-visibility
+     * directory entries need this or HR_ACCESS_PERMISSIONS.
      */
     public const ADMIN_ACCESS_PERMISSIONS = [
         'roles.view', 'permissions.view', 'users.view', 'organizational_units.view', 'services.view',
         'applications.view', 'committees.view', 'announcements.view',
         'audit_logs.view', 'settings.view', 'changelogs.view',
         'applications.manage_access', 'sessions.view', 'backups.create',
+    ];
+
+    /**
+     * The permissions that open the Human Resources area — its nav entry
+     * and dashboard at `/admin/hr` (`access-hr`). Kept apart from system
+     * administration: HR staff aren't system administrators, and system
+     * administrators don't need HR's personal data.
+     */
+    public const HR_ACCESS_PERMISSIONS = [
         'employees.view', 'employees.view_unit', 'pds.view', 'pds.verify', 'employee_documents.view',
         'ld.view', 'ld.manage', 'ld.approve', 'plantilla.view', 'plantilla.manage',
-        'service_records.view', 'leave.view', 'leave.manage',
+        'service_records.view', 'leave.view', 'leave.manage', 'payroll.view', 'payroll.manage',
     ];
 
     /**
@@ -84,11 +103,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Password::defaults(function () {
-            $rule = Password::min(8)->letters()->numbers();
-
-            return $this->app->isProduction() ? $rule->uncompromised() : $rule;
-        });
+        // System Settings → Security.
+        Password::defaults(fn () => SecurityPolicy::passwordRule());
+        SecurityPolicy::applySessionConfig();
 
         // API Resources are used here purely to shape Inertia props, never
         // as a versioned JSON API — the default {"data": [...]} envelope
@@ -100,6 +117,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Mirror account and access changes to the legacy subsystems' database.
         $this->app->make(LegacyBridge::class)->registerListeners();
+
+        // System Health: remember when each scheduled job last ran.
+        Event::listen(ScheduledTaskFinished::class, fn (ScheduledTaskFinished $event) => app(ScheduleMonitor::class)
+            ->record($event->task, in_array($event->task->exitCode, [null, 0], true)));
+        Event::listen(ScheduledTaskFailed::class, fn (ScheduledTaskFailed $event) => app(ScheduleMonitor::class)->record($event->task, false));
     }
 
     /**
@@ -138,6 +160,12 @@ class AppServiceProvider extends ServiceProvider
             'fwa_report' => FwaReport::class,
             'ld_record' => PdsLearningDevelopment::class,
             'pds_submission' => PdsSubmission::class,
+            'pay_component' => PayComponent::class,
+            'employee_pay_item' => EmployeePayItem::class,
+            'employee_loan' => EmployeeLoan::class,
+            'payroll_run' => PayrollRun::class,
+            'payroll_entry' => PayrollEntry::class,
+            'payslip_request' => PayslipRequest::class,
         ]);
 
         Event::subscribe(AuthenticationAuditSubscriber::class);
@@ -162,6 +190,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define(
             'access-admin',
             fn (User $user) => $user->hasAnyPermission(self::ADMIN_ACCESS_PERMISSIONS),
+        );
+
+        Gate::define(
+            'access-hr',
+            fn (User $user) => $user->hasAnyPermission(self::HR_ACCESS_PERMISSIONS),
         );
 
         if (! Schema::hasTable('permissions')) {

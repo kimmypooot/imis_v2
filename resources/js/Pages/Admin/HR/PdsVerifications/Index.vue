@@ -2,7 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -29,9 +29,9 @@ const columns = [
 <template>
     <Head title="PDS Verification" />
 
-    <PageHeader title="PDS Verification" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'PDS Verification' }]" />
+    <PageHeader title="PDS Verification" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'PDS Verification' }]" />
 
-    <AdminCard title="Awaiting Verification" icon="checkCircle" subtitle="Each is the PDS exactly as the employee e-signed it. Opening one is logged.">
+    <Card title="Awaiting Verification" icon="checkCircle" description="Each is the PDS exactly as the employee e-signed it. Opening one is logged.">
         <DataTable :columns="columns" :rows="pending" caption="PDS submissions awaiting verification" export-name="imis-pds-verifications">
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
@@ -45,5 +45,5 @@ const columns = [
                 <ActionButton icon="eye" tone="neutral" :label="`Review the PDS of ${row.name}`" :href="`/admin/hr/pds-verifications/${row.id}`" />
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

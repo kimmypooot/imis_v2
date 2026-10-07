@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Models\User;
 use App\Rules\Turnstile;
 use App\Support\Audit\AuditLogger;
+use App\Support\Security\SecurityPolicy;
 use App\Support\Usernames;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,10 +21,9 @@ use Illuminate\Validation\ValidationException;
  */
 class LoginRequest extends FormRequest
 {
-    public const MAX_ATTEMPTS = 5;
-
-    /** How long MAX_ATTEMPTS failures lock sign-in out: 15 minutes, as in the legacy IMIS. */
-    public const LOCKOUT_SECONDS = 900;
+    // How many failures lock sign-in, and for how long, are set on System
+    // Settings → Security (SecurityPolicy); 5 and 15 minutes by default,
+    // as in the legacy IMIS.
 
     /**
      * Determine if the user is authorized to make this request.
@@ -77,7 +77,7 @@ class LoginRequest extends FormRequest
         $user = User::where('username', $username)->first();
 
         if (! $user || ! Hash::check($this->string('password'), $user->password)) {
-            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+            RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
 
             // Only the attempted username is kept — never the password.
             app(AuditLogger::class)->recordFor(
@@ -94,7 +94,7 @@ class LoginRequest extends FormRequest
         }
 
         if (! $user->isActive()) {
-            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+            RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
 
             app(AuditLogger::class)->recordFor(
                 null,
@@ -124,7 +124,7 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), self::MAX_ATTEMPTS)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), SecurityPolicy::maxLoginAttempts())) {
             return;
         }
 

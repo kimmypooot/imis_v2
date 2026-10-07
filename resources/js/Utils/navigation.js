@@ -34,6 +34,12 @@ export const adminAccessPermissions = [
     'applications.manage_access',
     'sessions.view',
     'backups.create',
+];
+
+// Any one of these permissions is enough to see the Human Resources area
+// (sidebar entry, account menu, /admin/hr) — kept in sync with
+// AppServiceProvider::HR_ACCESS_PERMISSIONS.
+export const hrAccessPermissions = [
     'employees.view',
     'employees.view_unit',
     'pds.view',
@@ -47,12 +53,15 @@ export const adminAccessPermissions = [
     'service_records.view',
     'leave.view',
     'leave.manage',
+    'payroll.view',
+    'payroll.manage',
 ];
 
 /**
  * Portal sidebar: Home on its own, then headed groups. The Management
- * group holds only Administration, so it disappears entirely for users
- * without admin access (SidebarNav drops empty groups).
+ * group holds only the Executive Dashboard and the two management areas
+ * (Human Resources and Administration), so it disappears for users with none
+ * (SidebarNav drops empty groups).
  */
 export const portalNavItems = [
     { label: 'Home', href: '/dashboard', icon: 'home' },
@@ -85,12 +94,18 @@ export const portalNavItems = [
             { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'database' },
             { label: 'Flexible Work', href: '/my/flexible-work', icon: 'clock' },
             { label: 'Leave Approvals', href: '/leave/approvals', icon: 'checkCircle', flag: 'leaveApprover' },
+            { label: 'My Payslips', href: '/my/payslips', icon: 'database' },
+            { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
             { label: 'My Learning & Development', href: '/my/learning-development', icon: 'chartBar' },
         ],
     },
     {
         group: 'Management',
-        items: [{ label: 'Administration', href: '/admin', icon: 'shield', permission: adminAccessPermissions }],
+        items: [
+            { label: 'Executive Dashboard', href: '/executive', icon: 'chartBar', permission: 'executive.view' },
+            { label: 'HR Management', href: '/admin/hr', icon: 'clipboard', permission: hrAccessPermissions },
+            { label: 'Administration', href: '/admin', icon: 'shield', permission: adminAccessPermissions },
+        ],
     },
 ];
 
@@ -119,39 +134,12 @@ export const adminModuleGroups = [
         ],
     },
     {
-        // HR-1. Later HR phases (PDS, L&D, plantilla, service record,
-        // leave) add their pages here.
-        group: 'Human Resources',
-        icon: 'clipboard',
-        items: [
-            { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
-            { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
-            { label: 'Plantilla', href: '/admin/hr/plantilla', icon: 'grid', permission: ['plantilla.view', 'plantilla.manage'] },
-            { label: 'Positions', href: '/admin/hr/positions', icon: 'clipboard', permission: ['plantilla.view', 'plantilla.manage'] },
-            { label: 'Staffing', href: '/admin/hr/staffing', icon: 'building', permission: ['plantilla.view', 'plantilla.manage'] },
-            { label: 'Salary Schedules', href: '/admin/hr/salary-schedules', icon: 'database', permission: ['plantilla.view', 'plantilla.manage'] },
-            { label: 'Leave Credits', href: '/admin/hr/leave', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Leave Types', href: '/admin/hr/leave/types', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Holidays', href: '/admin/hr/leave/holidays', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Leave Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
-            { label: 'OIC Designations', href: '/admin/hr/leave/designations', icon: 'users', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Leave Monetization', href: '/admin/hr/leave/monetization', icon: 'database', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Leave Reports', href: '/admin/hr/leave/reports', icon: 'printer', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Cutover Readiness', href: '/admin/hr/readiness', icon: 'checkCircle', permission: 'leave.manage' },
-            { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify' },
-            { label: 'L&D Dashboard', href: '/admin/hr/learning-development/dashboard', icon: 'activity', permission: ['ld.view', 'ld.manage'] },
-            { label: 'Learning & Development', href: '/admin/hr/learning-development', icon: 'chartBar', permission: ['ld.view', 'ld.manage'] },
-            { label: 'Training Report', href: '/admin/hr/learning-development/report', icon: 'printer', permission: ['ld.view', 'ld.manage'] },
-            { label: 'L&D Review', href: '/admin/hr/learning-development/reviews', icon: 'checkCircle', permission: 'ld.approve' },
-        ],
-    },
-    {
         group: 'Portal Content',
         icon: 'building',
         items: [
             { label: 'Organizational Units', href: '/admin/organizational-units', icon: 'building', permission: 'organizational_units.view' },
             { label: 'Services', href: '/admin/services', icon: 'clipboard', permission: 'services.view' },
+            { label: 'Service Categories', href: '/admin/service-categories', icon: 'tag', permission: 'services.view' },
             { label: 'Committees', href: '/admin/committees', icon: 'users', permission: 'committees.view' },
         ],
     },
@@ -169,6 +157,7 @@ export const adminModuleGroups = [
             { label: 'Security Logs', href: '/admin/security-logs', icon: 'shield', permission: 'audit_logs.view' },
             { label: 'Admin Audit Log', href: '/admin/audit-logs', icon: 'clipboard', permission: 'audit_logs.view' },
             { label: 'System Settings', href: '/admin/settings', icon: 'cog', permission: 'settings.view' },
+            { label: 'System Health', href: '/admin/system-health', icon: 'activity', permission: 'settings.view' },
             { label: 'Backup Database', href: '/admin/backup', icon: 'database', permission: 'backups.create' },
             { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
             { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },
@@ -188,3 +177,70 @@ export const adminModuleGroups = [
 ];
 
 export const adminNavItems = [{ label: 'Dashboard', href: '/admin', icon: 'chartBar' }, ...adminModuleGroups];
+
+/**
+ * Human Resources sidebar — its own area, apart from system administration
+ * (AdminLayout picks it for every /admin/hr page). Dashboard, then one
+ * collapsible group per HR function; day-to-day pages first in each,
+ * setup pages last.
+ */
+export const hrNavItems = [
+    { label: 'Dashboard', href: '/admin/hr', icon: 'chartBar' },
+    {
+        group: 'Personnel',
+        icon: 'users',
+        items: [
+            { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
+            { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
+            { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify' },
+        ],
+    },
+    {
+        group: 'Plantilla & Staffing',
+        icon: 'grid',
+        items: [
+            { label: 'Staffing', href: '/admin/hr/staffing', icon: 'building', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Plantilla', href: '/admin/hr/plantilla', icon: 'grid', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Non-Plantilla', href: '/admin/hr/non-plantilla', icon: 'users', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Positions', href: '/admin/hr/positions', icon: 'clipboard', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'Salary Schedules', href: '/admin/hr/salary-schedules', icon: 'database', permission: ['plantilla.view', 'plantilla.manage'] },
+        ],
+    },
+    {
+        group: 'Leave',
+        icon: 'calendar',
+        items: [
+            { label: 'Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Calendar', href: '/admin/hr/leave/calendar', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Credits', href: '/admin/hr/leave', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
+            { label: 'OIC Designations', href: '/admin/hr/leave/designations', icon: 'users', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Monetization', href: '/admin/hr/leave/monetization', icon: 'database', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Reports', href: '/admin/hr/leave/reports', icon: 'printer', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Types', href: '/admin/hr/leave/types', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Holidays', href: '/admin/hr/leave/holidays', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+        ],
+    },
+    {
+        group: 'Payroll',
+        icon: 'database',
+        items: [
+            { label: 'Payrolls', href: '/admin/hr/payroll', icon: 'database', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Pay Profiles', href: '/admin/hr/payroll/profiles', icon: 'users', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Loans', href: '/admin/hr/payroll/loans', icon: 'key', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Payslip Requests', href: '/admin/hr/payroll/requests', icon: 'clipboard', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Pay Components', href: '/admin/hr/payroll/components', icon: 'cog', permission: ['payroll.view', 'payroll.manage'] },
+        ],
+    },
+    {
+        group: 'Learning & Development',
+        icon: 'chartBar',
+        items: [
+            { label: 'L&D Dashboard', href: '/admin/hr/learning-development/dashboard', icon: 'activity', permission: ['ld.view', 'ld.manage'] },
+            { label: 'Records', href: '/admin/hr/learning-development', icon: 'chartBar', permission: ['ld.view', 'ld.manage'] },
+            { label: 'Review Queue', href: '/admin/hr/learning-development/reviews', icon: 'checkCircle', permission: 'ld.approve' },
+            { label: 'Training Report', href: '/admin/hr/learning-development/report', icon: 'printer', permission: ['ld.view', 'ld.manage'] },
+        ],
+    },
+    { label: 'Cutover Readiness', href: '/admin/hr/readiness', icon: 'checkCircle', permission: 'leave.manage' },
+];

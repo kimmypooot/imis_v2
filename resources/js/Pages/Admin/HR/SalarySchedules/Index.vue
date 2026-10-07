@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
@@ -128,14 +128,14 @@ const cellClass = 'w-28 rounded border border-border bg-surface px-2 py-1 text-r
 <template>
     <Head title="Salary Schedules" />
 
-    <PageHeader title="Salary Schedules" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Salary Schedules' }]">
+    <PageHeader title="Salary Schedules" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Salary Schedules' }]">
         <template v-if="canManage" #actions>
             <Button variant="success" @click="openCreate"><Icon name="plus" size="sm" />New schedule</Button>
         </template>
     </PageHeader>
 
     <div class="grid gap-6 xl:grid-cols-4">
-        <AdminCard title="Schedules" icon="database" class="xl:col-span-1">
+        <Card title="Schedules" icon="database" class="xl:col-span-1">
             <p v-if="schedules.length === 0" class="text-sm text-text-muted">
                 None yet. Add the schedule in force (e.g. the 3rd tranche, 2026, NBC No. 601) and enter its amounts.
             </p>
@@ -152,17 +152,17 @@ const cellClass = 'w-28 rounded border border-border bg-surface px-2 py-1 text-r
                         <span class="block text-xs text-text-muted">
                             {{ schedule.reference ? `${schedule.reference} · ` : '' }}from {{ formatCalendarDate(schedule.effective_date) }} · {{ schedule.cells }} amounts
                         </span>
-                        <StatusBadge v-if="schedule.in_force" status="active" label="In force" class="mt-1" />
+                        <StatusBadge v-if="schedule.in_force" status="active" label="In Force" class="mt-1" />
                     </button>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
 
-        <AdminCard
+        <Card
             v-if="selected"
             :title="selected.name"
             icon="grid"
-            :subtitle="`${selected.reference ? selected.reference + ' · ' : ''}Monthly salary by grade and step, in force from ${formatCalendarDate(selected.effective_date)}`"
+            :description="`${selected.reference ? selected.reference + ' · ' : ''}Monthly salary by grade and step, in force from ${formatCalendarDate(selected.effective_date)}`"
             class="xl:col-span-3"
         >
             <template v-if="canManage" #actions>
@@ -225,7 +225,7 @@ const cellClass = 'w-28 rounded border border-border bg-surface px-2 py-1 text-r
                     </tbody>
                 </table>
             </div>
-        </AdminCard>
+        </Card>
     </div>
 
     <Modal :open="pasteOpen" title="Paste the salary table" icon="clipboard" size="lg" @close="pasteOpen = false">
@@ -238,7 +238,7 @@ const cellClass = 'w-28 rounded border border-border bg-surface px-2 py-1 text-r
             id="paste-table"
             v-model="pasted"
             rows="12"
-            class="block w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+            class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 font-mono text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
         />
         <InputError :message="pasteError" />
         <template #footer>

@@ -15,7 +15,8 @@ use Illuminate\Http\Request;
 /**
  * HR-4: who holds a plantilla item — appointing, step increments,
  * vacating, and correcting or removing a period recorded by mistake.
- * Never on your own appointment (PlantillaItemPolicy::appoint).
+ * Never on your own appointment (PlantillaItemPolicy::appoint), except
+ * correcting a period with the `plantilla.correct` override.
  */
 class PlantillaAppointmentController extends Controller
 {
@@ -73,7 +74,7 @@ class PlantillaAppointmentController extends Controller
 
     public function update(Request $request, PlantillaItem $item, PlantillaAppointment $appointment, Plantilla $plantilla): RedirectResponse
     {
-        $this->authorize('appoint', [PlantillaItem::class, $appointment->employee]);
+        $this->authorize('correct', [PlantillaItem::class, $appointment->employee]);
 
         $data = $request->validate([
             ...$plantilla->appointmentRules(false),
@@ -84,7 +85,9 @@ class PlantillaAppointmentController extends Controller
         $changed = $plantilla->correct($appointment, $data);
 
         if ($changed !== []) {
-            $this->audit()->record(AuditEvent::PlantillaAppointmentCorrected, "Corrected the {$appointment->label}", $appointment, ['fields' => $changed]);
+            $own = $appointment->employee->user_id === $request->user()->id;
+            $this->audit()->record(AuditEvent::PlantillaAppointmentCorrected, ($own ? 'Corrected their own ' : 'Corrected the ').$appointment->label, $appointment,
+                ['fields' => $changed] + ($own ? ['own_record' => true] : []));
         }
 
         return back()->with('status', 'The period was saved.');

@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
@@ -108,7 +108,7 @@ const save = (changes) => {
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'System Access' }]"
     />
 
-    <AdminCard title="Systems" icon="key">
+    <Card title="Systems" icon="key">
         <DataTable :columns="columns" :rows="systems" caption="Systems and their access" export-name="imis-system-access">
             <template #cell-name="{ row }">
                 <span class="font-medium text-text">{{ row.name }}</span>
@@ -130,7 +130,7 @@ const save = (changes) => {
                 </Button>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <AccessGridModal
         :open="openId !== null"

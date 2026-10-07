@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Button from '../../Components/UI/Button.vue';
@@ -60,7 +60,7 @@ const columns = [
     />
 
     <div class="grid gap-6 xl:grid-cols-3">
-        <AdminCard title="Request" icon="database" class="xl:col-span-1">
+        <Card title="Request" icon="database" class="xl:col-span-1">
             <dl class="mb-4 space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-text-muted">Vacation Leave</dt><dd class="tabular-nums text-text">{{ days(terms.vl) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-text-muted">Sick Leave</dt><dd class="tabular-nums text-text">{{ days(terms.sl) }}</dd></div>
@@ -83,7 +83,7 @@ const columns = [
                         min="0.001"
                         :max="terms.max_days"
                         required
-                        class="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                     <p v-if="estimate" class="mt-1 text-sm text-text">About <strong>{{ formatPeso(estimate) }}</strong> (HR confirms).</p>
                     <InputError :message="form.errors.days" />
@@ -94,14 +94,14 @@ const columns = [
                 </div>
                 <Button type="submit" variant="success" :loading="form.processing">File request</Button>
             </form>
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Your requests" icon="clipboard" class="xl:col-span-2">
+        <Card title="Your requests" icon="clipboard" class="xl:col-span-2">
             <DataTable :columns="columns" :rows="requests" caption="Your monetization requests" export-name="imis-my-monetization" :searchable="false" empty-text="No requests yet.">
                 <template #cell-days="{ row }"><span class="tabular-nums">{{ days(row.days) }}</span></template>
                 <template #cell-amount="{ row }"><span class="tabular-nums">{{ formatPeso(row.amount) }}</span></template>
                 <template #cell-status="{ row }">
-                    <StatusBadge :status="tones[row.status]" :label="row.status.charAt(0).toUpperCase() + row.status.slice(1)" />
+                    <StatusBadge :status="tones[row.status]" :label="row.status" />
                     <div v-if="row.decision_remarks" class="mt-1 text-xs text-text-muted">{{ row.decision_remarks }}</div>
                 </template>
                 <template #cell-created_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.created_at) }}</span></template>
@@ -109,6 +109,6 @@ const columns = [
                     <button v-if="row.status === 'pending' && row.kind === 'partial'" type="button" class="text-sm text-danger hover:underline" @click="cancel(row)">Cancel</button>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

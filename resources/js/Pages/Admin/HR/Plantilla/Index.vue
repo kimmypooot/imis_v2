@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import MetricCard from '../../../../Components/Admin/MetricCard.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -63,8 +63,14 @@ const columns = [
 <template>
     <Head title="Plantilla" />
 
-    <PageHeader title="Plantilla" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Plantilla' }]">
+    <PageHeader title="Plantilla" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Plantilla' }]">
         <template v-if="canManage" #actions>
+            <Link
+                href="/admin/hr/plantilla-sheet"
+                class="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
+            >
+                <Icon name="download" size="sm" />Complete from spreadsheet
+            </Link>
             <Button variant="success" @click="addOpen = true"><Icon name="plus" size="sm" />Add item</Button>
         </template>
     </PageHeader>
@@ -89,7 +95,7 @@ const columns = [
             <Link href="/admin/hr/salary-schedules" class="font-medium text-primary hover:underline">Enter the salary schedule</Link>.
         </p>
 
-        <AdminCard title="Items" icon="grid">
+        <Card title="Items" icon="grid">
             <template #actions>
                 <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
                     <button
@@ -125,9 +131,9 @@ const columns = [
                 </template>
                 <template #cell-step="{ row }"><span class="tabular-nums">{{ row.holder?.step ?? '—' }}</span></template>
                 <template #cell-monthly_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span></template>
-                <template #cell-status="{ row }"><StatusBadge :status="tones[row.status]" :label="row.status.charAt(0).toUpperCase() + row.status.slice(1)" /></template>
+                <template #cell-status="{ row }"><StatusBadge :status="tones[row.status]" :label="row.status" /></template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 
     <RecordModal

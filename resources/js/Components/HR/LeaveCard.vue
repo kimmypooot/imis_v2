@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import AdminCard from '../UI/AdminCard.vue';
+import Card from '../UI/Card.vue';
 import StatusBadge from '../UI/StatusBadge.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 
@@ -38,10 +38,10 @@ const forwardOf = (typeId) => props.card.forward[typeId] ?? 0;
             </div>
         </dl>
 
-        <AdminCard :title="`Leave card — ${year}`" icon="clipboard" subtitle="Every credit and deduction, with the running balance of its leave type.">
+        <Card :title="`Leave card — ${year}`" icon="clipboard" description="Every credit and deduction, with the running balance of its leave type.">
             <template #actions>
                 <label class="sr-only" for="leave-card-type">Leave type</label>
-                <select id="leave-card-type" v-model="filter" class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                <select id="leave-card-type" v-model="filter" class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
                     <option value="">All leave types</option>
                     <option v-for="balance in balances" :key="balance.type_id" :value="balance.type_id">{{ balance.code }} · {{ balance.name }}</option>
                 </select>
@@ -49,7 +49,7 @@ const forwardOf = (typeId) => props.card.forward[typeId] ?? 0;
                 <select
                     id="leave-card-year"
                     :value="year"
-                    class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     @change="emit('year', $event.target.value)"
                 >
                     <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
@@ -99,6 +99,6 @@ const forwardOf = (typeId) => props.card.forward[typeId] ?? 0;
                     </tbody>
                 </table>
             </div>
-        </AdminCard>
+        </Card>
     </div>
 </template>

@@ -3,6 +3,7 @@
 namespace App\Support\HR\Plantilla;
 
 use App\Models\Employee;
+use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
 use App\Models\PlantillaItem;
 use App\Support\HR\EmployeeAssignments;
@@ -21,6 +22,12 @@ use Illuminate\Support\Collection;
  * A holder whose station isn't their item's place of assignment is
  * "serving elsewhere": reassigned out of the item's office, and into the
  * office they serve in.
+ *
+ * Offices **headed by designation** — someone heading them in a concurrent
+ * capacity while staying in their own office, for want of an item there
+ * (e.g. one Field Director over two field offices) — are listed apart.
+ * The designee isn't counted as serving there: they still hold, and serve
+ * in, their own item.
  */
 class Staffing
 {
@@ -68,7 +75,7 @@ class Staffing
      * there; the holders serving away from their place of assignment; and
      * the vacant items (the recruitment list).
      *
-     * @return array{offices: Collection<int, array<string, mixed>>, elsewhere: Collection<int, array<string, mixed>>, vacancies: Collection<int, array<string, mixed>>, totals: array<string, int>}
+     * @return array{offices: Collection<int, array<string, mixed>>, elsewhere: Collection<int, array<string, mixed>>, vacancies: Collection<int, array<string, mixed>>, designations: Collection<int, array<string, mixed>>, totals: array<string, int>}
      */
     public function overview(): array
     {
@@ -86,8 +93,10 @@ class Staffing
             ? collect()
             : $this->assignments->stationsOn($unlinked, today())->countBy(fn (array $station) => $station['detailed_to_id'] ?? $station['office_id']);
 
+        $designations = $this->headDesignations($items);
+
         $offices = OrganizationalUnit::query()->orderBy('name')->get()
-            ->map(function (OrganizationalUnit $unit) use ($items, $serving, $unlinkedAt) {
+            ->map(function (OrganizationalUnit $unit) use ($items, $serving, $unlinkedAt, $designations) {
                 $own = $items->where('organizational_unit_id', $unit->id);
                 $filled = $own->filter(fn (PlantillaItem $item) => $item->incumbency !== null);
                 $out = $filled->filter(fn (PlantillaItem $item) => $serving[$item->id]['elsewhere']);
@@ -106,10 +115,14 @@ class Staffing
                     // Plantilla personnel actually serving here.
                     'present' => $filled->count() - $out->count() + $in->count(),
                     'without_item' => $unlinkedAt[$unit->id] ?? 0,
+                    // Headed by someone from another office, in a concurrent capacity.
+                    'headed_by' => $designations->where('office_id', $unit->id)->map(fn (array $row) => "{$row['name']} ({$row['capacity']})")->values(),
+                    // This office's people who also head another office.
+                    'also_heads' => $designations->where('home_office_id', $unit->id)->pluck('office')->values(),
                 ];
             })
             // Offices with nothing to show stay off the table.
-            ->filter(fn (array $row) => $row['items'] + $row['reassigned_in'] + $row['without_item'] > 0)
+            ->filter(fn (array $row) => $row['items'] + $row['reassigned_in'] + $row['without_item'] + $row['headed_by']->count() > 0)
             ->values();
 
         $elsewhere = $items
@@ -143,6 +156,7 @@ class Staffing
             'offices' => $offices,
             'elsewhere' => $elsewhere,
             'vacancies' => $vacancies,
+            'designations' => $designations,
             'totals' => [
                 'items' => $items->count(),
                 'filled' => $items->filter(fn (PlantillaItem $item) => $item->incumbency !== null)->count(),
@@ -150,8 +164,49 @@ class Staffing
                 'elsewhere' => $elsewhere->count(),
                 'without_item' => $unlinked->count(),
                 'no_place' => $items->whereNull('organizational_unit_id')->count(),
+                'headed_by_designation' => $designations->pluck('office_id')->unique()->count(),
             ],
         ];
+    }
+
+    /**
+     * Running head-of-office designations: who heads which office in a
+     * concurrent capacity, from which office, and on what item.
+     *
+     * @param  Collection<int, PlantillaItem>  $items  with incumbency
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function headDesignations(Collection $items): Collection
+    {
+        $itemOf = $items->filter(fn (PlantillaItem $item) => $item->incumbency !== null)->keyBy(fn (PlantillaItem $item) => $item->incumbency->employee_id);
+
+        return EmployeeAssignment::query()->headingOn()
+            ->with(['employee.user.organizationalUnit', 'toUnit'])
+            ->orderBy('effective_date')
+            ->get()
+            ->map(function (EmployeeAssignment $designation) use ($itemOf) {
+                $employee = $designation->employee;
+                $item = $itemOf[$employee->id] ?? null;
+
+                return [
+                    'id' => $designation->id,
+                    'office_id' => $designation->to_unit_id,
+                    'office' => $this->unitName($designation->toUnit),
+                    'employee_id' => $employee->id,
+                    'name' => $employee->user->name,
+                    'capacity' => $designation->capacity()->shortLabel(),
+                    'home_office_id' => $employee->user->organizational_unit_id,
+                    'home_office' => $this->unitName($employee->user->organizationalUnit),
+                    'position_title' => $item?->position_title ?? $employee->user->position,
+                    'item_id' => $item?->id,
+                    'item' => $item?->reference,
+                    'since' => $designation->effective_date->toDateString(),
+                    'until' => $designation->end_date?->toDateString(),
+                    'order_number' => $designation->order_number,
+                ];
+            })
+            ->sortBy('office', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
     }
 
     private function unitName(?OrganizationalUnit $unit): ?string

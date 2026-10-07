@@ -2,6 +2,10 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\AssignmentKind;
+use App\Enums\UnitType;
+use App\Models\Employee;
+use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
@@ -36,6 +40,34 @@ class OrganizationalUnitsTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/OrganizationalUnits/Index')
             ->has('organizationalUnits', 1));
+    }
+
+    public function test_each_office_shows_its_head_by_position_or_designation(): void
+    {
+        $user = $this->userWithPermission('organizational_units.view');
+        $division = OrganizationalUnit::factory()->create(['name' => 'A Division', 'sort_order' => 1, 'unit_type' => UnitType::RegionalSupportUnit]);
+        $field = OrganizationalUnit::factory()->create(['name' => 'B Field Office', 'sort_order' => 2, 'unit_type' => UnitType::FieldOffice]);
+        $vacant = OrganizationalUnit::factory()->create(['name' => 'C Field Office', 'sort_order' => 3, 'unit_type' => UnitType::FieldOffice]);
+
+        User::factory()->create(['name' => 'Chief Cruz', 'position' => 'Chief Human Resource Specialist', 'organizational_unit_id' => $division->id]);
+        User::factory()->create(['name' => 'Staff Santos', 'position' => 'Senior Human Resource Specialist', 'organizational_unit_id' => $division->id]);
+        User::factory()->create(['name' => 'Dir. Reyes', 'position' => 'Director II', 'organizational_unit_id' => $field->id]);
+        // An inactive Director II heads nothing; an OIC designation does.
+        User::factory()->inactive()->create(['position' => 'Director II', 'organizational_unit_id' => $vacant->id]);
+        $oic = Employee::factory()->for(User::factory()->state(['name' => 'Dir. Reyes OIC', 'position' => 'Director II', 'organizational_unit_id' => $field->id]))->create();
+
+        $this->actingAs($user)->get('/admin/organizational-units')->assertInertia(fn ($page) => $page
+            ->where('organizationalUnits.0.head', ['name' => 'Chief Cruz', 'position' => 'Chief Human Resource Specialist', 'capacity' => null])
+            ->where('organizationalUnits.1.head', null) // two Director IIs: HR has to sort out who
+            ->where('organizationalUnits.2.head', null));
+
+        EmployeeAssignment::query()->forceCreate([
+            'employee_id' => $oic->id, 'kind' => AssignmentKind::Designation, 'as_head' => true,
+            'to_unit_id' => $vacant->id, 'effective_date' => today()->subDay()->toDateString(),
+        ]);
+
+        $this->actingAs($user)->get('/admin/organizational-units')->assertInertia(fn ($page) => $page
+            ->where('organizationalUnits.2.head', ['name' => 'Dir. Reyes OIC', 'position' => 'Director II', 'capacity' => 'Officer-in-Charge']));
     }
 
     public function test_index_supports_searching_by_name_or_code(): void

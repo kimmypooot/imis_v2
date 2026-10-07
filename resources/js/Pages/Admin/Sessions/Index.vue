@@ -2,7 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import Icon from '../../../Components/UI/Icon.vue';
@@ -50,7 +50,7 @@ const forceLogout = async (session) => {
 
     <PageHeader title="Active Sessions" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Active Sessions' }]" />
 
-    <AdminCard :title="`Signed in now (${sessions.length})`" icon="desktop">
+    <Card :title="`Signed in now (${sessions.length})`" icon="desktop">
         <template #actions>
             <Button variant="secondary" @click="refresh">
                 <Icon name="refresh" size="sm" />
@@ -86,5 +86,5 @@ const forceLogout = async (session) => {
                 </Button>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

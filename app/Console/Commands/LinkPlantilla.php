@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\AuditEvent;
+use App\Enums\EmploymentStatus;
 use App\Models\Employee;
 use App\Support\Audit\AuditLogger;
 use App\Support\HR\Plantilla\Plantilla;
@@ -33,13 +34,15 @@ class LinkPlantilla extends Command
         $employees = Employee::query()->with(['user.organizationalUnit', 'plantillaAppointments' => fn ($query) => $query->whereNull('date_to')])->get()
             ->sortBy(fn (Employee $employee) => $employee->user->name, SORT_NATURAL | SORT_FLAG_CASE);
 
-        $skipped = ['separated' => [], 'inactive account' => [], 'no position title' => [], 'already holds an item' => []];
+        $skipped = ['separated' => [], 'inactive account' => [], 'non-plantilla (casual, contractual, JO, COS)' => [], 'no position title' => [], 'already holds an item' => []];
         $toLink = collect();
 
         foreach ($employees as $employee) {
             $reason = match (true) {
                 $employee->isSeparated() => 'separated',
                 ! $employee->user->isActive() => 'inactive account',
+                // They hold no item: the Non-Plantilla page keeps them.
+                in_array($employee->employment_status, EmploymentStatus::nonPlantilla(), true) => 'non-plantilla (casual, contractual, JO, COS)',
                 blank($employee->user->position) => 'no position title',
                 $employee->plantillaAppointments->isNotEmpty() => 'already holds an item',
                 default => null,

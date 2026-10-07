@@ -134,7 +134,7 @@ watch(selected, async (now, before) => {
                         v-model="systemQuery"
                         type="search"
                         placeholder="Search systems…"
-                        class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                 </div>
             </div>
@@ -159,7 +159,7 @@ watch(selected, async (now, before) => {
                         v-model="query"
                         type="search"
                         placeholder="Search divisions or systems…"
-                        class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                 </div>
             </div>
@@ -186,7 +186,7 @@ watch(selected, async (now, before) => {
                         {{ category.label }}
                         <span
                             v-if="category.type !== 'committee'"
-                            class="shrink-0 rounded-full bg-info-bg px-2 py-px text-[0.68rem] font-semibold tracking-normal text-primary normal-case"
+                            class="shrink-0 rounded-full bg-info-bg px-2 py-px text-xs font-semibold tracking-normal text-primary normal-case"
                         >
                             {{ category.divisions.length }} {{ category.divisions.length === 1 ? 'division' : 'divisions' }}
                             · {{ systemCount(category) }} {{ systemCount(category) === 1 ? 'system' : 'systems' }}
@@ -199,19 +199,16 @@ watch(selected, async (now, before) => {
                             <button
                                 type="button"
                                 :data-division="division.key"
-                                class="group relative flex h-full min-h-50 w-full overflow-hidden rounded-xl border-2 border-transparent bg-surface text-left shadow-card transition duration-200 hover:border-primary hover:shadow-card-hover focus:outline-none focus-visible:ring-4 focus-visible:ring-focus-ring/30 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-primary motion-safe:hover:-translate-y-1.5"
+                                class="group flex h-full w-full rounded-lg border border-border bg-surface text-left transition-colors hover:border-primary hover:bg-info-bg/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
                                 @click="open(division)"
                             >
-                                <!-- Legacy top accent bar, drawn in on hover. -->
-                                <span class="absolute inset-x-0 top-0 h-1 scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
-
-                                <span class="flex w-full gap-3.5 px-6 py-5">
-                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-info-bg text-primary" aria-hidden="true">
+                                <span class="flex w-full gap-3.5 p-5">
+                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-info-bg text-primary" aria-hidden="true">
                                         <Icon :name="icons[division.type]" />
                                     </span>
                                     <span class="flex min-w-0 flex-1 flex-col gap-1 pt-1.5">
-                                        <span class="text-[0.95rem] leading-snug font-semibold text-text">{{ division.name }}</span>
-                                        <span class="line-clamp-2 flex-1 text-[0.825rem] leading-snug text-text-muted">
+                                        <span class="text-base leading-snug font-semibold text-text">{{ division.name }}</span>
+                                        <span class="line-clamp-2 flex-1 text-sm leading-snug text-text-muted">
                                             {{ division.description }}
                                         </span>
                                         <!-- Looks like the legacy button; the whole card is the control. -->

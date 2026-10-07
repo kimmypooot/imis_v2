@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\LeaveApplicationStatus;
-use App\Models\Holiday;
 use App\Models\LeaveApplication;
+use App\Support\HR\Leave\LeaveCalendar;
 use App\Support\HR\Leave\LeaveCredits;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -36,9 +36,10 @@ class MyLeaveController extends Controller
     }
 
     /**
-     * HR-6c: your leave and the holidays in a month (legacy leave/calendar.php).
+     * HR-6c: your leave and the holidays in a month (legacy leave/calendar.php),
+     * plus who else in your division has filed leave.
      */
-    public function calendar(Request $request): Response
+    public function calendar(Request $request, LeaveCalendar $calendar): Response
     {
         $employee = $request->user()->employee;
 
@@ -65,8 +66,10 @@ class MyLeaveController extends Controller
                     'is_half_day' => $application->is_half_day,
                     'half_day_period' => $application->half_day_period,
                 ]) : [],
-            'holidays' => Holiday::query()->whereDate('date', '>=', $month)->whereDate('date', '<=', $end)->orderBy('date')->get()
-                ->map(fn (Holiday $holiday) => ['date' => $holiday->date->toDateString(), 'name' => $holiday->name, 'day_off' => $holiday->type->isDayOff()]),
+            // Co-workers in your division who've filed leave (no type of leave).
+            'colleagues' => $employee ? $calendar->colleagues($employee, $month) : [],
+            'division' => $request->user()->organizationalUnit?->name,
+            'holidays' => $calendar->holidays($month, $end),
         ]);
     }
 }

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -106,14 +106,14 @@ const columns = [
 <template>
     <Head title="Positions" />
 
-    <PageHeader title="Positions" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Positions' }]">
+    <PageHeader title="Positions" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Positions' }]">
         <template v-if="canManage" #actions>
             <Button variant="secondary" @click="addFromStaff"><Icon name="users" size="sm" />Add titles from staff</Button>
             <Button variant="success" @click="edit()"><Icon name="plus" size="sm" />Add position</Button>
         </template>
     </PageHeader>
 
-    <AdminCard title="Positions and salary grades" icon="clipboard" subtitle="Plantilla items follow the grade and level of their position.">
+    <Card title="Positions and salary grades" icon="clipboard" description="Plantilla items follow the grade and level of their position.">
         <p v-if="missingGrade" class="mb-4 rounded-md bg-warning-bg px-3 py-2 text-sm text-text">
             {{ missingGrade }} {{ missingGrade === 1 ? 'position has' : 'positions have' }} no salary grade yet, so their plantilla items can't be priced.
         </p>
@@ -137,7 +137,7 @@ const columns = [
             </template>
             <template #cell-salary_grade="{ row }">
                 <span v-if="row.salary_grade" class="tabular-nums">{{ row.salary_grade }}</span>
-                <StatusBadge v-else status="warning" label="Not set" />
+                <StatusBadge v-else status="warning" label="Not Set" />
             </template>
             <template #cell-monthly_salary="{ row }">
                 <span v-if="row.monthly_salary !== null" class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span>
@@ -172,7 +172,7 @@ const columns = [
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         v-if="canManage"

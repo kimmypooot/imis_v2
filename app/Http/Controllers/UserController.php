@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
+use App\Enums\OfficeDesignation;
+use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\UnitType;
 use App\Enums\UserStatus;
 use App\Http\Requests\User\AssignRolesRequest;
+use App\Http\Requests\User\SetUserPasswordRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserPhotoRequest;
 use App\Http\Requests\User\UpdateUserRequest;
@@ -18,6 +21,8 @@ use App\Models\User;
 use App\Support\HR\EmployeeRecords;
 use App\Support\Legacy\LegacyBridge;
 use App\Support\ProfilePhotos;
+use App\Support\Security\SecurityPolicy;
+use App\Support\SystemAccess\OfficeAdminAccess;
 use App\Support\Usernames;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +48,7 @@ class UserController extends Controller
         $actor = $request->user();
 
         $users = User::query()
-            ->with(['roles:id,name,display_name', 'organizationalUnit:id,name,short_name'])
+            ->with(['roles:id,name,display_name', 'organizationalUnit:id,name,short_name', 'employee.headDesignations.toUnit:id,name,short_name'])
             ->withCount('applicationAccess')
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
                 $query->where(function ($query) use ($search) {
@@ -64,9 +69,13 @@ class UserController extends Controller
             'users' => $users->map(fn (User $user) => [
                 ...$user->only(['id', 'name', 'first_name', 'middle_name', 'last_name', 'name_extension', 'username', 'email', 'sex', 'position', 'organizational_unit_id']),
                 'status' => $user->status->value,
+                'office_designation' => $user->office_designation?->value,
+                'designation_label' => $user->office_designation?->label(),
                 'birthday' => $user->birthday?->toDateString(),
                 'office' => $user->organizationalUnit?->short_name ?: $user->organizationalUnit?->name,
                 'office_name' => $user->organizationalUnit?->name,
+                // Offices they also head by designation (concurrent capacity).
+                'concurrent_offices' => $user->employee?->concurrentOffices() ?? [],
                 'profile_photo_url' => $user->profile_photo_url,
                 'roles' => $user->roles->map->only(['id', 'name', 'display_name'])->values(),
                 'systems_count' => $user->application_access_count,
@@ -76,6 +85,9 @@ class UserController extends Controller
                     'update' => $actor->can('update', $user),
                     'status' => $actor->can('updateStatus', $user),
                     'roles' => $actor->can('assignRoles', $user),
+                    'set_password' => ! $actor->is($user) && $actor->can('setPassword', $user),
+                    // Division Chief / Field Director grants admin access, so it follows system-access rights.
+                    'designation' => $actor->can('manageSystemAccess', $user),
                 ],
             ]),
             'filters' => $request->only(['search', 'status', 'role_id']),
@@ -85,6 +97,9 @@ class UserController extends Controller
             ],
             'roleOptions' => $this->assignableRoles($request),
             'officeOptions' => $this->officeOptions(),
+            'designationOptions' => OfficeDesignation::options(),
+            'canDesignate' => $actor->hasPermission(PermissionName::ApplicationsManageAccess->value),
+            'passwordRequirements' => SecurityPolicy::passwordRequirements(),
         ]);
     }
 
@@ -98,7 +113,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request, ProfilePhotos $photos, EmployeeRecords $records): RedirectResponse
     {
         $profile = $request->safe()->only([
-            'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'email',
+            'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'office_designation', 'email',
         ]);
 
         $user = DB::transaction(function () use ($request, $profile, $records) {
@@ -136,7 +151,9 @@ class UserController extends Controller
             'roles' => $user->roles()->pluck('name')->all(),
         ]);
 
-        return back()->with('status', "{$user->name} was added. A link to set their password was emailed to {$user->email}.");
+        $admin = $this->syncOfficeAdmin($user);
+
+        return back()->with('status', "{$user->name} was added. A link to set their password was emailed to {$user->email}.{$admin}");
     }
 
     public function show(Request $request, User $user): Response
@@ -167,6 +184,7 @@ class UserController extends Controller
     private function systemAccess(User $user): array
     {
         $current = $user->applicationAccess()->pluck('application_role_id', 'application_id');
+        $viaDesignation = $user->applicationAccess()->where('via_designation', true)->pluck('application_id')->flip();
 
         return Application::query()
             ->where(fn ($query) => $query
@@ -182,17 +200,25 @@ class UserController extends Controller
                 ...$application->only(['id', 'name', 'short_name', 'status']),
                 'roles' => $application->roles->map->only(['id', 'name', 'description'])->values(),
                 'role_id' => $current[$application->id] ?? null,
+                // Given by their Division Chief / Field Director designation.
+                'via_designation' => $viaDesignation->has($application->id),
             ])
             ->all();
     }
 
-    public function update(UpdateUserRequest $request, User $user): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user, OfficeAdminAccess $offices): RedirectResponse
     {
-        $user->update($request->validated());
+        $user->fill($request->validated());
+        // Moved to an office the designation doesn't fit: it lapses.
+        if ($user->office_designation && ! $offices->designationFits($user->office_designation, $user->organizationalUnit()->first())) {
+            $user->office_designation = null;
+        }
+        $user->save();
 
         $this->audit()->recordChanges(AuditEvent::UserUpdated, "Updated user {$user->name}", $user);
+        $admin = $this->syncOfficeAdmin($user);
 
-        return back()->with('status', "{$user->name}'s account was saved.");
+        return back()->with('status', "{$user->name}'s account was saved.{$admin}");
     }
 
     public function updatePhoto(UpdateUserPhotoRequest $request, User $user, ProfilePhotos $photos): RedirectResponse
@@ -225,6 +251,8 @@ class UserController extends Controller
         $verb = $this->activationVerb($user->status);
 
         $this->audit()->recordChanges(AuditEvent::UserStatusChanged, "{$verb} user {$user->name}", $user);
+        // A deactivated Division Chief / Field Director loses the admin access; reactivated, gets it back.
+        $this->syncOfficeAdmin($user);
 
         return back()->with('status', "{$user->name} was ".Str::lower($verb).'.');
     }
@@ -249,8 +277,8 @@ class UserController extends Controller
 
     /**
      * Sends a password-set link via the existing password-reset flow —
-     * this is the only account action in this controller that touches a
-     * password, and even this never sees or sets one directly.
+     * the usual way to help someone who can't sign in. The administrator
+     * never sees or sets the password.
      */
     public function sendPasswordReset(User $user): RedirectResponse
     {
@@ -261,6 +289,33 @@ class UserController extends Controller
         $this->audit()->record(AuditEvent::UserPasswordResetSent, "Sent a password reset link to {$user->name}", $user);
 
         return back()->with('status', 'Password reset link sent.');
+    }
+
+    /**
+     * The Super Administrator override: sets the password directly, for
+     * when a reset link can't be used (no working email, locked out). By
+     * default the user must choose their own at the next sign-in. Their
+     * open sessions and "remember me" end. The password is never logged;
+     * the legacy systems get the new hash through the usual sync.
+     */
+    public function setPassword(SetUserPasswordRequest $request, User $user): RedirectResponse
+    {
+        $mustChange = $request->boolean('must_change_password');
+
+        $user->forceFill([
+            'password' => $request->validated('password'),
+            'must_change_password' => $mustChange,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        if (config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+        }
+
+        $this->audit()->record(AuditEvent::UserPasswordSet, "Set the password of {$user->name}", $user, ['must_change_password' => $mustChange]);
+
+        return back()->with('status', "{$user->name}'s password was set."
+            .($mustChange ? ' They must choose a new one when they sign in.' : ''));
     }
 
     /**
@@ -296,11 +351,28 @@ class UserController extends Controller
             ->map(fn (UnitType $type) => [
                 'label' => $type->pluralLabel(),
                 'options' => $units->where('unit_type', $type)
-                    ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name])
+                    // The designation this office takes (Division Chief / Field Director), if any.
+                    ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name, 'designation' => OfficeDesignation::forUnitType($type)?->value])
                     ->values()->all(),
             ])
             ->filter(fn (array $group) => $group['options'] !== [])
             ->values()
             ->all();
+    }
+
+    /**
+     * Applies the user's Division Chief / Field Director designation to
+     * their office's systems; returns a sentence for the flash message.
+     */
+    private function syncOfficeAdmin(User $user): string
+    {
+        $counts = app(OfficeAdminAccess::class)->sync($user);
+        $parts = array_filter([
+            $counts['granted'] ? "granted admin in {$counts['granted']} ".Str::plural('system', $counts['granted']) : null,
+            $counts['raised'] ? "raised to admin in {$counts['raised']} ".Str::plural('system', $counts['raised']) : null,
+            $counts['removed'] ? "designation access removed from {$counts['removed']} ".Str::plural('system', $counts['removed']) : null,
+        ]);
+
+        return $parts ? ' Office systems: '.implode('; ', $parts).'.' : '';
     }
 }

@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -58,17 +58,17 @@ const columns = [
 <template>
     <Head title="OIC Designations" />
 
-    <PageHeader title="OIC Designations" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'OIC Designations' }]">
+    <PageHeader title="OIC Designations" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'OIC Designations' }]">
         <template v-if="canManage" #actions>
             <Button variant="success" @click="edit()"><Icon name="plus" size="sm" />Add designation</Button>
         </template>
     </PageHeader>
 
-    <AdminCard title="Officers-in-charge" icon="users" subtitle="Who acts for the Head of Agency on leave applications, and when.">
+    <Card title="Officers-in-charge" icon="users" description="Who acts for the Head of Agency on leave applications, and when.">
         <DataTable :columns="columns" :rows="designations" caption="OIC designations" export-name="imis-oic-designations" empty-text="No designations.">
             <template #cell-name="{ row }">
                 {{ row.name }}
-                <StatusBadge v-if="row.active" status="active" label="On duty" class="ml-2" />
+                <StatusBadge v-if="row.active" status="active" label="On Duty" class="ml-2" />
             </template>
             <template #cell-acting_for="{ row }">{{ row.acting_for || '—' }}</template>
             <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }} – {{ formatCalendarDate(row.date_to) }}</span></template>
@@ -80,7 +80,7 @@ const columns = [
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         v-if="canManage"

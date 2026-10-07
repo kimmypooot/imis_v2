@@ -25,10 +25,11 @@ class CsvExport
         return response()->streamDownload(function () use ($headings, $query, $row) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, $headings);
+            // No escape character: plain RFC 4180 quoting, as Excel reads it (PHP 8.4 wants it explicit).
+            fputcsv($out, $headings, escape: '');
 
             foreach ($query->lazy(500) as $record) {
-                fputcsv($out, array_map([self::class, 'cell'], $row($record)));
+                fputcsv($out, array_map([self::class, 'cell'], $row($record)), escape: '');
             }
 
             fclose($out);

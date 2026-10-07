@@ -13,9 +13,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The admin dashboard, laid out like the legacy IMIS admin home: welcome
- * banner, metric cards, charts, and tables (AdminDashboard), plus real
- * inactive-record counts. It manages nothing itself.
+ * The system administration dashboard, laid out like the legacy IMIS
+ * admin home: welcome banner, metric cards, charts, and tables
+ * (AdminDashboard), plus real inactive-record counts. It manages nothing
+ * itself. Human Resources has its own (Admin\HrDashboardController).
  */
 class AdminController extends Controller
 {

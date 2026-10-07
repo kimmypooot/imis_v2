@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Committee;
 use App\Models\OrganizationalUnit;
+use App\Support\SystemAccess\OfficeAdminAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -118,6 +119,11 @@ class DashboardLayoutController extends Controller
             Application::class,
             $division->listedApplications()->sync($ids),
         );
+
+        // Listed systems are the office's too: its Division Chief / Field Director follows.
+        if ($division instanceof OrganizationalUnit) {
+            app(OfficeAdminAccess::class)->syncOffice($division);
+        }
 
         return back()->with('status', "Systems under {$division->name} were saved.");
     }

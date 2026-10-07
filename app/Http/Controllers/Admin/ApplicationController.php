@@ -13,6 +13,7 @@ use App\Http\Requests\Application\UpdateApplicationStatusRequest;
 use App\Models\Application;
 use App\Models\Committee;
 use App\Models\OrganizationalUnit;
+use App\Support\SystemAccess\OfficeAdminAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -83,6 +84,7 @@ class ApplicationController extends Controller
         $this->syncListings($request, $application);
 
         $this->audit()->record(AuditEvent::ApplicationCreated, "Created system {$application->name}", $application);
+        app(OfficeAdminAccess::class)->syncApplication($application);
 
         return back()->with('status', "System {$application->name} was added. Add its roles next.");
     }
@@ -93,6 +95,8 @@ class ApplicationController extends Controller
 
         $this->audit()->recordChanges(AuditEvent::ApplicationUpdated, "Updated system {$application->name}", $application);
         $this->syncListings($request, $application);
+        // Its office or listings may have changed: Division Chiefs / Field Directors follow.
+        app(OfficeAdminAccess::class)->syncApplication($application);
 
         return back()->with('status', "System {$application->name} was saved.");
     }

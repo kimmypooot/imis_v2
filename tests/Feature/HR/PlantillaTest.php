@@ -12,6 +12,7 @@ use App\Models\PlantillaItem;
 use App\Models\Role;
 use App\Models\SalarySchedule;
 use App\Models\User;
+use App\Support\PermissionCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -202,6 +203,33 @@ class PlantillaTest extends TestCase
         $own = Employee::factory()->for($hr)->create();
 
         $this->actingAs($hr)->post("/admin/hr/plantilla/{$this->item()->id}/appointments", $this->appointment($own))->assertForbidden();
+    }
+
+    public function test_the_correct_override_fixes_a_wrong_step_on_your_own_record_only_as_a_correction(): void
+    {
+        $item = $this->item();
+        $this->actingAs($this->hr())->post("/admin/hr/plantilla/{$item->id}/appointments", $this->appointment($own = $this->employee(), ['step' => 1]));
+        $appointment = PlantillaAppointment::query()->sole();
+        $fix = ['step' => 4, 'status' => 'permanent', 'nature' => 'original', 'date_from' => '2026-02-01'];
+        $url = "/admin/hr/plantilla/{$item->id}/appointments/{$appointment->id}";
+
+        // plantilla.manage alone: never your own.
+        $hr = $own->user;
+        $role = Role::factory()->create();
+        $role->permissions()->attach(Permission::query()->firstOrCreate(['name' => 'plantilla.manage'], ['display_name' => 'plantilla.manage']));
+        $hr->roles()->attach($role);
+        $this->actingAs($hr)->put($url, $fix)->assertForbidden();
+
+        // With the override: the correction goes through, flagged in the audit log…
+        $role->permissions()->attach(Permission::query()->firstOrCreate(['name' => 'plantilla.correct'], ['display_name' => 'plantilla.correct']));
+        $hr->unsetRelation('roles');
+        PermissionCache::flush();
+        $this->actingAs($hr)->put($url, $fix)->assertSessionHasNoErrors();
+        $this->assertSame(4, $appointment->fresh()->step);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'plantilla_appointment.corrected', 'actor_id' => $hr->id, 'description' => "Corrected their own {$appointment->fresh()->label}"]);
+
+        // …but it never lets them record their own step increment.
+        $this->actingAs($hr)->post("{$url}/step-increment", ['step' => 5, 'date_from' => '2026-06-01'])->assertForbidden();
     }
 
     public function test_only_plantilla_statuses_are_accepted(): void

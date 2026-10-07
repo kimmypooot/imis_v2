@@ -126,11 +126,11 @@ const rowErrors = computed(() => {
                         v-model="search"
                         type="search"
                         :placeholder="`Search ${rowLabel.toLowerCase()}…`"
-                        class="block w-full rounded-md border border-border bg-surface py-1.5 pr-3 pl-8 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="block w-full rounded-md border border-border-strong bg-surface py-1.5 pr-3 pl-8 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                 </div>
                 <label for="grid-show" class="sr-only">Show</label>
-                <select id="grid-show" v-model="show" class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm">
+                <select id="grid-show" v-model="show" class="rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm">
                     <option value="all">All</option>
                     <option value="granted">With access</option>
                     <option value="none">No access</option>
@@ -138,7 +138,7 @@ const rowErrors = computed(() => {
                 </select>
                 <div v-if="bulkOptions.length" class="flex items-center gap-1">
                     <label for="grid-bulk" class="sr-only">Set every visible row to</label>
-                    <select id="grid-bulk" v-model="bulkRole" class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm">
+                    <select id="grid-bulk" v-model="bulkRole" class="rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm">
                         <option value="">No access</option>
                         <option v-for="role in bulkOptions" :key="role.id" :value="role.id">{{ role.name }}</option>
                     </select>
@@ -155,7 +155,7 @@ const rowErrors = computed(() => {
         <div v-else class="overflow-x-auto rounded-md border border-border">
             <table class="min-w-full text-[0.8125rem]">
                 <caption class="sr-only">{{ title }}</caption>
-                <thead class="sticky top-0 bg-surface-muted text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <thead class="sticky top-0 table-head">
                     <tr>
                         <th scope="col" class="px-3 py-2">{{ rowLabel }}</th>
                         <th scope="col" class="w-56 px-3 py-2 text-center">Assigned role</th>
@@ -185,7 +185,7 @@ const rowErrors = computed(() => {
                                 :id="`grid-role-${row.key}`"
                                 v-model="draft[row.key]"
                                 :disabled="isLocked(row)"
-                                class="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted"
+                                class="w-full rounded-md border border-border-strong bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted"
                                 :aria-invalid="!!rowErrors[row.key]"
                             >
                                 <option v-for="role in optionsFor(row)" :key="role.id" :value="role.id">{{ role.name }}</option>

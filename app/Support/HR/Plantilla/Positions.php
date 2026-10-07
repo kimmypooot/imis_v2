@@ -2,6 +2,7 @@
 
 namespace App\Support\HR\Plantilla;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\PositionLevel;
 use App\Models\PlantillaItem;
 use App\Models\Position;
@@ -76,7 +77,10 @@ class Positions
     {
         $known = Position::query()->pluck('title')->map(fn (string $title) => mb_strtolower(trim($title)));
 
-        $missing = User::query()->whereNotNull('position')->distinct()->pluck('position')
+        // Titles of non-plantilla staff (casual, contractual, JO, COS) aren't plantilla positions.
+        $missing = User::query()->whereNotNull('position')
+            ->whereDoesntHave('employee', fn ($query) => $query->whereIn('employment_status', EmploymentStatus::nonPlantilla()))
+            ->distinct()->pluck('position')
             ->merge(PlantillaItem::query()->distinct()->pluck('position_title'))
             ->map(fn (?string $title) => trim((string) $title))
             ->filter()

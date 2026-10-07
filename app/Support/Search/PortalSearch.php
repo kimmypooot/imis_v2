@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  * Authorization is the same as every portal listing, because every query
  * starts from the same scope those listings use:
  * - services/applications: `visibleTo($user)` (active + visibility tier;
- *   administrative-tier entries only for `access-admin` users)
+ *   administrative-tier entries only for `access-admin` or `access-hr` users)
  * - organizational units: `active()`
  * - announcements: `published()` (published, past publish date, not expired)
  *

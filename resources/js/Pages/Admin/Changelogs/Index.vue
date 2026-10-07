@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -114,7 +114,7 @@ const columns = [
     />
 
     <div class="grid items-start gap-6 xl:grid-cols-12">
-        <AdminCard v-if="can('changelogs.manage')" :title="isEditing ? `Edit Release ${current.version}` : 'New Release'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
+        <Card v-if="can('changelogs.manage')" :title="isEditing ? `Edit Release ${current.version}` : 'New Release'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
             <template #actions>
                 <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="isEditing ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'">
                     {{ isEditing ? 'Editing' : 'New draft' }}
@@ -153,7 +153,7 @@ const columns = [
                                         v-model="item.description"
                                         rows="2"
                                         maxlength="500"
-                                        class="block w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                        class="block w-full rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                                     />
                                 </div>
                             </div>
@@ -180,9 +180,9 @@ const columns = [
                     <ReleaseNotes :release="preview" />
                 </div>
             </form>
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Releases" icon="megaphone" :class="can('changelogs.manage') ? 'xl:col-span-7' : 'xl:col-span-12'">
+        <Card title="Releases" icon="megaphone" :class="can('changelogs.manage') ? 'xl:col-span-7' : 'xl:col-span-12'">
             <DataTable :columns="columns" :rows="changelogs" caption="Releases" export-name="imis-changelog" :numbered="false">
                 <template #cell-version="{ row }">
                     <span class="rounded bg-info-bg px-2 py-0.5 font-mono text-xs text-primary">v{{ row.version }}</span>
@@ -208,6 +208,6 @@ const columns = [
                     </div>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

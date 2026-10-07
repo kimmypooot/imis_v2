@@ -6,12 +6,13 @@ import UserAvatar from '../UI/UserAvatar.vue';
 import ConfirmDialog from '../Feedback/ConfirmDialog.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { firstName, useSplash } from '../../Composables/useSplash';
-import { adminAccessPermissions } from '../../Utils/navigation';
+import { adminAccessPermissions, hrAccessPermissions } from '../../Utils/navigation';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
  * The account menu, following the legacy IMIS profile dropdown: who you
- * are and when you last signed in, then Administration, Change password,
+ * are and when you last signed in, then HR Management and Administration
+ * (each only with access to that area), Change password,
  * What's New, About, and Sign out (confirmed, then the "Signing Out"
  * splash carries you to the login page).
  */
@@ -28,11 +29,13 @@ const emit = defineEmits(['about']);
 const { canAny } = useAuthorization();
 const { show: showSplash, hide: hideSplash } = useSplash();
 
-// Same any-of list as the sidebar's Administration entry (kept in one place).
+// Same any-of lists as the sidebar's Management entries (kept in one place).
 const canAccessAdmin = computed(() => canAny(adminAccessPermissions));
+const canAccessHr = computed(() => canAny(hrAccessPermissions));
 
 const open = ref(false);
 const rootRef = ref(null);
+const buttonRef = ref(null);
 
 const toggle = () => {
     open.value = !open.value;
@@ -48,10 +51,14 @@ const onDocumentClick = (event) => {
     }
 };
 
+// Escape closes the menu and, if focus was inside it, hands focus back
+// to the button so keyboard users aren't dropped at the top of the page.
 const onKeydown = (event) => {
-    if (event.key === 'Escape') {
-        close();
-    }
+    if (event.key !== 'Escape' || !open.value) return;
+
+    const hadFocus = rootRef.value?.contains(document.activeElement);
+    close();
+    if (hadFocus) buttonRef.value?.focus();
 };
 
 onMounted(() => {
@@ -93,62 +100,67 @@ const logout = () => {
 };
 
 const itemClass =
-    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none';
+    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
 </script>
 
 <template>
     <div ref="rootRef" class="relative">
         <button
+            ref="buttonRef"
             type="button"
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             :aria-label="`Account menu for ${user.name}`"
             :aria-expanded="open"
-            aria-haspopup="menu"
+            aria-controls="user-menu-panel"
             @click="toggle"
         >
-            <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" />
-            <!-- Name over position; long values truncate, with the full text on hover. -->
-            <span class="hidden max-w-48 min-w-0 flex-col text-left leading-tight sm:flex">
-                <span class="truncate font-semibold text-text" :title="user.name">{{ user.name }}</span>
-                <span v-if="user.position" class="truncate text-xs text-text-muted" :title="user.position">{{ user.position }}</span>
+            <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" highlight />
+            <!-- Name over position, shown in full. -->
+            <span class="hidden flex-col whitespace-nowrap text-left leading-tight sm:flex">
+                <span class="font-semibold text-text">{{ user.name }}</span>
+                <span v-if="user.position" class="text-xs text-text-muted">{{ user.position }}</span>
             </span>
             <Icon name="chevronDown" size="sm" class="shrink-0 text-text-muted" />
         </button>
 
         <div
             v-if="open"
-            role="menu"
+            id="user-menu-panel"
             class="absolute right-0 z-50 mt-2 w-64 rounded-md border border-border bg-surface py-1 shadow-lg"
         >
             <div class="border-b border-border px-3 py-2">
-                <p class="truncate text-sm font-semibold text-text">{{ user.name }}</p>
-                <p v-if="user.position" class="truncate text-xs text-text-muted">{{ user.position }}</p>
-                <p class="truncate text-xs text-text-muted">@{{ user.username }} · {{ user.email }}</p>
+                <p class="text-sm font-semibold break-words text-text">{{ user.name }}</p>
+                <p v-if="user.position" class="text-xs break-words text-text-muted">{{ user.position }}</p>
+                <p class="text-xs break-all text-text-muted">@{{ user.username }} · {{ user.email }}</p>
                 <p v-if="user.previous_login_at" class="mt-1 text-xs text-text-muted">
                     Last login: <time :datetime="user.previous_login_at">{{ formatDateTime(user.previous_login_at) }}</time>
                 </p>
             </div>
 
-            <Link v-if="canAccessAdmin" href="/admin" role="menuitem" :class="itemClass" @click="close">
+            <Link v-if="canAccessHr" href="/admin/hr" :class="itemClass" @click="close">
+                <Icon name="clipboard" size="sm" />
+                HR Management
+            </Link>
+            <Link v-if="canAccessAdmin" href="/admin" :class="itemClass" @click="close">
                 <Icon name="shield" size="sm" />
                 Administration
             </Link>
-            <Link href="/account/password" role="menuitem" :class="itemClass" @click="close">
+            <Link href="/account/password" :class="itemClass" @click="close">
                 <Icon name="lock" size="sm" />
                 Change password
             </Link>
-            <Link href="/whats-new" role="menuitem" :class="itemClass" @click="close">
+            <Link href="/whats-new" :class="itemClass" @click="close">
                 <Icon name="megaphone" size="sm" />
                 What's New
             </Link>
-            <button type="button" role="menuitem" :class="itemClass" @click="openAbout">
+            <button type="button" :class="itemClass" @click="openAbout">
                 <Icon name="info" size="sm" />
                 About IMIS
             </button>
 
             <div class="my-1 border-t border-border" />
 
-            <button type="button" role="menuitem" :class="itemClass" @click="requestLogout">
+            <button type="button" :class="itemClass" @click="requestLogout">
                 <Icon name="logout" size="sm" />
                 Sign out
             </button>

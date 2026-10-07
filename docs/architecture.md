@@ -5,8 +5,8 @@ Next-Generation IMIS and distinguishes what is **IMPLEMENTED** (Phase 0 —
 foundation, Phase 1 — authentication, Phase 2 — authorization, Phase 3 —
 UI/UX design system & application shell, Phase 4 — IMIS portal foundation &
 dashboard, Phase 5 — organizational structure & Regional Support Units,
-Phase 6 — services directory, through Phase 19 — legacy admin panel adaptation; see
-each section below) from what is **PLANNED** (future phases).
+Phase 6 — services directory, through Phase 19 — legacy admin panel adaptation,
+Human Resources HR-1 to HR-7, and hardening; see each section below) from what is **PLANNED** (future phases).
 It is not a description of business features that do not exist yet.
 
 ## Overall Architecture
@@ -300,7 +300,8 @@ value directly:
   `--color-surface`, `--color-surface-muted`, `--color-border`,
   `--color-text`, `--color-text-muted`, `--color-focus-ring` (from Phase 0).
 - **Semantic feedback** (new in Phase 3): `--color-success`,
-  `--color-warning`, `--color-danger` (aliases `--color-csc-red`),
+  `--color-warning`, `--color-danger` (aliases `--color-csc-red-dark`
+  since the UI review — see below),
   `--color-info` (aliases `--color-csc-blue`) — each with a paired `-bg` and
   `-border` tint for badges/alerts.
 - **Radius scale**: `--radius-sm/md/lg`, so `rounded-*` utilities stay
@@ -315,6 +316,42 @@ value directly:
 No gradients, glassmorphism, neon, or heavy shadows/animation were
 introduced — flat surfaces, a 1px border, and `shadow-xs`/`shadow-sm` only,
 consistent with a government-office visual identity.
+
+*UI review (accessibility and flat design):* a later review found the
+gradients, blur, orbiting circles, card shadows and hover lifts that had
+crept back in while matching legacy screens, and removed them (banners
+are solid `bg-primary`, the header is solid, the sign-in splash is a
+plain card). One exception was later restored on request: the legacy
+orbiting circles on the navy banners — the portal welcome
+(`WelcomeBanner.vue`) and the admin / HR dashboards
+(`DashboardBanner.vue`), all from one component, `UI/OrbitCircles.vue` —
+faint white on the flat navy, decorative (`aria-hidden`) and still under
+`prefers-reduced-motion`. The review also brought the colors up to WCAG AA:
+- `--color-danger` is the darker CSC red (5.4:1 on `danger-bg`, 6.2:1
+  with white text); the brand red stays as `accent`, for decoration only.
+- `--color-bypass` was darkened to `#b04f00` (5.3:1 with white text).
+- `--color-border-strong` (3.3:1) outlines form controls, per WCAG
+  1.4.11; `--color-border` stays for cards and dividers.
+- Navy-sidebar headings and footer use `text-white/70`, not `/50`.
+- A base `:focus-visible` outline covers any link or button without its
+  own ring; the portal sidebar uses a white ring; the account menu is a
+  disclosure (no `role="menu"`) whose items show a ring, and Escape
+  returns focus to its button.
+- `Button` gained `size` (`sm`/`md`), an `outline` variant, and
+  `href` (an Inertia link, or with `external` a new-tab `<a>`), so
+  pages no longer hand-style buttons.
+- `AdminCard` was merged into `Card` (one bordered, shadowless card with
+  `title`, `icon`, `description`, and `actions`/`header`/`footer` slots).
+  Card titles are sentence case in body color, so the navy `PageHeader`
+  title is the only navy heading on a page.
+- List tables share one header style, the `table-head` utility in
+  `app.css`; `Badge` and `StatusBadge` share one tone map
+  (`Components/UI/tones.js`).
+- Dashboards: `MetricCard` is a flat bordered card (no left accent bar),
+  and the `warning` tone is kept for figures that need attention
+  (vacancies, retirements). The "Data as of · Refresh" row moved into
+  `DashboardBanner` (`generatedAt`, `refreshing`, `@refresh`), and normal
+  counts such as inactive accounts are no longer shown in red.
 
 ### Component organization (`resources/js/Components/`)
 ```
@@ -388,7 +425,14 @@ Key components:
 
 ### Authorization-aware navigation
 `Utils/navigation.js` exports plain arrays: `{ label, href, icon,
-permission? }`. `SidebarNav.vue` filters out any item whose `permission`
+permission? }`. An admin group may also hold sections — `{ section,
+icon, items }` — rendered as collapsible categories one level down
+(Human Resources → Personnel, Plantilla & Staffing, Leave, Learning &
+Development), each opened when it holds the current page; empty ones
+are dropped, and the portal sidebar lists their links flat. Only the most
+specific matching link is marked active (`/admin/hr/leave/types` →
+Leave Types, not Credits at `/admin/hr/leave`).
+`SidebarNav.vue` filters out any item whose `permission`
 the current user lacks, using the Phase 2 `useAuthorization()` composable
 (`auth.permissions` from Inertia shared props). Adding a nav entry for a
 future module means adding one object to that array — no changes to
@@ -683,10 +727,23 @@ are unchanged from Phase 4 and still enforced by the shared
 
 `service_categories` (new table): `name`, `slug` (unique), `description`,
 `status`, `sort_order` — deliberately minimal, per the phase's own "avoid
-over-engineering taxonomy" instruction. No admin CRUD screens exist for
-it (categories are seeded and picked from a dropdown when managing a
-Service); a full category management UI is future work if the taxonomy
-ever needs to grow past a handful of seeded rows.
+over-engineering taxonomy" instruction. Categories are picked from a
+dropdown when managing a Service and filter the portal directory; both
+pickers list active categories only, by `sort_order` then name
+(`ServiceCategory::scopeOrdered()`).
+
+### Category admin (`/admin/service-categories`)
+`Admin\ServiceCategoryController` + `Pages/Admin/ServiceCategories/Index.vue`,
+the same one-table, Add / Edit-in-a-modal layout as Services: `index`
+(with each category's service count), `store`, `update` and
+`updateStatus`. Name is required and unique; the slug is generated on
+create and never accepted from the form. No delete: a deactivated
+category drops out of the pickers, but services keep their link to it.
+- **Permissions:** the `services.*` permissions (`view`, `create`,
+  `update`, `archive`), via `ServiceCategoryPolicy` — categories are part
+  of managing the directory, so there is no separate set.
+- **Audit:** `service_category.created`, `.updated`, `.status_changed`.
+- **Tests:** `tests/Feature/Admin/ServiceCategoriesTest.php`.
 
 ### Shared slug generation
 `OrganizationalUnit::generateUniqueSlug()` (Phase 5) was extracted into
@@ -932,10 +989,10 @@ meant renaming the already-shipped `users.show`/`users.assign-roles`.
   `users.delete` is this app's permission name for *deactivation*, not a
   destructive operation, consistent with every other module.
 - **Account actions**: "Send password reset link" (`POST
-  /users/{user}/send-password-reset`) is the only password-adjacent
-  action in the entire admin surface, and it only ever triggers the
-  existing reset-link email — it never reads, sets, or displays a
-  password or a reset token.
+  /users/{user}/send-password-reset`) only ever triggers the existing
+  reset-link email — it never reads, sets, or displays a password or a
+  reset token. The one exception is the Super Administrator override
+  below ("Set password").
 
 ### Role and permission management
 `RoleController`/`PermissionController` already existed (Phase 2); this
@@ -1412,7 +1469,8 @@ can't flip `editable` or change a `type`.
 ### Types (`App\Enums\SettingType`)
 `string` (≤255, or the setting's `max`), `text` (≤5000 or `max`),
 `integer` (`min`/`max`), `boolean`, `url` (`http`/`https` only — no
-`javascript:`), `email`. Each type owns its validation rules, its
+`javascript:`), `email`, `select` (one of the definition's `options`,
+listed in code; a dropdown in the form). Each type owns its validation rules, its
 serialization to the stored string (booleans `'1'`/`'0'`, empty → `null`),
 and casting back on read. Non-boolean values are nullable unless the
 definition sets `required`. There is intentionally no secret/password type.
@@ -1428,7 +1486,7 @@ its own form.
 | `portal_welcome_message` | text, ≤300 | portal | Portal home description |
 | `portal_home_announcement_limit` | integer 1–10 | portal | `PortalController` announcement count |
 | `portal_notice_enabled` / `portal_notice` | boolean / text ≤500 | portal | Banner on every signed-in page (`AppShell`) |
-| `contact_email` / `contact_phone` / `contact_website_url` | email / string / url | contact | "Need help?" on portal home |
+| `contact_email` / `contact_phone` / `contact_website_url` | email / string / url | contact | Portal home footer (each hidden while empty) |
 
 ### Reading values — `App\Support\Settings\Settings`
 `Settings::get($key)` returns the typed value. All settings load with one
@@ -1536,7 +1594,7 @@ so search can't show anything browsing can't:
 
 | Type | Scope |
 |------|-------|
-| Services, Systems/Applications | `visibleTo($user)` — active, and `administrative`-tier only for `access-admin` users |
+| Services, Systems/Applications | `visibleTo($user)` — active, and `administrative`-tier only for `access-admin` or `access-hr` users |
 | Organizational Units | `active()` |
 | Announcements | `published()` — never draft, scheduled, expired, or archived, even for announcement admins |
 
@@ -1706,6 +1764,35 @@ restricted systems (including in listings and on the dashboard), role
 launch-URL override, and the
 one-query-per-listing eager load.
 
+### Division Chief / Field Director (office designation)
+`users.office_designation` (`App\Enums\OfficeDesignation`): **Division
+Chief** for a Regional Support Unit, **Field Director** for a field or
+satellite office; one active holder per office. Set in the Add/Edit User
+form ("Designation", shown once the office is chosen). Because it hands
+out admin access, setting or changing it needs `applications.manage_access`
+and `UserPolicy::manageSystemAccess` (never on yourself); other profile
+edits leave it alone.
+
+The holder is overall admin of the office's systems — the ones it
+manages (`applications.organizational_unit_id`) and the ones listed under
+it (`application_listings`). `App\Support\SystemAccess\OfficeAdminAccess`
+gives each the system's strongest admin role (`superadmin` / `super
+admin` before `admin` / `administrator`, case-insensitive; a system with
+neither is skipped) through `SystemAccessManager`, so it's audited (with
+`via` in metadata) and mirrored to legacy like any grant. The grant
+remembers what the designation did (`application_access.via_designation`,
+`designation_previous_role_id`): removing the designation, deactivating
+the user or moving their office revokes the grants it created and puts
+raised roles back; an admin grant someone gave by hand is never touched.
+Changing a designation grant's role by hand makes it a regular grant.
+
+Re-synced when the user is created, edited or (de)activated; when a
+system is created or edited, its roles change, or an office's listings
+change; after `imis:apply-reassignments` (a move clears the designation,
+`User::booted`); and on demand with `imis:sync-office-admins`. The Users
+list shows the designation under Position; a user's System access card
+marks grants "by designation". Tests: `tests/Feature/Admin/OfficeDesignationTest.php`.
+
 ## System Maintenance Mode — IMPLEMENTED (Phase 16)
 
 A system can be marked **under maintenance**, carrying over the legacy
@@ -1804,8 +1891,9 @@ this stack.
     strip, the logo on a white disc in a breathing red halo, a red
     divider, bouncing dots, and a red progress bar along the bottom.
   - The sign-in/sign-out splash ports `js/imis_transition.js` (the
-    `.imis-tr*` classes). It has a frosted-glass card over a pale blue
-    gradient with floating navy/red blobs. The CSC seal sits inside two
+    `.imis-tr*` classes), flattened: a plain white card on the muted
+    page background (the legacy frosted glass, gradient and floating
+    blobs were dropped in the UI review). The CSC seal sits inside two
     counter-rotating rings (navy outer, red inner), and three dots take
     turns lighting up red every 400ms.
 - **Boot preloader** (`resources/views/app.blade.php`): shows the CSC-IMIS
@@ -1828,8 +1916,11 @@ this stack.
 `Components/Portal/AboutDialog.vue`, opened from the top bar's About
 button or the account menu. It revamps the legacy About content (what
 IMIS is, mission, what you can do, a "Rebuilt on a modern stack" note)
-and keeps the ITG / agency / location / version footer. The version comes
-from `config('app.version')` (`IMIS_VERSION`, shared as `app.version`).
+and keeps the ITG / agency / location / version footer. The version
+(shared as `app.version`) is `Changelog::currentVersion()`: the newest
+published What's New release, so it always matches the release notes,
+falling back to `config('app.version')` (`IMIS_VERSION`, default 2.7.0
+like the legacy `includes/config.php`) when nothing is published.
 
 ### Account menu
 Name, @username, email and last login; then Administration (when
@@ -1850,6 +1941,11 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   user, tracked in `users.last_seen_changelog_id` (the legacy tracked it
   per session). `/whats-new` lists every published release. Closing the
   pop-up or opening the page marks the release as seen.
+- **v3.0.0** (the VILT rebuild, HR, and the later additions) ships as a
+  *draft* through migration `2026_11_06_090000_add_v3_release_note`
+  (skipped if 3.0.0 exists; rollback removes it only while still a
+  draft). Publishing it in Admin → Changelogs shows it to everyone and
+  makes 3.0.0 the shown version.
 
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,
@@ -1953,22 +2049,26 @@ maintenance message still shows in the dashboard's maintenance notice
 and on its details page.
 
 ### Card styling
-Division and system cards follow the legacy dashboard cards: icon beside
-the details, a 2-line description clamp, a full-width button at the
-bottom, a lift and a top accent bar on hover (blue for divisions, green
-for systems), and an "online" dot on launchable systems. Button colors
+Division and system cards keep the legacy layout (icon beside the
+details, a 2-line description clamp, an "online" dot on launchable
+systems) and their full-width buttons ("View Systems (n)", "Access
+System", with their hover styles), but the cards themselves are flat: a
+bordered card with no shadow, lift or accent bar. A division card is
+itself the control and highlights its border on hover; a system card is
+not clickable as a whole, so it has no hover effect of its own. Button colors
 are green for launch, orange (`bypass` token) for maintenance bypass,
 red for Under Maintenance, and muted grey for No Access / Not configured.
 Category headers use the legacy small-caps label with a trailing rule;
 committees get the amber (`warning`) tint. Divisions show 4 per row on
-wide screens and systems 3. The hover lift only runs when the user
-allows motion. The card shadows and the bypass/hover colors are tokens
-in `app.css`.
+wide screens and systems 3. The bypass/hover colors are tokens in
+`app.css`.
 
 ### Dashboard layout
 The dashboard now follows the legacy order: banner → maintenance
-notice → announcements → **Systems Directory** → Services →
-Need help. The Phase 4 Quick Access and Organizational Units sections were
+notice → announcements → **Systems Directory** → Services → footer
+(the help desk contacts from System Settings → Contact, each hidden while
+empty, then the legacy copyright and ITG credits; `PortalFooter.vue`).
+The Phase 4 Quick Access and Organizational Units sections were
 removed (the directory supersedes both; `QuickAccess.vue` was deleted).
 The Organizational Units and Applications pages remain in the sidebar.
 
@@ -2046,11 +2146,21 @@ dashboard described in earlier phases.
   `confirm()`, `alert()`, and toasts (the SweetAlert2 replacement), mounted
   once in `app.js`. Server `flash.status` / `flash.error` become toasts
   automatically.
-- `UI/Tabs` (WAI-ARIA tabs), `UI/AdminCard`, `UI/ActionButton`,
+- `UI/Tabs` (WAI-ARIA tabs), `UI/AdminCard` (since merged into `UI/Card`), `UI/ActionButton`,
   `UI/StatusBadge`, `UI/UserAvatar`, `Forms/PhotoPicker`,
   `Forms/CheckboxGroup`, `Admin/SchemaForm` + `Admin/RecordModal`
   (schema-driven add/edit modal for simple records), `Admin/MetricCard`,
   `Charts/SimpleChart`.
+- **Statuses are Title Case** (2026-10-04): "Returned for Correction",
+  "Head of Office", "In Service". Minor words stay lowercase unless they
+  come first or last, and acronyms stay as written.
+  - Status labels are Title Case at the source: the status enums'
+    `label()`, fallbacks such as "Not Set", and the JS status maps.
+  - `UI/StatusBadge` also passes any label through `Utils/text.js`
+    `titleCase()`, replacing CSS `capitalize`, which capitalized every
+    word ("Returned For Correction").
+  - Field placeholders such as "Not set" in dropdowns aren't statuses
+    and stay sentence case.
 - Admin actions now redirect `back()` with a flash message, so modals stay
   on their page.
 
@@ -2065,8 +2175,21 @@ dashboard described in earlier phases.
   400×400 JPEG, no EXIF, old file removed.
 - Manage Users: one table with the legacy Add modal (green) and the Edit
   modal (blue) with Profile / Account / Security tabs. Per-row abilities
-  come from the server. Admins still never set or see passwords; the
-  legacy birthday password is not carried over.
+  come from the server. Admins never see passwords, and the legacy
+  birthday password is not carried over.
+- **Set password (Super Administrator override, 2026-10-05):** Edit →
+  Security, for when a reset link can't be used. `PUT
+  /users/{user}/password` (`UserController::setPassword`,
+  `SetUserPasswordRequest`, `UserPolicy::setPassword`, which only
+  Gate::before lets through; never on one's own account). The admin
+  confirms with their own password; the new one follows the password
+  policy. "Must change at next sign-in" (on by default) sets
+  `users.must_change_password`, which `EnsurePasswordIsCurrent` treats
+  like an expired password (`SecurityPolicy::mustChangePassword`); any
+  password change by the owner clears it (User `saving` hook). The
+  user's database sessions and remember token are cleared. Audited as
+  `user.password_set` (never the password); the legacy side gets the
+  hash through the usual LegacyBridge sync.
 
 ### Systems and access
 - **Manage Systems**: one extra-large modal with Details, Dashboard
@@ -2116,6 +2239,58 @@ real counts only):
 - people per IMIS role, users by office, access by system
 - top systems, active users without any system access
 - recent admin activity, plus the existing inactive-record counts
+
+It shows system administration only (`Components/Admin/SystemDashboard.vue`).
+
+### Two management areas: Administration and Human Resources
+Since 2026-10-03, system administration and Human Resources are separate
+areas, each with its own dashboard and sidebar. HR staff aren't system
+administrators, and system administrators don't need HR's personal data.
+- **Gates:** `access-admin` (`ADMIN_ACCESS_PERMISSIONS`, the system
+  permissions) opens `/admin`. `access-hr` (`HR_ACCESS_PERMISSIONS`: the
+  employee, PDS, 201, L&D, plantilla, service record and leave
+  permissions) opens `/admin/hr`. The JS mirrors are
+  `adminAccessPermissions` and `hrAccessPermissions`. Either gate shows
+  `administrative`-visibility directory entries
+  (`HasPortalVisibility::seesAdministrative`), as before the split.
+- **Entry points:** the portal's Management group and the account menu
+  list **HR Management** and **Administration**, each only with its gate.
+- **Sidebar:** `AdminLayout` picks `hrNavItems` for any `/admin/hr` URL and
+  `adminNavItems` otherwise. HR URLs stayed under `/admin/hr`. People with
+  both areas (e.g. Super Administrator) get an Admin | HR switcher at the
+  top of the sidebar (AppShell's `sidebar-header` slot). HR breadcrumbs
+  start at **Human Resources** (`/admin/hr`), not `/admin`.
+- **Banner:** both dashboards share `Components/Admin/DashboardBanner.vue`.
+
+### HR dashboard
+`/admin/hr` (`Admin\HrDashboardController`, `Pages/Admin/HR/Dashboard.vue`)
+is open to anyone with `access-hr`. The analytics
+(`App\Support\HR\HrDashboard`, the lazy `hr` prop,
+`Components/Admin/HrAnalytics.vue`) need `employees.view` (HR Officer, Top
+Management). Without it, `hr` is null and the page points to the sidebar.
+The analytics count staff **in service** (not separated, active account):
+- headcount; by sex (`Components/Charts/SplitBar.vue`), age band and
+  employment status; length of service (original appointment date, else
+  the earliest complete plantilla period)
+- birthdays in the next 30 days (29 Feb → 28 Feb in common years)
+- retirement within 12 months: optional at 60, compulsory at 65 (RA 8291),
+  and anyone past 65 still in service; how many are eligible now. Those
+  already 60–64 are listed too ("Eligible (60+)", last, dated at their
+  65th birthday), since they may retire at any time (user, 2026-10-04)
+- CSC loyalty-award milestones this year (10 years, then every 5)
+- what's waiting on HR (PDS to verify, leave in review, L&D to review,
+  incomplete plantilla links), each only with its permission
+- records to complete (no employment status, appointment date, birthday
+  or sex)
+- with `plantilla.view`: fill rate; with `leave.view`: on leave today, the
+  next 14 days, recent applications; with `ld.view`: share trained this
+  year, trainings and hours
+
+Viewing it is audited (`employee.hr_dashboard_viewed`) once a day per
+viewer. Chart colors are tokens in `app.css` (`--color-chart-1`, `-2`,
+`-neutral`; the pair validated for CVD and contrast), applied through
+class names (`bg-chart-1` …) so Tailwind emits them.
+`tests/Feature/HR/HrDashboardTest.php`.
 
 Charts use **Chart.js 4** (tree-shaken: bar and line only) through
 `Charts/SimpleChart`, following the dataviz method:
@@ -2190,7 +2365,7 @@ in one transaction, apart from photo files.
 |---|---|
 | `imis_dash_divisions` (RSU category) | existing offices, matched by the code in parentheses, then by name; an empty description is filled |
 | `imis_dash_divisions` (committee category) | `committees` |
-| `imis_projects` | `applications`, matched by `short_name` = `code_name`. `requires_access` = not `is_public`; `url` = `guest_url`; Bootstrap icon → nearest `Icon.vue` name |
+| `imis_projects` | `applications`, matched by `short_name` = `code_name`. `requires_access` = not `is_public`; `url` = `guest_url`; Bootstrap icon → nearest `Icon.vue` name. Systems built into IMIS (`LegacyImporter::RETIRED_SYSTEMS`: PRISM) are skipped, with their roles and grants |
 | `imis_dash_division_systems` | first active office = managing unit; other active placements → `application_listings`; `is_maintenance` → maintenance mode. Inactive placements are skipped |
 | `imis_access_roles` | `application_roles` (`launch_url` = `project_url`). Roles the legacy system lacks are deactivated if nobody holds them |
 | `users_cscro8` | `users`, matched by username. New accounts keep their bcrypt hash, so legacy passwords work; `fo_rsu` → office by name; `superadmin` → `super-admin` (legacy `admin` had no admin-panel rights) |
@@ -2397,6 +2572,22 @@ module:
 
 HR-1 lays the record the rest hang off.
 
+### Years in the CSC (loyalty awards) — IMPLEMENTED
+Loyalty awards (10 years, then every 5) count service in the CSC only.
+- **Dates:** `employees.original_appointment_date` is when government
+  service began. `employees.csc_entry_date` is set only for those who came
+  from another agency; when it's empty, CSC service runs from the
+  original appointment.
+- **Calculation:** `App\Support\HR\LoyaltyAwards` gives years and months
+  in the CSC (up to separation for those who left), the last award
+  earned, the next one and its date, and any milestone completed this
+  calendar year.
+- **Where it shows:** the employee record ("Years in the CSC"), the
+  Employees list (a "Years in CSC" column with a badge in an award year),
+  and the HR dashboard's loyalty list.
+- **Not handled:** leave without pay and breaks in service aren't
+  deducted.
+
 ### HR-1b: Reassignment history — IMPLEMENTED
 Every employee has a history of movements between Regional Support Units
 and Field Offices (`employee_assignments`, `App\Models\EmployeeAssignment`,
@@ -2459,6 +2650,77 @@ soft deletes).
   of assignment.
 - **Tests:** `tests/Feature/HR/ReassignmentTest.php`.
 
+#### Head-of-office designations (concurrent capacity)
+Added 2026-10-04 for a Field Director who heads a second field office
+because there's no Director II item for it. They keep their own item and
+office. The second office is a **designation** marked `as_head`, usually
+open-ended (no end date = until further notice). It is never a second
+appointment or plantilla item: that would count a filled item that
+doesn't exist, add a period to the Service Record, and hide the missing
+item from the staffing plan.
+- **Data** (`2026_11_01_090000_add_head_of_office_designations`):
+  `employee_assignments.as_head`, `hand_over_supervision` /
+  `supervision_handed_at`, `restore_supervision` /
+  `supervision_restored_at`; `supervisor_handovers` (assignment,
+  employee, previous supervisor, `restored_at`). `as_head` and the two
+  supervision flags are forced off for anything but a designation.
+- **Capacity** (`2026_11_03_090000_add_head_capacity_to_employee_assignments`,
+  `App\Enums\HeadCapacity`): a head designation is **Officer-in-Charge**
+  (`oic`) or **Caretaker** (`caretaker`), as the order says. It defaults to
+  OIC and is null when not heading. Existing head designations were set
+  to OIC.
+  - Both head the office the same way: access, handover, the Staffing
+    page, and payroll's designated head of HRD (HR-8, which checks
+    `as_head`).
+  - The capacity shows in the dialog's "Capacity" choice, the timeline
+    badge, "OIC of ESFO" / "Caretaker of ESFO" beside the person's office,
+    the Staffing page ("As" column; "Name (Caretaker)" on the office row),
+    and the audit label ("Designation as Caretaker of …").
+- **Access:** `Employee::officesSupervisedBy()` is the viewer's own
+  office plus any office they head by designation today
+  (`EmployeeAssignment::officesHeadedBy()`, scope `headingOn()`). It
+  needs `employees.view_unit` (the Supervisor role). Both
+  `Employee::scopeVisibleTo()` and `EmployeePolicy::view()` use it, so the
+  access ends by itself on the day after the end date. PDS, 201 files and
+  service records stay out of reach, as for any supervisor.
+- **Supervisor handover** (optional, on by default in the dialog): once
+  the designation is in effect, the office's staff in service with an
+  active account (not the designee) get the designee as immediate
+  supervisor. Each previous supervisor is kept in
+  `supervisor_handovers`.
+- **Give-back** happens when the designation ends (if
+  `restore_supervision`), is removed, stops being a head designation, or
+  is corrected to another office (which then hands over the new office).
+  Only staff whose supervisor is still the designee are given back, so a
+  change HR made since is kept.
+- **Timing:** recording or editing settles it at once if due. Otherwise
+  `imis:apply-reassignments` (daily) does it via `settleSupervision()`
+  on the start date, or the day after the end date. Each happens once.
+- **Not changed:** leave already filed keeps the approver it was routed
+  to. New staff joining the office later aren't handed over
+  automatically; HR sets their supervisor.
+- **Staffing page:** a `designations` list ("Offices headed by
+  designation": office, designee, their own office and item, since/until,
+  order). Each office row shows `headed_by` / `also_heads`, and
+  `totals.headed_by_designation` counts the offices. The designee isn't
+  counted as serving in the second office.
+- **Where the office shows:** the concurrent office appears next to the
+  person's own office, as "Also heads ESFO", on:
+  - the employee record (`EmployeeDetails`, admin and My Employee
+    Record);
+  - the Employees list;
+  - the Users list.
+
+  This comes from `Employee::headDesignations()` / `concurrentOffices()`,
+  sent as `EmployeeResource` `user.concurrent_units` and as the Users
+  list's `concurrent_offices`. CSV exports include it as well.
+- **UI:** `AssignmentModal` has a "Head of office" fieldset for
+  designations. `AssignmentTimeline` shows a "Head of office" badge and
+  whether staff were handed over or given back. Flash messages and audit
+  metadata (`supervision`) say how many staff were handed over or given
+  back.
+- **Tests:** `tests/Feature/HR/HeadOfOfficeDesignationTest.php`.
+
 ### Data
 - `employees`: one row per user (`user_id` unique, `restrictOnDelete`, so
   a user with an HR record can't be hard-deleted).
@@ -2485,8 +2747,8 @@ Permissions in `PermissionName`:
 | `employees.create` | Setting up a record |
 | `employees.update` | Editing a record |
 
-- Both view permissions grant `access-admin`, and are listed in
-  `ADMIN_ACCESS_PERMISSIONS` and the JS `adminAccessPermissions`.
+- Both view permissions open the Human Resources area (`access-hr`), and
+  are listed in `HR_ACCESS_PERMISSIONS` and the JS `hrAccessPermissions`.
 - `Employee::scopeVisibleTo()` and `EmployeePolicy::view()` apply the
   same rule: your own record always, your office's with `view_unit`, and
   anyone's with `view`.
@@ -2715,7 +2977,7 @@ saving without changes doesn't count.
 
 ### Permissions and policy
 - `pds.verify` (new) lets HR verify. Both `pds.view` and `pds.verify`
-  grant `access-admin`.
+  open the Human Resources area (`access-hr`).
 - `PdsSubmissionPolicy` is registered explicitly in AppServiceProvider,
   because models under `App\Models\Pds` sit outside auto-discovery.
   - **view:** the owner, `pds.view` or `pds.verify`.
@@ -2942,8 +3204,8 @@ HRD's side of ldms: `hrd/approve_training.php`,
 | `ld.manage` | Adding, editing and removing on someone's behalf (approved records included) and bulk add; also reads the overview and logs |
 | `ld.approve` | The review queue: approve, or reject with a reason; also opens certificates |
 
-All three open the admin area (`ADMIN_ACCESS_PERMISSIONS` and the JS
-`adminAccessPermissions`). **Separation of duties:** HRD never reviews or
+All three open the Human Resources area (`HR_ACCESS_PERMISSIONS` and the JS
+`hrAccessPermissions`). **Separation of duties:** HRD never reviews or
 manages their own entries (a Super Administrator may, via
 `Gate::before`); on their own log they use "My Learning & Development"
 like anyone else.
@@ -3210,6 +3472,51 @@ pending. Fields can be adjusted once it arrives.
   link with Correct on the item page; until then it can't be promoted or
   given a step increment. `PlantillaItem::incumbency` picks the open
   period by id, since an incomplete link has no start date.
+- **Complete from spreadsheet** (`/admin/hr/plantilla-sheet`,
+  `PlantillaSheetController`, `App\Support\HR\Plantilla\PlantillaSheet`;
+  `plantilla.manage`): download every active item as CSV with what's on
+  record (`CsvExport`), fill in item number, grade, place of assignment
+  (office name or short name) and the holder's step, status, nature and
+  start date (YYYY-MM-DD or m/d/yyyy), upload, review each row's changes
+  and errors, then apply. The upload waits in the session and is checked
+  again when applied. A blank cell never clears a value; a grade set on
+  the Positions list can't be overridden; vacant items take no holder
+  details; your own appointment is refused; item numbers stay unique.
+  Holder details go through `Plantilla::correct`. Audited
+  (`plantilla_item.sheet_applied`, item ids in metadata). The route has
+  its own path so it can't clash with `admin/hr/plantilla/{item}`.
+- **`php artisan imis:import-plantilla {file.xlsx} [--apply]`**
+  (`App\Support\HR\Plantilla\PlantillaOfPersonnel`, read with the
+  dependency-free `App\Support\Tables\XlsxReader`): updates IMIS from the
+  HR Division's certified *Plantilla of Personnel* workbook (item rows
+  under office headings: item no., position, SG, salary, step, name,
+  sex, birthday, TIN, original and last-promotion dates, status,
+  eligibility). Previews every row unless `--apply`; re-running is safe.
+  Audited (`plantilla_item.imported`, ids touched in metadata).
+  - **Matching:** the account with the same surname (a hyphenated double
+    surname counts by either part) and a first name in common, ignoring
+    honorifics ("Atty.") and taking "Ma." for Maria. With several, the
+    one with an employee record in service; the others are reported as
+    likely duplicate accounts.
+  - **Takes:** item number; place of assignment from the office heading
+    (`PlantillaOfPersonnel::OFFICES`; "FO No. 6 Leyte" is deliberately
+    unmapped until HR decides between the Leyte offices); step, status
+    and, inferred, nature and start date (a last-promotion date means a
+    Promotion from then, or from the assumption date in "6/22/2026
+    (A: 7/15/2026)"; "-" means the Original appointment); the original
+    appointment date; and the holder's sex, birthday and middle name (the
+    sheet is certified, so it wins). Vacant rows become vacant items under
+    the matching position.
+  - **Leaves alone:** IMIS position titles (the sheet's "SENIOR PS (SENIOR
+    HRS)" only identifies the position); grades (a different SG is
+    reported for the Positions list); TIN and eligibility (they're the
+    PDS's); and anything unusable: a step past 8, a future or unreadable
+    date, a "NEW" item number. A row whose position isn't the one held in
+    IMIS (an unrecorded promotion) gets staff details only.
+  - Typed dates are read month first (Excel's US format), day first only
+    when the first number can't be a month; each is shown in the preview.
+  - Staff in service in IMIS but not on the sheet are listed at the end.
+  - Tests: `tests/Feature/HR/ImportPlantillaTest.php`.
 - **Salary Schedules** (`/admin/hr/salary-schedules`):
   - the list, with the one in force marked
   - the selected table (33 grades × 8 steps)
@@ -3237,6 +3544,39 @@ pending. Fields can be adjusted once it arrives.
 
 ### Tests
 `tests/Feature/HR/PlantillaTest.php` (with made-up amounts).
+
+## Human Resources: Non-Plantilla Personnel — IMPLEMENTED
+
+Casual and contractual appointees, Job Order and Contract of Service
+workers hold no plantilla item (`EmploymentStatus::nonPlantilla()`), so
+they're kept on their own page: Human Resources → **Non-Plantilla**
+(`/admin/hr/non-plantilla`, `Admin\NonPlantillaController`, logic in
+`App\Support\HR\NonPlantilla\NonPlantilla`). Same access as the
+plantilla (`plantilla.view` / `plantilla.manage`); nobody records their
+own contracts (`PlantillaItemPolicy::appoint`).
+
+- **Who is listed:** everyone in service whose employee record has a
+  non-plantilla status, with status tabs and counts.
+- **Contracts** (`non_plantilla_contracts`, `NonPlantillaContract`, soft
+  deletes): status, designation, office, period (an open end is allowed),
+  rate per day or month, funding source, contract / order number,
+  remarks. One row per period; renewals are new rows (Renew pre-fills
+  the next period from the last). Periods of one person can't overlap,
+  and someone holding a plantilla item can't get one. Recording,
+  editing or removing sets the employee record's status to the running
+  (else latest) contract's. Audited as
+  `non_plantilla_contract.recorded/updated/removed`.
+- **Contract state:** running, ending soon (within 30 days, with days
+  left), ended, starts later, or none.
+- **Kept off the plantilla:** `imis:link-plantilla` skips non-plantilla
+  staff, and "Add positions from staff" ignores their titles. Migration
+  `2026_11_08_090001_remove_non_plantilla_staff_from_plantilla` removed
+  the items it had made for them earlier (no item number, every holder
+  non-plantilla — e.g. the Contract of Service Computer Technician), their
+  holder rows, and Positions-list titles left unused; audited as
+  `plantilla_item.non_plantilla_removed`.
+
+Tests: `tests/Feature/HR/NonPlantillaTest.php`.
 
 ## Human Resources: Service Record — IMPLEMENTED (HR-5)
 
@@ -3267,6 +3607,28 @@ history (HR-1b) each time.
 - **Branch:** System Settings → Human Resources (default "National").
 - **Leave without pay:** left blank until HR-6 (Leave).
 
+### Service in other agencies
+- **Lines entered by hand:** service in another government agency, which
+  no plantilla item here holds, is stored as `service_record_entries`
+  (`App\Models\ServiceRecordEntry`, soft deletes). It's the one stored
+  part of the record, and the lines show with the plantilla lines in date
+  order.
+- **Fields:** the same CSC columns, entered directly:
+  - dates (both required, ending by today)
+  - designation, status, salary grade and step, annual salary
+  - agency and station, shown together in the station column
+  - branch, leave without pay
+  - separation date and cause
+  - remarks
+- **Rules:** the dates may not overlap a plantilla period or another line.
+- **Who:** HR with `service_records.manage`, never on their own record
+  (`EmployeePolicy::manageServiceRecord`). Adding, correcting and
+  removing are audited.
+- **Page:** "Add service from another agency" on HR's Service Record
+  page, with Edit/Remove on those lines. Routes are under
+  `…/service-record/entries/{serviceRecordEntry}`, scoped to the
+  employee.
+
 ### Pages
 - **HR:** the employee record → **Service Record**
   (`/admin/hr/employees/{employee}/service-record`), with
@@ -3280,7 +3642,12 @@ history (HR-1b) each time.
     "Nothing follows", and the date
   - "Certified correct" over the certifying officer's name and position
     (System Settings → Human Resources: `hr_certifying_officer_name`,
-    `hr_certifying_officer_position`)
+    `hr_certifying_officer_position`). The position is a dropdown: Chief
+    Human Resource Specialist, Human Resource Division; Director IV; or
+    Director III (`App\Support\HR\CertifyingOfficer::POSITIONS`). The name
+    defaults to whoever holds that position's plantilla item now (the Chief
+    HRS item in the office coded HRD); a typed name overrides it, and a
+    vacant or ambiguous position prints a blank line
 - **Employees:** Portal → **My Service Record** (`/my/service-record`) is
   read-only. Its print is marked "Copy for reference, not certified",
   with no signatory.
@@ -3386,9 +3753,9 @@ import.
 - **Schedule:** `imis:leave-accrual [--year --month]` runs on the 1st of
   each month for the month before, and on January's run also starts the
   year.
-- **Not yet:** pro-rating accrual for leave without pay. It needs
-  HR-6b's approved LWOP; `WorkingDays::weekdaysInMonth()` is the
-  legacy denominator.
+- **Leave without pay** pro-rates the month's accrual, added in HR-6b
+  (`LeaveCredits::proRated()`; `WorkingDays::weekdaysInMonth()` is the
+  legacy denominator). See HR-6b's approval rules.
 
 ### Leave settings on the employee record
 `employees` gains `immediate_supervisor_id` (needed before filing opens
@@ -3554,9 +3921,33 @@ writer.
 This completes the port of the legacy LMS (HR-6).
 
 ### Wellness Leave
-**Wellness Leave (`WL`)**, the newest CSC leave, is seeded **inactive and
-without entitlements**. HR enters its days and rules from the CSC
-circular on Leave Types, then activates it. The amounts weren't assumed.
+**Wellness Leave (`WL`)** follows **CSC MC No. 01, s. 2026** (CSC
+Resolution No. 2501292, effective 1 January 2026). Its terms are in
+`LeaveTypeSeeder::wellnessLeave()`, and migration `2026_10_30_090000`
+applies them to an existing WL that HR hadn't filled in.
+- **Entitlement:** 5 days a year, separate from VL, SL and SPL, and
+  available from the date of assumption of duty. It lapses at year end
+  and can't be monetized.
+- **Who:** permanent, temporary, coterminous, casual and contractual
+  staff. Job Order and Contract of Service workers are excluded, since
+  the circular leaves them to their contracts.
+- **Limits:** at most 3 days in a row (`max_consecutive_days`), counted
+  across adjoining applications too.
+- **Filing:** 5 days ahead, or on return in an emergency
+  (`allows_emergency_filing`). The application then carries
+  `is_emergency`, which shows on the form and the print.
+- **Route:** supervisor, then HR, then the Head. No reason needs to be
+  given (3.d, confidentiality).
+
+These rules are leave-type settings, so other types can use them too.
+
+**Annual grants from assumption of duty:** `LeaveCredits::grantDue()`
+posts this year's annual grants (SPL, Solo Parent, WL, …) to anyone in
+service who doesn't have them yet. That covers people who joined after
+January 1 and types switched on mid-year. A grant is dated January 1, or
+the first day in service if that's later. The monthly
+`imis:leave-accrual` run calls it, and so does the year-start button for
+the current year.
 
 ### Monetization and terminal leave (`Support/HR/Leave/LeaveMonetizations`)
 - **Table:** `leave_monetizations` (`LeaveMonetization`), with reference
@@ -3601,6 +3992,26 @@ register is Leave Applications. Each is a DataTable with print and CSV.
 A month grid of your leave and the holidays. Approved leave is solid;
 leave under review or returned is outlined.
 
+It also shows co-workers in your division (your organizational unit)
+who have filed leave: approved, under review or returned, on working
+days only (`LeaveCalendar::colleagues`). Only the name, dates and status
+are shared; the type of leave and the application stay private
+(RA 10173). Yours is green, theirs blue; "Show my division" hides them,
+and picking a day lists everyone in your division out that day.
+
+### Leave Calendar for HR (Admin → Leave → Calendar)
+New (legacy only had the personal calendar): everyone's leave on a month
+grid, `/admin/hr/leave/calendar`, with `leave.view` or `leave.manage`
+(`LeaveApplicationPolicy::viewAny`). `App\Support\HR\Leave\LeaveCalendar`
+lists each application's days in the month, skipping weekends and
+day-off holidays (except leave counted in calendar days, e.g.
+maternity). Approved leave by default; "Include pending" adds leave
+under review or returned (outlined). Filters: office (the user's
+organizational unit) and type of leave. A day shows up to three names
+and "+N more"; picking a day lists everyone out that day below the grid.
+Like the applications list, the overview isn't audited; opening an
+application is. Tests: `tests/Feature/HR/LeaveCalendarTest.php`.
+
 ### Notifications, access and audit
 - **Notifications:** decisions on monetization, arrangements and early
   ends notify the employee (`HrUpdate`, database channel).
@@ -3621,7 +4032,8 @@ leave under review or returned is outlined.
 
 ## Phase HR-7 — Migration and cutover — IMPLEMENTED (import not yet run)
 
-The tools for switching off the legacy PRISM, LMS and ldms. The legacy
+The tools for switching off the legacy LMS and ldms. (PRISM held no data
+and its launcher is already deleted; see below.) The legacy
 `lms_*` tables exist only on the live server, so **the leave import has
 not been run against real data yet**. Its column names come from the
 legacy LMS code's own queries.
@@ -3671,11 +4083,22 @@ Each item is "To do" (blocking), "Check" (worth fixing) or "Ready", with
 a link to fix it. It needs `leave.manage`.
 
 ### Retiring the launchers (`imis:retire-legacy-hr`)
-Sets the PRISM, LMS and LDMS portal entries inactive, audited as
+Sets the LMS and LDMS portal entries inactive, audited as
 `application.status_changed`. Without `--apply` it only shows what it
 would do. Access grants stay on record, and an entry can be reactivated
 from System management. The legacy apps keep running until they are
 switched off on the legacy server.
+
+### PRISM removed
+PRISM was blank, so nothing needed importing, and the HR module replaces
+it. Migration `2026_10_31_090000_remove_prism_launcher` deletes its
+launcher (`short_name` PRISM) outright: its system roles, access grants,
+listings and SSO tokens go with it, and access-log rows keep their
+history with the system cleared. It can't be rolled back; the launcher
+can be re-added from System management. `imis:import-legacy` skips PRISM
+(`LegacyImporter::RETIRED_SYSTEMS`), so a re-import doesn't bring it
+back. The bridge leaves legacy-side PRISM grants alone, since it only
+syncs systems that exist here. Test: `tests/Feature/RemovePrismLauncherTest.php`.
 
 ### Cutover order
 1. Get the live `lms_*` tables reachable through the legacy connection.
@@ -3689,10 +4112,95 @@ switched off on the legacy server.
 `tests/Feature/HR/LegacyLeaveImportTest.php`, against fictional `lms_*`
 tables.
 
-## Future Modular Architecture — PLANNED
+## Human Resources: Payroll and payslips — IMPLEMENTED (HR-8)
 
-Modules are intended to be introduced in this order, each depending on the
-ones before it:
+Built from scratch (the legacy IMIS has no payroll). Decisions (user,
+2026-10-04): IMIS computes each month and HR adjusts; one monthly payroll
+with net pay released on the 15th and the 30th; withholding tax is entered
+per employee (Accounting computes it), not computed; payslip requests are
+approved by the head of HRD or whoever is designated head of HRD.
+
+### Data (`2026_11_02_090000_create_payroll_tables`)
+- `pay_components` (`PayComponent`): allowance, deduction and loan types.
+  `kind` (`PayComponentKind`: earning, deduction, loan) and `method`
+  (`PayComputation`): *fixed* amount, *percent* of basic salary between an
+  optional floor and ceiling, or *manual* (per employee). `automatic` ones
+  go on everyone's pay. `PayComponentSeeder` adds PERA, GSIS personal
+  share (9%), PhilHealth (2.5% on ₱10,000–₱100,000), Pag-IBIG (2% of at
+  most ₱10,000), withholding tax, RATA, MP2, cooperative, absences, and
+  GSIS/Pag-IBIG/Landbank/cooperative loan types. **HR should check the
+  rates against current issuances**; every one is editable.
+- `employee_pay_items` (`EmployeePayItem`): someone's recurring item from
+  a month (to a month). Its amount overrides the component's; 0 exempts
+  them from an automatic one.
+- `employee_loans` (`EmployeeLoan`): principal, total payable, monthly
+  amortization, first deduction month, amount paid before IMIS, and a
+  stop date. **No balance is stored**: it's total payable − paid before −
+  its lines on finalized payrolls (`App\Support\HR\Payroll\Loans`), so a
+  reopened payroll can't leave a balance wrong.
+- `payroll_runs` → `payroll_entries` → `payroll_lines`: one month (unique),
+  each person's snapshot (name, position, item, SG/step, office), basic
+  salary, totals and the two releases, and their lines (`adjusted` marks
+  HR's changes).
+- `payslip_requests` (`PayslipRequest`, `PS-YYYY-NNNNN`): pending,
+  approved, rejected or cancelled; who decided and whom they acted for.
+
+### Rules (`App\Support\HR\Payroll\Payrolls`, the only writer)
+- **Who is paid:** everyone in service that month (not separated before
+  it, active account) with a complete plantilla period begun by its end,
+  priced by the salary schedule in force on the 1st. Anyone else is listed
+  under "Not on this payroll" with the reason.
+- **Lines:** automatic components, the profile's items in effect, and each
+  loan's amortization (or what's left). Earnings first, then deductions.
+- **Releases:** the first half is net ÷ 2 rounded down to the centavo
+  (integer centavos), the second takes the rest. Releases on the 15th and
+  the 30th (the last day in February).
+- **Net pay below ₱5,000** (the GAA floor) is flagged, not blocked.
+- **Draft:** HR changes, adds or removes lines, rebuilds one entry, or
+  regenerates everything (discarding adjustments). **Finalized:** locked;
+  loans count it as paid; payslips can be requested. **Reopen** returns it
+  to a draft. A draft with no payslip requests can be deleted.
+- Nobody adjusts their own pay, profile or loans (`PayrollRunPolicy::managePayOf`).
+
+### Payslips (`PayslipRequests`, `PayslipApprovers`)
+- The employee asks for a month whose payroll is final (one open request
+  per month); the approvers are told under the bell.
+- **Approvers:** the holder of the Chief Human Resource Specialist item at
+  the office coded `HRD`, plus anyone designated head of HRD (HR-1b
+  designation as head of office) while it runs. A designated head is
+  recorded as acting for the Chief. Nobody decides their own; with no
+  head, a Super Administrator can. Shared as the `payslipApprover` flag
+  for the portal sidebar.
+- Approving lets the employee open `/payslips/{entry}` (`HR/PayslipPrint`,
+  half a short bond sheet). Rejecting needs remarks. Payroll staff open any
+  finalized payslip; anyone other than the employee opening one is audited.
+
+### Pages
+- **Admin → Human Resources → Payroll:** Payrolls (`/admin/hr/payroll`:
+  list, monitoring cards, loans nearly paid, who approves; one payroll at
+  `/admin/hr/payroll/runs/{run}` with the register, entry dialog and
+  actions), Pay Profiles (list and one person's), Loans (filterable,
+  outstanding total), Payslip Requests (by status), Pay Components.
+- **Portal → Human Resources:** My Payslips (`/my/payslips`) and Payslip
+  Approvals (`/payslips/approvals`, approvers only).
+
+### Permissions and audit
+- `payroll.view` reads; `payroll.manage` also maintains components,
+  profiles and loans and works on payrolls. Both open the HR area. The
+  starter HR Officer role gets both (new installs only: existing roles are
+  never changed by `HrRoleSeeder`, so grant them under Roles).
+- Audit events `pay_component.*`, `employee_pay_item.*`, `employee_loan.*`,
+  `payroll_run.*`, `payroll_entry.adjusted`, `payslip_request.*` and
+  `payroll_entry.payslip_viewed`; amounts are never put in metadata.
+  Opening someone's pay profile is logged as `employee.viewed`.
+
+### Tests
+`tests/Feature/HR/PayrollTest.php`.
+
+## Modular Architecture
+
+Modules were introduced in this order, each depending on the ones before
+it. Everything listed is built; what is still planned follows below.
 
 ```
 Authentication (IMPLEMENTED — Phase 1)
@@ -3709,14 +4217,23 @@ Authentication (IMPLEMENTED — Phase 1)
     -> Audit / activity logs, append-only with read-only viewer (IMPLEMENTED — Phase 12)
     -> System settings, typed/grouped/protected, cached (IMPLEMENTED — Phase 13)
     -> Global search & UX refinement (IMPLEMENTED — Phase 14)
-    -> Future integrations (SSO, cross-application auth, health monitoring)
+    -> Per-system roles (IMPLEMENTED — Phase 15)
+    -> System maintenance mode (IMPLEMENTED — Phase 16)
+    -> Legacy sign-in experience & account features (IMPLEMENTED — Phase 17)
+    -> Dashboard systems directory, division drill-down (IMPLEMENTED — Phase 18)
+    -> Legacy admin panel adaptation (IMPLEMENTED — Phase 19)
+    -> Legacy data import, legacy bridge & SSO (IMPLEMENTED)
+    -> Human Resources HR-1 to HR-7 (IMPLEMENTED; the leave import awaits live data)
+    -> Hardening: system health, scheduler monitoring, starter HR roles (IMPLEMENTED)
+    -> Executive Dashboard: snapshots, system feeds, targets, alerts (IMPLEMENTED — Exec-1 to Exec-3)
 ```
 
-None of the modules below Phase 14 exist yet. Phase 0 only ensures the
-project structure (`app/Actions`, `app/Services`,
-`resources/js/Composables`, etc.) can accommodate new modules without
-restructuring — those directories are created when the first module that
-needs them is built, not preemptively.
+New directories (`app/Actions`, `app/Services`, `resources/js/Composables`,
+etc.) are created when the first module that needs them is built, not
+preemptively.
+
+Still planned: a public (unauthenticated) portal and versioned external
+integrations, described below.
 
 ### How a future module adds permissions and policies
 A new module defines its own permission rows (`resource.action`, e.g.
@@ -3756,10 +4273,247 @@ Any external system integrations (e.g. other CSC systems) are planned as
 explicit, versioned service classes under `app/Services`, never embedded
 directly in controllers.
 
-## Error Handling Foundation — IMPLEMENTED / PLANNED
+## Error Handling Foundation — IMPLEMENTED
 
-- IMPLEMENTED: Laravel's exception handler in `bootstrap/app.php` already
-  renders JSON for API/XHR requests (`shouldRenderJsonWhen`), which Inertia
-  relies on for validation error handling.
-- PLANNED: dedicated Inertia error pages for 401/403/404/419/422/429/500,
-  added when the routes that can trigger them exist.
+- Laravel's exception handler in `bootstrap/app.php` renders JSON for
+  API/XHR requests (`shouldRenderJsonWhen`), which Inertia relies on for
+  validation error handling.
+- **Inertia error pages:** `Errors/403` (with its message) and
+  `Errors/Show` for 404, 419, 429, 500 and 503. A 500 falls through to
+  Laravel's debug page while `APP_DEBUG` is on.
+
+## Hardening — IMPLEMENTED
+
+### System Health (`Support/System/HealthChecks`)
+Shown on Admin → System Health (`/admin/system-health`; needs
+`settings.view` and the Setting policy) and by `imis:health`. The command
+exits non-zero when a check fails, or also on a warning with `--strict`.
+Each check is ok, warn or fail, and never shows a secret or a personal
+record.
+- **Application:** APP_KEY, debug mode, HTTPS
+- **Database:** connection and latency, pending migrations
+- **Services:** cache, private storage, free disk space, failed jobs,
+  mail (a `log` mailer means password resets aren't sent)
+- **Scheduler:** whether it runs at all, and each scheduled task's last
+  run against its timetable
+- **Legacy bridge:** whether it's on and reachable
+
+### Scheduler monitoring (`Support/System/ScheduleMonitor`)
+- `ScheduledTaskFinished` and `ScheduledTaskFailed` (listened to in
+  `AppServiceProvider`) record each task's last run and outcome in the
+  cache, keyed by the task's mutex name.
+- The schedule itself is read from `Schedule::events()`, after
+  bootstrapping the console kernel so `routes/console.php` is loaded on
+  web requests too.
+- Cron counts as stopped when no task has run for 15 minutes; the most
+  frequent task is `imis:expire-sessions`, every five.
+
+### Starter HR roles (`HrRoleSeeder`, called by `DatabaseSeeder`)
+- **HR Officer:** `employees.*` (except `view_unit`), `pds.*`,
+  `employee_documents.*`, `ld.*`, `plantilla.*`, `service_records.view`,
+  and `leave.view`/`manage`/`certify`
+- **Top Management** (Director IV and III): view-only oversight —
+  `employees.view`, `plantilla.view`, `service_records.view`, `ld.view`,
+  `leave.view`. Deliberately **not** `pds.view` or
+  `employee_documents.view` (the user's choice, RA 10173 data
+  minimization), and nothing that changes data
+  (`TopManagementAccessTest`). The Director IV also gets Head of Agency.
+- **Head of Agency:** `leave.approve`
+- **Supervisor:** `employees.view_unit`
+
+Each role is created only if missing and never changed afterwards, so
+admins' edits survive re-seeding. No one is assigned a role
+automatically. Intended holders (user, 2026-10-03): the HRD Chief →
+HR Officer; the Director IV → Top Management and Head of Agency; the
+Director III → Top Management. Director IIs (field office heads) get
+nothing for now.
+
+### Tests
+`tests/Feature/SystemHealthTest.php`.
+
+## Security Policy, Automatic Backups, Log Retention — IMPLEMENTED (Admin-1)
+
+Three new System Settings groups (`SettingGroup::Security`, `Backups`,
+`Retention`), defined in `SettingRegistry` like the others. The
+credential guard skips the `password_policy_` prefix (these keys describe
+rules, never a password) but still checks the rest of the key.
+`SettingType::Integer` gained a `min_unless_zero` constraint: 0 means
+"off/forever", any other value has a floor.
+
+### Security (`Support/Security/SecurityPolicy`)
+Everything that enforces these rules reads them through `SecurityPolicy`.
+- **Session timeouts:** `security_idle_timeout_minutes` and
+  `security_session_limit_minutes` override `session.lifetime` and
+  `session.absolute_lifetime` at boot (`applySessionConfig()`, from
+  `AppServiceProvider`). Empty keeps the `.env` value. If settings can't
+  be read (fresh install), the server defaults stand.
+- **Lockout:** `security_login_max_attempts` and
+  `security_lockout_minutes` (defaults 5 and 15 minutes, as in the legacy
+  IMIS) replace `LoginRequest`'s former constants.
+- **Password rules:** `Password::defaults()` is
+  `SecurityPolicy::passwordRule()`. It always requires letters and
+  numbers, adds `password_policy_min_length`, `_mixed_case` and
+  `_symbols`, and checks for breached passwords in production.
+  `passwordRequirements()` describes the rules in words for Change
+  Password and Reset Password (`Forms/PasswordRequirements`).
+- **Reuse:** `password_histories` keeps the hashes of replaced passwords
+  (User `updated` hook, newest 24). `Rules\NotRecentPassword` refuses the
+  current password plus `password_policy_history` previous ones. For
+  resets it runs inside the `Password::reset` callback, after the token
+  is verified; failing there leaves the token usable.
+- **Expiry:** `users.password_changed_at` is set whenever the password
+  changes. The migration backfills existing accounts with the migration
+  date, so turning expiry on gives everyone the full period.
+  `EnsurePasswordIsCurrent` (web group) redirects every page to Change
+  Password once `password_policy_expiry_days` have passed. Change
+  Password, logout and the session heartbeat stay reachable; JSON
+  requests get a 403. After the change the user goes to the dashboard.
+
+### Automatic backups (`Support/Backup/BackupStore`, `imis:backup`)
+- Backups are kept in private storage under `backups/`, named
+  `imis-backup-YYYY-MM-DD-HHMMSS-{auto|manual}.sql.gz` (plain `.sql`
+  without zlib). They are written to a `.partial` file and renamed only
+  when complete. Only names matching that pattern are ever read or
+  deleted.
+- `imis:backup --if-enabled` runs nightly at 02:00 Asia/Manila (the app
+  runs on UTC) and skips while `backup_schedule_enabled` is off. Run by
+  hand, it always backs up. Each backup is followed by pruning to
+  `backup_keep_count`.
+- The Backup Database page lists the stored backups and adds "Back up
+  now", download (password re-check, audited) and delete. It's still
+  Super Administrators only, and it warns that encrypted PDS data needs
+  the same `APP_KEY`.
+- Audit events `system.backup_created`, `system.backup_failed` and
+  `system.backup_deleted`.
+- System Health gets a **Backups** check: warn when nightly backups are
+  off in production or none exist yet, warn after 26 hours, fail after 74.
+
+### Log retention (`Support/Audit/LogRetention`, `imis:prune-logs`)
+- Runs nightly at 03:00 Asia/Manila. `--dry-run` prints the cutoffs and
+  row counts.
+- Periods in months, 0 = forever, and a floor applied both in the form
+  and when pruning:
+
+  | Log | Default | Floor |
+  | --- | --- | --- |
+  | Login history | 24 | 6 |
+  | System access logs | 24 | 6 |
+  | Audit and security log | forever | 12 |
+  | Personal-data access entries | forever | 36 |
+
+- Personal-data access entries are `AuditEvent::personalDataAccess()`:
+  viewing or printing employee, PDS, 201, service record, leave, L&D and
+  payslip records.
+- This is the only code that deletes audit entries. It uses the query
+  builder on purpose (`AuditLog` still refuses deletion through
+  Eloquent) and deletes in chunks of 5,000. A run that deletes anything
+  records `system.logs_pruned` with the counts and cutoffs.
+
+### Tests
+`tests/Feature/Admin/SecurityPolicyTest.php`, `BackupStoreTest.php`,
+`LogRetentionTest.php`.
+
+## Executive Dashboard — IMPLEMENTED (Exec-1 to Exec-3; Exec-4 pending)
+
+Top management's (Director IV and III) view of every IMIS module and
+connected system in one place, at `/executive` (Portal sidebar →
+Management). It answers three questions in order: is anything wrong
+(system tiles), how are we doing against targets (counts and each
+figure's status), and where to look (each figure's breakdown, and a link
+into the module).
+
+**Figures and targets are not agreed yet** (as of 2026-10-07). The
+built-in figures are starter totals; targets are data, entered on the
+Settings page once management agrees on them. Until then figures show
+with no on-track/behind status.
+
+### Collection, never live (`Support/Executive/MetricCollector`)
+- `imis:collect-metrics` runs every 30 minutes and saves each source's
+  figures as an `executive_snapshots` row (`ok` with `metrics`, or
+  `failed` with the reason). One source failing never stops the others.
+- The dashboard reads only snapshots (`ExecutiveDashboard`), so it loads
+  quickly and a system that is down shows its last figures and their age
+  instead of breaking the page. Figures older than two hours are flagged
+  as not current.
+- History: everything for two days, then each source's last good
+  snapshot per day; deleted after System Settings → Log Retention →
+  *Executive Dashboard history* (24 months by default, floor 3).
+- Trends are the daily series over 30 days; the change is against the
+  first point in that window.
+
+### Sources (`Support/Executive/Sources`, `MetricSource`)
+| Key | Source | Starter figures |
+| --- | --- | --- |
+| `hr` | Human Resources | employees in service (by office), plantilla filled %, vacant items, compulsory retirement within 12 months |
+| `leave` | Leave | on leave today (by office), awaiting action, days approved this month |
+| `ld` | Learning & Development | trainings and hours this year, % of staff trained |
+| `payroll` | Payroll | gross and net pay this month (with its draft/final state), payslip requests pending |
+| `portal` | IMIS portal usage | % of active accounts that signed in, sign-ins, systems opened (by system), last 30 days |
+| `imis` | IMIS health | checks failing (named) and needing attention, from `HealthChecks` |
+| `system:{id}` | a connected system | whatever its summary feed sends |
+
+Every figure takes one shape (`MetricFeed`): key, label, value, unit
+(`count`, `percent`, `days`, `hours`, `peso`), optional period, note and
+breakdown. IMIS's own figures may also carry `href` + `permission`; the
+dashboard keeps a link only for viewers holding that permission. Totals
+only, so viewing the dashboard isn't audited.
+
+### Connected systems (Exec-2)
+- `applications.feed_url` and `applications.feed_key` (encrypted with
+  `APP_KEY`, hidden from serialization, not mass-assignable). Set only on
+  Executive Dashboard → Settings, never by the general system form.
+- `SystemFeedSource` GETs the address with the key as a bearer token
+  (10 s timeout, no redirects, 256 KB limit) and validates the response
+  with `MetricFeed::fromFeed`; a feed can't add links into IMIS.
+- The contract and a copy-ready Laravel controller (PROCTAD) are in
+  [`executive-feed.md`](executive-feed.md). **No system serves a feed
+  yet:** the endpoints belong in each system's own repository.
+- System tiles: *Running*, *Maintenance* (IMIS maintenance mode),
+  *Not answering*, *Not current*, *Waiting*, *Not connected*. The IMIS
+  tile follows the health checks.
+
+### Targets, alerts, weekly summary, print (Exec-3)
+- `executive_targets`: one per figure, keyed `source/metric`, with a
+  direction (higher or lower is better) and a tolerance in percent.
+  `TargetStatus`: meeting the target → *On track*; short by no more than
+  the tolerance → *At risk*; further → *Behind*.
+- Alerts (`MetricAlerts`, the bell, `ExecutiveAlert`): when a figure
+  turns *Behind*, when a source stops updating, and when it recovers —
+  only on the change. System Settings → Executive Dashboard → *Alerts*
+  (on by default).
+- Weekly summary (`imis:executive-digest`, Mondays 07:00 Asia/Manila;
+  `ExecutiveDigest`, email and the bell): systems needing attention and
+  figures off target, built per recipient. *Weekly summary* setting, off
+  by default; `--force` sends anyway.
+- Recipients (`ExecutiveAudience`): active accounts whose roles grant
+  `executive.view`.
+- `/executive/print`: the same figures as a report to print or save as
+  PDF, with no app layout.
+
+### Permissions, policy and audit
+- `executive.view` (the dashboard and its report) and `executive.manage`
+  (Settings: feeds, keys, targets, *Collect now*), checked by the
+  `permission:` middleware and `ExecutiveSnapshotPolicy` (`viewAny`,
+  `manage`).
+- The **Top Management** starter role now includes `executive.view` on a
+  fresh install; on an existing install an administrator adds it to that
+  role (starter roles are never changed after they are created). Nobody
+  gets `executive.manage` by default.
+- Audited: `executive.feed_updated`, `executive.feed_key_generated` (never
+  the key itself), `executive.target_saved`, `executive.target_removed`,
+  `executive.collected`.
+
+### Exec-4 — PLANNED
+The remaining legacy PHP systems (a small PHP file serving the same
+feed, see `executive-feed.md`) and CTS once it is rebuilt. The legacy
+code at `../old-imis` is reference only, so those endpoints are written
+in the systems themselves.
+
+### Deploying
+`php artisan migrate`, then `php artisan db:seed --class=RolePermissionSeeder`
+(new permissions) and `--class=SettingSeeder` (new settings). Grant
+`executive.view` to Top Management and `executive.manage` to whoever
+maintains the dashboard. The scheduler must be running.
+
+### Tests
+`tests/Feature/ExecutiveDashboardTest.php`.

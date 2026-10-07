@@ -162,7 +162,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                             <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-text">
                                 <input
                                     type="checkbox"
-                                    class="h-4 w-4 rounded border-border text-primary focus:ring-focus-ring"
+                                    class="h-4 w-4 rounded border-border-strong text-primary focus:ring-focus-ring"
                                     :checked="groupState(group) === 'all'"
                                     :indeterminate="groupState(group) === 'some'"
                                     @change="toggleGroup(group)"

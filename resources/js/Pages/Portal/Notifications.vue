@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Button from '../../Components/UI/Button.vue';
 import { formatDateTime } from '../../Utils/datetime';
@@ -31,7 +31,7 @@ const readAll = () => router.post('/notifications/read-all', {}, { preserveScrol
         </template>
     </PageHeader>
 
-    <AdminCard v-if="notifications.length" icon="bell" :title="unread ? `${unread} unread` : 'All read'">
+    <Card v-if="notifications.length" icon="bell" :title="unread ? `${unread} unread` : 'All read'">
         <ul class="divide-y divide-border">
             <li v-for="notification in notifications" :key="notification.id">
                 <a :href="`/notifications/${notification.id}`" class="flex gap-3 px-1 py-3 hover:bg-surface-muted">
@@ -46,6 +46,6 @@ const readAll = () => router.post('/notifications/read-all', {}, { preserveScrol
                 </a>
             </li>
         </ul>
-    </AdminCard>
+    </Card>
     <EmptyState v-else icon="bell" title="No notifications" description="Updates on your leave applications, and anything waiting for your action, will show here." />
 </template>

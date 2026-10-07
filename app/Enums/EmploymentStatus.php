@@ -41,6 +41,26 @@ enum EmploymentStatus: string
     }
 
     /**
+     * The statuses that hold no plantilla item: casual and contractual
+     * appointments, and Job Order / Contract of Service workers. They're
+     * kept on the Non-Plantilla page, never on the plantilla.
+     *
+     * @return array<int, self>
+     */
+    public static function nonPlantilla(): array
+    {
+        return [self::Casual, self::Contractual, self::JobOrder, self::ContractOfService];
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function nonPlantillaOptions(): array
+    {
+        return array_map(fn (self $case) => ['value' => $case->value, 'label' => $case->label()], self::nonPlantilla());
+    }
+
+    /**
      * @return array<int, array{value: string, label: string}>
      */
     public static function plantillaOptions(): array

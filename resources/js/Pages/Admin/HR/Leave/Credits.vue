@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -64,11 +64,11 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
 <template>
     <Head title="Leave Credits" />
 
-    <PageHeader title="Leave Credits" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Leave Credits' }]" />
+    <PageHeader title="Leave Credits" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Credits' }]" />
 
     <div class="space-y-6">
         <div v-if="canManage" class="grid gap-4 lg:grid-cols-2">
-            <AdminCard title="Monthly accrual" icon="calendar" subtitle="VL and SL earned for a month (runs automatically on the 1st for the month before).">
+            <Card title="Monthly accrual" icon="calendar" description="VL and SL earned for a month (runs automatically on the 1st for the month before).">
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="runAccrual">
                     <div>
                         <label for="accrual-month" class="block text-xs font-medium text-text-muted">Month</label>
@@ -83,9 +83,9 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                     <Button type="submit" :loading="accrual.processing">Post accrual</Button>
                 </form>
                 <p v-if="accrual.errors.month || accrual.errors.year" class="mt-2 text-sm text-danger">{{ accrual.errors.month || accrual.errors.year }}</p>
-            </AdminCard>
+            </Card>
 
-            <AdminCard title="Start of the year" icon="calendar" subtitle="Lapses last year's unused non-cumulative credits and posts this year's grants (runs automatically in January).">
+            <Card title="Start of the year" icon="calendar" description="Lapses last year's unused non-cumulative credits and posts this year's grants (runs automatically in January).">
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="runYearStart">
                     <div>
                         <label for="year-start" class="block text-xs font-medium text-text-muted">Year</label>
@@ -94,17 +94,17 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                     <Button type="submit" :loading="yearStart.processing">Start year</Button>
                 </form>
                 <p v-if="yearStart.errors.year" class="mt-2 text-sm text-danger">{{ yearStart.errors.year }}</p>
-            </AdminCard>
+            </Card>
         </div>
 
         <p v-if="noSupervisor" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
-            {{ noSupervisor }} {{ noSupervisor === 1 ? 'person has' : 'people have' }} no immediate supervisor set. Set one on their leave page before leave filing opens.
+            {{ noSupervisor }} {{ noSupervisor === 1 ? 'person has' : 'people have' }} no immediate supervisor. Supervisors follow position and office (the Chief Human Resource Specialist for Regional Support Unit staff, the Director II for Field Office staff, the Director IV for ORD staff, the Director III, the Chief Human Resource Specialists and the Attorney VI); set the rest on their leave page before leave filing opens.
         </p>
 
-        <AdminCard title="Balances today" icon="users" subtitle="Accrual and grants need an employment status that the leave type allows (set on the employee record).">
+        <Card title="Balances today" icon="users" description="Accrual and grants need an employment status that the leave type allows (set on the employee record).">
             <template v-if="separatedCount" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Show separated ({{ separatedCount }})
                 </label>
             </template>
@@ -119,10 +119,15 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                     <span class="tabular-nums">{{ days(row.balances[type.id]) }}</span>
                 </template>
                 <template #cell-supervisor="{ row }">
-                    <span v-if="row.supervisor">{{ row.supervisor }}</span>
+                    <template v-if="row.supervisor">
+                        <span>{{ row.supervisor }}</span>
+                        <span v-if="row.supervisor_position" class="block text-xs text-text-muted">
+                            {{ row.supervisor_position }}<template v-if="row.supervisor_source === 'set'"> · set by HR</template>
+                        </span>
+                    </template>
                     <span v-else class="text-warning">Not set</span>
                 </template>
             </DataTable>
-        </AdminCard>
+        </Card>
     </div>
 </template>

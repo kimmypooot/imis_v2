@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../../Components/UI/AdminCard.vue';
+import Card from '../../../../Components/UI/Card.vue';
 import Button from '../../../../Components/UI/Button.vue';
 import Modal from '../../../../Components/Feedback/Modal.vue';
 import TextInput from '../../../../Components/Forms/TextInput.vue';
@@ -50,10 +50,10 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
 <template>
     <Head title="Flexible Work" />
 
-    <PageHeader title="Flexible Work" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Human Resources' }, { label: 'Flexible Work' }]" />
+    <PageHeader title="Flexible Work" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Flexible Work' }]" />
 
     <div class="space-y-6">
-        <AdminCard :title="`Requests (${pending.length})`" icon="clock">
+        <Card :title="`Requests (${pending.length})`" icon="clock">
             <p v-if="pending.length === 0" class="text-sm text-text-muted">No requests waiting.</p>
             <ul v-else class="divide-y divide-border">
                 <li v-for="row in pending" :key="row.id" class="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
@@ -70,9 +70,9 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                     <span v-else-if="row.own" class="text-xs text-text-muted">Your own</span>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
 
-        <AdminCard :title="`Weekly reports to acknowledge (${reports.length})`" icon="clipboard">
+        <Card :title="`Weekly reports to acknowledge (${reports.length})`" icon="clipboard">
             <p v-if="reports.length === 0" class="text-sm text-text-muted">Nothing waiting.</p>
             <ul v-else class="divide-y divide-border">
                 <li v-for="row in reports" :key="row.id" class="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
@@ -86,9 +86,9 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                     <button v-if="canManage && !row.own" type="button" class="text-success hover:underline" @click="open('acknowledge', row)">Acknowledge</button>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
 
-        <AdminCard :title="`In effect today (${active.length})`" icon="calendar">
+        <Card :title="`In effect today (${active.length})`" icon="calendar">
             <p v-if="active.length === 0" class="text-sm text-text-muted">No arrangements in effect.</p>
             <ul v-else class="divide-y divide-border">
                 <li v-for="row in active" :key="row.id" class="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
@@ -99,7 +99,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                     <button v-if="canManage && !row.own" type="button" class="text-danger hover:underline" @click="open('terminate', row)">End early</button>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
     </div>
 
     <Modal :open="mode !== null" :title="titles[mode] ?? ''" :tone="mode === 'terminate' || form.decision === 'rejected' ? 'danger' : 'success'" @close="mode = null">

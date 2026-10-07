@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
@@ -97,7 +97,7 @@ const save = (changes) => {
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'User Access' }]"
     />
 
-    <AdminCard title="Users" icon="users">
+    <Card title="Users" icon="users">
         <DataTable :columns="columns" :rows="users" caption="Users and their system access" export-name="imis-user-access" :default-sort="{ key: 'name', direction: 'asc' }">
             <template #cell-name="{ row }">
                 <div class="flex items-center gap-3">
@@ -126,7 +126,7 @@ const save = (changes) => {
                 </Button>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <AccessGridModal
         :open="openId !== null"

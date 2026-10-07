@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -59,7 +59,7 @@ const openEdit = (role) => {
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'IMIS Roles' }]"
     />
 
-    <AdminCard title="List of Roles" icon="users">
+    <Card title="List of Roles" icon="users">
         <template v-if="can('roles.create')" #actions>
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Role</Button>
         </template>
@@ -77,7 +77,7 @@ const openEdit = (role) => {
                 <ActionButton v-if="can('roles.update') || can('permissions.manage')" icon="pencil" :label="`Edit ${row.display_name}`" @click="openEdit(row)" />
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RoleModal :open="modalOpen" :role="editing" :permissions="permissions" @close="modalOpen = false" />
 </template>

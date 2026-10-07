@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
 import Select from '../../Components/Forms/Select.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
@@ -38,6 +38,7 @@ const form = useForm({
     detail: source.detail ?? '',
     detail_text: source.detail_text ?? '',
     commutation_requested: source.commutation_requested ?? false,
+    is_emergency: source.is_emergency ?? false,
     remarks: source.remarks ?? '',
     attachment: null,
 });
@@ -62,7 +63,7 @@ watch(() => form.leave_type_id, () => {
 // Ask the server again whenever what it checks changes (debounced).
 let timer = null;
 watch(
-    () => [form.leave_type_id, form.date_from, form.date_to, form.is_half_day, form.detail, form.detail_text],
+    () => [form.leave_type_id, form.date_from, form.date_to, form.is_half_day, form.is_emergency, form.detail, form.detail_text],
     () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
@@ -71,7 +72,7 @@ watch(
                 only: ['preview'],
                 data: {
                     leave_type_id: form.leave_type_id, date_from: form.date_from, date_to: form.date_to || form.date_from,
-                    is_half_day: form.is_half_day ? 1 : 0, detail: form.detail, detail_text: form.detail_text,
+                    is_half_day: form.is_half_day ? 1 : 0, is_emergency: form.is_emergency ? 1 : 0, detail: form.detail, detail_text: form.detail_text,
                     ...(props.resubmitting ? { resubmit: props.resubmitting.id } : {}),
                 },
                 preserveState: true,
@@ -87,7 +88,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
 
 const submit = () => {
     const options = { preserveScroll: true, forceFormData: true };
-    const data = (values) => ({ ...values, is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
+    const data = (values) => ({ ...values, is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, is_emergency: values.is_emergency && type.value?.allows_emergency_filing ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
 
     form.transform(data).post(props.resubmitting ? `/my/leave/applications/${props.resubmitting.id}` : '/my/leave/applications', options);
 };
@@ -105,7 +106,7 @@ const field = 'mt-1 block w-full';
     />
 
     <div class="grid gap-6 xl:grid-cols-3">
-        <AdminCard title="Application" icon="clipboard" class="xl:col-span-2">
+        <Card title="Application" icon="clipboard" class="xl:col-span-2">
             <p v-if="resubmitting?.returned_remarks" class="mb-4 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">
                 <strong>Returned for correction:</strong> {{ resubmitting.returned_remarks }}
             </p>
@@ -116,6 +117,7 @@ const field = 'mt-1 block w-full';
                     <Select id="apply-type" v-model="form.leave_type_id" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!(form.errors.leave_type_id || issues.leave_type_id)" />
                     <p v-if="type?.ineligible.length" class="mt-1 text-sm text-danger">{{ type.ineligible.join(' ') }}</p>
                     <InputError :message="form.errors.leave_type_id || issues.leave_type_id" />
+                    <p v-if="type?.description" class="mt-1 text-xs text-text-muted">{{ type.description }}</p>
                     <p v-if="type?.supporting_documents" class="mt-1 text-xs text-text-muted">Attach: {{ type.supporting_documents }}</p>
                 </div>
 
@@ -123,7 +125,7 @@ const field = 'mt-1 block w-full';
                     <legend class="block text-sm font-medium text-text">6.B Details of leave <span class="text-danger" aria-hidden="true">*</span></legend>
                     <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1">
                         <label v-for="option in details" :key="option.value" class="inline-flex items-center gap-2 text-sm text-text">
-                            <input v-model="form.detail" type="radio" :value="option.value" class="h-4 w-4 border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                            <input v-model="form.detail" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                             {{ option.label }}
                         </label>
                     </div>
@@ -140,14 +142,21 @@ const field = 'mt-1 block w-full';
                     <InputError :message="form.errors.date_to || issues.date_to" />
                 </div>
 
+                <div v-if="type?.allows_emergency_filing" class="sm:col-span-2">
+                    <label class="inline-flex items-center gap-2 text-sm text-text">
+                        <input v-model="form.is_emergency" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        Emergency: I'm filing on my return instead of {{ type.advance_filing_days }} days ahead
+                    </label>
+                </div>
+
                 <div v-if="type?.allows_half_day" class="flex flex-wrap items-center gap-4 sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                         Half day
                     </label>
                     <template v-if="form.is_half_day">
                         <label v-for="period in ['AM', 'PM']" :key="period" class="inline-flex items-center gap-1.5 text-sm text-text">
-                            <input v-model="form.half_day_period" type="radio" :value="period" class="h-4 w-4 border-border text-primary focus:ring-2 focus:ring-focus-ring" />{{ period }}
+                            <input v-model="form.half_day_period" type="radio" :value="period" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />{{ period }}
                         </label>
                     </template>
                     <InputError :message="form.errors.is_half_day || issues.is_half_day || form.errors.half_day_period" />
@@ -156,8 +165,8 @@ const field = 'mt-1 block w-full';
                 <fieldset class="sm:col-span-2">
                     <legend class="block text-sm font-medium text-text">6.D Commutation</legend>
                     <div class="mt-1 flex gap-5">
-                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="false" class="h-4 w-4 border-border text-primary" />Not requested</label>
-                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="true" class="h-4 w-4 border-border text-primary" />Requested</label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="false" class="h-4 w-4 border-border-strong text-primary" />Not requested</label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="true" class="h-4 w-4 border-border-strong text-primary" />Requested</label>
                     </div>
                 </fieldset>
 
@@ -179,7 +188,7 @@ const field = 'mt-1 block w-full';
                         id="apply-attachment"
                         type="file"
                         accept="application/pdf,image/jpeg,image/png"
-                        class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
+                        class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
                         @change="form.attachment = $event.target.files[0] ?? null"
                     />
                     <p class="mt-1 text-xs text-text-muted">PDF, JPG or PNG, up to {{ Math.round(attachmentKilobytes / 1024) }} MB. Only you, your approvers and HR can open it.</p>
@@ -191,10 +200,10 @@ const field = 'mt-1 block w-full';
                 <Link href="/my/leave/applications" class="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-muted">Cancel</Link>
                 <Button type="submit" form="leave-apply-form" variant="success" :loading="form.processing">{{ resubmitting ? 'Resubmit' : 'Submit application' }}</Button>
             </div>
-        </AdminCard>
+        </Card>
 
         <div class="space-y-6">
-            <AdminCard title="Summary" icon="calendar">
+            <Card title="Summary" icon="calendar">
                 <dl class="space-y-3 text-sm">
                     <div class="flex justify-between gap-3">
                         <dt class="text-text-muted">{{ type?.counts_calendar_days ? 'Calendar days' : 'Working days applied for' }}</dt>
@@ -220,16 +229,16 @@ const field = 'mt-1 block w-full';
                     </div>
                 </dl>
                 <p v-if="preview && Object.keys(issues).length === 0 && preview.days > 0" class="mt-4 rounded-md bg-success-bg px-3 py-2 text-sm text-success">Ready to submit.</p>
-            </AdminCard>
+            </Card>
 
-            <AdminCard title="Your credits" icon="chartBar">
+            <Card title="Your credits" icon="chartBar">
                 <ul class="divide-y divide-border text-sm">
                     <li v-for="balance in balances" :key="balance.type_id" class="flex justify-between py-1.5">
                         <span class="text-text">{{ balance.code }} · {{ balance.name }}</span>
                         <span class="tabular-nums font-medium text-text">{{ days(balance.balance) }}</span>
                     </li>
                 </ul>
-            </AdminCard>
+            </Card>
         </div>
     </div>
 </template>

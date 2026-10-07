@@ -67,6 +67,7 @@ class PlantillaController extends Controller
                 ->map(fn (PlantillaAppointment $appointment) => [
                     ...$plantilla->presentAppointment($appointment),
                     'can_manage' => $request->user()->can('appoint', [PlantillaItem::class, $appointment->employee]),
+                    'can_correct' => $request->user()->can('correct', [PlantillaItem::class, $appointment->employee]),
                 ]),
             'canManage' => $canManage,
             'itemForm' => $canManage ? $this->itemForm($plantilla) : null,

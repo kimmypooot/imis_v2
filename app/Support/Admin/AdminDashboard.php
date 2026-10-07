@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\User;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * The legacy admin dashboard's numbers (admin/index.php + dashboard.js):
@@ -242,7 +243,9 @@ class AdminDashboard
             ->map(fn (AuditLog $log) => [
                 'id' => $log->id,
                 'event' => $log->event->label(),
-                'actor' => $log->actor_label ?? 'System',
+                // The snapshot is "Name <email>"; the card shows the name only.
+                'actor' => $log->actor_label ? trim(Str::before($log->actor_label, ' <')) : 'System',
+                'actor_label' => $log->actor_label,
                 'description' => $log->description,
                 'created_at' => $log->created_at->toIso8601String(),
             ])

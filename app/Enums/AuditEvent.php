@@ -20,6 +20,10 @@ enum AuditEvent: string
     case AuthPasswordReset = 'auth.password_reset';
     case SessionEnded = 'auth.session_ended';
     case DatabaseBackupDownloaded = 'system.backup_downloaded';
+    case DatabaseBackupCreated = 'system.backup_created';
+    case DatabaseBackupFailed = 'system.backup_failed';
+    case DatabaseBackupDeleted = 'system.backup_deleted';
+    case LogsPruned = 'system.logs_pruned';
 
     case UserCreated = 'user.created';
     case UserUpdated = 'user.updated';
@@ -27,6 +31,7 @@ enum AuditEvent: string
     case UserRolesChanged = 'user.roles_changed';
     case UserPasswordResetSent = 'user.password_reset_sent';
     case UserPasswordChanged = 'user.password_changed';
+    case UserPasswordSet = 'user.password_set';
 
     case RoleCreated = 'role.created';
     case RoleUpdated = 'role.updated';
@@ -39,6 +44,9 @@ enum AuditEvent: string
     case ServiceCreated = 'service.created';
     case ServiceUpdated = 'service.updated';
     case ServiceStatusChanged = 'service.status_changed';
+    case ServiceCategoryCreated = 'service_category.created';
+    case ServiceCategoryUpdated = 'service_category.updated';
+    case ServiceCategoryStatusChanged = 'service_category.status_changed';
 
     case ApplicationCreated = 'application.created';
     case ApplicationUpdated = 'application.updated';
@@ -59,6 +67,8 @@ enum AuditEvent: string
     case EmployeeCreated = 'employee.created';
     case EmployeeUpdated = 'employee.updated';
     case EmployeeViewed = 'employee.viewed';
+    // The HR dashboard analytics (names, birthdays, ages); once a day per viewer.
+    case HrDashboardViewed = 'employee.hr_dashboard_viewed';
     // HR-1b: assignment history. Metadata names the office move, if any.
     case EmployeeAssignmentRecorded = 'employee_assignment.recorded';
     case EmployeeAssignmentUpdated = 'employee_assignment.updated';
@@ -73,8 +83,18 @@ enum AuditEvent: string
     case PlantillaVacated = 'plantilla_appointment.vacated';
     case PlantillaAppointmentCorrected = 'plantilla_appointment.corrected';
     case PlantillaAppointmentRemoved = 'plantilla_appointment.removed';
+    // Non-plantilla staff (casual, contractual, Job Order, Contract of Service): their contracts / appointments.
+    case NonPlantillaContractRecorded = 'non_plantilla_contract.recorded';
+    case NonPlantillaContractUpdated = 'non_plantilla_contract.updated';
+    case NonPlantillaContractRemoved = 'non_plantilla_contract.removed';
+    // Plantilla items that only ever held non-plantilla staff, taken off the plantilla (ids in metadata).
+    case PlantillaNonPlantillaItemsRemoved = 'plantilla_item.non_plantilla_removed';
     // `imis:link-plantilla`: staff linked to new items from their accounts (counts in metadata).
     case PlantillaLinkedFromAccounts = 'plantilla_appointment.linked_from_accounts';
+    // Items and links completed from the plantilla spreadsheet (item ids in metadata).
+    case PlantillaSheetApplied = 'plantilla_item.sheet_applied';
+    // `imis:import-plantilla`: the certified Plantilla of Personnel workbook (ids touched, by kind, in metadata).
+    case PlantillaImported = 'plantilla_item.imported';
     // HR-4 positions. Metadata counts the plantilla items adjusted.
     case PositionCreated = 'position.created';
     case PositionUpdated = 'position.updated';
@@ -85,6 +105,9 @@ enum AuditEvent: string
     // HR-5: HR opening or printing someone's Service Record.
     case ServiceRecordViewed = 'service_record.viewed';
     case ServiceRecordPrinted = 'service_record.printed';
+    case ServiceRecordLineAdded = 'service_record.line_added';
+    case ServiceRecordLineUpdated = 'service_record.line_updated';
+    case ServiceRecordLineRemoved = 'service_record.line_removed';
     // HR-6a leave foundations.
     case LeaveTypeSaved = 'leave_type.saved';
     case HolidaySaved = 'holiday.saved';
@@ -117,6 +140,27 @@ enum AuditEvent: string
     case FwaReportAcknowledged = 'fwa_report.acknowledged';
     // HR-7: the one-time import from the legacy LMS (counts in metadata).
     case LeaveImportedFromLegacy = 'leave_credit.imported_from_legacy';
+    // HR-8 payroll. Metadata names fields or counts — never amounts.
+    case PayComponentCreated = 'pay_component.created';
+    case PayComponentUpdated = 'pay_component.updated';
+    case PayComponentDeleted = 'pay_component.deleted';
+    case PayItemSaved = 'employee_pay_item.saved';
+    case PayItemDeleted = 'employee_pay_item.deleted';
+    case LoanSaved = 'employee_loan.saved';
+    case LoanStopped = 'employee_loan.stopped';
+    case LoanResumed = 'employee_loan.resumed';
+    case LoanDeleted = 'employee_loan.deleted';
+    case PayrollCreated = 'payroll_run.created';
+    case PayrollRegenerated = 'payroll_run.regenerated';
+    case PayrollAdjusted = 'payroll_entry.adjusted';
+    case PayrollFinalized = 'payroll_run.finalized';
+    case PayrollReopened = 'payroll_run.reopened';
+    case PayrollDeleted = 'payroll_run.deleted';
+    case PayslipRequested = 'payslip_request.requested';
+    case PayslipRequestCancelled = 'payslip_request.cancelled';
+    case PayslipRequestDecided = 'payslip_request.decided';
+    // Someone other than the employee opened their payslip (RA 10173).
+    case PayslipViewed = 'payroll_entry.payslip_viewed';
     // HR-2. Metadata names the section and which fields/rows changed —
     // never the values, which are sensitive.
     case PdsViewed = 'pds.viewed';
@@ -171,6 +215,32 @@ enum AuditEvent: string
     case ChangelogUpdated = 'changelog.updated';
     case ChangelogPublished = 'changelog.published';
     case ChangelogUnpublished = 'changelog.unpublished';
+
+    // Executive Dashboard settings: a system's summary feed and the
+    // targets figures are measured against. Viewing the dashboard isn't
+    // audited: it shows totals only, never a person's record.
+    case ExecutiveFeedUpdated = 'executive.feed_updated';
+    case ExecutiveFeedKeyGenerated = 'executive.feed_key_generated';
+    case ExecutiveTargetSaved = 'executive.target_saved';
+    case ExecutiveTargetRemoved = 'executive.target_removed';
+    case ExecutiveCollected = 'executive.collected';
+
+    /**
+     * Someone looking at or printing an employee's HR records — the
+     * personal-data access trail kept for RA 10173, which has its own
+     * retention period (System Settings → Log Retention).
+     *
+     * @return array<int, self>
+     */
+    public static function personalDataAccess(): array
+    {
+        return [
+            self::EmployeeViewed, self::ServiceRecordViewed, self::ServiceRecordPrinted,
+            self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed,
+            self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed,
+            self::LdCertificateViewed, self::LdLogViewed, self::LdReportViewed,
+        ];
+    }
 
     public function action(): string
     {

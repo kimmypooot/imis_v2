@@ -35,6 +35,8 @@ class UpdateEmployeeRequest extends FormRequest
             // Optional: a record can exist before HR knows it ("Not set").
             'employment_status' => ['nullable', new Enum(EmploymentStatus::class)],
             'original_appointment_date' => ['nullable', 'date', 'before_or_equal:today'],
+            // Only for those who came from another agency (loyalty awards count CSC service).
+            'csc_entry_date' => ['nullable', 'date', 'before_or_equal:today', 'after_or_equal:original_appointment_date'],
             'separation_date' => ['nullable', 'date', 'after_or_equal:original_appointment_date'],
             // Why someone left (retirement, resignation, transfer, …) is
             // required once a separation date is set (and dropped without
@@ -79,6 +81,7 @@ class UpdateEmployeeRequest extends FormRequest
             'employee_number' => 'employee number',
             'employment_status' => 'employment status',
             'original_appointment_date' => 'original appointment date',
+            'csc_entry_date' => 'date entered the CSC',
         ];
     }
 }

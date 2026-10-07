@@ -42,6 +42,16 @@ class LeaveAccrual extends Command
             $this->info("Year start: {$start['granted']} grants, {$start['lapsed']} lapsed.");
         }
 
+        // Annual grants for anyone who joined (or became eligible) since
+        // January 1, or a leave type switched on mid-year.
+        if (! $this->option('year')) {
+            $due = $credits->grantDue();
+            if ($due['granted'] > 0) {
+                $audit->recordFor(null, AuditEvent::LeaveYearStartRun, "Posted {$due['granted']} annual leave grant(s) due since January 1 (scheduled)", null, ['year' => today()->year] + $due);
+            }
+            $this->info("Grants due this year: {$due['granted']} posted.");
+        }
+
         return self::SUCCESS;
     }
 }

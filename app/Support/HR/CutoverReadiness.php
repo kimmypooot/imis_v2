@@ -12,12 +12,12 @@ use App\Models\Holiday;
 use App\Models\LeaveLedgerEntry;
 use App\Models\SalarySchedule;
 use App\Models\User;
-use App\Support\Settings\Settings;
+use App\Support\HR\Leave\Supervisors;
 use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
 /**
- * HR-7: what still stands between HR and switching off the legacy PRISM,
+ * HR-7: what still stands between HR and switching off the legacy
  * LMS and ldms — counts only (no names), each with where to fix it. A
  * check is "ok", "warn" (worth fixing, not blocking) or "todo".
  */
@@ -62,8 +62,8 @@ class CutoverReadiness
         $schedule = SalarySchedule::query()->inForceOn(today())->exists();
         $add('Plantilla', 'A salary schedule is in force today', $schedule, $schedule ? 'Yes' : 'None in force', '/admin/hr/salary-schedules');
 
-        $officer = filled(Settings::get('hr_certifying_officer_name'));
-        $add('Plantilla', 'Service Record certifying officer is set', $officer, $officer ? 'Set' : 'Not set', '/admin/settings', false);
+        $officer = filled(app(CertifyingOfficer::class)->current()['name']);
+        $add('Plantilla', 'Service Record certifying officer is set', $officer, $officer ? 'Set' : 'Not Set', '/admin/settings', false);
 
         // Leave.
         $noCredits = $staff()->whereDoesntHave('leaveLedger')->count();
@@ -76,7 +76,8 @@ class CutoverReadiness
         $holidays = Holiday::query()->whereYear('date', today()->year)->count();
         $add('Leave', 'This year\'s holidays are entered', $holidays > 0, $holidays ? "{$holidays} entered" : 'None for '.today()->year, '/admin/hr/leave/holidays');
 
-        $noSupervisor = $staff()->whereNull('immediate_supervisor_id')->count();
+        $supervisors = app(Supervisors::class);
+        $noSupervisor = $staff()->with(['user.organizationalUnit', 'immediateSupervisor'])->get()->filter(fn (Employee $employee) => $supervisors->for($employee)['source'] === null)->count();
         $add('Leave', 'Staff have an immediate supervisor (leave recommendation)', $noSupervisor === 0,
             $noSupervisor ? "{$noSupervisor} without one (their leave goes straight to HR)" : 'All set', '/admin/hr/leave', false);
 
@@ -87,7 +88,7 @@ class CutoverReadiness
 
         // Cutover.
         $launchers = Application::query()->whereIn('short_name', RetireLegacyHr::SYSTEMS)->where('status', Status::Active)->pluck('short_name');
-        $add('Cutover', 'Legacy PRISM, LMS and ldms launchers retired', $launchers->isEmpty(),
+        $add('Cutover', 'Legacy LMS and ldms launchers retired', $launchers->isEmpty(),
             $launchers->isEmpty() ? 'Retired' : 'Still on the portal: '.$launchers->implode(', ').' — run imis:retire-legacy-hr last', '/admin/applications', false);
 
         $add('Cutover', 'Legacy database reachable (for the imports)', $reachable = $this->legacyReachable(),

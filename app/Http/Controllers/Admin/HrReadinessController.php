@@ -9,7 +9,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * HR-7: the cutover checklist — what's left before the legacy PRISM, LMS
+ * HR-7: the cutover checklist — what's left before the legacy LMS
  * and ldms can be switched off. Counts only, no names.
  */
 class HrReadinessController extends Controller

@@ -20,28 +20,38 @@ use App\Http\Controllers\Admin\EmployeePdsController;
 use App\Http\Controllers\Admin\EmployeeServiceRecordController;
 use App\Http\Controllers\Admin\FlexibleWorkController;
 use App\Http\Controllers\Admin\HolidayController;
+use App\Http\Controllers\Admin\HrDashboardController;
 use App\Http\Controllers\Admin\HrReadinessController;
 use App\Http\Controllers\Admin\LdReportController;
 use App\Http\Controllers\Admin\LdReviewController;
 use App\Http\Controllers\Admin\LearningDevelopmentController;
 use App\Http\Controllers\Admin\LeaveApplicationController as AdminLeaveApplicationController;
+use App\Http\Controllers\Admin\LeaveCalendarController;
 use App\Http\Controllers\Admin\LeaveCreditController;
 use App\Http\Controllers\Admin\LeaveDesignationController;
 use App\Http\Controllers\Admin\LeaveMonetizationController;
 use App\Http\Controllers\Admin\LeaveReportController;
 use App\Http\Controllers\Admin\LeaveTypeController;
+use App\Http\Controllers\Admin\NonPlantillaController;
 use App\Http\Controllers\Admin\OrganizationalUnitController as AdminOrganizationalUnitController;
+use App\Http\Controllers\Admin\PayComponentController;
+use App\Http\Controllers\Admin\PayProfileController;
+use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\PayrollMonitoringController;
 use App\Http\Controllers\Admin\PdsVerificationController;
 use App\Http\Controllers\Admin\PlantillaAppointmentController;
 use App\Http\Controllers\Admin\PlantillaController;
+use App\Http\Controllers\Admin\PlantillaSheetController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ReassignmentReportController;
 use App\Http\Controllers\Admin\SalaryScheduleController;
+use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Admin\SessionController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StaffingController;
 use App\Http\Controllers\Admin\SystemAccessController;
+use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthorizationDemoController;
@@ -55,8 +65,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 /*
- * Administration surface. `/admin` is the minimal landing page gated by
- * the `access-admin` Gate ability (any of the core admin permissions);
+ * Administration surface. `/admin` is the system administration landing
+ * page, gated by the `access-admin` Gate ability (any of the core admin
+ * permissions); `/admin/hr` is Human Resources' own, gated by `access-hr`;
  * every other route is additionally protected by its controller's policy
  * check ($this->authorize()) — the "permission"/"can" middleware here is
  * a route-boundary guard, not the sole protection.
@@ -65,6 +76,11 @@ Route::middleware('auth')->group(function () {
     Route::get('admin', [AdminController::class, 'index'])
         ->middleware('can:access-admin')
         ->name('admin.index');
+
+    // The Human Resources area's own landing page (any HR permission).
+    Route::get('admin/hr', [HrDashboardController::class, 'index'])
+        ->middleware('can:access-hr')
+        ->name('admin.hr.index');
 
     // Developer tools, registered only when running locally (APP_ENV=local),
     // so they don't exist (404) on staging or the live server.
@@ -117,6 +133,8 @@ Route::middleware('auth')->group(function () {
         Route::put('users/{user}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles');
         Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordReset'])
             ->name('users.send-password-reset');
+        // Super Administrators only (UserPolicy::setPassword).
+        Route::put('users/{user}/password', [UserController::class, 'setPassword'])->name('users.set-password');
     });
 
     Route::middleware('permission:users.delete')->group(function () {
@@ -145,19 +163,24 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:services.view')->group(function () {
         Route::get('admin/services', [AdminServiceController::class, 'index'])->name('admin.services.index');
+        Route::get('admin/service-categories', [ServiceCategoryController::class, 'index'])->name('admin.service-categories.index');
     });
 
     Route::middleware('permission:services.create')->group(function () {
         Route::post('admin/services', [AdminServiceController::class, 'store'])->name('admin.services.store');
+        Route::post('admin/service-categories', [ServiceCategoryController::class, 'store'])->name('admin.service-categories.store');
     });
 
     Route::middleware('permission:services.update')->group(function () {
         Route::put('admin/services/{service}', [AdminServiceController::class, 'update'])->name('admin.services.update');
+        Route::put('admin/service-categories/{serviceCategory}', [ServiceCategoryController::class, 'update'])->name('admin.service-categories.update');
     });
 
     Route::middleware('permission:services.archive')->group(function () {
         Route::patch('admin/services/{service}/status', [AdminServiceController::class, 'updateStatus'])
             ->name('admin.services.update-status');
+        Route::patch('admin/service-categories/{serviceCategory}/status', [ServiceCategoryController::class, 'updateStatus'])
+            ->name('admin.service-categories.update-status');
     });
 
     Route::middleware('permission:applications.view')->group(function () {
@@ -273,6 +296,12 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/hr/employees/{employee}/service-record', [EmployeeServiceRecordController::class, 'show'])->name('admin.hr.employees.service-record');
         Route::get('admin/hr/employees/{employee}/service-record/print', [EmployeeServiceRecordController::class, 'print'])->name('admin.hr.employees.service-record.print');
     });
+    // HR-5: service in other agencies, entered by hand (EmployeePolicy::manageServiceRecord).
+    Route::middleware('permission:service_records.manage')->scopeBindings()->group(function () {
+        Route::post('admin/hr/employees/{employee}/service-record/entries', [EmployeeServiceRecordController::class, 'store'])->name('admin.hr.employees.service-record.entries.store');
+        Route::put('admin/hr/employees/{employee}/service-record/entries/{serviceRecordEntry}', [EmployeeServiceRecordController::class, 'update'])->name('admin.hr.employees.service-record.entries.update');
+        Route::delete('admin/hr/employees/{employee}/service-record/entries/{serviceRecordEntry}', [EmployeeServiceRecordController::class, 'destroy'])->name('admin.hr.employees.service-record.entries.destroy');
+    });
 
     // HR-6a: leave — types, holidays, everyone's credits, one person's
     // leave card. `leave.manage` also reads; EmployeePolicy keeps HR off
@@ -289,11 +318,12 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/hr/leave/monetization', [LeaveMonetizationController::class, 'index'])->name('admin.hr.leave.monetization');
         Route::get('admin/hr/leave/flexible-work', [FlexibleWorkController::class, 'index'])->name('admin.hr.leave.fwa');
         Route::get('admin/hr/leave/reports', [LeaveReportController::class, 'index'])->name('admin.hr.leave.reports');
+        Route::get('admin/hr/leave/calendar', [LeaveCalendarController::class, 'index'])->name('admin.hr.leave.calendar');
         Route::get('admin/hr/employees/{employee}/leave', [EmployeeLeaveController::class, 'show'])->name('admin.hr.employees.leave');
     });
 
     Route::middleware('permission:leave.manage')->scopeBindings()->group(function () {
-        // HR-7: what is left before the legacy PRISM, LMS and ldms are retired.
+        // HR-7: what is left before the legacy LMS and ldms are retired.
         Route::get('admin/hr/readiness', [HrReadinessController::class, 'index'])->name('admin.hr.readiness');
         Route::post('admin/hr/leave/accrual', [LeaveCreditController::class, 'accrue'])->name('admin.hr.leave.accrue');
         Route::post('admin/hr/leave/year-start', [LeaveCreditController::class, 'startYear'])->name('admin.hr.leave.year-start');
@@ -316,6 +346,43 @@ Route::middleware('auth')->group(function () {
         Route::put('admin/hr/employees/{employee}/leave/settings', [EmployeeLeaveController::class, 'updateSettings'])->name('admin.hr.employees.leave.settings');
     });
 
+    // HR-8: payroll. `payroll.manage` also reads; PayrollRunPolicy keeps
+    // HR off their own pay. Payrolls sit under /runs/{run}, clear of the
+    // fixed paths. Scoped bindings: an entry only resolves under its run,
+    // a line under its entry, a pay item or loan under its employee.
+    Route::middleware('permission:payroll.view,payroll.manage')->scopeBindings()->group(function () {
+        Route::get('admin/hr/payroll', [PayrollController::class, 'index'])->name('admin.hr.payroll.index');
+        Route::get('admin/hr/payroll/runs/{run}', [PayrollController::class, 'show'])->name('admin.hr.payroll.show');
+        Route::get('admin/hr/payroll/components', [PayComponentController::class, 'index'])->name('admin.hr.payroll.components');
+        Route::get('admin/hr/payroll/profiles', [PayProfileController::class, 'index'])->name('admin.hr.payroll.profiles');
+        Route::get('admin/hr/payroll/profiles/{employee}', [PayProfileController::class, 'show'])->name('admin.hr.payroll.profiles.show');
+        Route::get('admin/hr/payroll/loans', [PayrollMonitoringController::class, 'loans'])->name('admin.hr.payroll.loans');
+        Route::get('admin/hr/payroll/requests', [PayrollMonitoringController::class, 'requests'])->name('admin.hr.payroll.requests');
+    });
+
+    Route::middleware('permission:payroll.manage')->scopeBindings()->group(function () {
+        Route::post('admin/hr/payroll/runs', [PayrollController::class, 'store'])->name('admin.hr.payroll.store');
+        Route::post('admin/hr/payroll/runs/{run}/regenerate', [PayrollController::class, 'regenerate'])->name('admin.hr.payroll.regenerate');
+        Route::post('admin/hr/payroll/runs/{run}/finalize', [PayrollController::class, 'finalize'])->name('admin.hr.payroll.finalize');
+        Route::post('admin/hr/payroll/runs/{run}/reopen', [PayrollController::class, 'reopen'])->name('admin.hr.payroll.reopen');
+        Route::delete('admin/hr/payroll/runs/{run}', [PayrollController::class, 'destroy'])->name('admin.hr.payroll.destroy');
+        Route::post('admin/hr/payroll/runs/{run}/entries/{entry}/regenerate', [PayrollController::class, 'regenerateEntry'])->name('admin.hr.payroll.entries.regenerate');
+        Route::post('admin/hr/payroll/runs/{run}/entries/{entry}/lines', [PayrollController::class, 'storeLine'])->name('admin.hr.payroll.lines.store');
+        Route::put('admin/hr/payroll/runs/{run}/entries/{entry}/lines/{line}', [PayrollController::class, 'updateLine'])->name('admin.hr.payroll.lines.update');
+        Route::delete('admin/hr/payroll/runs/{run}/entries/{entry}/lines/{line}', [PayrollController::class, 'destroyLine'])->name('admin.hr.payroll.lines.destroy');
+        Route::post('admin/hr/payroll/components', [PayComponentController::class, 'store'])->name('admin.hr.payroll.components.store');
+        Route::put('admin/hr/payroll/components/{component}', [PayComponentController::class, 'update'])->name('admin.hr.payroll.components.update');
+        Route::delete('admin/hr/payroll/components/{component}', [PayComponentController::class, 'destroy'])->name('admin.hr.payroll.components.destroy');
+        Route::post('admin/hr/payroll/profiles/{employee}/items', [PayProfileController::class, 'storeItem'])->name('admin.hr.payroll.items.store');
+        Route::put('admin/hr/payroll/profiles/{employee}/items/{payItem}', [PayProfileController::class, 'updateItem'])->name('admin.hr.payroll.items.update');
+        Route::delete('admin/hr/payroll/profiles/{employee}/items/{payItem}', [PayProfileController::class, 'destroyItem'])->name('admin.hr.payroll.items.destroy');
+        Route::post('admin/hr/payroll/profiles/{employee}/loans', [PayProfileController::class, 'storeLoan'])->name('admin.hr.payroll.loans.store');
+        Route::put('admin/hr/payroll/profiles/{employee}/loans/{loan}', [PayProfileController::class, 'updateLoan'])->name('admin.hr.payroll.loans.update');
+        Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/stop', [PayProfileController::class, 'stopLoan'])->name('admin.hr.payroll.loans.stop');
+        Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/resume', [PayProfileController::class, 'resumeLoan'])->name('admin.hr.payroll.loans.resume');
+        Route::delete('admin/hr/payroll/profiles/{employee}/loans/{loan}', [PayProfileController::class, 'destroyLoan'])->name('admin.hr.payroll.loans.destroy');
+    });
+
     // HR-4: plantilla and salary schedules. `plantilla.manage` also reads;
     // PlantillaItemPolicy keeps HR off their own appointment. Scoped
     // bindings: an appointment only resolves under its own item.
@@ -325,10 +392,24 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/hr/salary-schedules', [SalaryScheduleController::class, 'index'])->name('admin.hr.salary-schedules.index');
         Route::get('admin/hr/positions', [PositionController::class, 'index'])->name('admin.hr.positions.index');
         Route::get('admin/hr/staffing', [StaffingController::class, 'index'])->name('admin.hr.staffing.index');
+        // Casual, contractual, Job Order and Contract of Service staff (no plantilla item).
+        Route::get('admin/hr/non-plantilla', [NonPlantillaController::class, 'index'])->name('admin.hr.non-plantilla.index');
+    });
+
+    Route::middleware('permission:plantilla.manage')->group(function () {
+        Route::post('admin/hr/non-plantilla/contracts', [NonPlantillaController::class, 'store'])->name('admin.hr.non-plantilla.contracts.store');
+        Route::put('admin/hr/non-plantilla/contracts/{contract}', [NonPlantillaController::class, 'update'])->name('admin.hr.non-plantilla.contracts.update');
+        Route::delete('admin/hr/non-plantilla/contracts/{contract}', [NonPlantillaController::class, 'destroy'])->name('admin.hr.non-plantilla.contracts.destroy');
     });
 
     Route::middleware('permission:plantilla.manage')->scopeBindings()->group(function () {
         Route::post('admin/hr/plantilla', [PlantillaController::class, 'store'])->name('admin.hr.plantilla.store');
+        // Completing the plantilla from a spreadsheet (its own path, clear of {item}).
+        Route::get('admin/hr/plantilla-sheet', [PlantillaSheetController::class, 'show'])->name('admin.hr.plantilla.sheet');
+        Route::get('admin/hr/plantilla-sheet/template', [PlantillaSheetController::class, 'template'])->name('admin.hr.plantilla.sheet.template');
+        Route::post('admin/hr/plantilla-sheet', [PlantillaSheetController::class, 'upload'])->name('admin.hr.plantilla.sheet.upload');
+        Route::post('admin/hr/plantilla-sheet/apply', [PlantillaSheetController::class, 'apply'])->name('admin.hr.plantilla.sheet.apply');
+        Route::delete('admin/hr/plantilla-sheet', [PlantillaSheetController::class, 'discard'])->name('admin.hr.plantilla.sheet.discard');
         Route::put('admin/hr/plantilla/{item}', [PlantillaController::class, 'update'])->name('admin.hr.plantilla.update');
         Route::patch('admin/hr/plantilla/{item}/abolish', [PlantillaController::class, 'abolish'])->name('admin.hr.plantilla.abolish');
         Route::patch('admin/hr/plantilla/{item}/restore', [PlantillaController::class, 'restore'])->name('admin.hr.plantilla.restore');
@@ -462,6 +543,17 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/backup', [BackupController::class, 'download'])
             ->middleware('throttle:5,10')
             ->name('admin.backup.download');
+        // Backups kept on the server (nightly imis:backup, or "Back up now").
+        Route::post('admin/backup/files', [BackupController::class, 'store'])
+            ->middleware('throttle:3,10')
+            ->name('admin.backup.store');
+        Route::post('admin/backup/files/{backup}/download', [BackupController::class, 'downloadStored'])
+            ->where('backup', '[A-Za-z0-9.\-]+')
+            ->middleware('throttle:5,10')
+            ->name('admin.backup.download-stored');
+        Route::delete('admin/backup/files/{backup}', [BackupController::class, 'destroy'])
+            ->where('backup', '[A-Za-z0-9.\-]+')
+            ->name('admin.backup.destroy');
     });
 
     // Legacy System Administration logs (read-only) and Active Sessions.
@@ -486,6 +578,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:settings.view')->group(function () {
         Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
+        Route::get('admin/system-health', [SystemHealthController::class, 'index'])->name('admin.system-health');
     });
 
     Route::middleware('permission:changelogs.view')->group(function () {

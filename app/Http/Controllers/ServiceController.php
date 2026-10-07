@@ -39,7 +39,7 @@ class ServiceController extends Controller
         return Inertia::render('Portal/Services/Index', [
             'services' => ServiceResource::collection($services),
             'filters' => $request->only(['search', 'category_id', 'organizational_unit_id']),
-            'categoryOptions' => ServiceCategory::query()->active()->orderBy('name')->get(['id', 'name']),
+            'categoryOptions' => ServiceCategory::query()->active()->ordered()->get(['id', 'name']),
             'organizationalUnitOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get(['id', 'name']),
         ]);
     }

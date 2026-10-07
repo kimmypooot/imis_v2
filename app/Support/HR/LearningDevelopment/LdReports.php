@@ -3,6 +3,7 @@
 namespace App\Support\HR\LearningDevelopment;
 
 use App\Enums\LdType;
+use App\Enums\Sex;
 use App\Models\Employee;
 use App\Models\OrganizationalUnit;
 use App\Models\Pds\PdsLearningDevelopment;
@@ -117,7 +118,7 @@ class LdReports
                 'id' => $record->id,
                 'employee_id' => $record->employee_id,
                 'name' => $this->listName($record->employee->user),
-                'sex' => $record->employee->user->sex ? ucfirst($record->employee->user->sex) : null,
+                'sex' => Sex::labelFor($record->employee->user->sex),
                 'position' => $record->employee->user->position,
                 'office' => $this->office($record->employee->user),
                 'title' => $record->title,

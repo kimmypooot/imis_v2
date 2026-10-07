@@ -24,6 +24,16 @@ class ApplicationAccess extends Model
 
     protected $table = 'application_access';
 
+    /**
+     * `via_designation`: granted (or raised to admin) because the user is
+     * their office's Division Chief / Field Director; set only by
+     * OfficeAdminAccess, never mass-assigned.
+     */
+    protected function casts(): array
+    {
+        return ['via_designation' => 'boolean'];
+    }
+
     public function application(): BelongsTo
     {
         return $this->belongsTo(Application::class);

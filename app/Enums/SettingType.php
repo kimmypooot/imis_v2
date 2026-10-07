@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use Closure;
+use Illuminate\Validation\Rule;
+
 /**
  * How a setting's value is validated, stored, and read back. Every value
  * is stored as a nullable string in `settings.value`; this enum is the
@@ -18,14 +21,17 @@ enum SettingType: string
     case Boolean = 'boolean';
     case Url = 'url';
     case Email = 'email';
+    case Select = 'select';
 
     /**
      * Validation rules for one value of this type. `$constraints` comes
      * from SettingRegistry (code), never from a request — only the known
-     * keys `required`, `min`, and `max` are read.
+     * keys `required`, `min`, `max`, `options` (a select's allowed
+     * values) and `min_unless_zero` (an integer where 0 means "off" but any
+     * other value has a floor, such as a retention period) are read.
      *
-     * @param  array{required?: bool, min?: int, max?: int}  $constraints
-     * @return array<int, string>
+     * @param  array{required?: bool, min?: int, max?: int, options?: array<int, string>, min_unless_zero?: int}  $constraints
+     * @return array<int, mixed>
      */
     public function rules(array $constraints = []): array
     {
@@ -42,10 +48,21 @@ enum SettingType: string
                 'integer',
                 'min:'.(int) ($constraints['min'] ?? 0),
                 'max:'.(int) ($constraints['max'] ?? 1_000_000),
+                ...(isset($constraints['min_unless_zero']) ? [self::minUnlessZero((int) $constraints['min_unless_zero'])] : []),
             ],
             self::Url => ['url:http,https', 'max:2048'],
             self::Email => ['email', 'max:255'],
+            self::Select => ['string', Rule::in($constraints['options'] ?? [])],
         }];
+    }
+
+    private static function minUnlessZero(int $floor): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($floor) {
+            if ((int) $value !== 0 && (int) $value < $floor) {
+                $fail("The :attribute must be 0 or at least {$floor}.");
+            }
+        };
     }
 
     /**

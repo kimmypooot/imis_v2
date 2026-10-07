@@ -161,7 +161,7 @@ class LegacyLeaveImportTest extends TestCase
     public function test_the_readiness_page_and_retiring_the_launchers(): void
     {
         $hr = $this->userWith(['leave.manage']);
-        foreach (['PRISM', 'LMS', 'LDMS'] as $system) {
+        foreach (['LMS', 'LDMS'] as $system) {
             Application::factory()->create(['short_name' => $system]);
         }
 
@@ -171,7 +171,7 @@ class LegacyLeaveImportTest extends TestCase
             ->where('checks', fn ($checks) => collect($checks)->firstWhere('label', 'Legacy LMS credits imported')['status'] === 'todo'));
 
         $this->artisan('imis:retire-legacy-hr')->expectsOutputToContain('--apply')->assertSuccessful();
-        $this->assertSame(3, Application::query()->where('status', 'active')->count());
+        $this->assertSame(2, Application::query()->where('status', 'active')->count());
 
         $this->artisan('imis:retire-legacy-hr', ['--apply' => true])->assertSuccessful();
         $this->assertSame(0, Application::query()->where('status', 'active')->count());

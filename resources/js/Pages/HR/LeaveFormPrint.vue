@@ -112,6 +112,7 @@ const print = () => window.print();
                         <div class="value">{{ num(application.days) }}<template v-if="application.is_half_day"> ({{ application.half_day_period }})</template></div>
                         <span class="label">INCLUSIVE DATES</span>
                         <div class="value">{{ mdy(application.date_from) }}<template v-if="application.date_to !== application.date_from"> – {{ mdy(application.date_to) }}</template></div>
+                        <small v-if="application.is_emergency">Emergency: filed upon return</small>
                     </td>
                     <td colspan="2" class="top">
                         <span class="label">6.D COMMUTATION</span>

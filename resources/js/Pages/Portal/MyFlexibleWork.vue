@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Button from '../../Components/UI/Button.vue';
 import Icon from '../../Components/UI/Icon.vue';
@@ -75,7 +75,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
     </PageHeader>
 
     <div class="space-y-6">
-        <AdminCard title="Now" icon="clock">
+        <Card title="Now" icon="clock">
             <p v-if="!current" class="text-sm text-text-muted">No flexible work arrangement in effect today.</p>
             <div v-else class="text-sm text-text">
                 <p class="font-medium">{{ current.type_label }} · {{ period(current) }}</p>
@@ -84,9 +84,9 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                     <span v-for="day in days" :key="day" class="mr-3">{{ day }}: {{ current.schedule[day] ?? '—' }}</span>
                 </p>
             </div>
-        </AdminCard>
+        </Card>
 
-        <AdminCard v-if="current" title="Weekly report" icon="clipboard" subtitle="Targets and accomplishments for a week (Monday to Friday). You can edit it until HR acknowledges it.">
+        <Card v-if="current" title="Weekly report" icon="clipboard" description="Targets and accomplishments for a week (Monday to Friday). You can edit it until HR acknowledges it.">
             <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitReport">
                 <div>
                     <TextInput id="far-week" v-model="report.week_start" type="date" label="Week of (any day; it uses that week's Monday)" required :invalid="!!report.errors.week_start" />
@@ -104,10 +104,10 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                 </div>
                 <div class="sm:col-span-2 flex justify-end"><Button type="submit" :loading="report.processing">Submit report</Button></div>
             </form>
-        </AdminCard>
+        </Card>
 
         <div class="grid gap-6 xl:grid-cols-2">
-            <AdminCard title="Your arrangements" icon="calendar">
+            <Card title="Your arrangements" icon="calendar">
                 <p v-if="arrangements.length === 0" class="text-sm text-text-muted">None yet.</p>
                 <ul v-else class="divide-y divide-border">
                     <li v-for="row in arrangements" :key="row.id" class="flex items-start justify-between gap-3 py-2.5 text-sm">
@@ -117,14 +117,14 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                             <p v-if="row.decision_remarks" class="text-xs text-text-muted">{{ row.decision_remarks }}</p>
                         </div>
                         <div class="text-right">
-                            <StatusBadge :status="tones[row.status]" :label="row.status.charAt(0).toUpperCase() + row.status.slice(1)" />
+                            <StatusBadge :status="tones[row.status]" :label="row.status" />
                             <button v-if="row.status === 'pending'" type="button" class="mt-1 block text-xs text-danger hover:underline" @click="cancel(row)">Cancel</button>
                         </div>
                     </li>
                 </ul>
-            </AdminCard>
+            </Card>
 
-            <AdminCard title="Your weekly reports" icon="clipboard">
+            <Card title="Your weekly reports" icon="clipboard">
                 <p v-if="reports.length === 0" class="text-sm text-text-muted">None yet.</p>
                 <ul v-else class="divide-y divide-border">
                     <li v-for="row in reports" :key="row.id" class="flex items-start justify-between gap-3 py-2.5 text-sm">
@@ -138,7 +138,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                         </div>
                     </li>
                 </ul>
-            </AdminCard>
+            </Card>
         </div>
     </div>
 
@@ -162,7 +162,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                 <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <label v-for="day in days" :key="day" class="text-sm text-text">
                         {{ day }}
-                        <select v-model="arrangement.schedule[day]" class="mt-0.5 block w-full rounded-md border border-border bg-surface px-2 py-1 text-sm">
+                        <select v-model="arrangement.schedule[day]" class="mt-0.5 block w-full rounded-md border border-border-strong bg-surface px-2 py-1 text-sm">
                             <option value="office">Office</option>
                             <option value="wfh">Work from home</option>
                             <option value="off">Off</option>

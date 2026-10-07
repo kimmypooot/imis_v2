@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
-import AdminCard from '../../../Components/UI/AdminCard.vue';
+import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
@@ -67,7 +67,7 @@ const toggleStatus = async (committee) => {
 
     <PageHeader title="Committees" :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'Committees' }]" />
 
-    <AdminCard title="List of Committees" icon="users">
+    <Card title="List of Committees" icon="users">
         <template v-if="can('committees.create')" #actions>
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Committee</Button>
         </template>
@@ -92,7 +92,7 @@ const toggleStatus = async (committee) => {
                 </div>
             </template>
         </DataTable>
-    </AdminCard>
+    </Card>
 
     <RecordModal
         :open="modalOpen"

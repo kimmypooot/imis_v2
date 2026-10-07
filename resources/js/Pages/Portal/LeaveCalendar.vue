@@ -1,24 +1,34 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
 import Icon from '../../Components/UI/Icon.vue';
+import StatusBadge from '../../Components/UI/StatusBadge.vue';
+import Checkbox from '../../Components/Forms/Checkbox.vue';
+import { formatCalendarDate } from '../../Utils/datetime';
+import { leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
 
 defineOptions({ layout: PortalLayout });
 
 /**
  * HR-6c: your leave and the holidays, a month at a time (legacy
- * leave/calendar.php). Approved leave is solid; leave still under review
- * or returned is outlined.
+ * leave/calendar.php), plus co-workers in your division who've filed
+ * leave (who is out, not the type of leave). Yours is green, theirs blue;
+ * leave still under review or returned is outlined. Pick a day to list
+ * everyone out that day.
  */
 const props = defineProps({
     month: { type: String, required: true },
     leave: { type: Array, required: true },
+    colleagues: { type: Array, required: true },
+    division: { type: String, default: null },
     holidays: { type: Array, required: true },
 });
+
+const MAX_COLLEAGUES_PER_DAY = 2;
 
 const [year, monthNumber] = props.month.split('-').map(Number);
 const first = new Date(year, monthNumber - 1, 1);
@@ -41,9 +51,26 @@ const weeks = computed(() => {
     return Array.from({ length: cells.length / 7 }, (_, index) => cells.slice(index * 7, index * 7 + 7));
 });
 
+const showDivision = ref(true);
+
 const leaveOn = (date) => props.leave.filter((item) => item.date_from <= iso(date) && item.date_to >= iso(date));
+// Co-workers' days already skip weekends and non-working holidays (server side).
+const colleaguesByDate = computed(() => {
+    const map = {};
+    for (const item of props.colleagues) {
+        for (const date of item.dates) (map[date] ??= []).push(item);
+    }
+    for (const list of Object.values(map)) list.sort((a, b) => a.name.localeCompare(b.name));
+    return map;
+});
+const colleaguesOn = (date) => (showDivision.value ? colleaguesByDate.value[iso(date)] ?? [] : []);
 const holidayOn = (date) => props.holidays.find((holiday) => holiday.date === iso(date));
 const today = iso(new Date());
+
+const selected = ref(props.month === today.slice(0, 7) ? today : null);
+const selectedColleagues = computed(() => (selected.value ? colleaguesByDate.value[selected.value] ?? [] : []));
+
+const pending = (item) => item.status !== 'approved';
 </script>
 
 <template>
@@ -51,6 +78,7 @@ const today = iso(new Date());
 
     <PageHeader title="Leave Calendar" :breadcrumbs="[{ label: 'My Leave', href: '/my/leave' }, { label: 'Leave Calendar' }]">
         <template #actions>
+            <Checkbox v-if="division" id="cal-division" v-model="showDivision" label="Show my division" />
             <Button variant="secondary" @click="shift(-1)" aria-label="Previous month">‹</Button>
             <Button variant="secondary" @click="shift(1)" aria-label="Next month">›</Button>
             <Link href="/my/leave/apply" class="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:brightness-95">
@@ -59,10 +87,10 @@ const today = iso(new Date());
         </template>
     </PageHeader>
 
-    <AdminCard :title="title" icon="calendar">
+    <Card :title="title" icon="calendar">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[42rem] table-fixed border-collapse text-sm">
-                <caption class="sr-only">Your leave and holidays, {{ title }}</caption>
+                <caption class="sr-only">Your leave, your division's leave and holidays, {{ title }}</caption>
                 <thead>
                     <tr>
                         <th v-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day" scope="col" class="border-b border-border py-2 text-center text-xs font-medium text-text-muted">{{ day }}</th>
@@ -70,26 +98,75 @@ const today = iso(new Date());
                 </thead>
                 <tbody>
                     <tr v-for="(week, index) in weeks" :key="index">
-                        <td v-for="(date, column) in week" :key="column" class="h-24 border border-border p-1 align-top" :class="[date && column >= 5 ? 'bg-surface-muted' : '', date && iso(date) === today ? 'ring-2 ring-inset ring-primary' : '']">
+                        <td
+                            v-for="(date, column) in week"
+                            :key="column"
+                            class="h-24 border border-border p-1 align-top"
+                            :class="[
+                                date && column >= 5 ? 'bg-surface-muted' : '',
+                                date && iso(date) === today ? 'ring-2 ring-inset ring-primary' : '',
+                                date && iso(date) === selected ? 'bg-primary/5' : '',
+                            ]"
+                        >
                             <template v-if="date">
-                                <div class="text-xs font-semibold text-text">{{ date.getDate() }}</div>
-                                <div v-if="holidayOn(date)" class="mt-0.5 rounded bg-info-bg px-1 text-[0.7rem] text-info">{{ holidayOn(date).name }}</div>
+                                <button
+                                    type="button"
+                                    class="w-full rounded px-0.5 text-left text-xs font-semibold text-text hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                    :aria-label="`${formatCalendarDate(iso(date))}: show who is on leave`"
+                                    :aria-pressed="iso(date) === selected"
+                                    @click="selected = iso(date)"
+                                >
+                                    {{ date.getDate() }}
+                                </button>
+                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded bg-info-bg px-1 text-[0.7rem] text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
                                 <Link
                                     v-for="item in leaveOn(date)"
                                     :key="item.id"
                                     :href="`/leave/applications/${item.id}`"
                                     class="mt-0.5 block truncate rounded px-1 text-[0.7rem]"
-                                    :class="item.status === 'approved' ? 'bg-success text-white' : 'border border-warning text-warning'"
-                                    :title="`${item.name} (${item.status === 'approved' ? 'approved' : 'not yet approved'})`"
+                                    :class="pending(item) ? 'border border-warning text-warning' : 'bg-success text-white'"
+                                    :title="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`"
                                 >
                                     {{ item.code }}<template v-if="item.is_half_day"> ½ {{ item.half_day_period }}</template>
                                 </Link>
+                                <div
+                                    v-for="item in colleaguesOn(date).slice(0, MAX_COLLEAGUES_PER_DAY)"
+                                    :key="`c${item.id}`"
+                                    class="mt-0.5 truncate rounded px-1 text-[0.7rem]"
+                                    :class="pending(item) ? 'border border-primary text-primary' : 'bg-primary text-white'"
+                                    :title="`${item.name} (${pending(item) ? 'filed, not yet approved' : 'approved'})`"
+                                >
+                                    {{ item.surname }}<template v-if="item.is_half_day"> ½</template>
+                                </div>
+                                <button
+                                    v-if="colleaguesOn(date).length > MAX_COLLEAGUES_PER_DAY"
+                                    type="button"
+                                    class="mt-0.5 text-[0.7rem] font-medium text-primary hover:underline"
+                                    @click="selected = iso(date)"
+                                >
+                                    +{{ colleaguesOn(date).length - MAX_COLLEAGUES_PER_DAY }} more
+                                </button>
                             </template>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <p class="mt-3 text-xs text-text-muted">Solid: approved. Outlined: under review or returned. Blue: holiday.</p>
-    </AdminCard>
+        <p class="mt-3 text-xs text-text-muted">
+            Green: your leave. <template v-if="division">Blue: co-workers in {{ division }}. </template>Outlined: under review or returned. Light blue: holiday.
+        </p>
+    </Card>
+
+    <Card v-if="division && showDivision && selected" class="mt-6" icon="users" :title="`Your division on ${formatCalendarDate(selected)}`">
+        <p v-if="!selectedColleagues.length" class="text-sm text-text-muted">No one else in {{ division }} has filed leave for this day.</p>
+        <ul v-else class="divide-y divide-border">
+            <li v-for="item in selectedColleagues" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
+                <div>
+                    <div class="font-medium text-text">{{ item.name }}</div>
+                    <div class="text-xs text-text-muted">{{ leaveDates(item, formatCalendarDate) }}</div>
+                </div>
+                <StatusBadge :status="leaveStatusTones[item.status]" :label="item.status_label" />
+            </li>
+        </ul>
+    </Card>
 </template>

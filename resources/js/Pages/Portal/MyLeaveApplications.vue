@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Icon from '../../Components/UI/Icon.vue';
@@ -37,7 +37,7 @@ const columns = [
         </template>
     </PageHeader>
 
-    <AdminCard title="Applications" icon="clipboard">
+    <Card title="Applications" icon="clipboard">
         <DataTable :columns="columns" :rows="applications" caption="My leave applications" export-name="imis-my-leave-applications" empty-text="You haven't filed any leave yet.">
             <template #cell-reference_number="{ row }">
                 <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
@@ -45,5 +45,5 @@ const columns = [
             <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
             <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>
         </DataTable>
-    </AdminCard>
+    </Card>
 </template>

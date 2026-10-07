@@ -1,6 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import AdminCard from '../UI/AdminCard.vue';
+import Card from '../UI/Card.vue';
 import StatusBadge from '../UI/StatusBadge.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 import { formatPeso } from '../../Utils/money';
@@ -20,7 +20,7 @@ const period = (row) => `${row.date_from ? formatCalendarDate(row.date_from) : '
 </script>
 
 <template>
-    <AdminCard title="Plantilla" icon="grid" subtitle="Positions held, with the salary in the schedule then in force.">
+    <Card title="Plantilla" icon="grid" description="Positions held, with the salary in the schedule then in force.">
         <p v-if="periods.length === 0" class="text-sm text-text-muted">Not appointed to a plantilla item yet.</p>
         <div v-else class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -46,7 +46,7 @@ const period = (row) => `${row.date_from ? formatCalendarDate(row.date_from) : '
                         </td>
                         <td class="py-2 pr-4 align-top tabular-nums text-text">{{ row.salary_grade ?? '—' }} / {{ row.step ?? '—' }}</td>
                         <td class="py-2 pr-4 align-top">
-                            <StatusBadge :status="row.current ? 'active' : 'logged_out'" :label="row.current ? `${row.status_label ?? 'Incomplete'} · current` : row.status_label ?? 'Incomplete'" />
+                            <StatusBadge :status="row.current ? 'active' : 'logged_out'" :label="row.current ? `${row.status_label ?? 'Incomplete'} · Current` : row.status_label ?? 'Incomplete'" />
                         </td>
                         <td class="py-2 pr-4 align-top text-text">
                             <span class="whitespace-nowrap">{{ period(row) }}</span>
@@ -57,5 +57,5 @@ const period = (row) => `${row.date_from ? formatCalendarDate(row.date_from) : '
                 </tbody>
             </table>
         </div>
-    </AdminCard>
+    </Card>
 </template>

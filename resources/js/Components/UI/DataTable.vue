@@ -2,6 +2,7 @@
 import { computed, ref, useId, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Icon from './Icon.vue';
+import Button from './Button.vue';
 import { toast } from '../../Composables/useDialog';
 
 /**
@@ -230,7 +231,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     <select
                         :id="`${id}-length`"
                         v-model.number="perPage"
-                        class="rounded-md border border-border bg-surface px-2 py-1 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     >
                         <option v-for="size in pageSizes" :key="size" :value="size">{{ size }}</option>
                     </select>
@@ -238,9 +239,9 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                 </label>
 
                 <div v-if="exportable" class="flex items-center gap-1" role="group" aria-label="Export">
-                    <button type="button" class="dt-button" @click="copyRows"><Icon name="copy" size="sm" />Copy</button>
-                    <button type="button" class="dt-button" @click="downloadCsv"><Icon name="download" size="sm" />CSV</button>
-                    <button type="button" class="dt-button" @click="printRows"><Icon name="printer" size="sm" />Print</button>
+                    <Button variant="secondary" size="sm" @click="copyRows"><Icon name="copy" size="sm" />Copy</Button>
+                    <Button variant="secondary" size="sm" @click="downloadCsv"><Icon name="download" size="sm" />CSV</Button>
+                    <Button variant="secondary" size="sm" @click="printRows"><Icon name="printer" size="sm" />Print</Button>
                 </div>
 
                 <slot name="toolbar" />
@@ -254,7 +255,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     v-model="search"
                     type="search"
                     placeholder="Search…"
-                    class="block w-full rounded-md border border-border bg-surface py-1.5 pr-3 pl-8 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="block w-full rounded-md border border-border-strong bg-surface py-1.5 pr-3 pl-8 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
             </div>
         </div>
@@ -263,7 +264,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
         <div class="overflow-x-auto rounded-md border border-border">
             <table class="min-w-full text-[0.8125rem]">
                 <caption class="sr-only">{{ caption }}</caption>
-                <thead class="bg-surface-muted text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <thead class="table-head">
                     <tr>
                         <th v-if="numbered" scope="col" class="w-12 px-3 py-2.5 text-center">#</th>
                         <th
@@ -352,10 +353,6 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
 
 <style scoped>
 @reference '../../../css/app.css';
-
-.dt-button {
-    @apply inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-muted hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring;
-}
 
 .dt-page {
     @apply min-w-8 rounded-md border border-border bg-surface px-2.5 py-1 text-sm text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50;

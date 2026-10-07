@@ -16,7 +16,7 @@ enum LdApprovalStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Pending review',
+            self::Pending => 'Pending Review',
             self::Approved => 'Approved',
             self::Rejected => 'Rejected',
         };

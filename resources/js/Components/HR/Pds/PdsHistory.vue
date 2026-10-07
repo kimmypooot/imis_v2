@@ -1,6 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import AdminCard from '../../UI/AdminCard.vue';
+import Card from '../../UI/Card.vue';
 import StatusBadge from '../../UI/StatusBadge.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 
@@ -18,7 +18,7 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
 </script>
 
 <template>
-    <AdminCard title="Submissions" icon="clock" subtitle="Each one is an exact copy of the PDS as it was signed.">
+    <Card title="Submissions" icon="clock" description="Each one is an exact copy of the PDS as it was signed.">
         <p v-if="history.length === 0" class="text-sm text-text-muted">No submissions yet.</p>
         <ul v-else class="divide-y divide-border">
             <li v-for="item in history" :key="item.id" class="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
@@ -40,5 +40,5 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
                 </div>
             </li>
         </ul>
-    </AdminCard>
+    </Card>
 </template>

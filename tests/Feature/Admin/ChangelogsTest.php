@@ -24,6 +24,23 @@ class ChangelogsTest extends TestCase
         ],
     ];
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A migration ships the v3.0.0 draft; these tests start from none.
+        Changelog::query()->delete();
+    }
+
+    public function test_the_v3_release_note_ships_as_a_draft(): void
+    {
+        $this->artisan('migrate:refresh', ['--path' => 'database/migrations/2026_11_06_090000_add_v3_release_note.php'])->assertSuccessful();
+
+        $release = Changelog::query()->where('version', '3.0.0')->sole();
+        $this->assertFalse($release->isPublished());
+        $this->assertSame(14, $release->items()->count());
+    }
+
     public function test_listing_requires_permission(): void
     {
         $this->actingAs(User::factory()->create())->get('/admin/changelogs')->assertForbidden();
@@ -99,6 +116,21 @@ class ChangelogsTest extends TestCase
     }
 
     // ── Portal ───────────────────────────────────────────────────────
+
+    public function test_the_shown_version_follows_the_latest_published_release(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page->where('app.version', config('app.version')));
+
+        Changelog::factory()->published()->create(['version' => '2.7.0', 'published_at' => now()->subDay()]);
+        Changelog::factory()->published()->create(['version' => '2.8.0']);
+        Changelog::factory()->create(['version' => '2.9.0']); // draft, ignored
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page->where('app.version', '2.8.0'));
+    }
 
     public function test_dashboard_pops_up_the_latest_published_release_once(): void
     {

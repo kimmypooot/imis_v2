@@ -4,12 +4,16 @@ namespace App\Support\HR;
 
 use App\Enums\AssignmentKind;
 use App\Enums\EmployeeDocumentType;
+use App\Enums\HeadCapacity;
+use App\Enums\UserStatus;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\EmployeeDocument;
 use App\Models\OrganizationalUnit;
+use App\Models\SupervisorHandover;
 use App\Models\User;
 use Closure;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -32,6 +36,14 @@ use Illuminate\Validation\Rules\Enum;
  * A scanned order goes into the 201 file as an Office Order
  * (EmployeeDocuments), so it follows the 201 file's access and audit
  * rules.
+ *
+ * A designation **as head of office**, as Officer-in-Charge or Caretaker (a
+ * concurrent capacity, e.g. a Field Director over a second field office) may hand the office's staff over:
+ * their immediate supervisor becomes the designee once it is in effect,
+ * and, if asked, goes back to who it was when it ends. Only staff whose
+ * supervisor is still the designee are given back, so a change HR made
+ * since is kept. Removing the designation gives them back at once. Each
+ * happens once (`settleSupervision()`, scheduled daily, for dated ones).
  */
 class EmployeeAssignments
 {
@@ -44,6 +56,10 @@ class EmployeeAssignments
     {
         return [
             'kind' => ['required', new Enum(AssignmentKind::class)],
+            'as_head' => ['boolean'],
+            'head_capacity' => ['nullable', new Enum(HeadCapacity::class)],
+            'hand_over_supervision' => ['boolean'],
+            'restore_supervision' => ['boolean'],
             'from_unit_id' => ['nullable', 'integer', 'exists:organizational_units,id'],
             'to_unit_id' => ['required', 'integer', 'exists:organizational_units,id', $this->movesSomewhere($employee)],
             'effective_date' => ['required', 'date', 'after:1900-01-01'],
@@ -62,6 +78,8 @@ class EmployeeAssignments
     {
         return [
             'kind' => 'kind of movement',
+            'as_head' => 'head of office',
+            'head_capacity' => 'capacity',
             'from_unit_id' => 'from office',
             'to_unit_id' => 'to office',
             'effective_date' => 'effective date',
@@ -74,7 +92,7 @@ class EmployeeAssignments
 
     /**
      * @param  array<string, mixed>  $data  validated
-     * @return array{assignment: EmployeeAssignment, document: ?EmployeeDocument, office: ?array{from: ?string, to: ?string}}
+     * @return array{assignment: EmployeeAssignment, document: ?EmployeeDocument, office: ?array{from: ?string, to: ?string}, supervision: ?array<string, mixed>}
      */
     public function record(Employee $employee, array $data, User $actor): array
     {
@@ -90,13 +108,13 @@ class EmployeeAssignments
             $document = $this->attachScan($assignment, $data['scan'] ?? null, $actor);
             $office = $assignment->kind->movesOffice() ? $this->settle($assignment) : null;
 
-            return ['assignment' => $assignment, 'document' => $document, 'office' => $office];
+            return ['assignment' => $assignment, 'document' => $document, 'office' => $office, 'supervision' => $this->settleSupervisionOf($assignment)];
         });
     }
 
     /**
      * @param  array<string, mixed>  $data  validated
-     * @return array{changed: array<int, string>, document: ?EmployeeDocument, office: ?array{from: ?string, to: ?string}}
+     * @return array{changed: array<int, string>, document: ?EmployeeDocument, office: ?array{from: ?string, to: ?string}, supervision: ?array<string, mixed>}
      */
     public function update(EmployeeAssignment $assignment, array $data, User $actor): array
     {
@@ -113,23 +131,83 @@ class EmployeeAssignments
 
             $office = $wasReassignment || $assignment->kind->movesOffice() ? $this->settle($assignment, $wasReassignment) : null;
 
-            return ['changed' => array_values(array_diff($changed, ['updated_at'])), 'document' => $document, 'office' => $office];
+            // Corrected to another office after handing staff over: give the
+            // first office's staff back, then hand over the right one's.
+            if (in_array('to_unit_id', $changed, true) && $assignment->supervision_handed_at && ! $assignment->supervision_restored_at) {
+                $this->giveBack($assignment);
+                $assignment->handovers()->delete();
+                $assignment->forceFill(['supervision_handed_at' => null, 'supervision_restored_at' => null])->saveQuietly();
+                $assignment->unsetRelation('toUnit');
+            }
+
+            return [
+                'changed' => array_values(array_diff($changed, ['updated_at'])),
+                'document' => $document,
+                'office' => $office,
+                'supervision' => $this->settleSupervisionOf($assignment),
+            ];
         });
     }
 
     /**
      * Soft delete. Removing the reassignment that moved someone puts them
-     * back where it moved them from (or where the one before it put them).
+     * back where it moved them from (or where the one before it put them);
+     * removing a designation that handed staff over gives them back.
      *
-     * @return ?array{from: ?string, to: ?string}
+     * @return array{office: ?array{from: ?string, to: ?string}, supervision: ?array<string, mixed>}
      */
-    public function delete(EmployeeAssignment $assignment): ?array
+    public function delete(EmployeeAssignment $assignment): array
     {
         return DB::transaction(function () use ($assignment) {
             $assignment->delete();
 
-            return $assignment->kind->movesOffice() ? $this->settle($assignment, true) : null;
+            return [
+                'office' => $assignment->kind->movesOffice() ? $this->settle($assignment, true) : null,
+                'supervision' => $this->settleSupervisionOf($assignment),
+            ];
         });
+    }
+
+    /**
+     * Hands over or gives back supervision for head-of-office designations
+     * whose start or end has come since they were recorded.
+     *
+     * @return array{handed: int, restored: int}
+     */
+    public function settleSupervision(): array
+    {
+        $due = EmployeeAssignment::query()
+            ->where('as_head', true)
+            ->where(fn ($query) => $query
+                ->where(fn ($query) => $query->where('hand_over_supervision', true)->whereNull('supervision_handed_at')->whereDate('effective_date', '<=', today()))
+                ->orWhere(fn ($query) => $query->where('restore_supervision', true)->whereNotNull('supervision_handed_at')
+                    ->whereNull('supervision_restored_at')->whereDate('end_date', '<', today())))
+            ->get();
+
+        $counts = ['handed' => 0, 'restored' => 0];
+        foreach ($due as $assignment) {
+            $result = DB::transaction(fn () => $this->settleSupervisionOf($assignment));
+            if ($result) {
+                $counts[$result['action']]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Who is handed over to someone heading an office by designation: its
+     * staff in service with an active account, other than the designee.
+     *
+     * @return EloquentCollection<int, Employee>
+     */
+    public function staffOf(int $unitId, Employee $except): EloquentCollection
+    {
+        return Employee::query()
+            ->whereKeyNot($except->id)
+            ->whereHas('user', fn ($query) => $query->where('organizational_unit_id', $unitId)->where('status', UserStatus::Active))
+            ->where(fn ($query) => $query->whereNull('separation_date')->orWhereDate('separation_date', '>', today()))
+            ->get();
     }
 
     /**
@@ -278,6 +356,13 @@ class EmployeeAssignments
             'id' => $entry->id,
             'kind' => $entry->kind->value,
             'kind_label' => $entry->kind->label(),
+            'as_head' => $entry->as_head,
+            'head_capacity' => $entry->as_head ? $entry->capacity()->value : null,
+            'head_capacity_label' => $entry->as_head ? $entry->capacity()->label() : null,
+            'hand_over_supervision' => $entry->hand_over_supervision,
+            'restore_supervision' => $entry->restore_supervision,
+            'supervision_handed_at' => $entry->supervision_handed_at?->toIso8601String(),
+            'supervision_restored_at' => $entry->supervision_restored_at?->toIso8601String(),
             'moves_office' => $entry->kind->movesOffice(),
             'from_unit_id' => $entry->from_unit_id,
             'from_unit' => $this->unitName($entry->fromUnit),
@@ -361,6 +446,82 @@ class EmployeeAssignments
             ->each(fn (EmployeeAssignment $detail) => $detail->forceFill(['end_date' => $return->effective_date->copy()->subDay()])->save());
     }
 
+    /**
+     * Hands the office's staff over to the designee once a head-of-office
+     * designation is in effect, or gives them back once it has ended (if
+     * asked), was removed, or is no longer a head designation. Each once.
+     *
+     * @return ?array{action: string, office: ?string, count: int, kept?: int, employee_ids: array<int, int>}
+     */
+    private function settleSupervisionOf(EmployeeAssignment $assignment): ?array
+    {
+        if ($assignment->supervision_handed_at === null) {
+            return $assignment->hand_over_supervision && $assignment->isHeadingNow() ? $this->handOver($assignment) : null;
+        }
+
+        if ($assignment->supervision_restored_at !== null) {
+            return null;
+        }
+
+        $ended = $assignment->end_date !== null && $assignment->end_date->lt(today());
+        $gone = $assignment->trashed() || ! $assignment->as_head || $assignment->kind !== AssignmentKind::Designation;
+
+        return $gone || ($ended && $assignment->restore_supervision) ? $this->giveBack($assignment) : null;
+    }
+
+    /**
+     * @return array{action: string, office: ?string, count: int, employee_ids: array<int, int>}
+     */
+    private function handOver(EmployeeAssignment $assignment): array
+    {
+        $designee = $assignment->employee()->first();
+        $changed = [];
+
+        foreach ($this->staffOf($assignment->to_unit_id, $designee) as $employee) {
+            if ((int) $employee->immediate_supervisor_id === (int) $designee->user_id) {
+                continue;
+            }
+
+            SupervisorHandover::query()->create([
+                'assignment_id' => $assignment->id,
+                'employee_id' => $employee->id,
+                'previous_supervisor_id' => $employee->immediate_supervisor_id,
+            ]);
+            $employee->forceFill(['immediate_supervisor_id' => $designee->user_id])->save();
+            $changed[] = $employee->id;
+        }
+
+        $assignment->forceFill(['supervision_handed_at' => now()])->saveQuietly();
+
+        return ['action' => 'handed', 'office' => $this->unitName($assignment->toUnit), 'count' => count($changed), 'employee_ids' => $changed];
+    }
+
+    /**
+     * @return array{action: string, office: ?string, count: int, kept: int, employee_ids: array<int, int>}
+     */
+    private function giveBack(EmployeeAssignment $assignment): array
+    {
+        $designeeUserId = Employee::query()->whereKey($assignment->employee_id)->value('user_id');
+        $changed = [];
+        $kept = 0;
+
+        foreach ($assignment->handovers()->whereNull('restored_at')->with('employee')->get() as $handover) {
+            // Only while the designee is still their supervisor: a later change by HR stands.
+            if ($handover->employee && (int) $handover->employee->immediate_supervisor_id === (int) $designeeUserId) {
+                $handover->employee->forceFill(['immediate_supervisor_id' => $handover->previous_supervisor_id])->save();
+                $changed[] = $handover->employee_id;
+            } else {
+                $kept++;
+            }
+
+            $handover->forceFill(['restored_at' => now()])->save();
+        }
+
+        $assignment->forceFill(['supervision_restored_at' => now()])->saveQuietly();
+
+        return ['action' => 'restored', 'office' => $this->unitName($assignment->toUnit), 'count' => count($changed), 'kept' => $kept, 'employee_ids' => $changed];
+    }
+
     private function attachScan(EmployeeAssignment $assignment, mixed $file, User $actor): ?EmployeeDocument
     {
         if (! $file instanceof UploadedFile) {
@@ -385,11 +546,22 @@ class EmployeeAssignments
      */
     private function fields(array $data): array
     {
-        $fields = collect($data)->only(['kind', 'from_unit_id', 'to_unit_id', 'effective_date', 'end_date', 'order_number', 'order_date', 'remarks'])->all();
+        $fields = collect($data)->only([
+            'kind', 'as_head', 'head_capacity', 'from_unit_id', 'to_unit_id', 'effective_date', 'end_date', 'order_number', 'order_date', 'remarks',
+            'hand_over_supervision', 'restore_supervision',
+        ])->all();
 
         // Only details and designations end on their own date.
         if (! AssignmentKind::from($fields['kind'])->hasEndDate()) {
             $fields['end_date'] = null;
+        }
+
+        // Heading an office, and handing its staff over, is for designations only.
+        $fields['as_head'] = AssignmentKind::from($fields['kind']) === AssignmentKind::Designation && (bool) ($fields['as_head'] ?? false);
+        // Officer-in-Charge unless the order says Caretaker; none when not heading.
+        $fields['head_capacity'] = $fields['as_head'] ? ($fields['head_capacity'] ?? null ?: HeadCapacity::OfficerInCharge->value) : null;
+        foreach (['hand_over_supervision', 'restore_supervision'] as $flag) {
+            $fields[$flag] = $fields['as_head'] && (bool) ($fields[$flag] ?? false);
         }
 
         return $fields;

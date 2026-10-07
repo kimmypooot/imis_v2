@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
-import AdminCard from '../../Components/UI/AdminCard.vue';
+import Card from '../../Components/UI/Card.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import DocumentList from '../../Components/HR/DocumentList.vue';
 import { formatDateTime } from '../../Utils/datetime';
@@ -30,11 +30,11 @@ defineProps({
     />
 
     <div v-if="hasRecord" class="space-y-6">
-        <AdminCard title="Documents" icon="clipboard">
+        <Card title="Documents" icon="clipboard">
             <DocumentList :documents="documents" empty="HR hasn't added documents to your 201 file yet." />
-        </AdminCard>
+        </Card>
 
-        <AdminCard title="Verified PDS history" icon="checkCircle">
+        <Card title="Verified PDS history" icon="checkCircle">
             <p v-if="pdsHistory.length === 0" class="text-sm text-text-muted">
                 None yet. <Link href="/my/pds" class="font-medium text-primary hover:underline">Sign and submit your PDS</Link> for HR to verify.
             </p>
@@ -49,7 +49,7 @@ defineProps({
                     </span>
                 </li>
             </ul>
-        </AdminCard>
+        </Card>
     </div>
     <EmptyState v-else icon="clipboard" title="Your employee record isn't set up yet" description="Contact the HR office." />
 </template>

@@ -82,7 +82,7 @@ const toastStyles = {
                     aria-modal="true"
                     aria-labelledby="dialog-title"
                     :aria-describedby="state.dialog.text ? 'dialog-text' : undefined"
-                    class="relative w-full max-w-sm rounded-xl bg-surface p-6 text-center shadow-xl"
+                    class="relative w-full max-w-sm rounded-lg bg-surface p-6 text-center shadow-xl"
                 >
                     <span
                         class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-4"
@@ -108,7 +108,7 @@ const toastStyles = {
                         <button
                             v-if="state.dialog.showCancel"
                             type="button"
-                            class="inline-flex items-center gap-1.5 rounded-md bg-csc-red px-4 py-2 text-sm font-medium text-white hover:bg-csc-red-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
+                            class="inline-flex items-center gap-1.5 rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
                             @click="settle(false)"
                         >
                             <Icon name="close" size="sm" />

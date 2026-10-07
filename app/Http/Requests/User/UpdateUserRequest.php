@@ -6,6 +6,7 @@ use App\Http\Requests\User\Concerns\ProfileRules;
 use App\Http\Requests\User\Concerns\UsernameRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -27,5 +28,10 @@ class UpdateUserRequest extends FormRequest
             'username' => ['required', ...$this->usernameRules($this->route('user'))],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('user'))],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(fn (Validator $validator) => $this->validateDesignation($validator, $this->route('user')));
     }
 }

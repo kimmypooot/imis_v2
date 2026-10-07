@@ -128,7 +128,7 @@ const onKeydown = (event) => {
                     :maxlength="maxLength"
                     aria-describedby="search-page-hint"
                     :autofocus="query === ''"
-                    class="block w-full rounded-md border border-border bg-surface py-2.5 pl-9 pr-10 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring [&::-webkit-search-cancel-button]:hidden"
+                    class="block w-full rounded-md border border-border-strong bg-surface py-2.5 pl-9 pr-10 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring [&::-webkit-search-cancel-button]:hidden"
                     @keydown="onKeydown"
                 />
                 <button
