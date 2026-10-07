@@ -11,9 +11,10 @@ import { formatDateTime } from '../../Utils/datetime';
 
 /**
  * The account menu, following the legacy IMIS profile dropdown: who you
- * are and when you last signed in, then HR Management and Administration
- * (each only with access to that area), Change password,
- * What's New, About, and Sign out (confirmed, then the "Signing Out"
+ * are and when you last signed in, then the links in groups — Management
+ * (HR Management and Administration, each only with access to that area),
+ * your account (Change password, Who accessed my record), and about IMIS
+ * (What's New, Privacy notice, About) — and Sign out (confirmed, then the "Signing Out"
  * splash carries you to the login page).
  */
 const props = defineProps({
@@ -101,6 +102,11 @@ const logout = () => {
 
 const itemClass =
     'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
+
+// Groups are separated by a rule; only Management, the one group whose
+// purpose isn't obvious from its links (and admins-only), gets a heading.
+const groupClass = 'border-b border-border py-1';
+const headingClass = 'px-3 pt-1.5 pb-1 text-xs font-semibold uppercase tracking-wide text-text-muted';
 </script>
 
 <template>
@@ -137,33 +143,50 @@ const itemClass =
                 </p>
             </div>
 
-            <Link v-if="canAccessHr" href="/admin/hr" :class="itemClass" @click="close">
-                <Icon name="clipboard" size="sm" />
-                HR Management
-            </Link>
-            <Link v-if="canAccessAdmin" href="/admin" :class="itemClass" @click="close">
-                <Icon name="shield" size="sm" />
-                Administration
-            </Link>
-            <Link href="/account/password" :class="itemClass" @click="close">
-                <Icon name="lock" size="sm" />
-                Change password
-            </Link>
-            <Link href="/whats-new" :class="itemClass" @click="close">
-                <Icon name="megaphone" size="sm" />
-                What's New
-            </Link>
-            <button type="button" :class="itemClass" @click="openAbout">
-                <Icon name="info" size="sm" />
-                About IMIS
-            </button>
+            <div v-if="canAccessHr || canAccessAdmin" role="group" aria-labelledby="user-menu-management" :class="groupClass">
+                <p id="user-menu-management" :class="headingClass">Management</p>
+                <Link v-if="canAccessHr" href="/admin/hr" :class="itemClass" @click="close">
+                    <Icon name="clipboard" size="sm" />
+                    HR Management
+                </Link>
+                <Link v-if="canAccessAdmin" href="/admin" :class="itemClass" @click="close">
+                    <Icon name="shield" size="sm" />
+                    Administration
+                </Link>
+            </div>
 
-            <div class="my-1 border-t border-border" />
+            <div role="group" aria-label="My account" :class="groupClass">
+                <Link href="/account/password" :class="itemClass" @click="close">
+                    <Icon name="lock" size="sm" />
+                    Change password
+                </Link>
+                <Link href="/my/record-access" :class="itemClass" @click="close">
+                    <Icon name="eye" size="sm" />
+                    Who accessed my record
+                </Link>
+            </div>
 
-            <button type="button" :class="itemClass" @click="requestLogout">
-                <Icon name="logout" size="sm" />
-                Sign out
-            </button>
+            <div role="group" aria-label="About IMIS" :class="groupClass">
+                <Link href="/whats-new" :class="itemClass" @click="close">
+                    <Icon name="megaphone" size="sm" />
+                    What's New
+                </Link>
+                <Link href="/privacy" :class="itemClass" @click="close">
+                    <Icon name="documentText" size="sm" />
+                    Privacy notice
+                </Link>
+                <button type="button" :class="itemClass" @click="openAbout">
+                    <Icon name="info" size="sm" />
+                    About IMIS
+                </button>
+            </div>
+
+            <div class="pt-1">
+                <button type="button" :class="itemClass" @click="requestLogout">
+                    <Icon name="logout" size="sm" />
+                    Sign out
+                </button>
+            </div>
         </div>
 
         <ConfirmDialog

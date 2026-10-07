@@ -119,6 +119,32 @@ final class SettingRegistry
                 'default' => null,
             ],
 
+            // Admin-2: the privacy notice (/privacy). The rest of the notice
+            // is built from what IMIS actually does (PrivacyNotice).
+            'privacy_officer_name' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::Privacy,
+                'label' => 'Data Protection Officer',
+                'description' => 'Name (or office) of the Data Protection Officer, shown on the privacy notice. Leave empty to refer people to the HRD.',
+                'default' => null,
+                'constraints' => ['max' => 150],
+            ],
+            'privacy_officer_email' => [
+                'type' => SettingType::Email,
+                'group' => SettingGroup::Privacy,
+                'label' => 'Data Protection Officer email',
+                'description' => 'Where people send privacy questions and requests. Leave empty to hide.',
+                'default' => null,
+            ],
+            'privacy_notice_extra' => [
+                'type' => SettingType::Text,
+                'group' => SettingGroup::Privacy,
+                'label' => 'Additional notice text',
+                'description' => 'Anything the office adds to the notice, such as the Privacy Manual reference (plain text, up to 2,000 characters).',
+                'default' => null,
+                'constraints' => ['max' => 2000],
+            ],
+
             // HR-5: what the printed Service Record says.
             'hr_certifying_officer_name' => [
                 'type' => SettingType::String,

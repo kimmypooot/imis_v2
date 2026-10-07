@@ -12,6 +12,7 @@ enum SettingGroup: string
     case General = 'general';
     case Portal = 'portal';
     case Contact = 'contact';
+    case Privacy = 'privacy';
     case HumanResources = 'human_resources';
     case Security = 'security';
     case Backups = 'backups';
@@ -24,6 +25,7 @@ enum SettingGroup: string
             self::General => 'General',
             self::Portal => 'Portal',
             self::Contact => 'Contact Information',
+            self::Privacy => 'Data Privacy',
             self::HumanResources => 'Human Resources',
             self::Security => 'Security',
             self::Backups => 'Automatic Backups',
@@ -38,6 +40,7 @@ enum SettingGroup: string
             self::General => 'How the system identifies itself.',
             self::Portal => 'What employees see on the portal home and across the application shell.',
             self::Contact => 'How employees can reach the office for help with IMIS.',
+            self::Privacy => 'Who answers privacy questions, shown on the privacy notice (RA 10173). The rest of the notice follows what IMIS actually collects and keeps.',
             self::HumanResources => 'What HR documents print, such as who certifies the Service Record.',
             self::Security => 'Sign-in, session and password rules for every account. Changes apply from the next request; password rules are checked when a password is next set.',
             self::Backups => 'The nightly database backup kept on the server, in addition to the backups you download.',

@@ -97,6 +97,7 @@ export const portalNavItems = [
             { label: 'My Payslips', href: '/my/payslips', icon: 'database' },
             { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
             { label: 'My Learning & Development', href: '/my/learning-development', icon: 'chartBar' },
+            { label: 'Who Accessed My Record', href: '/my/record-access', icon: 'eye' },
         ],
     },
     {

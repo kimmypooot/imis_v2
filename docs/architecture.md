@@ -4517,3 +4517,41 @@ maintains the dashboard. The scheduler must be running.
 
 ### Tests
 `tests/Feature/ExecutiveDashboardTest.php`.
+
+## Privacy Notice and "Who Accessed My Record" — IMPLEMENTED (Admin-2)
+
+RA 10173's right to be informed, in two pages.
+
+### Privacy notice (`/privacy`, `Support/Privacy/PrivacyNotice`)
+- Open to everyone, signed in or not; linked from the sign-in pages'
+  footer (`AuthLayout`) and the account menu. Signed in, it sits in the
+  portal layout; signed out, it stands alone with a link back to sign in.
+- Written from what IMIS actually does: what it holds, why, who can see
+  it (the starter roles and their limits — supervisors and top
+  management never see the PDS or 201 file), what a connected system
+  receives at sign-in (the hub SSO fields, no HR records), how it's
+  protected, and the data subject's rights. Retention lines are read live
+  from System Settings → Log Retention.
+- System Settings → **Data Privacy**: the Data Protection Officer's name
+  and email (empty → "the Human Resource Division"), and additional text
+  the office adds (e.g. its Privacy Manual reference).
+- `PrivacyNotice::UPDATED` is the date shown; bump it, and the wording,
+  when a module starts holding a new kind of personal data.
+
+### Who accessed my record (`/my/record-access`, `Support/Privacy/RecordAccessLog`)
+- Everyone, no permission: the personal-data access entries
+  (`AuditEvent::personalDataAccess()`) about their own records, newest
+  first, 25 a page, filterable by year. Sidebar (Human Resources) and the
+  account menu link to it.
+- An entry targets the record that was opened, so each target type is
+  traced back to the employee: `employee`, `pds_submission`,
+  `employee_document`, `leave_application`, `ld_record`,
+  `payroll_entry`.
+- Not listed: the person's own visits, and the L&D training report
+  (covers everyone, names no one). Changes to a record aren't accesses
+  and aren't listed. Shows who (name, position), what, when and the
+  entry's description — never the IP address.
+- Without an employee record the page says so instead of a list.
+
+### Tests
+`tests/Feature/PrivacyTest.php`.

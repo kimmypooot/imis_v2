@@ -88,7 +88,10 @@ const agencyLogos = [
 
                     <slot />
 
-                    <p class="mt-8 text-center text-xs text-text-muted">CSC RO VIII &copy; {{ year }}</p>
+                    <p class="mt-8 text-center text-xs text-text-muted">
+                        CSC RO VIII &copy; {{ year }} ·
+                        <a href="/privacy" class="text-primary hover:underline">Privacy notice</a>
+                    </p>
                 </div>
             </div>
         </main>

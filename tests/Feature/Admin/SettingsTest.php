@@ -63,7 +63,7 @@ class SettingsTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Admin/Settings/Index')
                 ->where('canUpdate', false)
-                ->has('groups', 8)
+                ->has('groups', 9)
                 ->where('groups.0.key', 'general')
                 ->where('groups.0.settings.0.key', 'organization_name')
                 ->where('groups.0.settings.0.editable', false));
@@ -211,8 +211,8 @@ class SettingsTest extends TestCase
         $editor = $this->editor();
 
         $this->actingAs($editor)->get('/admin/settings')->assertInertia(fn ($page) => $page
-            ->where('groups.3.settings.1.type', 'select')
-            ->where('groups.3.settings.1.options', [
+            ->where('groups.4.settings.1.type', 'select')
+            ->where('groups.4.settings.1.options', [
                 'Chief Human Resource Specialist, Human Resource Division',
                 'Director IV',
                 'Director III',

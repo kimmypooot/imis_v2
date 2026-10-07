@@ -16,10 +16,11 @@ Key conventions:
 
 Phases 1–19 are implemented — `docs/architecture.md` has one section per
 phase and is the source of truth for what exists. Admin-1 (security
-policy, automatic backups, log retention, all in System Settings) is done.
-Admin-2 (privacy notice, "who accessed my record") and Admin-3 (account
-lifecycle, permission preview, notification settings, scheduled-task
-controls, bulk user import, email templates, branding) are next. In
+policy, automatic backups, log retention, all in System Settings) and
+Admin-2 (privacy notice at `/privacy`, "who accessed my record" at
+`/my/record-access`) are done. Admin-3 (account lifecycle, permission
+preview, notification settings, scheduled-task controls, bulk user
+import, email templates, branding) is next. In
 particular:
 - Authentication is session-based and signs in by **username** (legacy
   IMIS convention), not email; password resets still go by email. Don't

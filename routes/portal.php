@@ -18,6 +18,7 @@ use App\Http\Controllers\MyLeaveController;
 use App\Http\Controllers\MyMonetizationController;
 use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
+use App\Http\Controllers\MyRecordAccessController;
 use App\Http\Controllers\MyServiceRecordController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationalUnitController;
@@ -54,6 +55,9 @@ Route::middleware('auth')->group(function () {
 
     // HR-1 self-service: your own employee record (no permission needed).
     Route::get('my/employee-record', [MyEmployeeRecordController::class, 'show'])->name('my.employee-record');
+
+    // Admin-2: who else opened or printed your HR records (no permission needed).
+    Route::get('my/record-access', [MyRecordAccessController::class, 'index'])->name('my.record-access');
 
     // HR-2 self-service: your own Personal Data Sheet.
     Route::get('my/pds', [MyPdsController::class, 'show'])->name('my.pds');

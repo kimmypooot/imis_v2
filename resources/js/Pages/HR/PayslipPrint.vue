@@ -122,6 +122,8 @@ const print = () => window.print();
 .sheet {
     width: 8.5in; min-height: 5.5in; margin: 0 auto; padding: 0.35in 0.45in; box-sizing: border-box;
     background: #fff; color: #000; font: 9.5pt/1.3 Arial, Helvetica, sans-serif; border: 1px solid #ccc;
+    /* A column, so the footer sits on the bottom edge of the half sheet. */
+    display: flex; flex-direction: column;
 }
 .agency { text-align: center; margin-bottom: 0.12in; }
 .agency p { margin: 0; }
@@ -144,7 +146,7 @@ table { border-collapse: collapse; width: 100%; }
 .net .total th, .net .total td { font-size: 11pt; font-weight: 700; border-top: 2px solid #000; border-bottom: 2px solid #000; }
 .right { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .muted { color: #666; font-style: italic; }
-.foot { margin-top: 0.2in; font-size: 7.5pt; color: #333; }
+.foot { margin-top: auto; padding-top: 0.2in; font-size: 7.5pt; color: #333; }
 .foot p { margin: 0; }
 
 @media print {
