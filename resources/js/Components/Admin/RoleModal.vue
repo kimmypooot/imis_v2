@@ -197,6 +197,9 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
             </template>
 
             <template v-if="!isNew" #preview>
+                <p v-if="role.status === 'inactive'" class="mb-3 rounded-md bg-warning-bg px-3 py-2 text-sm text-warning">
+                    This role is inactive, so it grants nothing to the people holding it. Below is what it opens once it's active.
+                </p>
                 <p v-if="permissionsForm.isDirty" class="mb-3 text-xs text-warning">Includes permission changes you haven't saved yet.</p>
                 <AccessPreview :permissions="selectedNames" :super-admin="isSuperAdmin" :labels="permissionLabels" />
             </template>

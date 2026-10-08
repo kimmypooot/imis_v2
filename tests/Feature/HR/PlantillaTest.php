@@ -222,7 +222,7 @@ class PlantillaTest extends TestCase
 
         // With the override: the correction goes through, flagged in the audit log…
         $role->permissions()->attach(Permission::query()->firstOrCreate(['name' => 'plantilla.correct'], ['display_name' => 'plantilla.correct']));
-        $hr->unsetRelation('roles');
+        $hr->unsetRelation('activeRoles');
         PermissionCache::flush();
         $this->actingAs($hr)->put($url, $fix)->assertSessionHasNoErrors();
         $this->assertSame(4, $appointment->fresh()->step);

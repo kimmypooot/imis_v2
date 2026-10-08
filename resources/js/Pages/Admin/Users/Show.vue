@@ -100,7 +100,7 @@ const isGrantingSuperAdmin = computed(() => {
                     v-for="role in roles"
                     :key="role.id"
                     :id="`role-${role.id}`"
-                    :label="role.display_name"
+                    :label="role.status === 'inactive' ? `${role.display_name} (inactive — grants nothing)` : role.display_name"
                     :model-value="form.role_ids.includes(role.id)"
                     @update:model-value="(checked) => toggleRole(role.id, checked)"
                 />

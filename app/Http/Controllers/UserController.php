@@ -143,8 +143,9 @@ class UserController extends Controller
             'assignedRoleIds' => $user->roles()->pluck('roles.id'),
             'roles' => $roles = $this->assignableRoles($request),
             // Admin-3 permission preview: each role's permissions by name, so
-            // the page can show what ticking a role opens before saving.
-            'rolePermissions' => Role::query()->with('permissions:id,name')->whereIn('id', $roles->pluck('id'))->get()
+            // the page can show what ticking a role opens before saving. An
+            // inactive role grants nothing, so it previews as nothing.
+            'rolePermissions' => Role::query()->active()->with('permissions:id,name')->whereIn('id', $roles->pluck('id'))->get()
                 ->mapWithKeys(fn (Role $role) => [$role->id => $role->permissions->pluck('name')])->all(),
             'permissionLabels' => Permission::query()->pluck('display_name', 'name'),
             'holdsSuperAdmin' => $user->hasRole(RoleName::SuperAdmin),
@@ -320,7 +321,7 @@ class UserController extends Controller
                 fn ($query) => $query->where('name', '!=', RoleName::SuperAdmin->value),
             )
             ->orderBy('name')
-            ->get(['id', 'name', 'display_name']);
+            ->get(['id', 'name', 'display_name', 'status']);
     }
 
     /**

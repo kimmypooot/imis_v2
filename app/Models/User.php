@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\OfficeDesignation;
 use App\Enums\RoleName;
+use App\Enums\RoleStatus;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -177,11 +178,23 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * The roles assigned to this user.
+     * The roles assigned to this user, active or not — what the assignment
+     * screens show. Authorization reads activeRoles().
      */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    /**
+     * The assigned roles that are active: the only ones that grant
+     * anything. Deactivating a role (Roles & Permissions) takes its
+     * permissions away from everyone holding it, without unassigning it.
+     * The Super Administrator role can't be deactivated (UpdateRoleRequest).
+     */
+    public function activeRoles(): BelongsToMany
+    {
+        return $this->roles()->where('roles.status', RoleStatus::Active->value);
     }
 
     /**
@@ -193,14 +206,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * All permissions granted to this user through its assigned roles.
+     * All permissions granted to this user through its active roles.
      *
      * @return Collection<int, Permission>
      */
     public function permissions(): Collection
     {
-        return $this->loadMissing('roles.permissions')
-            ->roles
+        return $this->loadMissing('activeRoles.permissions')
+            ->activeRoles
             ->flatMap(fn (Role $role) => $role->permissions)
             ->unique('id')
             ->values();
@@ -210,7 +223,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $role = $role instanceof RoleName ? $role->value : $role;
 
-        return $this->loadMissing('roles')->roles->contains('name', $role);
+        return $this->loadMissing('activeRoles')->activeRoles->contains('name', $role);
     }
 
     /**

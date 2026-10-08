@@ -19,7 +19,7 @@ final class ExecutiveAudience
     public static function members(): Collection
     {
         return User::query()->where('status', UserStatus::Active)
-            ->whereHas('roles.permissions', fn ($query) => $query->where('name', PermissionName::ExecutiveView->value))
+            ->whereHas('activeRoles.permissions', fn ($query) => $query->where('name', PermissionName::ExecutiveView->value))
             ->get();
     }
 }

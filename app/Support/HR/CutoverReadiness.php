@@ -82,7 +82,7 @@ class CutoverReadiness
             $noSupervisor ? "{$noSupervisor} without one (their leave goes straight to HR)" : 'All set', '/admin/hr/leave', false);
 
         foreach ([PermissionName::LeaveCertify->value => 'Someone can certify leave credits (HR)', PermissionName::LeaveApprove->value => 'Someone can approve leave (Head of Agency)'] as $permission => $label) {
-            $count = (clone $activeUsers)->whereHas('roles.permissions', fn ($query) => $query->where('name', $permission))->count();
+            $count = (clone $activeUsers)->whereHas('activeRoles.permissions', fn ($query) => $query->where('name', $permission))->count();
             $add('Leave', $label, $count > 0, $count ? "{$count} account(s)" : "No active account has {$permission}", '/roles');
         }
 

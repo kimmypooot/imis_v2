@@ -175,9 +175,16 @@ and `Permission::roles()` `BelongsToMany` relationships.
   method, not a formal relation).
 - `hasRole()`, `hasAnyRole()`, `hasAllRoles()`, `hasPermission()`,
   `hasAnyPermission()`, `hasAllPermissions()` — all resolve from an
-  already-loaded `roles`/`roles.permissions` relation on the model
-  instance (`loadMissing`), so repeated checks on the same request's
+  already-loaded `activeRoles`/`activeRoles.permissions` relation on the
+  model instance (`loadMissing`), so repeated checks on the same request's
   `$request->user()` do not re-query.
+- **Only active roles grant anything** (`activeRoles()`, since
+  2026-10-08): deactivating a role takes its permissions from everyone
+  holding it without unassigning it, and reactivating gives them back.
+  `roles()` still lists every assigned role for the assignment screens,
+  which mark inactive ones. Queries for "people with permission X" go
+  through `activeRoles.permissions`. The Super Administrator role can't be
+  deactivated, so this can't lock anyone out.
 
 **Stable identifiers** (`App\Enums\RoleName`, `App\Enums\PermissionName`):
 backed enums so role/permission machine names are never hardcoded as bare
@@ -4592,8 +4599,8 @@ Seven independent features; none has a legacy counterpart.
 - Role editor → **Preview** tab (follows the ticked permissions before
   saving); a user's page → **What this person can open** (follows the
   ticked roles; the controller sends each role's permissions).
-- Assigned roles grant their permissions whatever their status, and the
-  preview mirrors that.
+- An inactive role grants nothing, so it previews as nothing; the role
+  editor and a user's page say so.
 
 ### Account lifecycle (`Support/Security/AccountLifecycle`, `imis:account-lifecycle`)
 - Nightly 00:30 Asia/Manila (`--dry-run` lists): deactivates the accounts

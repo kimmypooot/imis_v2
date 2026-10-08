@@ -642,7 +642,7 @@ class LeaveApplications
     private function withPermission(PermissionName $permission): Collection
     {
         return User::query()->where('status', 'active')
-            ->whereHas('roles.permissions', fn ($query) => $query->where('name', $permission->value))
+            ->whereHas('activeRoles.permissions', fn ($query) => $query->where('name', $permission->value))
             ->get();
     }
 

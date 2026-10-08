@@ -59,7 +59,7 @@ class HandleInertiaRequests extends Middleware
                     'previous_login_at' => $user->previous_login_at?->toIso8601String(),
                 ] : null,
                 'roles' => $user
-                    ? $user->roles->pluck('name')->values()
+                    ? $user->activeRoles->pluck('name')->values()
                     : [],
                 'permissions' => $user
                     ? $user->permissions()->pluck('name')->values()

@@ -3,9 +3,11 @@
 namespace Tests\Feature\Authorization;
 
 use App\Enums\RoleName;
+use App\Enums\RoleStatus;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Executive\ExecutiveAudience;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -169,5 +171,50 @@ class RoleAndPermissionTest extends TestCase
 
         $this->expectException(QueryException::class);
         $role->permissions()->attach($permission);
+    }
+
+    public function test_an_inactive_role_grants_nothing_until_reactivated(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::factory()->create(['status' => RoleStatus::Inactive]);
+        $role->permissions()->attach(Permission::factory()->create(['name' => 'leave.view']));
+        $user->roles()->attach($role);
+
+        $this->assertFalse($user->hasPermission('leave.view'));
+        $this->assertFalse($user->hasRole($role->name));
+        $this->assertCount(1, $user->roles, 'still assigned');
+
+        $role->update(['status' => RoleStatus::Active]);
+        $user = $user->fresh();
+
+        $this->assertTrue($user->hasPermission('leave.view'));
+        $this->assertTrue($user->hasRole($role->name));
+    }
+
+    public function test_people_found_by_permission_skip_inactive_roles(): void
+    {
+        $active = User::factory()->create();
+        $inactive = User::factory()->create();
+        $permission = Permission::factory()->create(['name' => 'executive.view']);
+        $on = Role::factory()->create();
+        $off = Role::factory()->create(['status' => RoleStatus::Inactive]);
+        $on->permissions()->attach($permission);
+        $off->permissions()->attach($permission);
+        $active->roles()->attach($on);
+        $inactive->roles()->attach($off);
+
+        $this->assertSame([$active->id], ExecutiveAudience::members()->pluck('id')->all());
+    }
+
+    public function test_an_inactive_roles_permissions_are_not_shared_with_the_browser(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::factory()->create(['status' => RoleStatus::Inactive]);
+        $role->permissions()->attach(Permission::factory()->create(['name' => 'leave.view']));
+        $user->roles()->attach($role);
+
+        $this->actingAs($user)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->where('auth.permissions', [])
+            ->where('auth.roles', []));
     }
 }
