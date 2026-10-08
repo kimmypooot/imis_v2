@@ -174,6 +174,15 @@ class ImisSummaryController extends Controller
 }
 ```
 
+### JPortal
+
+Served at `/api/imis/summary` (`App\Http\Controllers\Api\ImisSummaryController`
+in `../jportal`). Starter figures, each broken down by sector (NGA, LGU,
+SUC, Water District): open vacancy bulletins (`bulletins.open`, with how
+many close within 7 days), bulletins posted this month
+(`bulletins.posted_month`), and agencies that posted this year
+(`agencies.posting_year`, no breakdown). Archived bulletins are left out.
+
 ### Online Recruitment System
 
 The same shape. Likely starter figures: open vacancies, applications

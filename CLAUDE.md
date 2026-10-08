@@ -65,8 +65,9 @@ particular:
   scheduled snapshots of every module, connected systems' summary feeds
   (contract in `docs/executive-feed.md`), targets, alerts and a weekly
   summary. Which figures and targets top management tracks is not agreed
-  yet: the built-in figures are starters and targets are data. No system
-  serves a feed yet; Exec-4 (legacy PHP systems, CTS) is next.
+  yet: the built-in figures are starters and targets are data. JPortal
+  (`../jportal`, a separate app under the hub) serves a feed; no other
+  system does yet. Exec-4 (legacy PHP systems, CTS) is next.
 
 The legacy PHP IMIS this replaces lives at `../old-imis` (reference only —
 never edit it). Match its behavior when carrying a feature over.

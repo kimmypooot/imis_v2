@@ -2527,6 +2527,16 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   `field_offices.imis_code`, and copies the IMIS photo once into its own
   private storage (only from `IMIS_ASSET_ORIGIN`), as it does a Google
   photo.
+- **JPortal** (`../jportal`, the "CSC RO VIII Job Portal" entry under
+  PALD): the Bulletin of Vacant Positions, replacing the legacy
+  `jportal/pald` panel. Staff only, and only through IMIS: there is no
+  other sign-in. Its `Auth\ImisSsoController` (`/sso`) takes `role_code`
+  `admin` or `encoder` (PALD staff only), links by `users.imis_user_id`,
+  and keeps the IMIS photo URL. The Admin role must have no launch URL of
+  its own (it used to point at the legacy panel, and a role's launch URL
+  wins over the system's). It also serves the public listing on its own
+  host and `/api/public/*` for the cscro8.com website. Cutover steps are
+  in its `CUTOVER_RUNBOOK.md`.
 - **Launch screen:** `ApplicationLaunchController` renders
   `Portal/Applications/Launching` ("Opening <system>" over the IMIS logo)
   before sending the browser on; `app.blade.php` draws the same screen
@@ -4466,8 +4476,9 @@ only, so viewing the dashboard isn't audited.
   (10 s timeout, no redirects, 256 KB limit) and validates the response
   with `MetricFeed::fromFeed`; a feed can't add links into IMIS.
 - The contract and a copy-ready Laravel controller (PROCTAD) are in
-  [`executive-feed.md`](executive-feed.md). **No system serves a feed
-  yet:** the endpoints belong in each system's own repository.
+  [`executive-feed.md`](executive-feed.md). The endpoints belong in each
+  system's own repository. **JPortal** serves one (`/api/imis/summary`,
+  tested locally, not yet connected in production); the others don't yet.
 - System tiles: *Running*, *Maintenance* (IMIS maintenance mode),
   *Not answering*, *Not current*, *Waiting*, *Not connected*. The IMIS
   tile follows the health checks.
