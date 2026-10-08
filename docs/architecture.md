@@ -1233,7 +1233,9 @@ rejected. Once published, `publish_at` becomes required on edit (clearing
 it would silently hide the announcement forever — unpublish instead).
 `expires_at` must be after `publish_at` when both are set.
 
-**Timezones**: the app stays on UTC. The admin form's
+**Timezones**: the app runs on Asia/Manila, and MySQL's session is
+pinned to +08:00 (before 2027_01_16 it ran on UTC; that migration moved
+stored timestamps by the server's old session offset). The admin form's
 `datetime-local` inputs are converted in the browser
 (`resources/js/Utils/datetime.js`) to ISO-8601 instants with an offset
 before submit, and back to local time for display, so "8:00 AM" means
@@ -2378,7 +2380,8 @@ in one transaction, apart from photo files.
 
 Rules:
 - **Times**: legacy DATETIME columns are Asia/Manila wall-clock time,
-  converted to UTC. TIMESTAMP columns are read over a UTC session.
+  kept as Manila time (the app's time zone). TIMESTAMP columns are read
+  as UTC and converted.
 - **Relative launch paths** are made absolute against `--legacy-url`
   (default `https://imis.cscro8.com`), because launch URLs must be
   absolute.
@@ -3343,7 +3346,7 @@ like the overview. They appear in the HR sidebar menu.
     the legacy id, when it matches.
   - `created_by` → null
   - `otrs_training_id` is kept
-  - timestamps: Manila time converted to UTC
+  - timestamps: Manila time, as the app is
   - `deleted_at` is kept, so a record removed in ldms stays removed
 - **Data fixes:** an end date before the start date becomes the start
   date. A row with no title or start date is skipped and counted.
@@ -4385,8 +4388,7 @@ Everything that enforces these rules reads them through `SecurityPolicy`.
   without zlib). They are written to a `.partial` file and renamed only
   when complete. Only names matching that pattern are ever read or
   deleted.
-- `imis:backup --if-enabled` runs nightly at 02:00 Asia/Manila (the app
-  runs on UTC) and skips while `backup_schedule_enabled` is off. Run by
+- `imis:backup --if-enabled` runs nightly at 02:00 Asia/Manila and skips while `backup_schedule_enabled` is off. Run by
   hand, it always backs up. Each backup is followed by pruning to
   `backup_keep_count`.
 - The Backup Database page lists the stored backups and adds "Back up

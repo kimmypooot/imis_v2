@@ -557,7 +557,7 @@ class LegacyLeaveImporter
     {
         $value = trim((string) $value);
 
-        return $value === '' || str_starts_with($value, '0000') ? null : Carbon::parse($value, 'Asia/Manila')->utc();
+        return $value === '' || str_starts_with($value, '0000') ? null : Carbon::parse($value, 'Asia/Manila')->setTimezone(config('app.timezone'));
     }
 
     private function text(mixed $value, int $max): ?string

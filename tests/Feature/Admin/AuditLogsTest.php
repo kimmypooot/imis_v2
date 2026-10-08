@@ -148,10 +148,10 @@ class AuditLogsTest extends TestCase
     public function test_date_range_honours_timezone_offsets(): void
     {
         $user = $this->userWithPermissions('audit_logs.view');
-        // 2026-09-15 20:00 UTC is already 2026-09-16 04:00 in Manila.
-        AuditLog::factory()->create(['created_at' => '2026-09-15 20:00:00']);
+        // 04:00 on Sep 16 in Manila is still Sep 15 (20:00) in UTC.
+        AuditLog::factory()->create(['created_at' => '2026-09-16 04:00:00']);
 
-        $query = http_build_query(['from' => '2026-09-16T00:00:00+08:00', 'to' => '2026-09-16T23:59:59+08:00']);
+        $query = http_build_query(['from' => '2026-09-15T16:00:00Z', 'to' => '2026-09-16T15:59:59Z']);
 
         $this->actingAs($user)->get("/admin/audit-logs?{$query}")
             ->assertInertia(fn ($page) => $page->has('logs.data', 1));

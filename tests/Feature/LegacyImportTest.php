@@ -68,8 +68,8 @@ class LegacyImportTest extends TestCase
         $this->assertSame(UserStatus::Active, $user->status);
         $this->assertTrue(Hash::check('legacy-secret', $user->password));
         $this->assertTrue($user->hasRole(RoleName::SuperAdmin));
-        // 2026-09-01 08:00 Manila is midnight UTC.
-        $this->assertSame('2026-09-01 00:00:00', $user->last_login_at->toDateTimeString());
+        // Legacy DATETIMEs are Manila time, as the app is.
+        $this->assertSame('2026-09-01 08:00:00', $user->last_login_at->toDateTimeString());
 
         $inactive = User::where('username', 'mreyes')->firstOrFail();
         $this->assertSame(UserStatus::Inactive, $inactive->status);
@@ -147,21 +147,21 @@ class LegacyImportTest extends TestCase
         $this->assertSame(Status::Active, ApplicationRole::where('application_id', $otrs->id)->where('name', 'Admin')->value('status'));
     }
 
-    public function test_imports_announcements_releases_and_history_in_utc(): void
+    public function test_imports_announcements_releases_and_history_in_office_time(): void
     {
         $this->import();
 
         $announcement = Announcement::firstOrFail();
         $this->assertSame(AnnouncementStatus::Published, $announcement->status);
         $this->assertSame("Line one\nLine two", $announcement->body);
-        $this->assertSame('2026-06-04 04:00:00', $announcement->expires_at->toDateTimeString());
+        $this->assertSame('2026-06-04 12:00:00', $announcement->expires_at->toDateTimeString());
 
         $release = Changelog::where('version', '2.7.0')->firstOrFail();
         $this->assertTrue($release->isPublished());
         $this->assertSame(['feature', 'fix'], $release->items->pluck('type')->map->value->all());
 
         $login = LoginHistory::where('username', 'jdcruz')->firstOrFail();
-        $this->assertSame('2026-09-01 00:00:00', $login->logged_in_at->toDateTimeString());
+        $this->assertSame('2026-09-01 08:00:00', $login->logged_in_at->toDateTimeString());
         $this->assertNull($login->session_id);
         $this->assertSame('user', $login->ended_by);
 

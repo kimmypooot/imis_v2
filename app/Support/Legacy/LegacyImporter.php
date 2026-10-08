@@ -43,7 +43,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Legacy DATETIME columns hold Asia/Manila wall-clock time (the legacy app
  * set it in PHP); TIMESTAMP columns are true UTC when read over a UTC
- * session. Both are stored here in UTC.
+ * session. Both are stored here in the app's time zone (Asia/Manila).
  */
 class LegacyImporter
 {
@@ -583,12 +583,12 @@ class LegacyImporter
 
     private function manila(?string $value): ?Carbon
     {
-        return $value && ! str_starts_with($value, '0000') ? Carbon::parse($value, self::LEGACY_TIMEZONE)->utc() : null;
+        return $value && ! str_starts_with($value, '0000') ? Carbon::parse($value, self::LEGACY_TIMEZONE)->setTimezone(config('app.timezone')) : null;
     }
 
     private function utc(?string $value): ?Carbon
     {
-        return $value && ! str_starts_with($value, '0000') ? Carbon::parse($value, 'UTC') : null;
+        return $value && ! str_starts_with($value, '0000') ? Carbon::parse($value, 'UTC')->setTimezone(config('app.timezone')) : null;
     }
 
     private function user(int|string|null $legacyId): ?int

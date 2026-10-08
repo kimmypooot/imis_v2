@@ -95,8 +95,8 @@ class LegacyLdImportTest extends TestCase
         $this->assertSame('National Privacy Commission', $first->sponsor);
         $this->assertSame('Tacloban City', $first->venue);
         $this->assertSame('12.50', $first->hours);
-        // 08:00 in Manila is midnight UTC.
-        $this->assertSame('2026-03-01 00:00:00', $first->created_at->toDateTimeString());
+        // Legacy DATETIMEs are Manila time, as the app is.
+        $this->assertSame('2026-03-01 08:00:00', $first->created_at->toDateTimeString());
 
         // An unknown type becomes "Other" with its text; an end before the start becomes the start.
         $second = PdsLearningDevelopment::query()->where('legacy_id', 102)->sole();
