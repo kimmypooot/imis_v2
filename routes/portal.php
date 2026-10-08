@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\NotificationSettingsController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
@@ -49,6 +50,9 @@ Route::middleware('auth')->group(function () {
 
     // Self-service account actions (the legacy profile menu).
     Route::get('account/password', [PasswordController::class, 'edit'])->name('account.password.edit');
+    // Admin-3: which notifications also come by email.
+    Route::get('account/notifications', [NotificationSettingsController::class, 'edit'])->name('account.notifications.edit');
+    Route::put('account/notifications', [NotificationSettingsController::class, 'update'])->name('account.notifications.update');
     Route::put('account/password', [PasswordController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('account.password.update');

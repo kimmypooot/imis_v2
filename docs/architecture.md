@@ -4555,3 +4555,93 @@ RA 10173's right to be informed, in two pages.
 
 ### Tests
 `tests/Feature/PrivacyTest.php`.
+
+## Administration tools — IMPLEMENTED (Admin-3)
+
+Seven independent features; none has a legacy counterpart.
+
+### Scheduled tasks (`/admin/scheduled-tasks`, `Support/System/ScheduledTasks`)
+- Every task in `routes/console.php`, in words: what it does, its timetable
+  in office time ("Daily at 2:00 AM"), last and next run.
+- `scheduled_tasks.manage`: **pause** (a `scheduled_task_pauses` row; the
+  last block of `routes/console.php` adds a `skip()` to every task),
+  **resume**, and **run now** (in the request; closures included). Every
+  task skips work already done, so an early run is safe. Manual runs are
+  remembered separately and don't count for System Health; a paused task
+  shows there as "Check".
+- Viewing needs `settings.view`. Audited: `system.task_paused`,
+  `system.task_resumed`, `system.task_run`.
+
+### Permission preview (`Utils/accessPreview.js`, `Components/Admin/AccessPreview.vue`)
+- Works out which pages a set of permissions opens from the same
+  navigation definitions the sidebar uses, plus the permissions that only
+  allow actions inside pages.
+- Role editor → **Preview** tab (follows the ticked permissions before
+  saving); a user's page → **What this person can open** (follows the
+  ticked roles; the controller sends each role's permissions).
+- Assigned roles grant their permissions whatever their status, and the
+  preview mirrors that.
+
+### Account lifecycle (`Support/Security/AccountLifecycle`, `imis:account-lifecycle`)
+- Nightly 00:30 Asia/Manila (`--dry-run` lists): deactivates the accounts
+  of employees whose separation date has passed and, with System
+  Settings → Security → *Deactivate after days without signing in* (0 =
+  off, else 30–730), accounts with no sign-in for that long — counting
+  from the last sign-in, creation or reactivation (`users.status_changed_at`,
+  set whenever the status changes).
+- Super Administrators are never deactivated automatically; they're
+  reported instead.
+- Deactivating — automatically or from Manage Users — also ends the
+  person's open sessions and drops their designation's system access.
+  Automatic ones are audited as `user.status_changed` with no actor,
+  `automatic` and the reason.
+
+### Bulk user import (`/users/import`, `Support/Users/UserImport`)
+- CSV (template downloadable), up to 500 rows: preview first — the Add
+  User rules, the office by code/short name/name, roles by name, and
+  duplicates within the file — then the valid rows are created.
+- Account creation is one class, `Support/Users/AccountCreator`, used by
+  Add User and the import alike (username, employee record, set-password
+  email, audit, designation access).
+- Not importable: office designations and the Super Administrator role.
+  `users.create`. Audited per account (`source: bulk import`) and as
+  `user.imported`.
+
+### Notification settings (`/account/notifications`, `Support/Notifications/NotificationPreferences`)
+- Everything shows under the bell; per kind (leave, HR requests, and for
+  `executive.view` holders the dashboard alerts and weekly summary), a
+  person may also have it emailed (`users.notification_preferences`).
+  Email is off by default except the weekly summary.
+- Notification classes use `Notifications/Concerns/EmailsWhenWanted`
+  (a `KIND` constant and their `toArray()`).
+
+### Email templates (`/admin/email-templates`, `Support/Mail/EmailTemplates`)
+- Subject, opening, button and closing of: new account (set your
+  password), password reset, a notification sent by email, and the weekly
+  summary. Placeholders in braces; unknown ones are refused. Only edited
+  templates are stored (`email_templates`); deleting puts the default back.
+- Password emails go through `ResetPassword::toMailUsing` (in
+  `AppServiceProvider`): someone who has never signed in gets the
+  new-account email.
+- Live preview with sample values; *Send me a test* mails the signed-in
+  administrator. `settings.view` to see, `settings.update` to change.
+
+### Branding (`/admin/branding`, `Support/Branding/Branding`)
+- Replace or reset the agency logo, the IMIS mark and the sign-in
+  background (PNG/JPEG/WebP up to 2 MB, never SVG), stored on the public
+  disk (`brand_assets`). Shared on every page as `branding` and read
+  through `Composables/useBranding`; the preloader in `app.blade.php` uses
+  `Branding::url()`.
+- The name beside the header logo is the `header_name` setting (System
+  Settings → General). Colors and type stay in the design tokens.
+
+### Deploying
+`php artisan migrate`, then `db:seed --class=RolePermissionSeeder` (new
+`scheduled_tasks.manage`) and `--class=SettingSeeder`
+(`account_inactive_days`, `header_name`). `php artisan storage:link` must
+exist for uploaded branding.
+
+### Tests
+`tests/Feature/Admin/ScheduledTasksTest.php`, `PermissionPreviewTest.php`,
+`AccountLifecycleTest.php`, `UserImportTest.php`, `EmailTemplatesTest.php`,
+`BrandingTest.php`, and `tests/Feature/NotificationSettingsTest.php`.

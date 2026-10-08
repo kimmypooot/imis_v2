@@ -2,6 +2,7 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import PortalLayout from '../Layouts/PortalLayout.vue';
 import { formatCalendarDate } from '../Utils/datetime';
+import { useBranding } from '../Composables/useBranding';
 
 /**
  * Admin-2: the privacy notice (RA 10173). Signed in, it sits in the
@@ -17,6 +18,7 @@ defineProps({
 });
 
 const signedIn = !!usePage().props.auth?.user;
+const brand = useBranding();
 </script>
 
 <template>
@@ -26,7 +28,7 @@ const signedIn = !!usePage().props.auth?.user;
         <article class="mx-auto max-w-3xl rounded-lg border border-border bg-surface p-6 sm:p-8">
             <header class="mb-6 border-b border-border pb-5">
                 <div v-if="!signedIn" class="mb-4 flex items-center gap-3">
-                    <img src="/images/brand/CSC-IMIS.png" alt="" class="h-10 w-auto" />
+                    <img :src="brand.app_logo" alt="" class="h-10 w-auto" />
                     <p class="text-sm font-semibold text-primary">Integrated Management Information System (IMIS)</p>
                 </div>
                 <h1 class="text-xl font-semibold text-primary sm:text-2xl">Privacy Notice</h1>

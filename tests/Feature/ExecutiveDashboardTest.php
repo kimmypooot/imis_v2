@@ -239,7 +239,7 @@ class ExecutiveDashboardTest extends TestCase
         $this->set('executive_weekly_digest', true);
         $this->artisan('imis:executive-digest')->assertSuccessful();
         Notification::assertSentTo($viewer, ExecutiveDigest::class, fn (ExecutiveDigest $digest) => in_array('mail', $digest->via($viewer), true)
-            && str_contains($digest->toMail($viewer)->introLines[0], 'systems'));
+            && collect($digest->toMail($viewer)->introLines)->contains(fn ($line) => str_contains($line, 'systems')));
     }
 
     public function test_the_collect_command_runs_every_source(): void

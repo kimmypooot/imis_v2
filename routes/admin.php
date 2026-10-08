@@ -7,10 +7,12 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\ApplicationRoleController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\ChangelogController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\DashboardLayoutController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\EmployeeAssignmentController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmployeeDocumentController;
@@ -45,6 +47,7 @@ use App\Http\Controllers\Admin\PlantillaSheetController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ReassignmentReportController;
 use App\Http\Controllers\Admin\SalaryScheduleController;
+use App\Http\Controllers\Admin\ScheduledTaskController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Admin\SessionController;
@@ -59,8 +62,11 @@ use App\Http\Controllers\PdsPhotoController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserImportController;
 use App\Http\Controllers\UserSystemAccessController;
+use App\Support\Branding\Branding;
 use App\Support\HR\Pds\PdsSchema;
+use App\Support\Mail\EmailTemplates;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -120,6 +126,11 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:users.create')->group(function () {
         Route::post('users', [UserController::class, 'store'])->name('users.store');
+        // Admin-3: bulk import from a CSV (preview first, then create).
+        Route::get('users/import', [UserImportController::class, 'create'])->name('users.import');
+        Route::get('users/import/template', [UserImportController::class, 'template'])->name('users.import.template');
+        Route::post('users/import/preview', [UserImportController::class, 'preview'])->middleware('throttle:20,1')->name('users.import.preview');
+        Route::post('users/import', [UserImportController::class, 'store'])->name('users.import.store');
     });
 
     Route::middleware('permission:users.view')->group(function () {
@@ -579,6 +590,35 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:settings.view')->group(function () {
         Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
         Route::get('admin/system-health', [SystemHealthController::class, 'index'])->name('admin.system-health');
+        Route::get('admin/scheduled-tasks', [ScheduledTaskController::class, 'index'])->name('admin.scheduled-tasks.index');
+        Route::get('admin/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
+        Route::get('admin/branding', [BrandingController::class, 'index'])->name('admin.branding.index');
+    });
+
+    // Admin-3: replace or reset the logos and sign-in background.
+    Route::middleware('permission:settings.update')->group(function () {
+        // POST (not PUT): the image is a file upload.
+        Route::post('admin/branding/{key}', [BrandingController::class, 'update'])
+            ->whereIn('key', array_keys(Branding::ASSETS))->name('admin.branding.update');
+        Route::delete('admin/branding/{key}', [BrandingController::class, 'destroy'])
+            ->whereIn('key', array_keys(Branding::ASSETS))->name('admin.branding.destroy');
+    });
+
+    // Admin-3: the wording of the emails IMIS sends.
+    Route::middleware('permission:settings.update')->group(function () {
+        Route::put('admin/email-templates/{key}', [EmailTemplateController::class, 'update'])
+            ->whereIn('key', array_keys(EmailTemplates::DEFINITIONS))->name('admin.email-templates.update');
+        Route::delete('admin/email-templates/{key}', [EmailTemplateController::class, 'destroy'])
+            ->whereIn('key', array_keys(EmailTemplates::DEFINITIONS))->name('admin.email-templates.destroy');
+        Route::post('admin/email-templates/{key}/test', [EmailTemplateController::class, 'test'])
+            ->whereIn('key', array_keys(EmailTemplates::DEFINITIONS))->middleware('throttle:5,1')->name('admin.email-templates.test');
+    });
+
+    // Admin-3: pause, resume and run scheduled tasks.
+    Route::middleware('permission:scheduled_tasks.manage')->group(function () {
+        Route::post('admin/scheduled-tasks/pause', [ScheduledTaskController::class, 'pause'])->name('admin.scheduled-tasks.pause');
+        Route::post('admin/scheduled-tasks/resume', [ScheduledTaskController::class, 'resume'])->name('admin.scheduled-tasks.resume');
+        Route::post('admin/scheduled-tasks/run', [ScheduledTaskController::class, 'run'])->middleware('throttle:10,1')->name('admin.scheduled-tasks.run');
     });
 
     Route::middleware('permission:changelogs.view')->group(function () {

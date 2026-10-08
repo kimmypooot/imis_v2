@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\EmailsWhenWanted;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -11,19 +12,15 @@ use Illuminate\Notifications\Notification;
  */
 class HrUpdate extends Notification
 {
+    use EmailsWhenWanted;
+
+    public const KIND = 'hr';
+
     public function __construct(
         private readonly string $title,
         private readonly string $message,
         private readonly string $url,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['database'];
-    }
 
     /**
      * @return array<string, mixed>

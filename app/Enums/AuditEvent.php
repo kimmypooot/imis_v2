@@ -24,8 +24,12 @@ enum AuditEvent: string
     case DatabaseBackupFailed = 'system.backup_failed';
     case DatabaseBackupDeleted = 'system.backup_deleted';
     case LogsPruned = 'system.logs_pruned';
+    case ScheduledTaskPaused = 'system.task_paused';
+    case ScheduledTaskResumed = 'system.task_resumed';
+    case ScheduledTaskRun = 'system.task_run';
 
     case UserCreated = 'user.created';
+    case UsersImported = 'user.imported';
     case UserUpdated = 'user.updated';
     case UserStatusChanged = 'user.status_changed';
     case UserRolesChanged = 'user.roles_changed';
@@ -210,6 +214,8 @@ enum AuditEvent: string
     case AnnouncementUnfeatured = 'announcement.unfeatured';
 
     case SettingUpdated = 'setting.updated';
+    case EmailTemplateUpdated = 'setting.email_template_updated';
+    case BrandingUpdated = 'setting.branding_updated';
 
     case ChangelogCreated = 'changelog.created';
     case ChangelogUpdated = 'changelog.updated';

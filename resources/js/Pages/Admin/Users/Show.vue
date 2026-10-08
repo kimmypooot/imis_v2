@@ -11,6 +11,7 @@ import InputError from '../../../Components/Forms/InputError.vue';
 import FormGroup from '../../../Components/Forms/FormGroup.vue';
 import Select from '../../../Components/Forms/Select.vue';
 import Alert from '../../../Components/Feedback/Alert.vue';
+import AccessPreview from '../../../Components/Admin/AccessPreview.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 
 defineOptions({ layout: AdminLayout });
@@ -21,6 +22,9 @@ const props = defineProps({
     assignedRoleIds: { type: Array, required: true },
     systemAccess: { type: Array, required: true },
     canManageSystemAccess: { type: Boolean, required: true },
+    rolePermissions: { type: Object, required: true /** role id → permission names */ },
+    permissionLabels: { type: Object, required: true },
+    holdsSuperAdmin: { type: Boolean, default: false },
 });
 
 const { can } = useAuthorization();
@@ -52,6 +56,15 @@ const submitAccess = () => {
         .put(`/users/${props.user.id}/system-access`, { preserveScroll: true });
 };
 
+// Admin-3: what the ticked roles open (unsaved changes included). A role
+// the viewer can't assign (Super Administrator) still counts while held.
+const previewNames = computed(() => [...new Set(form.role_ids.flatMap((id) => props.rolePermissions[id] ?? []))]);
+const previewSuperAdmin = computed(() => {
+    const superAdmin = props.roles.find((role) => role.name === 'super-admin');
+
+    return superAdmin ? form.role_ids.includes(superAdmin.id) : props.holdsSuperAdmin;
+});
+
 const roleName = (system) => system.roles.find((role) => role.id === system.role_id)?.name;
 
 const isGrantingSuperAdmin = computed(() => {
@@ -80,27 +93,33 @@ const isGrantingSuperAdmin = computed(() => {
         <Badge :tone="user.status === 'active' ? 'success' : 'neutral'">{{ user.status }}</Badge>
     </div>
 
-    <Card title="Assigned roles" class="max-w-md">
-        <form class="space-y-3" @submit.prevent="submit">
-            <Checkbox
-                v-for="role in roles"
-                :key="role.id"
-                :id="`role-${role.id}`"
-                :label="role.display_name"
-                :model-value="form.role_ids.includes(role.id)"
-                @update:model-value="(checked) => toggleRole(role.id, checked)"
-            />
-            <p v-if="roles.length === 0" class="text-sm text-text-muted">No roles available to assign.</p>
+    <div class="grid items-start gap-6 lg:grid-cols-2">
+        <Card title="Assigned roles">
+            <form class="space-y-3" @submit.prevent="submit">
+                <Checkbox
+                    v-for="role in roles"
+                    :key="role.id"
+                    :id="`role-${role.id}`"
+                    :label="role.display_name"
+                    :model-value="form.role_ids.includes(role.id)"
+                    @update:model-value="(checked) => toggleRole(role.id, checked)"
+                />
+                <p v-if="roles.length === 0" class="text-sm text-text-muted">No roles available to assign.</p>
 
-            <Alert v-if="isGrantingSuperAdmin" tone="warning">
-                Granting Super Administrator access gives unrestricted control over the entire system. This cannot
-                be undone by anyone except another Super Administrator.
-            </Alert>
+                <Alert v-if="isGrantingSuperAdmin" tone="warning">
+                    Granting Super Administrator access gives unrestricted control over the entire system. This cannot
+                    be undone by anyone except another Super Administrator.
+                </Alert>
 
-            <InputError :message="form.errors.role_ids" />
-            <Button type="submit" :loading="form.processing">Save roles</Button>
-        </form>
-    </Card>
+                <InputError :message="form.errors.role_ids" />
+                <Button type="submit" :loading="form.processing">Save roles</Button>
+            </form>
+        </Card>
+
+        <Card title="What this person can open" icon="eye" description="From the roles ticked here — it changes as you tick them, before you save.">
+            <AccessPreview :permissions="previewNames" :super-admin="previewSuperAdmin" :labels="permissionLabels" />
+        </Card>
+    </div>
 
     <Card
         title="System access"

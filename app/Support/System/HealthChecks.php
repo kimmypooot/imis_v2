@@ -2,6 +2,7 @@
 
 namespace App\Support\System;
 
+use App\Models\ScheduledTaskPause;
 use App\Support\Backup\BackupStore;
 use App\Support\Settings\Settings;
 use Illuminate\Support\Facades\Cache;
@@ -125,7 +126,13 @@ class HealthChecks
 
             return [$late ? 'fail' : 'ok', 'Last ran '.$latest->diffForHumans()];
         });
+        $paused = ScheduledTaskPause::query()->pluck('task')->all();
         foreach ($this->safeTasks() as $task) {
+            if (in_array($task['name'], $paused, true)) {
+                $add('Scheduler', $task['name'], 'warn', 'Paused on Admin → Scheduled Tasks');
+
+                continue;
+            }
             $status = match (true) {
                 $task['last_run'] === null => 'warn',
                 $task['succeeded'] === false => 'fail',

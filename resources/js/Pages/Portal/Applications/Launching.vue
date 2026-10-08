@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import { useBranding } from '../../../Composables/useBranding';
 
 /**
  * The "Opening <system>" hand-off between IMIS and a system's own sign-in.
@@ -17,6 +18,7 @@ const props = defineProps({
     url: { type: String, required: true },
 });
 
+const brand = useBranding();
 const HOLD_MS = 600;
 
 // The server only ever sends an http(s) URL; checked again here so this page
@@ -64,7 +66,7 @@ const rings = [
                         :stroke-dashoffset="ring.offset"
                     />
                 </svg>
-                <img src="/images/brand/CSC-IMIS.png" alt="" class="imis-tr__logo" draggable="false" />
+                <img :src="brand.app_logo" alt="" class="imis-tr__logo" draggable="false" />
             </div>
 
             <div class="imis-tr__msg">Opening {{ application.name }}</div>

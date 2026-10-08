@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
 import Button from '../UI/Button.vue';
 import Icon from '../UI/Icon.vue';
+import { useBranding } from '../../Composables/useBranding';
 
 /**
  * "About IMIS" — the legacy About pop-up, rewritten for the rebuilt
@@ -18,6 +19,7 @@ defineProps({
 defineEmits(['close']);
 
 const page = usePage();
+const brand = useBranding();
 const version = computed(() => page.props.app?.version);
 const year = new Date().getFullYear();
 
@@ -39,7 +41,7 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
             <!-- Identity -->
             <div class="flex flex-col items-center gap-4 rounded-lg bg-primary px-6 py-8 text-center text-white sm:flex-row sm:text-left">
                 <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white" aria-hidden="true">
-                    <img src="/images/brand/csc-logo.png" alt="" class="h-11 w-auto" />
+                    <img :src="brand.logo" alt="" class="h-11 w-auto" />
                 </span>
                 <div>
                     <p class="text-lg leading-snug font-semibold">CSC RO VIII Integrated Management Information System</p>

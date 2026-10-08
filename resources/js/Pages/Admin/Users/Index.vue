@@ -91,6 +91,10 @@ const toggleStatus = async (user) => {
 
     <Card title="List of Users" icon="users">
         <template v-if="can('users.create')" #actions>
+            <Button variant="outline" class="rounded-full" href="/users/import">
+                <Icon name="download" size="sm" class="rotate-180" />
+                Import
+            </Button>
             <Button variant="success" class="rounded-full" @click="adding = true">
                 <Icon name="userPlus" size="sm" />
                 Add User

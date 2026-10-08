@@ -59,9 +59,17 @@ final class SettingRegistry
                 'type' => SettingType::String,
                 'group' => SettingGroup::General,
                 'label' => 'System name',
-                'description' => 'Short name shown at the top of the sidebar and header.',
+                'description' => 'The system\'s name in emails (e.g. "Reset your … password").',
                 'default' => 'CSC RO VIII IMIS',
                 'constraints' => ['required' => true, 'max' => 60],
+            ],
+            'header_name' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::General,
+                'label' => 'Name beside the logo',
+                'description' => 'Shown next to the agency logo at the top of every page. The logo itself is changed in Admin → Branding.',
+                'default' => 'CSC RO VIII',
+                'constraints' => ['required' => true, 'max' => 30],
             ],
 
             'portal_welcome_message' => [
@@ -220,6 +228,14 @@ final class SettingRegistry
                 'description' => 'Passwords always need letters and numbers; this sets how long they must be (8–64).',
                 'default' => 8,
                 'constraints' => ['required' => true, 'min' => 8, 'max' => 64],
+            ],
+            'account_inactive_days' => [
+                'type' => SettingType::Integer,
+                'group' => SettingGroup::Security,
+                'label' => 'Deactivate after days without signing in',
+                'description' => 'Accounts nobody has signed in to for this many days are deactivated overnight (30–730). Counts from the last sign-in, creation or reactivation. Super Administrators are never deactivated automatically. 0 turns this off.',
+                'default' => 0,
+                'constraints' => ['required' => true, 'min' => 0, 'max' => 730, 'min_unless_zero' => 30],
             ],
             'password_policy_mixed_case' => [
                 'type' => SettingType::Boolean,

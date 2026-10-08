@@ -13,7 +13,7 @@ import { formatDateTime } from '../../Utils/datetime';
  * The account menu, following the legacy IMIS profile dropdown: who you
  * are and when you last signed in, then the links in groups — Management
  * (HR Management and Administration, each only with access to that area),
- * your account (Change password, Who accessed my record), and about IMIS
+ * your account (Change password, Notification settings, Who accessed my record), and about IMIS
  * (What's New, Privacy notice, About) — and Sign out (confirmed, then the "Signing Out"
  * splash carries you to the login page).
  */
@@ -159,6 +159,10 @@ const headingClass = 'px-3 pt-1.5 pb-1 text-xs font-semibold uppercase tracking-
                 <Link href="/account/password" :class="itemClass" @click="close">
                     <Icon name="lock" size="sm" />
                     Change password
+                </Link>
+                <Link href="/account/notifications" :class="itemClass" @click="close">
+                    <Icon name="bell" size="sm" />
+                    Notification settings
                 </Link>
                 <Link href="/my/record-access" :class="itemClass" @click="close">
                     <Icon name="eye" size="sm" />

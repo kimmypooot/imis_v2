@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\LeaveApplication;
+use App\Notifications\Concerns\EmailsWhenWanted;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -12,20 +13,16 @@ use Illuminate\Notifications\Notification;
  */
 class LeaveApplicationUpdate extends Notification
 {
+    use EmailsWhenWanted;
+
+    public const KIND = 'leave';
+
     public function __construct(
         private readonly LeaveApplication $application,
         private readonly string $title,
         private readonly string $message,
         private readonly string $url,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['database'];
-    }
 
     /**
      * @return array<string, mixed>

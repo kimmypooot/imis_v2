@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { useBranding } from '../Composables/useBranding';
 
 /**
  * Split-screen guest layout carried over from the legacy IMIS login:
@@ -9,14 +10,15 @@ import { usePage } from '@inertiajs/vue3';
  * forgot/reset password, verify email) so they read as one flow.
  */
 const page = usePage();
+const brand = useBranding();
 const organization = computed(() => page.props.portal?.organization || 'Civil Service Commission Regional Office VIII');
 const year = new Date().getFullYear();
 
-const agencyLogos = [
-    { src: '/images/brand/csc-logo.png', alt: 'Civil Service Commission' },
+const agencyLogos = computed(() => [
+    { src: brand.value.logo, alt: 'Civil Service Commission' },
     { src: '/images/brand/bagong_pilipinas.png', alt: 'Bagong Pilipinas' },
     { src: '/images/brand/lingkod_bayani.png', alt: 'Lingkod Bayani' },
-];
+]);
 </script>
 
 <template>
@@ -24,7 +26,7 @@ const agencyLogos = [
         <!-- Brand panel (desktop only; decorative, so hidden from screen readers) -->
         <div
             class="relative hidden overflow-hidden bg-csc-blue bg-cover bg-center px-8 py-10 text-center text-white lg:flex lg:flex-col lg:items-center lg:justify-center"
-            style="background-image: url('/images/brand/cscbg_facade.jpeg')"
+            :style="{ backgroundImage: `url('${brand.login_background}')` }"
             aria-hidden="true"
         >
             <div class="absolute inset-0 bg-csc-blue/90" />
@@ -73,7 +75,7 @@ const agencyLogos = [
 
                     <div class="mb-6 flex items-center gap-4">
                         <img
-                            src="/images/brand/CSC-IMIS.png"
+                            :src="brand.app_logo"
                             alt=""
                             class="pointer-events-none h-11 w-auto shrink-0 select-none"
                             draggable="false"

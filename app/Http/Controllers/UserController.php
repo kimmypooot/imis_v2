@@ -16,14 +16,15 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Requests\User\UpdateUserStatusRequest;
 use App\Models\Application;
 use App\Models\OrganizationalUnit;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Support\HR\EmployeeRecords;
 use App\Support\Legacy\LegacyBridge;
 use App\Support\ProfilePhotos;
+use App\Support\Security\AccountLifecycle;
 use App\Support\Security\SecurityPolicy;
 use App\Support\SystemAccess\OfficeAdminAccess;
-use App\Support\Usernames;
+use App\Support\Users\AccountCreator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -110,48 +111,19 @@ class UserController extends Controller
      * password. (The legacy system set it to the user's birthday; that is
      * deliberately not carried over.)
      */
-    public function store(StoreUserRequest $request, ProfilePhotos $photos, EmployeeRecords $records): RedirectResponse
+    public function store(StoreUserRequest $request, ProfilePhotos $photos, AccountCreator $accounts): RedirectResponse
     {
         $profile = $request->safe()->only([
             'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'office_designation', 'email',
         ]);
 
-        $user = DB::transaction(function () use ($request, $profile, $records) {
-            $user = User::create([
-                ...$profile,
-                'name' => User::composeName($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name'], $profile['name_extension'] ?? null),
-                // Left blank → generated the legacy way (initials + surname).
-                'username' => $request->validated('username')
-                    ?: Usernames::generateFromParts($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name']),
-                'password' => Str::random(40),
-                'status' => UserStatus::Active,
-            ]);
-
-            if ($roleIds = $request->validated('role_ids') ?? []) {
-                $user->roles()->sync($roleIds);
-            }
-
-            // Every new account is a staff member: their employee record
-            // (HR-1) comes with it, employment status "Not set" for HR, so
-            // they can fill in their PDS right away.
-            $records->setUp($user, how: 'Automatically set up');
-
-            return $user;
-        });
+        ['user' => $user, 'office' => $office] = $accounts->create($profile, $request->validated('username'), $request->validated('role_ids') ?? []);
 
         if ($request->hasFile('profile_photo')) {
             $user->forceFill(['profile_photo_path' => $photos->store($request->file('profile_photo'))])->save();
         }
 
-        Password::sendResetLink(['email' => $user->email]);
-
-        $this->audit()->record(AuditEvent::UserCreated, "Created user {$user->name}", $user, [
-            'username' => $user->username,
-            'email' => $user->email,
-            'roles' => $user->roles()->pluck('name')->all(),
-        ]);
-
-        $admin = $this->syncOfficeAdmin($user);
+        $admin = $this->describeOfficeAdmin($office);
 
         return back()->with('status', "{$user->name} was added. A link to set their password was emailed to {$user->email}.{$admin}");
     }
@@ -169,7 +141,13 @@ class UserController extends Controller
                 'status' => $user->status,
             ],
             'assignedRoleIds' => $user->roles()->pluck('roles.id'),
-            'roles' => $this->assignableRoles($request),
+            'roles' => $roles = $this->assignableRoles($request),
+            // Admin-3 permission preview: each role's permissions by name, so
+            // the page can show what ticking a role opens before saving.
+            'rolePermissions' => Role::query()->with('permissions:id,name')->whereIn('id', $roles->pluck('id'))->get()
+                ->mapWithKeys(fn (Role $role) => [$role->id => $role->permissions->pluck('name')])->all(),
+            'permissionLabels' => Permission::query()->pluck('display_name', 'name'),
+            'holdsSuperAdmin' => $user->hasRole(RoleName::SuperAdmin),
             'systemAccess' => $this->systemAccess($user),
             'canManageSystemAccess' => $request->user()->can('manageSystemAccess', $user),
         ]);
@@ -251,7 +229,15 @@ class UserController extends Controller
         $verb = $this->activationVerb($user->status);
 
         $this->audit()->recordChanges(AuditEvent::UserStatusChanged, "{$verb} user {$user->name}", $user);
-        // A deactivated Division Chief / Field Director loses the admin access; reactivated, gets it back.
+
+        // Deactivated: signed out everywhere at once (and the office designation's
+        // system access dropped). Reactivated: the designation's access comes back.
+        if ($user->status === UserStatus::Inactive) {
+            $ended = app(AccountLifecycle::class)->ended($user);
+
+            return back()->with('status', "{$user->name} was deactivated".($ended ? " and signed out of {$ended} ".Str::plural('session', $ended) : '').'.');
+        }
+
         $this->syncOfficeAdmin($user);
 
         return back()->with('status', "{$user->name} was ".Str::lower($verb).'.');
@@ -366,7 +352,14 @@ class UserController extends Controller
      */
     private function syncOfficeAdmin(User $user): string
     {
-        $counts = app(OfficeAdminAccess::class)->sync($user);
+        return $this->describeOfficeAdmin(app(OfficeAdminAccess::class)->sync($user));
+    }
+
+    /**
+     * @param  array<string, int>  $counts  from OfficeAdminAccess::sync
+     */
+    private function describeOfficeAdmin(array $counts): string
+    {
         $parts = array_filter([
             $counts['granted'] ? "granted admin in {$counts['granted']} ".Str::plural('system', $counts['granted']) : null,
             $counts['raised'] ? "raised to admin in {$counts['raised']} ".Str::plural('system', $counts['raised']) : null,

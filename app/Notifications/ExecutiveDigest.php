@@ -2,8 +2,10 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\EmailsWhenWanted;
 use App\Support\Executive\MetricFormat;
 use App\Support\Executive\TargetStatus;
+use App\Support\Mail\EmailTemplates;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -14,35 +16,28 @@ use Illuminate\Notifications\Notification;
  */
 class ExecutiveDigest extends Notification
 {
+    use EmailsWhenWanted;
+
+    public const KIND = 'executive_digest';
+
     /**
      * @param  array<string, mixed>  $dashboard
      */
     public function __construct(private readonly array $dashboard) {}
 
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return filled($notifiable->email ?? null) ? ['mail', 'database'] : ['database'];
-    }
-
+    /** In the office's "weekly summary" wording (Admin → Email Templates). */
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new MailMessage)
-            ->subject('IMIS weekly summary')
-            ->greeting('Good morning,')
-            ->line($this->headline());
+        $lines = [
+            $this->headline(),
+            ...array_map(fn (array $system) => "• {$system['fullName']}: {$system['detail']}", $this->systemsNeedingAttention()),
+            ...array_map(fn (string $line) => "• {$line}", $this->offTarget()),
+        ];
 
-        foreach ($this->systemsNeedingAttention() as $system) {
-            $mail->line("• {$system['fullName']}: {$system['detail']}");
-        }
-
-        foreach ($this->offTarget() as $line) {
-            $mail->line("• {$line}");
-        }
-
-        return $mail->action('Open the Executive Dashboard', url('/executive'));
+        return EmailTemplates::mail('weekly_summary', [
+            'first_name' => $notifiable->first_name ?: $notifiable->name,
+            'name' => $notifiable->name,
+        ], url('/executive'), after: $lines);
     }
 
     /**

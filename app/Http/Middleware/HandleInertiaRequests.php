@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Changelog;
+use App\Support\Branding\Branding;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\Security\SessionLimits;
@@ -87,6 +88,8 @@ class HandleInertiaRequests extends Middleware
                 // Set right after signing in — drives the splash.
                 'signedIn' => fn () => $request->session()->get('signed_in'),
             ],
+            // Admin-3, Admin → Branding: logos, sign-in background, header name (cached).
+            'branding' => fn () => Branding::shared(),
             // An explicit whitelist of display settings (one cached read),
             // never the whole settings table.
             'portal' => fn () => [

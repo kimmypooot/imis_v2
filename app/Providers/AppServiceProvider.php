@@ -41,8 +41,10 @@ use App\Policies\PdsLearningDevelopmentPolicy;
 use App\Policies\PdsSubmissionPolicy;
 use App\Support\Audit\AuthenticationAuditSubscriber;
 use App\Support\Legacy\LegacyBridge;
+use App\Support\Mail\EmailTemplates;
 use App\Support\Security\SecurityPolicy;
 use App\Support\System\ScheduleMonitor;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -114,6 +116,20 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureAuthorization();
         $this->configureAuditing();
+
+        // Admin-3, Admin → Email Templates: the office's wording for the
+        // password email. Someone who has never signed in is setting up a
+        // new account, so they get the "set your password" email instead.
+        ResetPassword::toMailUsing(fn (User $user, string $token) => EmailTemplates::mail(
+            $user->last_login_at === null ? 'account_setup' : 'password_reset',
+            [
+                'first_name' => $user->first_name ?: $user->name,
+                'name' => $user->name,
+                'username' => $user->username,
+                'expires_minutes' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire'),
+            ],
+            url(route('password.reset', ['token' => $token, 'email' => $user->getEmailForPasswordReset()], false)),
+        ));
 
         // Mirror account and access changes to the legacy subsystems' database.
         $this->app->make(LegacyBridge::class)->registerListeners();

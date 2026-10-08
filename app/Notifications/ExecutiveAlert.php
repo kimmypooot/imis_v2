@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\EmailsWhenWanted;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -11,18 +12,14 @@ use Illuminate\Notifications\Notification;
  */
 class ExecutiveAlert extends Notification
 {
+    use EmailsWhenWanted;
+
+    public const KIND = 'executive';
+
     public function __construct(
         private readonly string $title,
         private readonly string $message,
     ) {}
-
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['database'];
-    }
 
     /**
      * @return array<string, mixed>

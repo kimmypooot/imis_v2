@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useSplash } from '../../Composables/useSplash';
+import { useBranding } from '../../Composables/useBranding';
 
 /**
  * Renders the splash driven by useSplash(): a port of the legacy
@@ -11,6 +12,7 @@ import { useSplash } from '../../Composables/useSplash';
  * the .imis-tr* classes in app.css. Announced through a polite live region.
  */
 const { splash } = useSplash();
+const brand = useBranding();
 
 // "{name}" in the subtitle becomes the highlighted first name; without a
 // name, the placeholder (and its leading comma) is dropped.
@@ -69,7 +71,7 @@ const rings = [
                             :stroke-dashoffset="ring.offset"
                         />
                     </svg>
-                    <img src="/images/brand/csc-logo.png" alt="" class="imis-tr__logo" />
+                    <img :src="brand.logo" alt="" class="imis-tr__logo" />
                 </div>
 
                 <div class="imis-tr__msg">{{ splash.title || 'Please wait' }}</div>

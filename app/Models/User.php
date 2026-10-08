@@ -44,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'office_designation' => OfficeDesignation::class,
             'birthday' => 'date',
             'last_login_at' => 'datetime',
+            'status_changed_at' => 'datetime',
+            'notification_preferences' => 'array',
             'previous_login_at' => 'datetime',
             'password_changed_at' => 'datetime',
             'must_change_password' => 'boolean',
@@ -66,6 +68,11 @@ class User extends Authenticatable implements MustVerifyEmail
             // (e.g. a reassignment) ends it unless it's set again with the move.
             if ($user->exists && $user->isDirty('organizational_unit_id') && ! $user->isDirty('office_designation')) {
                 $user->office_designation = null;
+            }
+
+            // Account lifecycle: a reactivated account counts as active from now.
+            if ($user->exists && $user->isDirty('status')) {
+                $user->status_changed_at = now();
             }
 
             // Password expiry counts from here (System Settings → Security).

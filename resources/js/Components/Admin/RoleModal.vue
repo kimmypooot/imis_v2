@@ -11,12 +11,14 @@ import InputError from '../Forms/InputError.vue';
 import FormGroup from '../Forms/FormGroup.vue';
 import Select from '../Forms/Select.vue';
 import Checkbox from '../Forms/Checkbox.vue';
+import AccessPreview from './AccessPreview.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { groupPermissionsByResource } from '../../Utils/permissions';
 
 /**
  * Add / edit an IMIS role (platform permissions, not a role inside a
- * system). Tabs: Details · Permissions (editing only). The super-admin
+ * system). Tabs: Details · Permissions · Preview (editing only) — the
+ * preview follows the ticked permissions live, before they're saved. The super-admin
  * role's name and status are locked — every Gate check depends on them.
  */
 const props = defineProps({
@@ -34,7 +36,12 @@ const isSuperAdmin = computed(() => props.role?.name === 'super-admin');
 const tab = ref('details');
 const tabs = computed(() => [
     { key: 'details', label: 'Details', icon: 'user' },
-    ...(isNew.value ? [] : [{ key: 'permissions', label: 'Permissions', icon: 'key', badge: props.role.permission_ids.length || null }]),
+    ...(isNew.value
+        ? []
+        : [
+              { key: 'permissions', label: 'Permissions', icon: 'key', badge: props.role.permission_ids.length || null },
+              { key: 'preview', label: 'Preview', icon: 'eye' },
+          ]),
 ]);
 
 const statusOptions = [
@@ -108,6 +115,10 @@ const toggleGroup = (group) => {
             ? permissionsForm.permission_ids.filter((id) => !ids.includes(id))
             : [...new Set([...permissionsForm.permission_ids, ...ids])];
 };
+
+// The ticked permissions by name, for the preview (unsaved changes included).
+const selectedNames = computed(() => props.permissions.filter((permission) => permissionsForm.permission_ids.includes(permission.id)).map((permission) => permission.name));
+const permissionLabels = computed(() => Object.fromEntries(props.permissions.map((permission) => [permission.name, permission.display_name])));
 
 const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('roles.update')));
 </script>
@@ -183,6 +194,11 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                     </fieldset>
                     <p v-if="!groups.length" class="text-sm text-text-muted">No permissions match your search.</p>
                 </form>
+            </template>
+
+            <template v-if="!isNew" #preview>
+                <p v-if="permissionsForm.isDirty" class="mb-3 text-xs text-warning">Includes permission changes you haven't saved yet.</p>
+                <AccessPreview :permissions="selectedNames" :super-admin="isSuperAdmin" :labels="permissionLabels" />
             </template>
         </Tabs>
 

@@ -42,7 +42,7 @@
                             <circle cx="12" cy="12" r="8" class="imis-tr__track" stroke-width="1.5" />
                             <circle cx="12" cy="12" r="8" class="imis-tr__arc--red" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="50.265" stroke-dashoffset="15" />
                         </svg>
-                        <img src="/images/brand/CSC-IMIS.png" class="imis-tr__logo" alt="" draggable="false">
+                        <img src="{{ \App\Support\Branding\Branding::url('app_logo') }}" class="imis-tr__logo" alt="" draggable="false">
                     </div>
                     <div class="imis-tr__msg">Opening {{ $page['props']['application']['name'] ?? 'system' }}</div>
                     <div class="imis-tr__sub">Signing you in from IMIS</div>
@@ -61,7 +61,7 @@
         <div id="boot-preloader" class="imis-preloader" role="status" aria-live="polite" aria-busy="true" aria-label="IMIS is loading. Please wait.">
             <div class="imis-preloader__accent" aria-hidden="true"></div>
             <div class="imis-preloader__logo-wrap" aria-hidden="true">
-                <img src="/images/brand/CSC-IMIS.png" class="imis-preloader__logo" alt="" draggable="false">
+                <img src="{{ \App\Support\Branding\Branding::url('app_logo') }}" class="imis-preloader__logo" alt="" draggable="false">
             </div>
             <div aria-hidden="true">
                 <span class="imis-preloader__agency-main">Civil Service Commission</span>

@@ -47,7 +47,7 @@ class ScheduleMonitor
             $due = (new CronExpression($task->expression))->getPreviousRunDate(now($task->timezone), 0, true);
 
             return [
-                'name' => $this->name($task),
+                'name' => self::nameOf($task),
                 'expression' => $task->expression,
                 'due' => Carbon::instance($due),
                 'last_run' => $run ? Carbon::parse($run['at']) : null,
@@ -56,7 +56,8 @@ class ScheduleMonitor
         })->values()->all();
     }
 
-    private function name(Event $task): string
+    /** How a task is named everywhere: its description, else its artisan command. */
+    public static function nameOf(Event $task): string
     {
         if ($task->description) {
             return $task->description;

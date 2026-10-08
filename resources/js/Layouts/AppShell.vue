@@ -8,6 +8,7 @@ import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
 import { firstName, useSplash } from '../Composables/useSplash';
+import { useBranding } from '../Composables/useBranding';
 
 /**
  * Shared authenticated shell that PortalLayout and AdminLayout both wrap
@@ -37,6 +38,7 @@ const DEFAULT_OPEN = props.variant === 'admin';
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 const page = usePage();
+const brand = useBranding();
 // From System Settings (shared by HandleInertiaRequests).
 const portalNotice = computed(() => page.props.portal?.notice);
 const unread = computed(() => page.props.notifications?.unread ?? 0);
@@ -185,8 +187,8 @@ onBeforeUnmount(() => {
                 href="/dashboard"
                 class="flex items-center gap-2 rounded-md pr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-                <img src="/images/brand/csc-logo.png" alt="CSC" class="h-9 w-auto" />
-                <span class="hidden text-lg font-semibold text-primary sm:inline">CSC RO VIII</span>
+                <img :src="brand.logo" alt="CSC" class="h-9 w-auto" />
+                <span class="hidden text-lg font-semibold text-primary sm:inline">{{ brand.header_name }}</span>
             </Link>
 
             <div class="hidden flex-1 justify-center px-6 md:flex">

@@ -65,6 +65,10 @@ enum PermissionName: string
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
 
+    // Admin-3, Admin → Scheduled Tasks: pause, resume and run a task now.
+    // Seeing the list needs only `settings.view`.
+    case ScheduledTasksManage = 'scheduled_tasks.manage';
+
     // "What's New" release notes: view drafts, write them, and publish
     // (publishing is what makes a release pop up for everyone).
     case ChangelogsView = 'changelogs.view';
