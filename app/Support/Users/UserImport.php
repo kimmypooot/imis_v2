@@ -34,7 +34,7 @@ class UserImport
 
     public const MAX_ROWS = 500;
 
-    public const COLUMNS = ['first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'office', 'email', 'username', 'roles'];
+    public const COLUMNS = ['honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'office', 'email', 'username', 'roles'];
 
     private const CACHE_MINUTES = 30;
 
@@ -46,7 +46,7 @@ class UserImport
     public static function template(): string
     {
         return implode(',', self::COLUMNS)."\r\n"
-            ."Juan,Santos,Dela Cruz,,male,1990-05-14,Administrative Officer II,HRD,juan.delacruz@example.gov.ph,,Supervisor\r\n";
+            .",Juan,Santos,Dela Cruz,,male,1990-05-14,Administrative Officer II,HRD,juan.delacruz@example.gov.ph,,Supervisor\r\n";
     }
 
     /**
@@ -180,8 +180,15 @@ class UserImport
                 $errors[] = 'Role(s) not found or not allowed here: '.implode(', ', $unknown).'.';
             }
 
+            // "atty" → "Atty."; a title typed into the first name moves out of it.
+            [$titleInName, $firstName] = User::splitHonorific($row['first_name']);
+            $honorific = $row['honorific'] === ''
+                ? $titleInName
+                : (collect(User::HONORIFICS)->first(fn ($title) => strcasecmp(rtrim($title, '.'), rtrim($row['honorific'], '.')) === 0) ?? $row['honorific']);
+
             $profile = [
-                'first_name' => $row['first_name'],
+                'honorific' => $honorific,
+                'first_name' => $firstName,
                 'middle_name' => $row['middle_name'] ?: null,
                 'last_name' => $row['last_name'],
                 'name_extension' => $row['name_extension'] ?: null,
@@ -211,13 +218,13 @@ class UserImport
             return [
                 'line' => $row['_line'],
                 'input' => $row,
-                'name' => trim("{$row['first_name']} {$row['last_name']}"),
+                'name' => User::composeName($profile['first_name'], null, $row['last_name'], null, $profile['honorific']),
                 'email' => $profile['email'],
                 'office' => $office ? ($office->short_name ?: $office->name) : null,
                 'roles' => $roles->whereIn('id', $roleIds)->pluck('display_name')->values()->all(),
                 'username' => $row['username'] !== ''
                     ? Usernames::normalize($row['username'])
-                    : ($row['first_name'] !== '' && $row['last_name'] !== '' ? Usernames::generateFromParts($row['first_name'], $profile['middle_name'], $row['last_name']) : null),
+                    : ($profile['first_name'] !== '' && $row['last_name'] !== '' ? Usernames::generateFromParts($profile['first_name'], $profile['middle_name'], $row['last_name']) : null),
                 'username_generated' => $row['username'] === '',
                 'profile' => $profile,
                 'role_ids' => $roleIds,

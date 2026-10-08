@@ -187,6 +187,36 @@ class UsersTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Updated Name', 'username' => 'updatedname']);
     }
 
+    public function test_the_honorific_is_kept_apart_from_the_first_name(): void
+    {
+        Notification::fake();
+        $actor = $this->userWithPermission('users.create');
+
+        $this->actingAs($actor)->post('/users', [
+            'honorific' => 'Atty.', 'first_name' => 'Ana', 'middle_name' => 'Bello', 'last_name' => 'Reyes',
+            'email' => 'ana@example.test',
+        ])->assertSessionHasNoErrors();
+
+        $created = User::where('email', 'ana@example.test')->firstOrFail();
+        $this->assertSame(['Atty.', 'Ana', 'Atty. Ana B. Reyes', 'abreyes'], [$created->honorific, $created->first_name, $created->name, $created->username]);
+
+        // Removing the title takes it out of the display name.
+        $this->actingAs($this->userWithPermission('users.update'))->put("/users/{$created->id}", [
+            'honorific' => '', 'first_name' => 'Ana', 'middle_name' => 'Bello', 'last_name' => 'Reyes', 'username' => 'abreyes', 'email' => 'ana@example.test',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame([null, 'Ana B. Reyes'], [$created->fresh()->honorific, $created->fresh()->name]);
+    }
+
+    public function test_only_a_known_honorific_is_accepted(): void
+    {
+        $actor = $this->userWithPermission('users.create');
+
+        $this->actingAs($actor)->post('/users', [
+            'honorific' => 'Sir', 'first_name' => 'Ana', 'last_name' => 'Reyes', 'email' => 'ana@example.test',
+        ])->assertSessionHasErrors('honorific');
+    }
+
     public function test_unauthorized_user_cannot_change_status(): void
     {
         $actor = $this->userWithPermission('users.update');

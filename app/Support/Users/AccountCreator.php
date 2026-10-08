@@ -30,7 +30,7 @@ class AccountCreator
     ) {}
 
     /**
-     * @param  array<string, mixed>  $profile  first/middle/last name, name extension, sex, birthday, position, organizational_unit_id, office_designation, email
+     * @param  array<string, mixed>  $profile  honorific, first/middle/last name, name extension, sex, birthday, position, organizational_unit_id, office_designation, email
      * @param  array<int, int>  $roleIds
      * @param  array<string, mixed>  $auditExtra  added to the audit entry's metadata
      * @return array{user: User, office: array<string, int>}
@@ -40,7 +40,7 @@ class AccountCreator
         $user = DB::transaction(function () use ($profile, $username, $roleIds) {
             $user = User::create([
                 ...$profile,
-                'name' => User::composeName($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name'], $profile['name_extension'] ?? null),
+                'name' => User::composeName($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name'], $profile['name_extension'] ?? null, $profile['honorific'] ?? null),
                 // Left blank → generated the legacy way (initials + surname).
                 'username' => $username ?: Usernames::generateFromParts($profile['first_name'], $profile['middle_name'] ?? null, $profile['last_name']),
                 'password' => Str::random(40),

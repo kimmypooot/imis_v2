@@ -30,6 +30,7 @@ const props = defineProps({
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
     designationOptions: { type: Array, default: () => [] },
+    honorificOptions: { type: Array, default: () => [] },
     passwordRequirements: { type: Array, default: () => [] },
 });
 
@@ -43,6 +44,7 @@ const tabs = [
 ];
 
 const profileFields = (user) => ({
+    honorific: user?.honorific ?? '',
     first_name: user?.first_name ?? '',
     middle_name: user?.middle_name ?? '',
     name_extension: user?.name_extension ?? '',
@@ -198,6 +200,7 @@ const close = () => emit('close');
                                 :form="form"
                                 :office-options="officeOptions"
                                 :designation-options="designationOptions"
+                                :honorific-options="honorificOptions"
                                 :can-designate="user.can.designation"
                                 id-prefix="edit"
                             />

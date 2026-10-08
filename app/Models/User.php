@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
-    'name', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id',
+    'name', 'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id',
     'office_designation', 'username', 'email', 'password', 'status',
 ])]
 #[Hidden(['password', 'remember_token'])]
@@ -30,6 +30,12 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Titles shown in front of a name (honorific), never part of it.
+     * "Ma." is not here: it's short for Maria, a real given name.
+     */
+    public const HONORIFICS = ['Atty.', 'Dr.', 'Dra.', 'Engr.', 'Arch.', 'Hon.', 'Prof.'];
 
     /**
      * Get the attributes that should be cast.
@@ -56,13 +62,14 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Keeps the stored display name in step with the name parts, in the
      * legacy format: "First M. Last" (middle initial with a period), plus
-     * the name extension when there is one ("First M. Last Jr.").
+     * the name extension when there is one ("First M. Last Jr.") and the
+     * honorific in front ("Atty. First M. Last").
      */
     protected static function booted(): void
     {
         static::saving(function (User $user) {
-            if ($user->first_name !== null && $user->isDirty(['first_name', 'middle_name', 'last_name', 'name_extension'])) {
-                $user->name = self::composeName($user->first_name, $user->middle_name, $user->last_name, $user->name_extension);
+            if ($user->first_name !== null && $user->isDirty(['honorific', 'first_name', 'middle_name', 'last_name', 'name_extension'])) {
+                $user->name = self::composeName($user->first_name, $user->middle_name, $user->last_name, $user->name_extension, $user->honorific);
             }
 
             // Division Chief / Field Director belongs to the office: moving
@@ -109,11 +116,44 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PasswordHistory::class);
     }
 
-    public static function composeName(?string $first, ?string $middle, ?string $last, ?string $extension = null): string
+    public static function composeName(?string $first, ?string $middle, ?string $last, ?string $extension = null, ?string $honorific = null): string
     {
         $initial = filled($middle) ? mb_strtoupper(mb_substr(trim($middle), 0, 1)).'.' : null;
 
-        return collect([trim((string) $first), $initial, trim((string) $last), trim((string) $extension)])->filter()->implode(' ');
+        return collect([trim((string) $honorific), trim((string) $first), $initial, trim((string) $last), trim((string) $extension)])->filter()->implode(' ');
+    }
+
+    /**
+     * Separates a title typed in front of a first name ("Atty. Juan",
+     * "ATTY. Juan") into the honorific, in its standard spelling, and the
+     * first name. The period is required: "Hon" or "Arch" without one
+     * could be a given name. A first name without a title comes back
+     * unchanged.
+     *
+     * @return array{0: ?string, 1: string}
+     */
+    public static function splitHonorific(string $firstName): array
+    {
+        $firstName = trim($firstName);
+
+        foreach (self::HONORIFICS as $honorific) {
+            $pattern = '/^'.preg_quote($honorific, '/').'\s*(?=\S)/iu';
+
+            if (preg_match($pattern, $firstName, $match)) {
+                return [$honorific, trim(substr($firstName, strlen($match[0])))];
+            }
+        }
+
+        return [null, $firstName];
+    }
+
+    /**
+     * The legacy systems have no honorific field and show the first name
+     * as the person's name, so the title rides along there as before.
+     */
+    public function legacyFirstName(): ?string
+    {
+        return $this->first_name === null ? null : trim("{$this->honorific} {$this->first_name}");
     }
 
     /**

@@ -33,7 +33,7 @@ class LegacyBridge
 {
     /** Account fields the legacy side keeps; a change to any triggers a sync. */
     private const SYNCED_FIELDS = [
-        'first_name', 'middle_name', 'last_name', 'sex', 'birthday', 'position', 'organizational_unit_id',
+        'honorific', 'first_name', 'middle_name', 'last_name', 'sex', 'birthday', 'position', 'organizational_unit_id',
         'username', 'email', 'password', 'status',
     ];
 
@@ -147,7 +147,7 @@ class LegacyBridge
         $unit = $user->organizationalUnit;
 
         $row = [
-            'fname' => $user->first_name ?? $existing->fname ?? $user->name,
+            'fname' => $user->legacyFirstName() ?? $existing->fname ?? $user->name,
             'lname' => $user->last_name ?? $existing->lname ?? '',
             'mname' => $user->middle_name ?? $existing->mname ?? '',
             'minitial' => $user->middle_name !== null ? self::middleInitial($user->middle_name) : ($existing->minitial ?? ''),

@@ -17,6 +17,8 @@ const props = defineProps({
     // Division Chief / Field Director: the labels, and whether this viewer may set it.
     designationOptions: { type: Array, default: () => [] },
     canDesignate: { type: Boolean, default: false },
+    // Atty., Dr., … — shown in front of the name, never part of it.
+    honorificOptions: { type: Array, default: () => [] },
 });
 
 // The designation the chosen office takes (RSU → Division Chief, field/satellite → Field Director).
@@ -35,6 +37,8 @@ watch(officeDesignation, (designation) => {
     }
 });
 
+const honorifics = computed(() => [{ value: '', label: 'None' }, ...props.honorificOptions.map((title) => ({ value: title, label: title }))]);
+
 const sexOptions = [
     { value: '', label: 'Prefer not to say' },
     { value: 'male', label: 'Male' },
@@ -43,7 +47,10 @@ const sexOptions = [
 </script>
 
 <template>
-    <div class="grid gap-4 sm:grid-cols-[1fr_1fr_1fr_6rem]">
+    <div class="grid gap-4 sm:grid-cols-[6.5rem_1fr_1fr_1fr_6rem]">
+        <FormGroup :id="`${idPrefix}-honorific`" label="Title" :error="form.errors.honorific">
+            <Select :id="`${idPrefix}-honorific`" v-model="form.honorific" :options="honorifics" />
+        </FormGroup>
         <div>
             <TextInput :id="`${idPrefix}-first_name`" v-model="form.first_name" label="First name" required :invalid="!!form.errors.first_name" />
             <InputError :message="form.errors.first_name" />

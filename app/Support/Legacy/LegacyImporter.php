@@ -256,8 +256,12 @@ class LegacyImporter
                 ? trim($legacyUser->email)
                 : null;
 
+            // The legacy first name carries any title ("Atty. Juan"); here it's separate.
+            [$honorific, $firstName] = User::splitHonorific((string) $legacyUser->fname);
+
             $profile = [
-                'first_name' => $this->text($legacyUser->fname),
+                'honorific' => $honorific,
+                'first_name' => $this->text($firstName),
                 'middle_name' => $this->text($legacyUser->mname),
                 'last_name' => $this->text($legacyUser->lname),
                 'sex' => match ($legacyUser->sex) {

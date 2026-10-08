@@ -86,6 +86,27 @@ class UserImportTest extends TestCase
         $this->actingAs($admin)->post('/users/import', ['token' => $token])->assertSessionHas('error');
     }
 
+    public function test_a_title_in_the_first_name_or_honorific_column_becomes_the_honorific(): void
+    {
+        Notification::fake();
+        $admin = $this->admin();
+        $header = "First Name,Last Name,Email,Honorific\n";
+
+        $this->actingAs($admin)->post('/users/import/preview', ['file' => UploadedFile::fake()->createWithContent('people.csv',
+            $header."Atty. Ana,Reyes,ana@example.test,\nJuan,Cruz,juan@example.test,engr\nRosa,Lim,rosa@example.test,Sir\n")]);
+        $preview = session('import_preview');
+        $rows = collect($preview['rows'])->keyBy('line');
+
+        $this->assertSame(['Atty. Ana Reyes', 'areyes'], [$rows[2]['name'], $rows[2]['username']]);
+        $this->assertNotEmpty($rows[4]['errors']);
+
+        $this->actingAs($admin)->post('/users/import', ['token' => $preview['token']]);
+
+        $ana = User::query()->where('email', 'ana@example.test')->sole();
+        $this->assertSame(['Atty.', 'Ana'], [$ana->honorific, $ana->first_name]);
+        $this->assertSame('Engr. Juan Cruz', User::query()->where('email', 'juan@example.test')->value('name'));
+    }
+
     public function test_files_without_the_required_columns_are_refused(): void
     {
         $file = UploadedFile::fake()->createWithContent('people.csv', "name,email\nJuan,juan@example.test\n");

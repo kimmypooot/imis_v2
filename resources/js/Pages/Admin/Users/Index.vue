@@ -30,6 +30,7 @@ const props = defineProps({
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
     designationOptions: { type: Array, default: () => [] },
+    honorificOptions: { type: Array, default: () => [] },
     canDesignate: { type: Boolean, default: false },
     passwordRequirements: { type: Array, default: () => [] },
 });
@@ -175,6 +176,7 @@ const toggleStatus = async (user) => {
         :role-options="roleOptions"
         :office-options="officeOptions"
         :designation-options="designationOptions"
+        :honorific-options="honorificOptions"
         :can-designate="canDesignate"
         @close="adding = false"
     />
@@ -184,6 +186,7 @@ const toggleStatus = async (user) => {
         :role-options="roleOptions"
         :office-options="officeOptions"
         :designation-options="designationOptions"
+        :honorific-options="honorificOptions"
         :password-requirements="passwordRequirements"
         @close="editingId = null"
     />

@@ -68,7 +68,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users->map(fn (User $user) => [
-                ...$user->only(['id', 'name', 'first_name', 'middle_name', 'last_name', 'name_extension', 'username', 'email', 'sex', 'position', 'organizational_unit_id']),
+                ...$user->only(['id', 'name', 'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'username', 'email', 'sex', 'position', 'organizational_unit_id']),
                 'status' => $user->status->value,
                 'office_designation' => $user->office_designation?->value,
                 'designation_label' => $user->office_designation?->label(),
@@ -99,6 +99,7 @@ class UserController extends Controller
             'roleOptions' => $this->assignableRoles($request),
             'officeOptions' => $this->officeOptions(),
             'designationOptions' => OfficeDesignation::options(),
+            'honorificOptions' => User::HONORIFICS,
             'canDesignate' => $actor->hasPermission(PermissionName::ApplicationsManageAccess->value),
             'passwordRequirements' => SecurityPolicy::passwordRequirements(),
         ]);
@@ -114,7 +115,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request, ProfilePhotos $photos, AccountCreator $accounts): RedirectResponse
     {
         $profile = $request->safe()->only([
-            'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'office_designation', 'email',
+            'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'office_designation', 'email',
         ]);
 
         ['user' => $user, 'office' => $office] = $accounts->create($profile, $request->validated('username'), $request->validated('role_ids') ?? []);

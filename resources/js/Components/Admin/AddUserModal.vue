@@ -20,6 +20,7 @@ const props = defineProps({
     roleOptions: { type: Array, required: true },
     officeOptions: { type: Array, required: true },
     designationOptions: { type: Array, default: () => [] },
+    honorificOptions: { type: Array, default: () => [] },
     canDesignate: { type: Boolean, default: false },
 });
 
@@ -27,6 +28,7 @@ const emit = defineEmits(['close']);
 
 const blank = () => ({
     office_designation: '',
+    honorific: '',
     first_name: '',
     middle_name: '',
     name_extension: '',
@@ -90,6 +92,7 @@ const submit = () => {
                 :form="form"
                 :office-options="officeOptions"
                 :designation-options="designationOptions"
+                :honorific-options="honorificOptions"
                 :can-designate="canDesignate"
                 id-prefix="add"
             />

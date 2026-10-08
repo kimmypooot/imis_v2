@@ -68,6 +68,13 @@ class LegacyBridgeTest extends TestCase
         $this->assertTrue(password_verify('password', $row->password));
     }
 
+    public function test_the_legacy_first_name_carries_the_honorific(): void
+    {
+        User::factory()->create(['honorific' => 'Atty.', 'first_name' => 'Juan', 'last_name' => 'Cruz']);
+
+        $this->assertSame('Atty. Juan', $this->legacy->table('users_cscro8')->sole()->fname);
+    }
+
     public function test_an_existing_legacy_account_is_matched_and_keeps_what_imis_lacks(): void
     {
         $this->legacyUser(['id' => 7, 'username' => 'jdcruz', 'email' => 'old@example.test', 'type' => 'hrd', 'role' => 'admin']);

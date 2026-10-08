@@ -23,6 +23,7 @@ trait ProfileRules
     private function profileRules(): array
     {
         return [
+            'honorific' => ['nullable', Rule::in(User::HONORIFICS)],
             'first_name' => ['required', 'string', 'max:64'],
             'middle_name' => ['nullable', 'string', 'max:64'],
             'last_name' => ['required', 'string', 'max:64'],

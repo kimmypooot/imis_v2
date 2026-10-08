@@ -120,7 +120,7 @@ class LegacySso
         return [
             'id' => $user->id,
             'username' => $user->username,
-            'fname' => (string) ($user->first_name ?? $user->name),
+            'fname' => (string) ($user->legacyFirstName() ?? $user->name),
             'lname' => (string) $user->last_name,
             'mname' => (string) $user->middle_name,
             'email' => (string) $user->email,
@@ -182,7 +182,7 @@ class LegacySso
         return [
             'id' => (int) $user->legacy_id,
             'username' => $user->username,
-            'fname' => (string) ($user->first_name ?? $user->name),
+            'fname' => (string) ($user->legacyFirstName() ?? $user->name),
             'lname' => (string) $user->last_name,
             'mname' => (string) $user->middle_name,
             'minitial' => LegacyBridge::middleInitial($user->middle_name),
