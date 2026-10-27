@@ -31,6 +31,8 @@ const props = defineProps({
     officeOptions: { type: Array, required: true },
     designationOptions: { type: Array, default: () => [] },
     honorificOptions: { type: Array, default: () => [] },
+    plantillaItemOptions: { type: Array, default: () => [] },
+    canAppoint: { type: Boolean, default: false },
     canDesignate: { type: Boolean, default: false },
     passwordRequirements: { type: Array, default: () => [] },
 });
@@ -177,6 +179,8 @@ const toggleStatus = async (user) => {
         :office-options="officeOptions"
         :designation-options="designationOptions"
         :honorific-options="honorificOptions"
+        :plantilla-item-options="plantillaItemOptions"
+        :can-appoint="canAppoint"
         :can-designate="canDesignate"
         @close="adding = false"
     />
@@ -187,6 +191,8 @@ const toggleStatus = async (user) => {
         :office-options="officeOptions"
         :designation-options="designationOptions"
         :honorific-options="honorificOptions"
+        :plantilla-item-options="plantillaItemOptions"
+        :can-appoint="canAppoint"
         :password-requirements="passwordRequirements"
         @close="editingId = null"
     />

@@ -6,6 +6,7 @@ use App\Enums\OfficeDesignation;
 use App\Enums\PermissionName;
 use App\Enums\UserStatus;
 use App\Models\OrganizationalUnit;
+use App\Models\PlantillaItem;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -34,6 +35,36 @@ trait ProfileRules
             'organizational_unit_id' => ['nullable', 'integer', 'exists:organizational_units,id'],
             'office_designation' => ['nullable', Rule::enum(OfficeDesignation::class)],
         ];
+    }
+
+    /**
+     * The position is a plantilla item, so changing it is an appointment
+     * step: it needs plantilla.manage and a vacant, active item.
+     *
+     * @return array<int, mixed>
+     */
+    private function plantillaItemRules(): array
+    {
+        return ['nullable', 'integer', Rule::exists('plantilla_items', 'id')->whereNull('abolished_at')];
+    }
+
+    private function validatePlantillaItem(Validator $validator, ?User $target): void
+    {
+        $itemId = (int) $this->input('plantilla_item_id');
+        if (! $itemId || $validator->errors()->has('plantilla_item_id')) {
+            return;
+        }
+
+        $current = $target?->employee?->plantillaAppointments()->whereNull('date_to')->value('plantilla_item_id');
+        if ($itemId === $current) {
+            return;
+        }
+
+        if (! $this->user()->hasPermission(PermissionName::PlantillaManage->value)) {
+            $validator->errors()->add('plantilla_item_id', 'You may not change the position: it is a plantilla appointment.');
+        } elseif (PlantillaItem::query()->whereKey($itemId)->whereHas('incumbency')->exists()) {
+            $validator->errors()->add('plantilla_item_id', 'That item is already filled.');
+        }
     }
 
     /**

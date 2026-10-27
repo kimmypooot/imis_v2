@@ -27,6 +27,7 @@ class StoreUserRequest extends FormRequest
     {
         return [
             ...$this->profileRules(),
+            'plantilla_item_id' => $this->plantillaItemRules(),
             'profile_photo' => ['nullable', ...$this->photoRules()],
             // Optional: generated from the name parts (legacy convention) when left blank.
             'username' => ['nullable', ...$this->usernameRules()],
@@ -54,6 +55,7 @@ class StoreUserRequest extends FormRequest
             }
 
             $this->validateDesignation($validator, null);
+            $this->validatePlantillaItem($validator, null);
         });
     }
 }

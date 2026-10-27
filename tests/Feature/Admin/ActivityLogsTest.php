@@ -105,7 +105,7 @@ class ActivityLogsTest extends TestCase
         $this->actingAs($user)->get("/applications/{$application->id}/launch")
             ->assertOk()
             ->assertSee('data-instant', false)
-            ->assertSee('Opening Test System')
+            ->assertSee('Opening</span> Test System', false)
             ->assertDontSee('imis-preloader__logo-wrap', false);
 
         // Any other page keeps the boot preloader.

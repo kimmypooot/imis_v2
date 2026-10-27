@@ -178,6 +178,44 @@ class Plantilla
     }
 
     /**
+     * Links someone to a vacant item picked on the user form, before HR has
+     * the details. Their current period (if any) ends today; the new one
+     * has only the item, so it stays incomplete (and off the Service
+     * Record) until HR completes it. The account position follows the item.
+     */
+    public function linkToItem(Employee $employee, PlantillaItem $item, User $actor): ?PlantillaAppointment
+    {
+        $current = $employee->plantillaAppointments()->whereNull('date_to')->first();
+
+        if ($current?->plantilla_item_id === $item->id) {
+            return null;
+        }
+        if ($item->isAbolished() || $item->incumbency()->exists()) {
+            throw ValidationException::withMessages(['plantilla_item_id' => 'That item is not vacant.']);
+        }
+
+        return DB::transaction(function () use ($employee, $item, $actor, $current) {
+            $current?->forceFill([
+                'date_to' => $current->date_from && $current->date_from->gt(today()) ? $current->date_from : today(),
+                'end_reason' => "Reassigned to {$item->reference}",
+            ])->save();
+
+            $status = in_array($employee->employment_status, EmploymentStatus::onPlantilla(), true) ? $employee->employment_status : null;
+
+            $appointment = new PlantillaAppointment(['status' => $status]);
+            $appointment->forceFill([
+                'plantilla_item_id' => $item->id,
+                'employee_id' => $employee->id,
+                'recorded_by' => $actor->id,
+            ])->save();
+
+            $this->followHolder($appointment);
+
+            return $appointment;
+        });
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function appointmentRules(bool $choosingEmployee = true): array

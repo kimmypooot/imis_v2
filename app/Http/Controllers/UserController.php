@@ -17,8 +17,11 @@ use App\Http\Requests\User\UpdateUserStatusRequest;
 use App\Models\Application;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
+use App\Models\PlantillaAppointment;
+use App\Models\PlantillaItem;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\HR\Plantilla\Plantilla;
 use App\Support\Legacy\LegacyBridge;
 use App\Support\ProfilePhotos;
 use App\Support\Security\AccountLifecycle;
@@ -27,6 +30,7 @@ use App\Support\SystemAccess\OfficeAdminAccess;
 use App\Support\Users\AccountCreator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -66,9 +70,15 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
+        // The item each person holds now, keyed by their account.
+        $heldItems = PlantillaAppointment::query()->whereNull('plantilla_appointments.date_to')
+            ->join('employees', 'employees.id', '=', 'plantilla_appointments.employee_id')
+            ->pluck('plantilla_appointments.plantilla_item_id', 'employees.user_id');
+
         return Inertia::render('Admin/Users/Index', [
             'users' => $users->map(fn (User $user) => [
                 ...$user->only(['id', 'name', 'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'username', 'email', 'sex', 'position', 'organizational_unit_id']),
+                'plantilla_item_id' => $heldItems[$user->id] ?? null,
                 'status' => $user->status->value,
                 'office_designation' => $user->office_designation?->value,
                 'designation_label' => $user->office_designation?->label(),
@@ -100,6 +110,8 @@ class UserController extends Controller
             'officeOptions' => $this->officeOptions(),
             'designationOptions' => OfficeDesignation::options(),
             'honorificOptions' => User::HONORIFICS,
+            'plantillaItemOptions' => $this->plantillaItemOptions($heldItems->values()),
+            'canAppoint' => $actor->hasPermission(PermissionName::PlantillaManage->value),
             'canDesignate' => $actor->hasPermission(PermissionName::ApplicationsManageAccess->value),
             'passwordRequirements' => SecurityPolicy::passwordRequirements(),
         ]);
@@ -112,13 +124,14 @@ class UserController extends Controller
      * password. (The legacy system set it to the user's birthday; that is
      * deliberately not carried over.)
      */
-    public function store(StoreUserRequest $request, ProfilePhotos $photos, AccountCreator $accounts): RedirectResponse
+    public function store(StoreUserRequest $request, ProfilePhotos $photos, AccountCreator $accounts, Plantilla $plantilla): RedirectResponse
     {
         $profile = $request->safe()->only([
-            'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id', 'office_designation', 'email',
+            'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'organizational_unit_id', 'office_designation', 'email',
         ]);
 
         ['user' => $user, 'office' => $office] = $accounts->create($profile, $request->validated('username'), $request->validated('role_ids') ?? []);
+        $this->linkPlantillaItem($request, $user, $plantilla);
 
         if ($request->hasFile('profile_photo')) {
             $user->forceFill(['profile_photo_path' => $photos->store($request->file('profile_photo'))])->save();
@@ -186,14 +199,15 @@ class UserController extends Controller
             ->all();
     }
 
-    public function update(UpdateUserRequest $request, User $user, OfficeAdminAccess $offices): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user, OfficeAdminAccess $offices, Plantilla $plantilla): RedirectResponse
     {
-        $user->fill($request->validated());
+        $user->fill(Arr::except($request->validated(), ['plantilla_item_id', 'position']));
         // Moved to an office the designation doesn't fit: it lapses.
         if ($user->office_designation && ! $offices->designationFits($user->office_designation, $user->organizationalUnit()->first())) {
             $user->office_designation = null;
         }
         $user->save();
+        $this->linkPlantillaItem($request, $user, $plantilla);
 
         $this->audit()->recordChanges(AuditEvent::UserUpdated, "Updated user {$user->name}", $user);
         $admin = $this->syncOfficeAdmin($user);
@@ -346,6 +360,39 @@ class UserController extends Controller
             ->filter(fn (array $group) => $group['options'] !== [])
             ->values()
             ->all();
+    }
+
+    /**
+     * Active plantilla items for the Position select, flagged vacant unless
+     * someone holds them now (the form offers vacant ones and the user's own).
+     *
+     * @param  Collection<int, int>  $held
+     * @return array<int, array<string, mixed>>
+     */
+    private function plantillaItemOptions(Collection $held): array
+    {
+        return PlantillaItem::query()->active()->with('organizationalUnit:id,name,short_name')
+            ->orderBy('position_title')->orderBy('item_number')->get()
+            ->map(fn (PlantillaItem $item) => [
+                'value' => $item->id,
+                'label' => ($item->item_number ?: 'No item no.').' — '.$item->position_title
+                    .($item->organizationalUnit ? ' ('.($item->organizationalUnit->short_name ?: $item->organizationalUnit->name).')' : ''),
+                'vacant' => ! $held->contains($item->id),
+            ])->all();
+    }
+
+    /**
+     * A position picked on the form is a plantilla item: the person is
+     * linked to it, incomplete until HR adds the step, nature and date.
+     */
+    private function linkPlantillaItem(Request $request, User $user, Plantilla $plantilla): void
+    {
+        $itemId = $request->integer('plantilla_item_id');
+        $employee = $user->employee;
+
+        if ($itemId && $employee && $plantilla->linkToItem($employee, PlantillaItem::query()->findOrFail($itemId), $request->user())) {
+            $this->audit()->record(AuditEvent::UserUpdated, "Linked {$user->name} to plantilla item #{$itemId} from the user form", $user);
+        }
     }
 
     /**

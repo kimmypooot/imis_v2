@@ -44,7 +44,7 @@
                         </svg>
                         <img src="{{ \App\Support\Branding\Branding::url('app_logo') }}" class="imis-tr__logo" alt="" draggable="false">
                     </div>
-                    <div class="imis-tr__msg">Opening {{ $page['props']['application']['name'] ?? 'system' }}</div>
+                    <div class="imis-tr__msg"><span class="imis-tr__lead">Opening</span> {{ $page['props']['application']['name'] ?? 'system' }}</div>
                     <div class="imis-tr__sub">Signing you in from IMIS</div>
                     <div class="imis-tr__note">
                         Not moving?

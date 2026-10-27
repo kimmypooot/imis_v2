@@ -69,7 +69,7 @@ const rings = [
                 <img :src="brand.app_logo" alt="" class="imis-tr__logo" draggable="false" />
             </div>
 
-            <div class="imis-tr__msg">Opening {{ application.name }}</div>
+            <div class="imis-tr__msg"><span class="imis-tr__lead">Opening</span> {{ application.name }}</div>
             <div class="imis-tr__sub">Signing you in from IMIS</div>
             <div class="imis-tr__note">
                 Not moving?

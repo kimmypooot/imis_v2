@@ -5,8 +5,10 @@ namespace Tests\Feature\Admin;
 use App\Enums\RoleName;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
+use App\Models\PlantillaItem;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\HR\EmployeeRecords;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -27,12 +29,14 @@ class UserProfileTest extends TestCase
         Notification::fake();
         $office = OrganizationalUnit::factory()->create(['name' => 'Examination Services Division']);
 
-        $this->actingAs($this->userWith('users.create'))->post('/users', [
+        $item = PlantillaItem::query()->create(['item_number' => 'T-1', 'position_title' => 'Human Resource Specialist II', 'salary_grade' => 16]);
+
+        $this->actingAs($this->userWith('users.create', 'plantilla.manage'))->post('/users', [
             'first_name' => 'Juan',
             'middle_name' => 'Santos',
             'last_name' => 'Dela Cruz',
             'email' => 'juan@example.test',
-            'position' => 'Human Resource Specialist II',
+            'plantilla_item_id' => $item->id,
             'sex' => 'male',
             'birthday' => '1990-05-17',
             'organizational_unit_id' => $office->id,
@@ -45,6 +49,20 @@ class UserProfileTest extends TestCase
             'position' => 'Human Resource Specialist II',
             'organizational_unit_id' => $office->id,
         ]);
+    }
+
+    public function test_picking_a_position_links_the_plantilla_item_and_needs_permission(): void
+    {
+        $item = PlantillaItem::query()->create(['item_number' => 'T-2', 'position_title' => 'Administrative Officer IV', 'salary_grade' => 15]);
+        $target = User::factory()->create();
+        $employee = app(EmployeeRecords::class)->setUp($target, how: 'test');
+        $base = ['first_name' => 'A', 'last_name' => 'B', 'username' => $target->username, 'email' => $target->email, 'plantilla_item_id' => $item->id];
+
+        $this->actingAs($this->userWith('users.update'))->put("/users/{$target->id}", $base)->assertSessionHasErrors('plantilla_item_id');
+
+        $this->actingAs($this->userWith('users.update', 'plantilla.manage'))->put("/users/{$target->id}", $base)->assertSessionHasNoErrors();
+        $this->assertSame($item->id, $employee->plantillaAppointments()->whereNull('date_to')->value('plantilla_item_id'));
+        $this->assertSame('Administrative Officer IV', $target->fresh()->position);
     }
 
     public function test_editing_name_parts_keeps_the_display_name_in_sync(): void
@@ -145,13 +163,15 @@ class UserProfileTest extends TestCase
             ->where('users', fn ($users) => collect($users)->firstWhere('name', 'Protected Admin')['can']['update'] === false));
     }
 
-    private function userWith(string $permission): User
+    private function userWith(string ...$permissions): User
     {
-        $user = User::factory()->create();
         $role = Role::factory()->create();
-        $role->permissions()->attach(
-            Permission::query()->firstOrCreate(['name' => $permission], ['display_name' => $permission]),
-        );
+        $user = User::factory()->create();
+        foreach ($permissions as $permission) {
+            $role->permissions()->attach(
+                Permission::query()->firstOrCreate(['name' => $permission], ['display_name' => $permission]),
+            );
+        }
         $user->roles()->attach($role);
 
         return $user;

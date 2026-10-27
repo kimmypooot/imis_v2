@@ -25,6 +25,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             ...$this->profileRules(),
+            'plantilla_item_id' => $this->plantillaItemRules(),
             'username' => ['required', ...$this->usernameRules($this->route('user'))],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('user'))],
         ];
@@ -32,6 +33,9 @@ class UpdateUserRequest extends FormRequest
 
     public function withValidator(Validator $validator): void
     {
-        $validator->after(fn (Validator $validator) => $this->validateDesignation($validator, $this->route('user')));
+        $validator->after(function (Validator $validator) {
+            $this->validateDesignation($validator, $this->route('user'));
+            $this->validatePlantillaItem($validator, $this->route('user'));
+        });
     }
 }

@@ -19,6 +19,8 @@ const props = defineProps({
     canDesignate: { type: Boolean, default: false },
     // Atty., Dr., … — shown in front of the name, never part of it.
     honorificOptions: { type: Array, default: () => [] },
+    plantillaItemOptions: { type: Array, default: () => [] },
+    canAppoint: { type: Boolean, default: false },
 });
 
 // The designation the chosen office takes (RSU → Division Chief, field/satellite → Field Director).
@@ -38,6 +40,21 @@ watch(officeDesignation, (designation) => {
 });
 
 const honorifics = computed(() => [{ value: '', label: 'None' }, ...props.honorificOptions.map((title) => ({ value: title, label: title }))]);
+
+// Vacant items, plus the one this person holds now.
+const itemOptions = computed(() => [
+    { value: '', label: '— Not set —' },
+    ...props.plantillaItemOptions
+        .filter((item) => item.vacant || item.value === props.form.plantilla_item_id)
+        .map(({ value, label }) => ({ value, label })),
+]);
+
+const positionHelp = computed(() => {
+    if (!props.canAppoint) return 'Changing the position is a plantilla appointment (needs plantilla.manage).';
+    if (!props.form.plantilla_item_id && props.form.position) return `Current title "${props.form.position}" is not linked to an item. Pick one to link it.`;
+
+    return 'Picking another item ends the current one today; HR completes the step, nature and date.';
+});
 
 const sexOptions = [
     { value: '', label: 'Prefer not to say' },
@@ -74,10 +91,14 @@ const sexOptions = [
             <TextInput :id="`${idPrefix}-email`" v-model="form.email" type="email" label="Email" required :invalid="!!form.errors.email" />
             <InputError :message="form.errors.email" />
         </div>
-        <div>
-            <TextInput :id="`${idPrefix}-position`" v-model="form.position" label="Position" :invalid="!!form.errors.position" />
-            <InputError :message="form.errors.position" />
-        </div>
+        <FormGroup
+            :id="`${idPrefix}-position`"
+            label="Position (plantilla item)"
+            :error="form.errors.plantilla_item_id"
+            :helper-text="positionHelp"
+        >
+            <Select :id="`${idPrefix}-position`" v-model="form.plantilla_item_id" :options="itemOptions" :disabled="!canAppoint" />
+        </FormGroup>
         <FormGroup :id="`${idPrefix}-sex`" label="Sex" :error="form.errors.sex">
             <Select :id="`${idPrefix}-sex`" v-model="form.sex" :options="sexOptions" />
         </FormGroup>

@@ -416,6 +416,15 @@
         color: var(--color-text);
     }
 
+    /* The small lead-in above a name, e.g. "Opening" over the system's name. */
+    .imis-tr__lead {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        color: var(--color-text-muted);
+    }
+
     .imis-tr__sub {
         margin-top: 0.5rem;
         font-size: 0.875rem;

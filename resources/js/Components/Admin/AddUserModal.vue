@@ -21,6 +21,8 @@ const props = defineProps({
     officeOptions: { type: Array, required: true },
     designationOptions: { type: Array, default: () => [] },
     honorificOptions: { type: Array, default: () => [] },
+    plantillaItemOptions: { type: Array, default: () => [] },
+    canAppoint: { type: Boolean, default: false },
     canDesignate: { type: Boolean, default: false },
 });
 
@@ -35,6 +37,7 @@ const blank = () => ({
     last_name: '',
     email: '',
     position: '',
+    plantilla_item_id: '',
     sex: '',
     birthday: '',
     organizational_unit_id: '',
@@ -67,6 +70,7 @@ const submit = () => {
     form.transform((data) => ({
         ...data,
         organizational_unit_id: data.organizational_unit_id || null,
+        plantilla_item_id: data.plantilla_item_id || null,
         office_designation: data.office_designation || null,
         sex: data.sex || null,
         birthday: data.birthday || null,
@@ -93,6 +97,8 @@ const submit = () => {
                 :office-options="officeOptions"
                 :designation-options="designationOptions"
                 :honorific-options="honorificOptions"
+                :plantilla-item-options="plantillaItemOptions"
+                :can-appoint="canAppoint"
                 :can-designate="canDesignate"
                 id-prefix="add"
             />
