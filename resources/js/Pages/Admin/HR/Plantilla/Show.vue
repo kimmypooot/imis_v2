@@ -56,13 +56,13 @@ const open = (next, row = null) => {
     target.value = row;
     const today = new Date().toISOString().slice(0, 10);
     const values = {
-        appoint: { employee_id: '', step: 1, status: 'permanent', nature: 'original', date_from: '', remarks: '' },
-        step: { step: Math.min(8, (row?.step ?? 1) + 1), date_from: '', remarks: '' },
+        appoint: { employee_id: '', step: 1, status: 'permanent', nature: 'original', date_from: '', salary_override: '', remarks: '' },
+        step: { step: Math.min(8, (row?.step ?? 1) + 1), date_from: '', salary_override: '', remarks: '' },
         vacate: { date_to: '', end_reason: '' },
         correct: row && {
             // An incomplete link has blanks; HR fills them in here.
             step: row.step ?? '', status: row.status ?? '', nature: row.nature ?? '', date_from: row.date_from ?? '',
-            date_to: row.date_to ?? '', end_reason: row.end_reason ?? '', remarks: row.remarks ?? '',
+            date_to: row.date_to ?? '', end_reason: row.end_reason ?? '', salary_override: row.salary_override ?? '', remarks: row.remarks ?? '',
         },
         abolish: { abolished_on: today, abolition_authority: '' },
     }[next];
@@ -197,7 +197,7 @@ const field = 'mt-1 block w-full';
                                 <span class="whitespace-nowrap">{{ period(row) }}</span>
                                 <div v-if="row.end_reason" class="text-xs text-text-muted">{{ row.end_reason }}</div>
                             </td>
-                            <td class="py-2 pr-4 text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}</td>
+                            <td class="py-2 pr-4 text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}<span v-if="row.salary_override !== null" class="block text-xs text-text-muted">Override</span></td>
                             <td v-if="canManage" class="py-2 align-top">
                                 <div v-if="row.can_manage" class="flex flex-wrap justify-end gap-3 whitespace-nowrap">
                                     <button v-if="row.current && !row.missing.length && row.step < 8" type="button" class="text-success hover:underline" @click="open('step', row)">Step increment</button>
@@ -267,6 +267,11 @@ const field = 'mt-1 block w-full';
                 <div>
                     <TextInput id="action-from" v-model="form.date_from" type="date" :label="mode === 'correct' ? 'From' : 'Effective date'" required :invalid="!!form.errors.date_from" />
                     <InputError :message="form.errors.date_from" />
+                </div>
+                <div class="sm:col-span-2">
+                    <TextInput id="action-salary-override" v-model="form.salary_override" type="number" step="0.01" min="0" label="Monthly salary override (optional)" :invalid="!!form.errors.salary_override" />
+                    <p class="mt-1 text-xs text-text-muted">Leave blank to follow the salary schedule. Set it when the schedule has no amount for this grade and step, or an agreed rate applies. Payroll and the Service Record use it.</p>
+                    <InputError :message="form.errors.salary_override" />
                 </div>
             </template>
 

@@ -43,6 +43,9 @@ Schedule::command('imis:executive-digest')->weeklyOn(1, '07:00')->timezone('Asia
 // when System Settings → Security says so, accounts unused for too long.
 Schedule::command('imis:account-lifecycle')->dailyAt('00:30')->timezone('Asia/Manila')->withoutOverlapping();
 
+// HR-8: employees hear when a recurring deduction is nearly completed.
+Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/Manila')->withoutOverlapping();
+
 // Admin-3: a task paused on Admin → Scheduled Tasks is skipped until it
 // is resumed. Keep this last, so it covers every task above.
 foreach (Schedule::events() as $task) {

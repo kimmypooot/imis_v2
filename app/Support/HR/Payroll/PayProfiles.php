@@ -2,6 +2,7 @@
 
 namespace App\Support\HR\Payroll;
 
+use App\Enums\PayCategory;
 use App\Enums\PayComponentKind;
 use App\Enums\PayComputation;
 use App\Models\Employee;
@@ -35,6 +36,7 @@ class PayProfiles
             'code' => ['required', 'string', 'max:30', 'alpha_dash', Rule::unique('pay_components', 'code')->ignore($ignore)],
             'name' => ['required', 'string', 'max:120'],
             'kind' => ['required', new Enum(PayComponentKind::class)],
+            'category' => ['nullable', new Enum(PayCategory::class)],
             'method' => ['required', new Enum(PayComputation::class)],
             'amount' => ['nullable', 'numeric', 'min:0', 'max:9999999', 'required_if:method,fixed'],
             'rate' => ['nullable', 'numeric', 'gt:0', 'max:100', 'required_if:method,percent'],
@@ -60,6 +62,7 @@ class PayProfiles
             'code' => mb_strtoupper($data['code']),
             'name' => $data['name'],
             'kind' => $kind,
+            'category' => $data['category'] ?? PayCategory::defaultFor($kind)->value,
             'method' => $method,
             // Only what the method uses is kept.
             'amount' => $method === PayComputation::Fixed ? $data['amount'] : null,
@@ -178,7 +181,17 @@ class PayProfiles
 
     public function resumeLoan(EmployeeLoan $loan): void
     {
+        if ($loan->cancelled_on) {
+            throw ValidationException::withMessages(['loan' => 'A cancelled loan cannot be resumed; add a new one.']);
+        }
+
         $loan->forceFill(['stopped_on' => null])->save();
+    }
+
+    /** Ends the loan for good: no more deductions, history kept. */
+    public function cancelLoan(EmployeeLoan $loan, string $date): void
+    {
+        $loan->forceFill(['stopped_on' => $date, 'cancelled_on' => $date])->save();
     }
 
     public function deleteLoan(EmployeeLoan $loan): void
@@ -201,6 +214,8 @@ class PayProfiles
             'name' => $component->name,
             'kind' => $component->kind->value,
             'kind_label' => $component->kind->label(),
+            'category' => $component->category?->value,
+            'category_label' => $component->category?->label(),
             'method' => $component->method->value,
             'method_label' => $component->method->label(),
             'amount' => $component->amount !== null ? (float) $component->amount : null,

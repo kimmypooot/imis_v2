@@ -8,6 +8,7 @@ use App\Http\Controllers\ApplicationLaunchController;
 use App\Http\Controllers\EmployeeDocumentFileController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\ExecutiveSettingsController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\My201FileController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\MyLearningDevelopmentController;
 use App\Http\Controllers\MyLeaveApplicationController;
 use App\Http\Controllers\MyLeaveController;
 use App\Http\Controllers\MyMonetizationController;
+use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
 use App\Http\Controllers\MyRecordAccessController;
@@ -44,6 +46,11 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard', [PortalController::class, 'index'])->name('dashboard');
 
     Route::get('search', [PortalSearchController::class, 'index'])->name('search');
+
+    // Feedback, suggestions and recommendations: anyone signed in may send
+    // one (from the account-menu dialog) and read the replies to their own.
+    Route::get('my/feedback', [FeedbackController::class, 'index'])->name('my.feedback');
+    Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,1')->name('feedback.store');
 
     Route::get('whats-new', [WhatsNewController::class, 'index'])->name('whats-new');
     Route::post('whats-new/seen', [WhatsNewController::class, 'seen'])->name('whats-new.seen');
@@ -120,6 +127,7 @@ Route::middleware('auth')->group(function () {
     // HR-8: your payslips (requested, then approved by the head of HRD),
     // the head of HRD's approvals, and one printable payslip (yours once
     // approved, or anyone's for payroll staff — PayrollRunPolicy).
+    Route::get('my/earnings', [MyEarningsController::class, 'show'])->name('my.earnings');
     Route::get('my/payslips', [MyPayslipController::class, 'index'])->name('my.payslips');
     Route::post('my/payslips', [MyPayslipController::class, 'store'])->middleware('throttle:10,1')->name('my.payslips.store');
     Route::post('my/payslips/{payslipRequest}/cancel', [MyPayslipController::class, 'cancel'])->name('my.payslips.cancel');
@@ -129,6 +137,7 @@ Route::middleware('auth')->group(function () {
 
     // Your notifications (the top-bar bell).
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('notifications/{id}', [NotificationController::class, 'open'])->name('notifications.open');
 

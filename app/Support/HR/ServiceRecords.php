@@ -65,7 +65,7 @@ class ServiceRecords
                 $from = Carbon::parse($start);
                 $last = $index === $starts->count() - 1;
                 $to = $last ? $period->date_to : Carbon::parse($starts[$index + 1])->subDay();
-                $monthly = $this->schedules->monthlySalary($period->item->salary_grade, $period->step, $from);
+                $monthly = $this->schedules->salaryOf($period, $from);
                 $lwop = (float) $withoutPay
                     ->filter(fn (LeaveApplication $leave) => $leave->date_from->gte($from) && $leave->date_from->lte($to ?? today()))
                     ->sum('days_without_pay');

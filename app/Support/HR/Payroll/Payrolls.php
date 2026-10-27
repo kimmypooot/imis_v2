@@ -2,9 +2,11 @@
 
 namespace App\Support\HR\Payroll;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\PayComponentKind;
 use App\Enums\PayComputation;
 use App\Enums\PayrollRunStatus;
+use App\Enums\PayslipRequestStatus;
 use App\Models\Employee;
 use App\Models\EmployeeLoan;
 use App\Models\EmployeePayItem;
@@ -12,6 +14,7 @@ use App\Models\PayComponent;
 use App\Models\PayrollEntry;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
+use App\Models\PayslipRequest;
 use App\Models\PlantillaAppointment;
 use App\Models\User;
 use App\Support\HR\Plantilla\SalarySchedules;
@@ -99,8 +102,11 @@ class Payrolls
             $eligible = $this->eligible($run->month());
             $run->entries()->whereNotIn('employee_id', $eligible->keys())->delete();
 
+            $cancelled = $run->entries()->whereNotNull('cancelled_at')->pluck('employee_id')->all();
             foreach ($eligible as $employeeId => $period) {
-                $this->build($run, $period);
+                if (! in_array($employeeId, $cancelled, true)) {
+                    $this->build($run, $period);
+                }
             }
         });
     }
@@ -109,6 +115,7 @@ class Payrolls
     public function regenerateEntry(PayrollEntry $entry): void
     {
         $this->ensureDraft($entry->run);
+        $this->ensureNotCancelled($entry);
 
         $period = $this->eligible($entry->run->month())->get($entry->employee_id);
         if (! $period) {
@@ -155,24 +162,29 @@ class Payrolls
             'pay_component_id' => ['nullable', 'integer', 'exists:pay_components,id'],
             'label' => ['required_without:pay_component_id', 'nullable', 'string', 'max:120'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 
     /**
      * @param  array<string, mixed>  $data  validated
      */
-    public function addLine(PayrollEntry $entry, array $data): PayrollLine
+    public function addLine(PayrollEntry $entry, array $data, User $actor): PayrollLine
     {
         $this->ensureDraft($entry->run);
+        $this->ensureNotCancelled($entry);
         $component = isset($data['pay_component_id']) ? PayComponent::query()->find($data['pay_component_id']) : null;
 
-        return DB::transaction(function () use ($entry, $data, $component) {
+        return DB::transaction(function () use ($entry, $data, $component, $actor) {
             $line = $entry->lines()->create([
                 'kind' => $component ? ($component->kind->isDeduction() ? 'deduction' : 'earning') : $data['kind'],
                 'pay_component_id' => $component?->id,
                 'label' => $data['label'] ?? $component->name,
                 'amount' => round((float) $data['amount'], 2),
                 'adjusted' => true,
+                'adjusted_by' => $actor->id,
+                'adjusted_at' => now(),
+                'adjust_reason' => $data['reason'] ?? null,
                 'sort_order' => ($entry->lines()->max('sort_order') ?? 0) + 1,
             ]);
             $this->total($entry);
@@ -181,12 +193,29 @@ class Payrolls
         });
     }
 
-    public function updateLine(PayrollLine $line, float $amount): void
+    /**
+     * Overrides a line's amount. The first override keeps the amount the
+     * line was generated with (`original_amount`); who, when and why are
+     * recorded each time. Putting it back to the original clears the override.
+     */
+    public function updateLine(PayrollLine $line, float $amount, User $actor, ?string $reason = null): void
     {
         $this->ensureDraft($line->entry->run);
+        $this->ensureNotCancelled($line->entry);
 
-        DB::transaction(function () use ($line, $amount) {
-            $line->forceFill(['amount' => round($amount, 2), 'adjusted' => true])->save();
+        DB::transaction(function () use ($line, $amount, $actor, $reason) {
+            $amount = round($amount, 2);
+            $original = $line->original_amount ?? $line->amount;
+            $restored = $line->original_amount !== null && (float) $line->original_amount === $amount;
+
+            $line->forceFill([
+                'amount' => $amount,
+                'original_amount' => $restored ? null : $original,
+                'adjusted' => $restored ? $line->adjusted : true,
+                'adjusted_by' => $actor->id,
+                'adjusted_at' => now(),
+                'adjust_reason' => $reason,
+            ])->save();
             $this->total($line->entry);
         });
     }
@@ -194,6 +223,7 @@ class Payrolls
     public function removeLine(PayrollLine $line): void
     {
         $this->ensureDraft($line->entry->run);
+        $this->ensureNotCancelled($line->entry);
 
         DB::transaction(function () use ($line) {
             $entry = $line->entry;
@@ -212,13 +242,30 @@ class Payrolls
         $run->forceFill(['status' => PayrollRunStatus::Finalized, 'finalized_at' => now(), 'finalized_by' => $actor->id])->save();
     }
 
-    public function reopen(PayrollRun $run): void
+    /** Correcting a finalized payroll starts here, so it always has a reason. */
+    public function reopen(PayrollRun $run, ?string $reason = null): void
     {
         if (! $run->isFinalized()) {
             throw ValidationException::withMessages(['run' => 'The payroll is still a draft.']);
         }
 
-        $run->forceFill(['status' => PayrollRunStatus::Draft, 'finalized_at' => null, 'finalized_by' => null])->save();
+        $run->forceFill(['status' => PayrollRunStatus::Draft, 'finalized_at' => null, 'finalized_by' => null, 'reopen_reason' => $reason])->save();
+    }
+
+    /**
+     * Cancels one person's payslip: it stays on the payroll for the audit
+     * trail but counts toward no total, loan balance or payslip request.
+     */
+    public function cancelEntry(PayrollEntry $entry, string $reason, User $actor): void
+    {
+        $this->ensureNotCancelled($entry);
+
+        DB::transaction(function () use ($entry, $reason, $actor) {
+            $entry->forceFill(['cancelled_at' => now(), 'cancelled_by' => $actor->id, 'cancel_reason' => $reason])->save();
+            PayslipRequest::query()->where('payroll_entry_id', $entry->id)
+                ->whereIn('status', [PayslipRequestStatus::Pending, PayslipRequestStatus::Approved])
+                ->update(['status' => PayslipRequestStatus::Cancelled]);
+        });
     }
 
     public function delete(PayrollRun $run): void
@@ -238,7 +285,7 @@ class Payrolls
      */
     public function totals(PayrollRun $run): array
     {
-        $entries = $run->entries();
+        $entries = $run->entries()->whereNull('cancelled_at');
 
         return [
             'people' => (clone $entries)->count(),
@@ -295,6 +342,9 @@ class Payrolls
             'first_half' => (float) $entry->first_half,
             'second_half' => (float) $entry->second_half,
             'below_minimum' => $net < self::MINIMUM_NET_PAY,
+            'cancelled' => $entry->isCancelled(),
+            'cancel_reason' => $entry->cancel_reason,
+            'cancelled_at' => $entry->cancelled_at?->toIso8601String(),
             'adjusted' => $entry->relationLoaded('lines') ? $entry->lines->contains('adjusted', true) : $entry->lines()->where('adjusted', true)->exists(),
             'lines' => $withLines ? $entry->lines->map(fn (PayrollLine $line) => [
                 'id' => $line->id,
@@ -302,28 +352,61 @@ class Payrolls
                 'label' => $line->label,
                 'amount' => (float) $line->amount,
                 'adjusted' => $line->adjusted,
+                'original_amount' => $line->original_amount !== null ? (float) $line->original_amount : null,
+                'adjust_reason' => $line->adjust_reason,
+                'adjusted_by' => $line->adjuster?->name,
+                'adjusted_at' => $line->adjusted_at?->toIso8601String(),
                 'loan' => $line->employee_loan_id !== null,
+                'remitted_on' => $line->remitted_on?->toDateString(),
             ])->values()->all() : [],
         ];
     }
 
     /**
-     * Who is on the payroll for the month, with the period that pays them.
+     * Who is on the payroll for the month, with the period that pays them
+     * (the latest one in force that month) and the basic salary across
+     * every period in force. A promotion or step increase part-way through
+     * the month pays each period for its own days, so the new grade starts
+     * on the date of the promotion; a past month keeps the grade held then.
      *
-     * @return Collection<int, PlantillaAppointment> keyed by employee id
+     * @return Collection<int, PlantillaAppointment> keyed by employee id; each carries `basic_for_month`
      */
     private function eligible(Carbon $month): Collection
     {
         $staff = $this->inService($month)->keyBy('id');
+        $start = $month->copy()->startOfMonth();
+        $end = $month->copy()->endOfMonth();
 
-        return PlantillaAppointment::query()->complete()->with('item.organizationalUnit')
+        $periods = PlantillaAppointment::query()->complete()->with('item.organizationalUnit')
+            ->where('status', EmploymentStatus::Permanent->value)
             ->whereIn('employee_id', $staff->keys())
-            ->whereNull('date_to')
-            ->whereDate('date_from', '<=', $month->copy()->endOfMonth())
-            ->orderBy('id')->get()
-            ->keyBy('employee_id')
-            ->filter(fn (PlantillaAppointment $period) => $this->schedules->monthlySalary($period->item->salary_grade, $period->step, $month) !== null)
-            ->each(fn (PlantillaAppointment $period) => $period->setRelation('employee', $staff[$period->employee_id]));
+            ->whereDate('date_from', '<=', $end)
+            ->where(fn ($query) => $query->whereNull('date_to')->orWhereDate('date_to', '>=', $start))
+            ->orderBy('date_from')->orderBy('id')->get()
+            ->groupBy('employee_id');
+
+        return $periods->map(function (Collection $held) use ($staff, $start, $end, $month) {
+            $priced = $held->filter(fn (PlantillaAppointment $period) => $this->schedules->salaryOf($period, $month) !== null);
+            if ($priced->isEmpty()) {
+                return null;
+            }
+
+            $days = 0;
+            $basic = 0.0;
+            foreach ($priced as $period) {
+                $from = $period->date_from->gt($start) ? $period->date_from->copy() : $start->copy();
+                $to = $period->date_to && $period->date_to->lt($end) ? $period->date_to->copy() : $end->copy();
+                $share = min($from->diffInDays($to) + 1, $month->daysInMonth - $days);
+                $days += $share;
+                $basic += (float) $this->schedules->salaryOf($period, $month) * $share / $month->daysInMonth;
+            }
+
+            $current = $priced->last();
+            $current->setRelation('employee', $staff[$current->employee_id]);
+            $current->setAttribute('basic_for_month', round($basic, 2));
+
+            return $current;
+        })->filter();
     }
 
     /**
@@ -332,6 +415,9 @@ class Payrolls
     private function inService(Carbon $month): Collection
     {
         return Employee::query()->with('user')
+            ->whereHas('plantillaAppointments', fn ($query) => $query->where(fn ($query) => $query->where('status', EmploymentStatus::Permanent->value)->orWhereNull('status'))
+                ->where(fn ($query) => $query->whereNull('date_from')->orWhereDate('date_from', '<=', $month->copy()->endOfMonth()))
+                ->where(fn ($query) => $query->whereNull('date_to')->orWhereDate('date_to', '>=', $month->copy()->startOfMonth())))
             ->where(fn ($query) => $query->whereNull('separation_date')->orWhereDate('separation_date', '>=', $month->copy()->startOfMonth()))
             ->whereHas('user', fn ($query) => $query->where('status', 'active'))
             ->get();
@@ -341,7 +427,7 @@ class Payrolls
     {
         $employee = $period->employee;
         $month = $run->month();
-        $basic = (float) $this->schedules->monthlySalary($period->item->salary_grade, $period->step, $month);
+        $basic = (float) $period->getAttribute('basic_for_month');
 
         $entry = PayrollEntry::query()->firstOrNew(['payroll_run_id' => $run->id, 'employee_id' => $employee->id]);
         $entry->fill([
@@ -443,6 +529,13 @@ class Payrolls
             'first_half' => $first,
             'second_half' => round($net - $first, 2),
         ])->save();
+    }
+
+    private function ensureNotCancelled(PayrollEntry $entry): void
+    {
+        if ($entry->isCancelled()) {
+            throw ValidationException::withMessages(['entry' => "The payslip of {$entry->name} was cancelled."]);
+        }
     }
 
     private function ensureDraft(PayrollRun $run): void

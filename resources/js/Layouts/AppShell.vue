@@ -4,8 +4,10 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import Icon from '../Components/UI/Icon.vue';
 import SidebarNav from '../Components/Navigation/SidebarNav.vue';
 import UserMenu from '../Components/Navigation/UserMenu.vue';
+import NotificationMenu from '../Components/Navigation/NotificationMenu.vue';
 import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
+import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
 import { firstName, useSplash } from '../Composables/useSplash';
 import { useBranding } from '../Composables/useBranding';
@@ -59,6 +61,7 @@ if (page.props.flash?.signedIn) {
 }
 
 const aboutOpen = ref(false);
+const feedbackOpen = ref(false);
 const sidebarOpen = ref(false);
 const isDesktop = ref(false);
 const menuButtonRef = ref(null);
@@ -196,34 +199,13 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="ml-auto flex items-center gap-1">
-                <button
-                    type="button"
-                    class="flex items-center gap-1.5 rounded-md p-2 text-sm text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                    aria-haspopup="dialog"
-                    @click="aboutOpen = true"
-                >
-                    <Icon name="info" size="md" />
-                    <span class="hidden md:inline">About</span>
-                </button>
-                <Link
-                    v-if="page.props.notifications"
-                    href="/notifications"
-                    class="relative rounded-md p-2 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                    :aria-label="unread ? `Notifications, ${unread} unread` : 'Notifications'"
-                    title="Notifications"
-                >
-                    <Icon name="bell" size="md" />
-                    <span
-                        v-if="unread"
-                        class="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-danger px-1 text-center text-[0.65rem] font-bold leading-[1.1rem] text-white"
-                        aria-hidden="true"
-                    >{{ unread > 99 ? '99+' : unread }}</span>
-                </Link>
-                <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @about="aboutOpen = true" />
+                <NotificationMenu v-if="page.props.notifications" :unread="unread" />
+                <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @about="aboutOpen = true" @feedback="feedbackOpen = true" />
             </div>
         </header>
 
         <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
+        <FeedbackDialog v-if="page.props.auth.user" :open="feedbackOpen" @close="feedbackOpen = false" />
         <SessionTimeoutDialog v-if="page.props.auth.user" />
 
         <!-- Overlay backdrop (below desktop width only) -->

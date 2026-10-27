@@ -13,18 +13,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * HR-4: one period of service by an employee on a plantilla item, at a
  * step and status — a Service Record line (HR-5). Open (`date_to` null)
- * while they hold it. Written only by App\Support\HR\Plantilla\Plantilla.
+ * while they hold it. `salary_override` replaces the salary schedule's amount
+ * for this period (an agreed or special rate); blank follows the schedule.
+ * Written only by App\Support\HR\Plantilla\Plantilla.
  */
 class PlantillaAppointment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['step', 'status', 'nature', 'date_from', 'date_to', 'end_reason', 'remarks'];
+    protected $fillable = ['step', 'status', 'nature', 'date_from', 'date_to', 'end_reason', 'remarks', 'salary_override'];
 
     protected function casts(): array
     {
         return [
             'step' => 'integer',
+            'salary_override' => 'decimal:2',
             'status' => EmploymentStatus::class,
             'nature' => AppointmentNature::class,
             'date_from' => 'date:Y-m-d',

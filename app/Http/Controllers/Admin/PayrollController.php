@@ -12,6 +12,7 @@ use App\Models\PayrollEntry;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Models\PayslipRequest;
+use App\Support\HR\Payroll\DeductionNotices;
 use App\Support\HR\Payroll\Loans;
 use App\Support\HR\Payroll\Payrolls;
 use App\Support\HR\Payroll\PayslipApprovers;
@@ -70,7 +71,7 @@ class PayrollController extends Controller
 
         return Inertia::render('Admin/HR/Payroll/Show', [
             'run' => $payrolls->presentRun($run),
-            'entries' => $run->entries()->with('lines', 'employee')->orderBy('name')->get()
+            'entries' => $run->entries()->with('lines.adjuster', 'employee')->orderBy('name')->get()
                 ->map(fn (PayrollEntry $entry) => [
                     ...$payrolls->presentEntry($entry, withLines: true),
                     'own' => $entry->employee->user_id === $request->user()->id,
@@ -94,24 +95,26 @@ class PayrollController extends Controller
         return back()->with('status', "Payroll for {$run->period} regenerated from pay profiles.");
     }
 
-    public function finalize(Request $request, PayrollRun $run, Payrolls $payrolls): RedirectResponse
+    public function finalize(Request $request, PayrollRun $run, Payrolls $payrolls, DeductionNotices $notices): RedirectResponse
     {
         $this->authorize('manage', PayrollRun::class);
 
         $payrolls->finalize($run, $request->user());
         $this->audit()->record(AuditEvent::PayrollFinalized, "Finalized the {$run->label}", $run, ['entries' => $run->entries()->count()]);
+        $notices->afterFinalize($run);
 
         return back()->with('status', "Payroll for {$run->period} finalized. Loans count it as paid, and staff can request their payslips.");
     }
 
-    public function reopen(PayrollRun $run, Payrolls $payrolls): RedirectResponse
+    public function reopen(Request $request, PayrollRun $run, Payrolls $payrolls): RedirectResponse
     {
         $this->authorize('manage', PayrollRun::class);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
 
-        $payrolls->reopen($run);
+        $payrolls->reopen($run, $data['reason']);
         $approved = PayslipRequest::query()->whereIn('payroll_entry_id', $run->entries()->select('id'))
             ->where('status', PayslipRequestStatus::Approved)->count();
-        $this->audit()->record(AuditEvent::PayrollReopened, "Reopened the {$run->label}", $run, ['approved_payslips' => $approved]);
+        $this->audit()->record(AuditEvent::PayrollReopened, "Reopened the {$run->label}: {$data['reason']}", $run, ['approved_payslips' => $approved, 'reason' => $data['reason']]);
 
         return back()->with('status', "Payroll for {$run->period} reopened as a draft.".($approved ? " {$approved} approved payslip(s) will show the corrected figures once it's finalized again." : ''));
     }
@@ -142,8 +145,8 @@ class PayrollController extends Controller
         $this->authorizeEntry($entry);
         $data = $request->validate($payrolls->lineRules());
 
-        $line = $payrolls->addLine($entry, $data);
-        $this->audit()->record(AuditEvent::PayrollAdjusted, "Added {$line->label} to the {$entry->label}", $entry, ['action' => 'line_added', 'kind' => $line->kind]);
+        $line = $payrolls->addLine($entry, $data, $request->user());
+        $this->audit()->record(AuditEvent::PayrollAdjusted, "Added {$line->label} to the {$entry->label}", $entry, ['action' => 'line_added', 'kind' => $line->kind, 'reason' => $data['reason'] ?? null]);
 
         return back()->with('status', "{$line->label} added for {$entry->name}.");
     }
@@ -151,10 +154,10 @@ class PayrollController extends Controller
     public function updateLine(Request $request, PayrollRun $run, PayrollEntry $entry, PayrollLine $line, Payrolls $payrolls): RedirectResponse
     {
         $this->authorizeEntry($entry);
-        $data = $request->validate(['amount' => ['required', 'numeric', 'gt:0', 'max:9999999']]);
+        $data = $request->validate(['amount' => ['required', 'numeric', 'gt:0', 'max:9999999'], 'reason' => ['nullable', 'string', 'max:500']]);
 
-        $payrolls->updateLine($line, (float) $data['amount']);
-        $this->audit()->record(AuditEvent::PayrollAdjusted, "Changed {$line->label} on the {$entry->label}", $entry, ['action' => 'line_changed']);
+        $payrolls->updateLine($line, (float) $data['amount'], $request->user(), $data['reason'] ?? null);
+        $this->audit()->record(AuditEvent::PayrollAdjusted, "Overrode {$line->label} on the {$entry->label}", $entry, ['action' => 'line_changed', 'reason' => $data['reason'] ?? null]);
 
         return back()->with('status', "{$line->label} changed for {$entry->name}.");
     }
@@ -167,6 +170,17 @@ class PayrollController extends Controller
         $this->audit()->record(AuditEvent::PayrollAdjusted, "Removed {$line->label} from the {$entry->label}", $entry, ['action' => 'line_removed']);
 
         return back()->with('status', "{$line->label} removed for {$entry->name}.");
+    }
+
+    public function cancelEntry(Request $request, PayrollRun $run, PayrollEntry $entry, Payrolls $payrolls): RedirectResponse
+    {
+        $this->authorizeEntry($entry);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+
+        $payrolls->cancelEntry($entry, $data['reason'], $request->user());
+        $this->audit()->record(AuditEvent::PayslipCancelled, "Cancelled the {$entry->label}: {$data['reason']}", $entry, ['reason' => $data['reason']]);
+
+        return back()->with('status', "The payslip of {$entry->name} was cancelled. It stays on the payroll for the record.");
     }
 
     private function authorizeEntry(PayrollEntry $entry): void

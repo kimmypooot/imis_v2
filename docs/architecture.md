@@ -4214,8 +4214,42 @@ approved by the head of HRD or whoever is designated head of HRD.
   `payroll_entry.payslip_viewed`; amounts are never put in metadata.
   Opening someone's pay profile is logged as `employee.viewed`.
 
+### Earnings & Deductions extension (`2027_01_20_090000_extend_payroll_for_overrides_and_schedules`)
+Built on the tables above rather than beside them (decision 2026-10-27).
+IMIS records and schedules; it never collects or remits anything, and it
+is not the official payslip (the printout says so).
+- **Overrides:** a changed payroll line keeps the generated amount in
+  `original_amount`, with `adjusted_by/at` and an optional `adjust_reason`;
+  the component, profile and loan are untouched. Setting it back clears
+  the override. Loan amortization changes go through the loan (payroll
+  managers only, never their own) with an optional reason, and tell the
+  employee.
+- **Installment schedule (`Loans::schedule`):** history from payroll lines,
+  then projected months. Statuses: *scheduled* (no line yet), *reflected*
+  (line on a draft payroll), *confirmed* (finalized payroll), *paid* (HR set
+  `remitted_on`), *overdue* (confirmed, not marked paid 30 days after the
+  second release). Loan states: active, suspended (`stopped_on`), cancelled
+  (`cancelled_on`, final, reason required), completed (balance 0).
+- **Cancelled payslips:** `payroll_entries.cancelled_at`; kept for audit,
+  excluded from totals, loan balances and payslip requests. A finalized
+  payroll is corrected by reopening it, which needs a reason (audited).
+- **Notices (`DeductionNotices`, via `HrUpdate`):** assigned, amount changed,
+  suspended, resumed, cancelled, reflected in a payslip and completed (on
+  finalize), nearly completed (`imis:notify-loan-endings`, daily, once per
+  loan and count).
+- **`pay_components.category`** groups lines on **My Earnings & Deductions**
+  (`/my/earnings`): mandatory contributions, government loans, other loans,
+  other. It shows the employee's own latest *finalized* payroll only; the
+  printable payslip still needs the approved request.
+- Not done: dashboard widget for these notices; amount type "variable" and
+  one-time vs recurring flags on components (fixed/percent/manual and
+  profile effective months cover them). The automatic GSIS/PhilHealth/
+  Pag-IBIG formulas from HR-8 remain (editable, or exempt per employee).
+- Audit: `employee_loan.cancelled`, `employee_loan.remitted`,
+  `payroll_entry.cancelled`; reasons go in metadata, amounts never.
+
 ### Tests
-`tests/Feature/HR/PayrollTest.php`.
+`tests/Feature/HR/PayrollTest.php`, `tests/Feature/HR/EarningsDeductionsTest.php`.
 
 ## Modular Architecture
 

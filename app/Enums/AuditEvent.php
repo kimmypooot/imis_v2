@@ -154,12 +154,15 @@ enum AuditEvent: string
     case LoanStopped = 'employee_loan.stopped';
     case LoanResumed = 'employee_loan.resumed';
     case LoanDeleted = 'employee_loan.deleted';
+    case LoanCancelled = 'employee_loan.cancelled';
+    case LoanRemitted = 'employee_loan.remitted';
     case PayrollCreated = 'payroll_run.created';
     case PayrollRegenerated = 'payroll_run.regenerated';
     case PayrollAdjusted = 'payroll_entry.adjusted';
     case PayrollFinalized = 'payroll_run.finalized';
     case PayrollReopened = 'payroll_run.reopened';
     case PayrollDeleted = 'payroll_run.deleted';
+    case PayslipCancelled = 'payroll_entry.cancelled';
     case PayslipRequested = 'payslip_request.requested';
     case PayslipRequestCancelled = 'payslip_request.cancelled';
     case PayslipRequestDecided = 'payslip_request.decided';
@@ -221,6 +224,10 @@ enum AuditEvent: string
     case ChangelogUpdated = 'changelog.updated';
     case ChangelogPublished = 'changelog.published';
     case ChangelogUnpublished = 'changelog.unpublished';
+
+    case FeedbackReplied = 'feedback.replied';
+    case FeedbackNoted = 'feedback.noted';
+    case FeedbackStatusChanged = 'feedback.status_changed';
 
     // Executive Dashboard settings: a system's summary feed and the
     // targets figures are measured against. Viewing the dashboard isn't

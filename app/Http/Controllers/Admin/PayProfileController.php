@@ -10,7 +10,9 @@ use App\Models\EmployeeLoan;
 use App\Models\EmployeePayItem;
 use App\Models\PayComponent;
 use App\Models\PayrollEntry;
+use App\Models\PayrollLine;
 use App\Models\PayrollRun;
+use App\Support\HR\Payroll\DeductionNotices;
 use App\Support\HR\Payroll\Loans;
 use App\Support\HR\Payroll\PayProfiles;
 use App\Support\HR\Payroll\Payrolls;
@@ -63,7 +65,7 @@ class PayProfileController extends Controller
             'employee' => ['id' => $employee->id, 'name' => $employee->user->name, 'position' => $employee->user->position],
             'items' => EmployeePayItem::query()->with('component')->where('employee_id', $employee->id)->orderByDesc('effective_from')->get()
                 ->map(fn (EmployeePayItem $item) => $profiles->presentItem($item)),
-            'loans' => $loans->presentMany(EmployeeLoan::query()->with('component')->where('employee_id', $employee->id)->orderByDesc('start_month')->get()),
+            'loans' => $loans->presentMany(EmployeeLoan::query()->with('component')->where('employee_id', $employee->id)->orderByDesc('start_month')->get(), withSchedule: true),
             'automatic' => PayComponent::query()->active()->where('automatic', true)->ordered()->get()
                 ->map(fn (PayComponent $component) => ['id' => $component->id, 'name' => $component->name, 'kind' => $component->kind->value, 'rule' => $profiles->describe($component)]),
             'recent' => PayrollEntry::query()->with('run')->where('employee_id', $employee->id)->latest('id')->limit(6)->get()
@@ -106,45 +108,82 @@ class PayProfileController extends Controller
         return back()->with('status', "{$payItem->component->name} removed from the pay profile.");
     }
 
-    public function storeLoan(Request $request, Employee $employee, PayProfiles $profiles): RedirectResponse
+    public function storeLoan(Request $request, Employee $employee, PayProfiles $profiles, DeductionNotices $notices): RedirectResponse
     {
         $this->authorize('managePayOf', [PayrollRun::class, $employee]);
 
         $loan = $profiles->saveLoan($employee, null, $request->validate($profiles->loanRules()));
         $this->audit()->record(AuditEvent::LoanSaved, "Added {$loan->label}", $loan);
+        $notices->assigned($loan);
 
         return back()->with('status', "{$loan->component->name} added.");
     }
 
-    public function updateLoan(Request $request, Employee $employee, EmployeeLoan $loan, PayProfiles $profiles): RedirectResponse
+    public function updateLoan(Request $request, Employee $employee, EmployeeLoan $loan, PayProfiles $profiles, DeductionNotices $notices): RedirectResponse
     {
         $this->authorize('managePayOf', [PayrollRun::class, $employee]);
+        $data = $request->validate([...$profiles->loanRules(), 'change_reason' => ['nullable', 'string', 'max:500']]);
 
-        $profiles->saveLoan($employee, $loan, $request->validate($profiles->loanRules()));
-        $this->audit()->recordChanges(AuditEvent::LoanSaved, "Updated {$loan->label}", $loan);
+        $before = (float) $loan->monthly_amortization;
+        $profiles->saveLoan($employee, $loan, $data);
+        $this->audit()->recordChanges(AuditEvent::LoanSaved, "Updated {$loan->label}", $loan, ['reason' => $data['change_reason'] ?? null]);
+        if ($before !== (float) $loan->monthly_amortization) {
+            $notices->amountChanged($loan);
+        }
 
         return back()->with('status', "{$loan->component->name} updated.");
     }
 
-    public function stopLoan(Request $request, Employee $employee, EmployeeLoan $loan, PayProfiles $profiles): RedirectResponse
+    public function stopLoan(Request $request, Employee $employee, EmployeeLoan $loan, PayProfiles $profiles, DeductionNotices $notices): RedirectResponse
     {
         $this->authorize('managePayOf', [PayrollRun::class, $employee]);
-        $data = $request->validate(['stopped_on' => ['required', 'date']]);
+        $data = $request->validate(['stopped_on' => ['required', 'date'], 'reason' => ['nullable', 'string', 'max:500']]);
 
         $profiles->stopLoan($loan, $data['stopped_on']);
-        $this->audit()->record(AuditEvent::LoanStopped, "Stopped {$loan->label}", $loan);
+        $this->audit()->record(AuditEvent::LoanStopped, "Suspended {$loan->label}", $loan, ['reason' => $data['reason'] ?? null]);
+        $notices->suspended($loan);
 
         return back()->with('status', "{$loan->component->name} stopped: no more deductions after {$data['stopped_on']}.");
     }
 
-    public function resumeLoan(Employee $employee, EmployeeLoan $loan, PayProfiles $profiles): RedirectResponse
+    public function resumeLoan(Employee $employee, EmployeeLoan $loan, PayProfiles $profiles, DeductionNotices $notices): RedirectResponse
     {
         $this->authorize('managePayOf', [PayrollRun::class, $employee]);
 
         $profiles->resumeLoan($loan);
         $this->audit()->record(AuditEvent::LoanResumed, "Resumed {$loan->label}", $loan);
+        $notices->resumed($loan);
 
         return back()->with('status', "{$loan->component->name} resumed.");
+    }
+
+    public function cancelLoan(Request $request, Employee $employee, EmployeeLoan $loan, PayProfiles $profiles, DeductionNotices $notices): RedirectResponse
+    {
+        $this->authorize('managePayOf', [PayrollRun::class, $employee]);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+
+        $profiles->cancelLoan($loan, today()->toDateString());
+        $this->audit()->record(AuditEvent::LoanCancelled, "Cancelled {$loan->label}: {$data['reason']}", $loan, ['reason' => $data['reason']]);
+        $notices->cancelled($loan);
+
+        return back()->with('status', "{$loan->component->name} cancelled: nothing more will be deducted.");
+    }
+
+    /** Marks one installment as actually paid (or, with `paid` false, clears it). */
+    public function remitLine(Request $request, Employee $employee, EmployeeLoan $loan, PayrollLine $line, Loans $loans): RedirectResponse
+    {
+        $this->authorize('managePayOf', [PayrollRun::class, $employee]);
+        abort_unless($line->employee_loan_id === $loan->id, 404);
+        $data = $request->validate(['paid' => ['required', 'boolean'], 'remitted_on' => ['nullable', 'date', 'before_or_equal:today']]);
+
+        if ($data['paid']) {
+            $loans->markRemitted($line, $request->user(), $data['remitted_on'] ?? null);
+        } else {
+            $loans->unmarkRemitted($line);
+        }
+        $this->audit()->record(AuditEvent::LoanRemitted, ($data['paid'] ? 'Marked paid' : 'Cleared the paid mark of')." an installment of {$loan->label}", $loan, ['month' => $line->entry->run->month()->format('Y-m'), 'paid' => (bool) $data['paid']]);
+
+        return back()->with('status', $data['paid'] ? 'Marked as paid.' : 'Paid mark cleared.');
     }
 
     public function destroyLoan(Employee $employee, EmployeeLoan $loan, PayProfiles $profiles): RedirectResponse

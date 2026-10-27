@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,15 +19,34 @@ class NotificationController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Portal/Notifications', [
-            'notifications' => $request->user()->notifications()->latest()->limit(100)->get()
-                ->map(fn (DatabaseNotification $notification) => [
-                    'id' => $notification->id,
-                    'title' => $notification->data['title'] ?? 'Notification',
-                    'message' => $notification->data['message'] ?? '',
-                    'read' => $notification->read_at !== null,
-                    'created_at' => $notification->created_at->toIso8601String(),
-                ]),
+            'notifications' => $this->present($request, 100),
         ]);
+    }
+
+    /**
+     * The latest few, for the bell's dropdown.
+     */
+    public function recent(Request $request): JsonResponse
+    {
+        return response()->json([
+            'unread' => $request->user()->unreadNotifications()->count(),
+            'notifications' => $this->present($request, 8),
+        ]);
+    }
+
+    /**
+     * @return Collection<int, array{id: string, title: string, message: string, read: bool, created_at: string}>
+     */
+    private function present(Request $request, int $limit): Collection
+    {
+        return $request->user()->notifications()->latest()->limit($limit)->get()
+            ->map(fn (DatabaseNotification $notification) => [
+                'id' => $notification->id,
+                'title' => $notification->data['title'] ?? 'Notification',
+                'message' => $notification->data['message'] ?? '',
+                'read' => $notification->read_at !== null,
+                'created_at' => $notification->created_at->toIso8601String(),
+            ]);
     }
 
     public function open(Request $request, string $id): RedirectResponse

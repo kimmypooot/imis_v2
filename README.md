@@ -161,8 +161,9 @@ php artisan optimize  # cache config, routes and views
 php artisan test
 ```
 
-Tests run against in-memory SQLite (see `phpunit.xml`), independent of your
-MySQL setup.
+The application itself runs on MySQL/MariaDB. Only the test suite uses a
+throwaway in-memory SQLite database (see `phpunit.xml`), so tests never touch
+your real data.
 
 ## Operations
 

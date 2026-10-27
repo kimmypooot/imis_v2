@@ -39,7 +39,7 @@ class PayslipRequests
             ->whereIn('status', [PayslipRequestStatus::Pending, PayslipRequestStatus::Approved])
             ->get()->keyBy('payroll_entry_id');
 
-        return PayrollEntry::query()->with('run')->where('employee_id', $employee->id)
+        return PayrollEntry::query()->with('run')->where('employee_id', $employee->id)->whereNull('cancelled_at')
             ->whereHas('run', fn ($query) => $query->where('status', PayrollRunStatus::Finalized->value))
             ->get()
             ->sortByDesc(fn (PayrollEntry $entry) => $entry->run->month())
@@ -53,7 +53,7 @@ class PayslipRequests
 
     public function request(Employee $employee, PayrollEntry $entry, ?string $purpose): PayslipRequest
     {
-        if ($entry->employee_id !== $employee->id || ! $entry->run->isFinalized()) {
+        if ($entry->employee_id !== $employee->id || ! $entry->run->isFinalized() || $entry->isCancelled()) {
             throw ValidationException::withMessages(['payroll_entry_id' => 'Pick a month whose payroll is finalized.']);
         }
         if (PayslipRequest::query()->where('payroll_entry_id', $entry->id)

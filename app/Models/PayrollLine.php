@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * HR-8: one earning or deduction on a payroll entry. `adjusted` marks a
  * line HR changed or added by hand, so regenerating the entry warns
- * before discarding it.
+ * before discarding it. An override keeps the configured amount in
+ * `original_amount`, with who, when and why; `remitted_on` marks a
+ * deduction confirmed as actually paid.
  */
 class PayrollLine extends Model
 {
@@ -18,7 +20,10 @@ class PayrollLine extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'original_amount' => 'decimal:2',
             'adjusted' => 'boolean',
+            'adjusted_at' => 'datetime',
+            'remitted_on' => 'date:Y-m-d',
         ];
     }
 
@@ -35,6 +40,11 @@ class PayrollLine extends Model
     public function loan(): BelongsTo
     {
         return $this->belongsTo(EmployeeLoan::class, 'employee_loan_id');
+    }
+
+    public function adjuster(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'adjusted_by');
     }
 
     public function isEarning(): bool

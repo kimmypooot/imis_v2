@@ -51,7 +51,7 @@ class PayrollRunPolicy
             return $entry->run->isFinalized() || $user->hasPermission(PermissionName::PayrollManage->value);
         }
 
-        return $entry->employee->user_id === $user->id && $entry->run->isFinalized()
+        return $entry->employee->user_id === $user->id && $entry->run->isFinalized() && ! $entry->isCancelled()
             && PayslipRequest::query()->where('payroll_entry_id', $entry->id)->where('status', 'approved')->exists();
     }
 }

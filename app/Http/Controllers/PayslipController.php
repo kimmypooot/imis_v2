@@ -20,6 +20,23 @@ use Inertia\Response;
  */
 class PayslipController extends Controller
 {
+    /**
+     * HR's override notes (the configured amount, who and why) are for
+     * payroll staff; the employee's copy shows only the figures.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return array<string, mixed>
+     */
+    private function forViewer(array $entry, Request $request): array
+    {
+        if (! $request->user()->can('viewAny', PayrollRun::class)) {
+            $entry['lines'] = array_map(fn (array $line) => array_diff_key($line, array_flip(['original_amount', 'adjust_reason', 'adjusted_by', 'adjusted_at', 'remitted_on'])), $entry['lines']);
+            $entry['cancel_reason'] = null;
+        }
+
+        return $entry;
+    }
+
     public function show(Request $request, PayrollEntry $entry, Payrolls $payrolls): Response
     {
         $entry->load(['run', 'employee', 'lines']);
@@ -33,7 +50,7 @@ class PayslipController extends Controller
             ->where('status', PayslipRequestStatus::Approved)->latest('decided_at')->with(['decider', 'actingFor'])->first();
 
         return Inertia::render('HR/PayslipPrint', [
-            'entry' => $payrolls->presentEntry($entry, withLines: true),
+            'entry' => $this->forViewer($payrolls->presentEntry($entry, withLines: true), $request),
             'run' => [
                 'period' => $entry->run->period,
                 'first_release_on' => $entry->run->first_release_on?->toDateString(),

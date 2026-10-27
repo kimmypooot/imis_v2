@@ -23,10 +23,10 @@ class NotificationSettingsTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/account/notifications')->assertInertia(fn (Assert $page) => $page
             ->component('Account/Notifications')
-            ->where('kinds', fn ($kinds) => collect($kinds)->pluck('kind')->all() === ['leave', 'hr']));
+            ->where('kinds', fn ($kinds) => collect($kinds)->pluck('kind')->all() === ['leave', 'hr', 'feedback']));
 
         $this->actingAs($this->userWith(['executive.view']))->get('/account/notifications')->assertInertia(fn (Assert $page) => $page
-            ->where('kinds', fn ($kinds) => collect($kinds)->pluck('kind')->all() === ['leave', 'hr', 'executive', 'executive_digest']
+            ->where('kinds', fn ($kinds) => collect($kinds)->pluck('kind')->all() === ['leave', 'hr', 'feedback', 'executive', 'executive_digest']
                 && collect($kinds)->firstWhere('kind', 'executive_digest')['email'] === true));
     }
 

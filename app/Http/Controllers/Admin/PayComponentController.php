@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
+use App\Enums\PayCategory;
 use App\Enums\PayComponentKind;
 use App\Enums\PayComputation;
 use App\Http\Controllers\Controller;
@@ -30,6 +31,7 @@ class PayComponentController extends Controller
             ]),
             'kinds' => PayComponentKind::options(),
             'methods' => PayComputation::options(),
+            'categories' => PayCategory::options(),
             'canManage' => $request->user()->can('manage', PayrollRun::class),
         ]);
     }

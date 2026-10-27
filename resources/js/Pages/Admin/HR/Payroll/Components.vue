@@ -23,6 +23,7 @@ const props = defineProps({
     components: { type: Array, required: true },
     kinds: { type: Array, required: true },
     methods: { type: Array, required: true },
+    categories: { type: Array, required: true },
     canManage: { type: Boolean, required: true },
 });
 
@@ -42,6 +43,7 @@ const fields = [
     { key: 'code', label: 'Code', required: true, help: 'Short and unique, e.g. PERA, GSIS-PS.' },
     { key: 'name', label: 'Name', required: true },
     { key: 'kind', label: 'Kind', type: 'select', required: true, options: props.kinds },
+    { key: 'category', label: 'Group on the employee’s page', type: 'select', options: props.categories, help: 'Where it appears on My Earnings & Deductions. Blank picks one from the kind.' },
     { key: 'method', label: 'Computed as', type: 'select', required: true, options: props.methods, help: 'Loans are always entered per loan.' },
     { key: 'amount', label: 'Amount (fixed)', type: 'number', help: 'For "Fixed amount".' },
     { key: 'rate', label: 'Rate, % of basic', type: 'number', help: 'For "% of basic salary".' },
@@ -53,7 +55,7 @@ const fields = [
     { key: 'remarks', label: 'Remarks (e.g. the issuance)', type: 'textarea' },
 ];
 
-const defaults = { code: '', name: '', kind: 'deduction', method: 'manual', amount: '', rate: '', base_min: '', base_max: '', sort_order: 0, automatic: false, is_active: true, remarks: '' };
+const defaults = { code: '', name: '', kind: 'deduction', category: '', method: 'manual', amount: '', rate: '', base_min: '', base_max: '', sort_order: 0, automatic: false, is_active: true, remarks: '' };
 
 const groups = computed(() =>
     props.kinds.map((kind) => ({ ...kind, rows: props.components.filter((component) => component.kind === kind.value) })),
@@ -63,6 +65,7 @@ const columns = [
     { key: 'code', label: 'Code' },
     { key: 'name', label: 'Name' },
     { key: 'rule', label: 'Computed as' },
+    { key: 'category_label', label: 'Group', value: (row) => row.category_label ?? '' },
     { key: 'automatic', label: 'Applies to', value: (row) => (row.automatic ? 'Everyone' : 'Pay profiles') },
     { key: 'is_active', label: 'Status', value: (row) => (row.is_active ? 'Active' : 'Inactive') },
     { key: 'actions', label: '', sortable: false, export: false },
@@ -109,7 +112,7 @@ const columns = [
         :record="editing"
         :fields="fields"
         :defaults="defaults"
-        :nullable="['amount', 'rate', 'base_min', 'base_max', 'remarks']"
+        :nullable="['category', 'amount', 'rate', 'base_min', 'base_max', 'remarks']"
         store-url="/admin/hr/payroll/components"
         :update-url="(record) => `/admin/hr/payroll/components/${record.id}`"
         @close="open = false"

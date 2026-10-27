@@ -2,6 +2,7 @@
 
 namespace App\Support\HR\Plantilla;
 
+use App\Models\PlantillaAppointment;
 use App\Models\SalarySchedule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -110,6 +111,21 @@ class SalarySchedules
         $key = $date->toDateString();
 
         return $this->inForce[$key] ??= SalarySchedule::query()->inForceOn($date)->with('rates')->first();
+    }
+
+    /**
+     * What a period pays a month: its salary override when HR set one,
+     * else the schedule's amount for its grade and step on $date.
+     */
+    public function salaryOf(PlantillaAppointment $appointment, ?Carbon $date = null): ?float
+    {
+        if ($appointment->salary_override !== null) {
+            return (float) $appointment->salary_override;
+        }
+
+        $grade = $appointment->loadMissing('item')->item?->salary_grade;
+
+        return $grade !== null && $appointment->step !== null ? $this->monthlySalary($grade, $appointment->step, $date) : null;
     }
 
     /**

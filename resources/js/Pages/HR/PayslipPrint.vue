@@ -44,7 +44,8 @@ const print = () => window.print();
                 <p class="agency-name">{{ (organization || '').toUpperCase() }}</p>
                 <h1>PAYSLIP</h1>
                 <p class="period">For the month of {{ run.period }}</p>
-                <p v-if="!run.finalized" class="draft">DRAFT — NOT FINAL</p>
+                <p v-if="entry.cancelled" class="draft">CANCELLED — NOT VALID</p>
+                <p v-else-if="!run.finalized" class="draft">DRAFT — NOT FINAL</p>
             </header>
 
             <table class="person">
@@ -102,7 +103,10 @@ const print = () => window.print();
                 <p v-if="request">
                     Released on request {{ request.reference_number }}, approved by {{ request.approved_by }}<template v-if="request.acting_for"> for {{ request.acting_for }}</template>.
                 </p>
-                <p>System-generated from the IMIS payroll; no signature required. Printed {{ printed }}.</p>
+                <p>
+                    IMIS-generated compensation record. It is not the official payslip issued by the payroll office and does not replace it.
+                    No signature required. Printed {{ printed }}.
+                </p>
             </footer>
         </section>
     </main>

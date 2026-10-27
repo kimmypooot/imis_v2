@@ -6,6 +6,7 @@ use App\Enums\RoleName;
 use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\Changelog;
+use App\Models\Feedback;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
 use App\Models\Employee;
@@ -159,6 +160,7 @@ class AppServiceProvider extends ServiceProvider
             'announcement' => Announcement::class,
             'setting' => Setting::class,
             'changelog' => Changelog::class,
+            'feedback' => Feedback::class,
             'employee' => Employee::class,
             'employee_document' => EmployeeDocument::class,
             'employee_assignment' => EmployeeAssignment::class,

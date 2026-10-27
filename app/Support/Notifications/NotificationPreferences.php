@@ -26,6 +26,18 @@ final class NotificationPreferences
             'email' => false,
             'permission' => null,
         ],
+        'feedback' => [
+            'label' => 'Feedback replies',
+            'description' => 'A reply to feedback, a suggestion or a recommendation you sent.',
+            'email' => false,
+            'permission' => null,
+        ],
+        'feedback_received' => [
+            'label' => 'New feedback',
+            'description' => 'Feedback, suggestions and recommendations sent in by users.',
+            'email' => false,
+            'permission' => 'feedback.view',
+        ],
         'executive' => [
             'label' => 'Executive Dashboard alerts',
             'description' => 'A figure falling behind its target, or a system\'s figures no longer updating.',

@@ -13,7 +13,7 @@ import { formatDateTime } from '../../Utils/datetime';
  * The account menu, following the legacy IMIS profile dropdown: who you
  * are and when you last signed in, then the links in groups — Management
  * (HR Management and Administration, each only with access to that area),
- * your account (Change password, Notification settings, Who accessed my record), and about IMIS
+ * your account (Change password, Notification settings, Who accessed my record), feedback (Send feedback, My feedback), and about IMIS
  * (What's New, Privacy notice, About) — and Sign out (confirmed, then the "Signing Out"
  * splash carries you to the login page).
  */
@@ -25,7 +25,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['about']);
+const emit = defineEmits(['about', 'feedback']);
 
 const { canAny } = useAuthorization();
 const { show: showSplash, hide: hideSplash } = useSplash();
@@ -77,6 +77,11 @@ const openAbout = () => {
     emit('about');
 };
 
+const openFeedback = () => {
+    close();
+    emit('feedback');
+};
+
 const confirmingLogout = ref(false);
 
 const requestLogout = () => {
@@ -101,12 +106,11 @@ const logout = () => {
 };
 
 const itemClass =
-    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
+    'flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
 
-// Groups are separated by a rule; only Management, the one group whose
-// purpose isn't obvious from its links (and admins-only), gets a heading.
+// Groups are separated by a rule, and each carries a small heading.
 const groupClass = 'border-b border-border py-1';
-const headingClass = 'px-3 pt-1.5 pb-1 text-xs font-semibold uppercase tracking-wide text-text-muted';
+const headingClass = 'px-3 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted';
 </script>
 
 <template>
@@ -155,7 +159,8 @@ const headingClass = 'px-3 pt-1.5 pb-1 text-xs font-semibold uppercase tracking-
                 </Link>
             </div>
 
-            <div role="group" aria-label="My account" :class="groupClass">
+            <div role="group" aria-labelledby="user-menu-account" :class="groupClass">
+                <p id="user-menu-account" :class="headingClass">My account</p>
                 <Link href="/account/password" :class="itemClass" @click="close">
                     <Icon name="lock" size="sm" />
                     Change password
@@ -170,7 +175,20 @@ const headingClass = 'px-3 pt-1.5 pb-1 text-xs font-semibold uppercase tracking-
                 </Link>
             </div>
 
-            <div role="group" aria-label="About IMIS" :class="groupClass">
+            <div role="group" aria-labelledby="user-menu-feedback" :class="groupClass">
+                <p id="user-menu-feedback" :class="headingClass">Feedback</p>
+                <button type="button" :class="itemClass" @click="openFeedback">
+                    <Icon name="chat" size="sm" />
+                    Send feedback
+                </button>
+                <Link href="/my/feedback" :class="itemClass" @click="close">
+                    <Icon name="envelope" size="sm" />
+                    My feedback
+                </Link>
+            </div>
+
+            <div role="group" aria-labelledby="user-menu-about" :class="groupClass">
+                <p id="user-menu-about" :class="headingClass">About IMIS</p>
                 <Link href="/whats-new" :class="itemClass" @click="close">
                     <Icon name="megaphone" size="sm" />
                     What's New

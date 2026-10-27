@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\ChangelogController;
+use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\DashboardLayoutController;
@@ -377,6 +378,7 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/hr/payroll/runs/{run}/finalize', [PayrollController::class, 'finalize'])->name('admin.hr.payroll.finalize');
         Route::post('admin/hr/payroll/runs/{run}/reopen', [PayrollController::class, 'reopen'])->name('admin.hr.payroll.reopen');
         Route::delete('admin/hr/payroll/runs/{run}', [PayrollController::class, 'destroy'])->name('admin.hr.payroll.destroy');
+        Route::post('admin/hr/payroll/runs/{run}/entries/{entry}/cancel', [PayrollController::class, 'cancelEntry'])->name('admin.hr.payroll.entries.cancel');
         Route::post('admin/hr/payroll/runs/{run}/entries/{entry}/regenerate', [PayrollController::class, 'regenerateEntry'])->name('admin.hr.payroll.entries.regenerate');
         Route::post('admin/hr/payroll/runs/{run}/entries/{entry}/lines', [PayrollController::class, 'storeLine'])->name('admin.hr.payroll.lines.store');
         Route::put('admin/hr/payroll/runs/{run}/entries/{entry}/lines/{line}', [PayrollController::class, 'updateLine'])->name('admin.hr.payroll.lines.update');
@@ -392,6 +394,8 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/stop', [PayProfileController::class, 'stopLoan'])->name('admin.hr.payroll.loans.stop');
         Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/resume', [PayProfileController::class, 'resumeLoan'])->name('admin.hr.payroll.loans.resume');
         Route::delete('admin/hr/payroll/profiles/{employee}/loans/{loan}', [PayProfileController::class, 'destroyLoan'])->name('admin.hr.payroll.loans.destroy');
+        Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/cancel', [PayProfileController::class, 'cancelLoan'])->name('admin.hr.payroll.loans.cancel');
+        Route::post('admin/hr/payroll/profiles/{employee}/loans/{loan}/lines/{line}/remit', [PayProfileController::class, 'remitLine'])->withoutScopedBindings()->name('admin.hr.payroll.loans.remit');
     });
 
     // HR-4: plantilla and salary schedules. `plantilla.manage` also reads;
@@ -633,6 +637,16 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:changelogs.publish')->group(function () {
         Route::patch('admin/changelogs/{changelog}/status', [ChangelogController::class, 'updateStatus'])
             ->name('admin.changelogs.update-status');
+    });
+
+    Route::middleware('permission:feedback.view')->group(function () {
+        Route::get('admin/feedback', [FeedbackController::class, 'index'])->name('admin.feedback.index');
+        Route::get('admin/feedback/{feedback}', [FeedbackController::class, 'show'])->name('admin.feedback.show');
+    });
+
+    Route::middleware('permission:feedback.manage')->group(function () {
+        Route::post('admin/feedback/{feedback}/replies', [FeedbackController::class, 'reply'])->name('admin.feedback.reply');
+        Route::patch('admin/feedback/{feedback}/status', [FeedbackController::class, 'updateStatus'])->name('admin.feedback.update-status');
     });
 
     // `{group}` is bound to App\Enums\SettingGroup — an unknown group is a

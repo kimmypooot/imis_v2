@@ -31,6 +31,7 @@ export const adminAccessPermissions = [
     'audit_logs.view',
     'settings.view',
     'changelogs.view',
+    'feedback.view',
     'applications.manage_access',
     'sessions.view',
     'backups.create',
@@ -70,6 +71,7 @@ export const portalNavItems = [
         items: [
             { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
             { label: "What's New", href: '/whats-new', icon: 'activity' },
+            { label: 'My Feedback', href: '/my/feedback', icon: 'chat' },
         ],
     },
     {
@@ -94,6 +96,7 @@ export const portalNavItems = [
             { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'database' },
             { label: 'Flexible Work', href: '/my/flexible-work', icon: 'clock' },
             { label: 'Leave Approvals', href: '/leave/approvals', icon: 'checkCircle', flag: 'leaveApprover' },
+            { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar' },
             { label: 'My Payslips', href: '/my/payslips', icon: 'database' },
             { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
             { label: 'My Learning & Development', href: '/my/learning-development', icon: 'chartBar' },
@@ -152,6 +155,7 @@ export const adminModuleGroups = [
         items: [
             { label: 'Announcements', href: '/admin/announcements', icon: 'megaphone', permission: 'announcements.view' },
             { label: 'Changelog', href: '/admin/changelogs', icon: 'activity', permission: 'changelogs.view' },
+            { label: 'User Feedback', href: '/admin/feedback', icon: 'chat', permission: 'feedback.view', badge: 'feedback' },
             { label: 'Active Sessions', href: '/admin/sessions', icon: 'desktop', permission: 'sessions.view' },
             { label: 'Login History', href: '/admin/login-history', icon: 'clock', permission: 'audit_logs.view' },
             { label: 'System Access Logs', href: '/admin/access-logs', icon: 'globe', permission: 'audit_logs.view' },

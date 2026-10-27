@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PayCategory;
 use App\Enums\PayComponentKind;
 use App\Enums\PayComputation;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +24,7 @@ class PayComponent extends Model
     {
         return [
             'kind' => PayComponentKind::class,
+            'category' => PayCategory::class,
             'method' => PayComputation::class,
             'amount' => 'decimal:2',
             'rate' => 'decimal:3',

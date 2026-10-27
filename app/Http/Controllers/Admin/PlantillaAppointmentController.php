@@ -47,9 +47,10 @@ class PlantillaAppointmentController extends Controller
             'step' => ['required', 'integer', 'between:2,'.SalarySchedules::STEPS],
             'date_from' => ['required', 'date'],
             'remarks' => ['nullable', 'string', 'max:2000'],
+            'salary_override' => ['nullable', 'numeric', 'gt:0', 'max:9999999'],
         ], [], $this->attributes());
 
-        $next = $plantilla->stepIncrement($appointment, (int) $data['step'], $data['date_from'], $data['remarks'] ?? null, $request->user());
+        $next = $plantilla->stepIncrement($appointment, (int) $data['step'], $data['date_from'], $data['remarks'] ?? null, $request->user(), isset($data['salary_override']) ? (float) $data['salary_override'] : null);
 
         $this->audit()->record(AuditEvent::PlantillaStepIncrement, "Step increment for {$next->label}", $next, ['from_step' => $appointment->step, 'to_step' => $next->step]);
 

@@ -2,7 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\FeedbackStatus;
+use App\Enums\PermissionName;
 use App\Models\Changelog;
+use App\Models\Feedback;
 use App\Support\Branding\Branding;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Payroll\PayslipApprovers;
@@ -76,6 +79,13 @@ class HandleInertiaRequests extends Middleware
                 'leaveApprover' => app(LeaveApplications::class)->isApprover($user),
                 // HR-8: the head of HRD, or someone designated head of HRD.
                 'payslipApprover' => app(PayslipApprovers::class)->isApprover($user),
+            ] : [],
+            // Counts shown on sidebar entries (navigation `badge`), only to
+            // those who may open the page behind them.
+            'badges' => fn () => $user ? [
+                'feedback' => $user->hasPermission(PermissionName::FeedbackView->value)
+                    ? Feedback::query()->where('status', FeedbackStatus::New)->count()
+                    : 0,
             ] : [],
             // The top-bar bell.
             'notifications' => fn () => $user ? ['unread' => $user->unreadNotifications()->count()] : null,

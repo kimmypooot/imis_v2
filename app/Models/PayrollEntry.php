@@ -28,6 +28,7 @@ class PayrollEntry extends Model
             'net_pay' => 'decimal:2',
             'first_half' => 'decimal:2',
             'second_half' => 'decimal:2',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -39,6 +40,16 @@ class PayrollEntry extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->cancelled_at !== null;
+    }
+
+    public function canceller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     public function lines(): HasMany

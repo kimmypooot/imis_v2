@@ -75,6 +75,13 @@ enum PermissionName: string
     case ChangelogsManage = 'changelogs.manage';
     case ChangelogsPublish = 'changelogs.publish';
 
+    // Feedback, suggestions and recommendations from users. Anyone signed
+    // in may send one (and read the replies to theirs) with no permission;
+    // `view` reads everyone's, `manage` replies, adds private notes and
+    // changes the status.
+    case FeedbackView = 'feedback.view';
+    case FeedbackManage = 'feedback.manage';
+
     // Active sessions: see who is signed in, and force-sign-out a session.
     case SessionsView = 'sessions.view';
     case SessionsRevoke = 'sessions.revoke';

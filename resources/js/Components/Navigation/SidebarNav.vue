@@ -98,6 +98,13 @@ const entries = computed(() =>
     }, []),
 );
 
+// A count on an entry (`badge` names a key of the shared `badges` prop);
+// a group or section adds up its children, so it shows while collapsed.
+const badgeCount = (entry) =>
+    entry.items ? entry.items.reduce((sum, item) => sum + badgeCount(item), 0) : Number(page.props.badges?.[entry.badge] ?? 0);
+const badgeText = (count) => (count > 99 ? '99+' : String(count));
+const badgeClass = 'ml-auto min-w-[1.25rem] shrink-0 rounded-full bg-danger px-1.5 text-center text-[0.7rem] font-bold leading-5 text-white';
+
 // Stable id for a portal group heading, so the group is labelled by it.
 const groupId = (group) => `nav-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
@@ -154,6 +161,7 @@ const linkClass = (href) => {
             >
                 <Icon :name="entry.icon" size="sm" />
                 {{ entry.label }}
+                <span v-if="badgeCount(entry)" :class="badgeClass">{{ badgeText(badgeCount(entry)) }}<span class="sr-only"> new</span></span>
             </Link>
 
             <!-- Admin: collapsible group -->
@@ -166,6 +174,7 @@ const linkClass = (href) => {
                 >
                     <Icon :name="entry.icon || 'grid'" size="sm" />
                     <span class="flex-1">{{ entry.label }}</span>
+                    <span v-if="!isExpanded(entry) && badgeCount(entry)" :class="badgeClass">{{ badgeText(badgeCount(entry)) }}<span class="sr-only"> new inside</span></span>
                     <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(entry) }" />
                 </button>
                 <ul v-show="isExpanded(entry)" class="mt-0.5 space-y-0.5">
@@ -184,6 +193,7 @@ const linkClass = (href) => {
                                 aria-hidden="true"
                             />
                             {{ item.label }}
+                            <span v-if="badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new</span></span>
                         </Link>
 
                         <!-- A category inside the group (e.g. Human Resources → Leave) -->
@@ -239,6 +249,7 @@ const linkClass = (href) => {
                 >
                     <Icon :name="item.icon" size="sm" />
                     {{ item.label }}
+                    <span v-if="badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new</span></span>
                 </Link>
             </div>
         </template>

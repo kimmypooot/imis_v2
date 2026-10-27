@@ -174,6 +174,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Feedback, suggestions and recommendations this user sent.
+     */
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
+    /**
      * Surname first, for lists sorted by surname: "Dela Cruz, Juan T. Jr."
      * Falls back to the display name when the name parts aren't set.
      */

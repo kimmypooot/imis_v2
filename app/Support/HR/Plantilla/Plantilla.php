@@ -227,6 +227,7 @@ class Plantilla
             'nature' => ['required', Rule::enum(AppointmentNature::class)],
             'date_from' => ['required', 'date', 'after:1900-01-01'],
             'remarks' => ['nullable', 'string', 'max:2000'],
+            'salary_override' => ['nullable', 'numeric', 'gt:0', 'max:9999999'],
         ];
     }
 
@@ -279,7 +280,7 @@ class Plantilla
      * A step increment: the current period ends the day before, and the
      * next opens at the new step on the same item and status.
      */
-    public function stepIncrement(PlantillaAppointment $current, int $step, string $date, ?string $remarks, User $actor): PlantillaAppointment
+    public function stepIncrement(PlantillaAppointment $current, int $step, string $date, ?string $remarks, User $actor, ?float $salaryOverride = null): PlantillaAppointment
     {
         $from = Carbon::parse($date)->startOfDay();
 
@@ -296,7 +297,7 @@ class Plantilla
             throw ValidationException::withMessages(['date_from' => 'The increment must take effect after the current period began.']);
         }
 
-        return DB::transaction(function () use ($current, $step, $from, $remarks, $actor) {
+        return DB::transaction(function () use ($current, $step, $from, $remarks, $actor, $salaryOverride) {
             $current->forceFill(['date_to' => $from->copy()->subDay(), 'end_reason' => 'Step increment'])->save();
 
             return $this->open($current->item, $current->employee, [
@@ -305,6 +306,7 @@ class Plantilla
                 'nature' => AppointmentNature::StepIncrement->value,
                 'date_from' => $from->toDateString(),
                 'remarks' => $remarks,
+                'salary_override' => $salaryOverride,
             ], $actor);
         });
     }
@@ -334,7 +336,7 @@ class Plantilla
      */
     public function correct(PlantillaAppointment $appointment, array $data): array
     {
-        $appointment->fill(collect($data)->only(['step', 'status', 'nature', 'date_from', 'date_to', 'end_reason', 'remarks'])->all());
+        $appointment->fill(collect($data)->only(['step', 'status', 'nature', 'date_from', 'date_to', 'end_reason', 'remarks', 'salary_override'])->all());
 
         if ($appointment->date_to && $appointment->date_to->lt($appointment->date_from)) {
             throw ValidationException::withMessages(['date_to' => 'The last day can\'t be before the period began.']);
@@ -421,10 +423,13 @@ class Plantilla
                 'since' => $holder->date_from?->toDateString(),
                 'missing' => $holder->missingDetails(),
             ] : null,
-            // Priced at the holder's step, or step 1 for a vacant item.
-            'monthly_salary' => $item->isAbolished() || $item->salary_grade === null || ($holder && $holder->step === null)
-                ? null
-                : $this->schedules->monthlySalary($item->salary_grade, $holder->step ?? 1),
+            // The holder's salary override, else priced at their step (step 1 for a vacant item).
+            'monthly_salary' => match (true) {
+                $item->isAbolished() => null,
+                $holder?->salary_override !== null => (float) $holder->salary_override,
+                $item->salary_grade === null || ($holder && $holder->step === null) => null,
+                default => $this->schedules->monthlySalary($item->salary_grade, $holder->step ?? 1),
+            },
         ];
     }
 
@@ -452,9 +457,10 @@ class Plantilla
             'remarks' => $appointment->remarks,
             'current' => $appointment->isOpen(),
             'missing' => $appointment->missingDetails(),
-            // Priced by the schedule in force when the period began.
-            'monthly_salary' => $appointment->isComplete()
-                ? $this->schedules->monthlySalary($appointment->item->salary_grade, $appointment->step, $appointment->isOpen() ? null : $appointment->date_from)
+            'salary_override' => $appointment->salary_override !== null ? (float) $appointment->salary_override : null,
+            // The override, else priced by the schedule in force when the period began.
+            'monthly_salary' => $appointment->isComplete() || $appointment->salary_override !== null
+                ? $this->schedules->salaryOf($appointment, $appointment->isOpen() ? null : $appointment->date_from)
                 : null,
         ];
     }
@@ -478,7 +484,7 @@ class Plantilla
      */
     private function open(PlantillaItem $item, Employee $employee, array $data, User $actor): PlantillaAppointment
     {
-        $appointment = new PlantillaAppointment(collect($data)->only(['step', 'status', 'nature', 'date_from', 'remarks'])->all());
+        $appointment = new PlantillaAppointment(collect($data)->only(['step', 'status', 'nature', 'date_from', 'remarks', 'salary_override'])->all());
         $appointment->forceFill([
             'plantilla_item_id' => $item->id,
             'employee_id' => $employee->id,

@@ -52,10 +52,17 @@ const finalize = async () => {
         post('/finalize');
     }
 };
-const reopen = async () => {
-    if (await confirm({ title: `Reopen ${props.run.period}?`, text: 'It becomes a draft again: its loan payments stop counting until it is finalized again.', tone: 'danger', confirmText: 'Reopen' })) {
-        post('/reopen');
-    }
+// Reopening a payroll and cancelling a payslip both need a reason for the audit trail.
+const reasonDialog = ref(null); // 'reopen' | 'cancel'
+const reasonForm = useForm({ reason: '' });
+const askReason = (kind) => {
+    reasonDialog.value = kind;
+    reasonForm.reset();
+    reasonForm.clearErrors();
+};
+const submitReason = () => {
+    const url = reasonDialog.value === 'reopen' ? `${base}/reopen` : `${base}/entries/${entry.value.id}/cancel`;
+    reasonForm.post(url, { preserveScroll: true, onSuccess: () => (reasonDialog.value = null) });
 };
 const destroy = async () => {
     if (await confirm({ title: `Delete the draft for ${props.run.period}?`, tone: 'danger', confirmText: 'Delete' })) {
@@ -66,15 +73,17 @@ const destroy = async () => {
 // One person's pay: lines, and HR's adjustments while a draft.
 const openId = ref(null);
 const entry = computed(() => props.entries.find((item) => item.id === openId.value) ?? null);
-const canAdjust = computed(() => editable.value && entry.value && !entry.value.own);
+const canAdjust = computed(() => editable.value && entry.value && !entry.value.own && !entry.value.cancelled);
+const canCancel = computed(() => props.canManage && entry.value && !entry.value.own && !entry.value.cancelled);
 const earnings = computed(() => entry.value?.lines.filter((line) => line.kind === 'earning') ?? []);
 const deductions = computed(() => entry.value?.lines.filter((line) => line.kind === 'deduction') ?? []);
 
 const editingLine = ref(null);
-const lineForm = useForm({ amount: '' });
+const lineForm = useForm({ amount: '', reason: '' });
 const editLine = (line) => {
     editingLine.value = line.id;
     lineForm.amount = line.amount;
+    lineForm.reason = line.adjust_reason ?? '';
     lineForm.clearErrors();
 };
 const saveLine = (line) =>
@@ -85,7 +94,7 @@ const removeLine = async (line) => {
     }
 };
 
-const addForm = useForm({ kind: 'deduction', pay_component_id: '', label: '', amount: '' });
+const addForm = useForm({ kind: 'deduction', pay_component_id: '', label: '', amount: '', reason: '' });
 const componentOptions = computed(() => [{ value: '', label: 'Other (type a label)' }, ...props.components]);
 const addLine = () =>
     addForm
@@ -125,7 +134,7 @@ const columns = [
                 <Button variant="secondary" @click="destroy">Delete draft</Button>
                 <Button variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
             </template>
-            <Button v-else variant="secondary" @click="reopen">Reopen</Button>
+            <Button v-else variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
         </template>
     </PageHeader>
 
@@ -138,6 +147,7 @@ const columns = [
                 <div v-if="run.created_by" class="flex justify-between gap-3"><dt class="text-text-muted">Drafted by</dt><dd class="text-right text-text">{{ run.created_by }}</dd></div>
             </dl>
             <p v-if="run.remarks" class="mt-3 border-t border-border pt-3 text-sm text-text">{{ run.remarks }}</p>
+            <p v-if="run.reopen_reason" class="mt-3 border-t border-border pt-3 text-sm text-text-muted">Last reopened: {{ run.reopen_reason }}</p>
         </Card>
         <Card title="Totals" icon="database" class="lg:col-span-2">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
@@ -162,6 +172,7 @@ const columns = [
                 <button type="button" class="text-left font-medium text-text hover:text-primary" @click="openId = row.id">{{ row.name }}</button>
                 <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.item_number"> · {{ row.item_number }}</template></div>
                 <div class="mt-0.5 flex flex-wrap gap-1">
+                    <Badge v-if="row.cancelled" tone="danger">Cancelled</Badge>
                     <Badge v-if="row.adjusted" tone="info">Adjusted</Badge>
                     <Badge v-if="row.below_minimum" tone="warning">Below {{ formatPeso(minimumNet) }}</Badge>
                 </div>
@@ -200,6 +211,9 @@ const columns = [
             </p>
 
             <Alert v-if="editable && entry.own" tone="info" class="mb-4">This is your own pay: another payroll officer adjusts it.</Alert>
+            <Alert v-if="entry.cancelled" tone="warning" title="This payslip was cancelled" class="mb-4">
+                {{ entry.cancel_reason }}<template v-if="entry.cancelled_at"> ({{ formatDateTime(entry.cancelled_at) }})</template>. It counts toward no total or loan balance and stays here for the record.
+            </Alert>
 
             <table class="w-full text-sm">
                 <caption class="sr-only">Earnings and deductions</caption>
@@ -215,7 +229,13 @@ const columns = [
                         <tr v-for="line in group.lines" :key="line.id" class="border-b border-border last:border-0">
                             <td class="py-1.5 text-text">
                                 {{ line.label }}
-                                <Badge v-if="line.adjusted" tone="info" class="ml-1">Adjusted</Badge>
+                                <Badge v-if="line.original_amount !== null" tone="warning" class="ml-1">Overridden</Badge>
+                                <Badge v-else-if="line.adjusted" tone="info" class="ml-1">Adjusted</Badge>
+                                <div v-if="line.original_amount !== null" class="text-xs text-text-muted">
+                                    Configured {{ formatPeso(line.original_amount) }}<template v-if="line.adjusted_by"> · {{ line.adjusted_by }}</template><template v-if="line.adjusted_at">, {{ formatDateTime(line.adjusted_at) }}</template>
+                                </div>
+                                <div v-if="line.adjust_reason" class="text-xs text-text-muted">Reason: {{ line.adjust_reason }}</div>
+                                <div v-if="line.loan && line.remitted_on" class="text-xs text-text-muted">Paid {{ formatCalendarDate(line.remitted_on) }}</div>
                             </td>
                             <td class="py-1.5 text-right tabular-nums">
                                 <form v-if="editingLine === line.id" class="flex items-center justify-end gap-2" @submit.prevent="saveLine(line)">
@@ -229,6 +249,8 @@ const columns = [
                                         required
                                         class="w-32 rounded-md border border-border-strong bg-surface px-2 py-1 text-right text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                                     />
+                                    <label :for="`reason-${line.id}`" class="sr-only">Reason for changing {{ line.label }}</label>
+                                    <input :id="`reason-${line.id}`" v-model="lineForm.reason" type="text" maxlength="500" placeholder="Reason (optional)" class="w-44 rounded-md border border-border-strong bg-surface px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
                                     <Button type="submit" size="sm" :loading="lineForm.processing">Save</Button>
                                 </form>
                                 <template v-else>{{ formatPeso(line.amount) }}</template>
@@ -270,6 +292,10 @@ const columns = [
                     <input id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-right text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
                     <InputError :message="addForm.errors.amount || addForm.errors.run" />
                 </div>
+                <div class="sm:col-span-6">
+                    <label for="add-reason" class="block text-xs font-medium text-text-muted">Reason (optional)</label>
+                    <input id="add-reason" v-model="addForm.reason" type="text" maxlength="500" class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                </div>
                 <div class="flex items-end sm:col-span-6">
                     <Button type="submit" size="sm" variant="success" :loading="addForm.processing"><Icon name="plus" size="sm" />Add line</Button>
                 </div>
@@ -277,10 +303,27 @@ const columns = [
         </template>
 
         <template #footer>
-            <Button v-if="canAdjust" variant="ghost" class="mr-auto" @click="rebuild"><Icon name="refresh" size="sm" />Rebuild from profile</Button>
+            <Button v-if="canAdjust" variant="ghost" @click="rebuild"><Icon name="refresh" size="sm" />Rebuild from profile</Button>
+            <Button v-if="canCancel" variant="ghost" class="mr-auto" @click="askReason('cancel')">Cancel payslip</Button>
             <Button v-if="entry && !isDraft" variant="secondary" :href="`/payslips/${entry.id}`" external><Icon name="printer" size="sm" />Payslip</Button>
             <Button v-if="entry" variant="secondary" :href="`/admin/hr/payroll/profiles/${entry.employee_id}`">Pay profile</Button>
             <Button @click="openId = null">Close</Button>
+        </template>
+    </Modal>
+
+    <Modal :open="reasonDialog !== null" :title="reasonDialog === 'reopen' ? `Reopen ${run.period} to correct it` : `Cancel ${entry?.name ?? ''}’s payslip`" size="sm" @close="reasonDialog = null">
+        <form id="reason-form" @submit.prevent="submitReason">
+            <p class="mb-3 text-sm text-text-muted">
+                <template v-if="reasonDialog === 'reopen'">The payroll becomes a draft again and its loan payments stop counting until it is finalized. The reason is kept in the audit trail.</template>
+                <template v-else>The payslip stays on the payroll for the record but counts toward no total or loan balance, and any payslip request for it is closed.</template>
+            </p>
+            <label for="reason" class="block text-sm font-medium text-text">Reason</label>
+            <textarea id="reason" v-model="reasonForm.reason" rows="3" maxlength="500" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+            <InputError :message="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry" />
+        </form>
+        <template #footer>
+            <Button variant="ghost" @click="reasonDialog = null">Back</Button>
+            <Button type="submit" form="reason-form" variant="danger" :loading="reasonForm.processing">{{ reasonDialog === 'reopen' ? 'Reopen' : 'Cancel payslip' }}</Button>
         </template>
     </Modal>
 </template>

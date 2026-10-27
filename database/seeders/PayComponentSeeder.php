@@ -60,8 +60,18 @@ class PayComponentSeeder extends Seeder
             ['code' => 'COOP-LOAN', 'name' => 'Cooperative Loan', 'kind' => 'loan', 'method' => 'manual', 'sort_order' => 330],
         ];
 
+        // How each is grouped on the employee's Earnings & Deductions page.
+        $categories = [
+            'mandatory' => ['GSIS-PS', 'PHIC', 'HDMF', 'WTAX'],
+            'government_loan' => ['GSIS-CONSO', 'GSIS-MPL', 'GSIS-EML', 'GSIS-POL', 'HDMF-MPL', 'HDMF-CAL'],
+            'other_loan' => ['LBP', 'COOP-LOAN'],
+        ];
+
         foreach ($components as $component) {
-            PayComponent::query()->firstOrCreate(['code' => $component['code']], $component);
+            $category = collect($categories)->search(fn (array $codes) => in_array($component['code'], $codes, true));
+            $category = $category ?: ($component['kind'] === 'earning' ? 'allowance' : 'other');
+
+            PayComponent::query()->firstOrCreate(['code' => $component['code']], [...$component, 'category' => $category]);
         }
     }
 }

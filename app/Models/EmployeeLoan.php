@@ -28,6 +28,7 @@ class EmployeeLoan extends Model
             'granted_on' => 'date:Y-m-d',
             'start_month' => 'date:Y-m-d',
             'stopped_on' => 'date:Y-m-d',
+            'cancelled_on' => 'date:Y-m-d',
         ];
     }
 

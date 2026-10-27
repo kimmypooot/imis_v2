@@ -95,7 +95,7 @@ class PayrollTest extends TestCase
 
         // Net 8,000 + 2,000 − 720 − 250 − 160 = 8,870.00; add a centavo to make it odd.
         $entry = $run->entries()->where('employee_id', $low->id)->sole();
-        app(Payrolls::class)->addLine($entry, ['kind' => 'earning', 'label' => 'Rounding', 'amount' => 0.01]);
+        app(Payrolls::class)->addLine($entry, ['kind' => 'earning', 'label' => 'Rounding', 'amount' => 0.01], $this->hr());
         $entry->refresh();
         $this->assertSame(8870.01, (float) $entry->net_pay);
         $this->assertSame(4435.0, (float) $entry->first_half);
@@ -134,7 +134,7 @@ class PayrollTest extends TestCase
         $this->assertNull($december->entries()->sole()->lines->firstWhere('employee_loan_id', $loan->id));
 
         // Reopening October un-pays it: the balance follows.
-        $payrolls->reopen($october);
+        $payrolls->reopen($october, 'Wrong amount');
         $this->assertSame(1000.0, app(Loans::class)->balance($loan));
     }
 
