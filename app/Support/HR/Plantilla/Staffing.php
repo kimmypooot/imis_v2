@@ -80,7 +80,7 @@ class Staffing
     public function overview(): array
     {
         $items = PlantillaItem::query()->active()
-            ->with(['organizationalUnit', 'incumbency.employee.user'])
+            ->with(['organizationalUnit', 'incumbency.employee.user', 'selections' => fn ($query) => $query->pending()])
             ->get();
         $serving = $this->servingOf($items);
 
@@ -148,6 +148,8 @@ class Staffing
                 'salary_grade' => $item->salary_grade,
                 'monthly_salary' => $item->salary_grade !== null ? $this->schedules->monthlySalary($item->salary_grade, 1) : null,
                 'place_of_assignment' => $this->unitName($item->organizationalUnit),
+                // Whom the Recruitment Portal's Appointing Authority picked; HR still appoints them here.
+                'selected' => $item->selections->first()?->applicant_name,
             ])
             ->sortBy([['place_of_assignment', 'asc'], ['position_title', 'asc']])
             ->values();

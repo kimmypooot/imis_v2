@@ -67,6 +67,12 @@ class PlantillaItem extends Model
         return $this->hasOne(PlantillaAppointment::class)->whereNull('date_to')->latestOfMany();
     }
 
+    /** Selections the Recruitment Portal has reported for this item. */
+    public function selections(): HasMany
+    {
+        return $this->hasMany(PlantillaSelection::class);
+    }
+
     public function isAbolished(): bool
     {
         return $this->abolished_at !== null;

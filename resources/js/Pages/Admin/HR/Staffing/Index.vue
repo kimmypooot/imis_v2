@@ -61,6 +61,7 @@ const vacancyColumns = [
     { key: 'item_number', label: 'Item No.', value: (row) => row.item_number ?? '' },
     { key: 'salary_grade', label: 'SG', align: 'right', value: (row) => row.salary_grade ?? '' },
     { key: 'monthly_salary', label: 'Monthly salary', align: 'right', value: (row) => row.monthly_salary ?? '' },
+    { key: 'selected', label: 'Selected (Recruitment)', value: (row) => row.selected ?? '' },
 ];
 </script>
 
