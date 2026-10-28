@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\JportalController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\SsoValidateController;
+use App\Http\Middleware\AuthenticateJportal;
 use App\Http\Middleware\AuthenticateRecruitmentPortal;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +21,9 @@ Route::post(config('legacy.sso.validate_path'), SsoValidateController::class)
 Route::middleware([AuthenticateRecruitmentPortal::class, 'throttle:120,1'])->prefix('api/v1/recruitment')->group(function () {
     Route::get('vacant-positions', [RecruitmentController::class, 'vacantPositions'])->name('recruitment.vacant');
     Route::post('items/{item}/selection', [RecruitmentController::class, 'selection'])->name('recruitment.selection');
+});
+
+// JPortal's public office directory (portal.cscro8.com/directory).
+Route::middleware([AuthenticateJportal::class, 'throttle:120,1'])->prefix('api/v1/jportal')->group(function () {
+    Route::get('directory', [JportalController::class, 'directory'])->name('jportal.directory');
 });
