@@ -2552,15 +2552,63 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   before sending the browser on; `app.blade.php` draws the same screen
   at first paint instead of the navy boot preloader, so there is no
   second flash.
-- **Not done yet:** single logout, and ending a session in the system
-  immediately when access is revoked in IMIS (the next sign-in fails).
+- **Not done yet:** ending a session in a system immediately when only
+  that system's access is revoked in IMIS (the next sign-in fails). Signing
+  out of IMIS, and deactivating the account, do end it (below).
+
+#### Single sign-out (`Support/Legacy/SsoLogout`)
+
+When an IMIS session ends, each Laravel system opened from it ends its own
+session. Signing out of a system does not sign the person out of IMIS or
+of other systems. The contract for system owners is
+[`sso-logout.md`](sso-logout.md).
+
+- **Opening:** a hub token remembers the IMIS session that issued it
+  (`sso_tokens.imis_session_id`; legacy tokens don't). Redeeming it opens
+  an `sso_sessions` row (account, system, IMIS session id, `sid`
+  encrypted with `APP_KEY`, the system's logout address) and the redeem
+  response carries `sid`: 64 random characters the system keeps with its
+  own session. It is `null` when the token wasn't issued from a session.
+- **Logout address:** the launch URL's origin plus `legacy.sso.logout_path`
+  (`SSO_LOGOUT_PATH`, default `sso/logout`). No per-system setting.
+- **Telling the system:** `SsoLogout::signOut($imisSessionId)` POSTs JSON
+  `{sid}` to every open `sso_sessions` row for that IMIS session, in
+  parallel, without following redirects (2 s to connect, 3 s in all), then
+  marks them ended whatever the answer. Best effort: a system that is down
+  or answers an error never blocks the person signing out of IMIS, and
+  its session ends by its own idle limit. The `sid` is the only
+  credential.
+- **When it runs:** from `LoginHistoryRecorder`, so every way an IMIS
+  session ends is covered: sign-out and the absolute 8-hour cap
+  (`close()`), and an administrator's force-end and account deactivation
+  (`forceEnd()`, called by `AccountLifecycle::ended()`). The idle timeout
+  is caught by `imis:expire-sessions`, so within about 5 minutes.
+- **Pruning:** the daily `prune-sso-tokens` task (`LegacySso::prune()`)
+  also deletes `sso_sessions` ended over a day ago or opened over 30 days
+  ago (IMIS stops tracking a session after 30 days).
+- **In the systems** (each commits its own migration; run `migrate`):
+  - **JPortal and PROCTAD:** `imis_sessions` maps `sha256(sid)` to the
+    Laravel session id, written after `Auth::login`. `POST /sso/logout`
+    (CSRF-exempt; PROCTAD also exempts it from maintenance mode)
+    destroys that session through the session handler. A daily task
+    deletes mappings over 30 days old.
+  - **Recruitment Portal:** it has Sanctum tokens, not sessions, so
+    `personal_access_tokens.imis_sid_hash` holds `sha256(sid)` and
+    `POST /sso/logout` deletes that token; the SPA's next call gets a 401.
+    Its 2-hour token expiry needs no prune.
+- **Not done yet:** the Training Information Management System
+  (`../csc-tims`) and the legacy PHP systems (`LEGACY_SSO_HOSTS`), which
+  get no `sid`. Until they have a logout endpoint they rely on their own
+  idle limit; a legacy system's `includes/session.php` should keep it
+  short.
 
 The legacy `api/*` endpoints other than `system-redirect.php`
 (user-access, maintenance-status, track-access, announcements and
 changelog) served only the old dashboard, and are already covered here.
 
-Covered by `tests/Feature/Legacy/LegacyBridgeTest.php` and
-`tests/Feature/Legacy/LegacySsoTest.php`.
+Covered by `tests/Feature/Legacy/LegacyBridgeTest.php`,
+`tests/Feature/Legacy/LegacySsoTest.php` and
+`tests/Feature/Legacy/SsoLogoutTest.php` (single sign-out).
 
 ## Backend / Frontend Boundary — IMPLEMENTED
 
