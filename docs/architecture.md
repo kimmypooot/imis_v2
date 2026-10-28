@@ -2587,17 +2587,16 @@ of other systems. The contract for system owners is
   also deletes `sso_sessions` ended over a day ago or opened over 30 days
   ago (IMIS stops tracking a session after 30 days).
 - **In the systems** (each commits its own migration; run `migrate`):
-  - **JPortal and PROCTAD:** `imis_sessions` maps `sha256(sid)` to the
+  - **JPortal, PROCTAD and TIMS:** `imis_sessions` maps `sha256(sid)` to the
     Laravel session id, written after `Auth::login`. `POST /sso/logout`
-    (CSRF-exempt; PROCTAD also exempts it from maintenance mode)
+    (CSRF-exempt; PROCTAD and TIMS also exempt it from maintenance mode)
     destroys that session through the session handler. A daily task
     deletes mappings over 30 days old.
   - **Recruitment Portal:** it has Sanctum tokens, not sessions, so
     `personal_access_tokens.imis_sid_hash` holds `sha256(sid)` and
     `POST /sso/logout` deletes that token; the SPA's next call gets a 401.
     Its 2-hour token expiry needs no prune.
-- **Not done yet:** the Training Information Management System
-  (`../csc-tims`) and the legacy PHP systems (`LEGACY_SSO_HOSTS`), which
+- **Not done yet:** the legacy PHP systems (`LEGACY_SSO_HOSTS`), which
   get no `sid`. Until they have a logout endpoint they rely on their own
   idle limit; a legacy system's `includes/session.php` should keep it
   short.
