@@ -4,6 +4,7 @@ namespace App\Support\Security;
 
 use App\Models\LoginHistory;
 use App\Models\User;
+use App\Support\Legacy\SsoLogout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class LoginHistoryRecorder
 {
+    public function __construct(private readonly SsoLogout $systems) {}
+
     public function started(Request $request, User $user): void
     {
         LoginHistory::query()->forceCreate([
@@ -44,8 +47,11 @@ class LoginHistoryRecorder
         $this->close($sessionId, $userId, 'timeout');
     }
 
+    /** Closes the sign-in and signs the person out of the systems opened from it (SsoLogout). */
     private function close(string $sessionId, ?int $userId, string $endedBy): void
     {
+        $this->systems->signOut($sessionId);
+
         $ended = ['logged_out_at' => now(), 'ended_by' => $endedBy];
 
         $updated = LoginHistory::query()->where('session_id', $sessionId)->whereNull('logged_out_at')->update($ended);
@@ -70,6 +76,8 @@ class LoginHistoryRecorder
         }
 
         DB::table($table)->where('id', $sessionId)->delete();
+
+        $this->systems->signOut($sessionId);
 
         User::query()->whereKey($userId)->first()?->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
 

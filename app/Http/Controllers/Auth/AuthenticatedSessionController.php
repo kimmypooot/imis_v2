@@ -59,6 +59,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request, LoginHistoryRecorder $history): RedirectResponse
     {
+        // Also signs the person out of the systems opened from this session.
         $history->signedOut($request->session()->getId(), $request->user()?->id);
 
         Auth::guard('web')->logout();

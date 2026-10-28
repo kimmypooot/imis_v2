@@ -25,7 +25,7 @@ class LegacySso
     /** Marks a token as issued for a Laravel system rather than a legacy page. */
     private const HUB_PREFIX = 'host:';
 
-    public function __construct(private readonly LegacyBridge $bridge) {}
+    public function __construct(private readonly LegacyBridge $bridge, private readonly SsoLogout $logout) {}
 
     /** Whether launches to this URL get a sign-in token. */
     public function handles(string $url): bool
@@ -75,6 +75,7 @@ class LegacySso
             'user_id' => $user->id,
             'application_id' => $application->id,
             'audience' => $audience,
+            'imis_session_id' => str_starts_with($audience, self::HUB_PREFIX) && request()->hasSession() ? request()->session()->getId() : null,
             'expires_at' => now()->addSeconds(config('legacy.sso.ttl')),
             'created_at' => now(),
         ]);
@@ -114,10 +115,13 @@ class LegacySso
             return null;
         }
 
-        $role = Application::query()->find($record->application_id)?->accessFor($user)?->role;
+        $application = Application::query()->find($record->application_id);
+        $role = $application?->accessFor($user)?->role;
         $office = $this->office($user);
 
         return [
+            // Kept with the system's session; IMIS sends it back to sign out.
+            'sid' => $application ? $this->logout->open($record, (string) $application->url) : null,
             'id' => $user->id,
             'username' => $user->username,
             'fname' => (string) ($user->legacyFirstName() ?? $user->name),
@@ -192,9 +196,11 @@ class LegacySso
         ];
     }
 
-    /** Deletes tokens a day past expiry; scheduled daily. */
+    /** Deletes tokens a day past expiry (and finished sign-out sessions); scheduled daily. */
     public function prune(): int
     {
+        $this->logout->prune();
+
         return DB::table('sso_tokens')->where('expires_at', '<', now()->subDay())->delete();
     }
 

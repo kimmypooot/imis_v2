@@ -35,6 +35,11 @@ return [
         // role in that system. Empty = off.
         'hub_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('SSO_HUB_HOSTS', ''))))),
 
+        // Where a Laravel system under IMIS ends its session when the person
+        // signs out of IMIS (POST sid=…), relative to the system's origin.
+        // See docs/sso-logout.md.
+        'logout_path' => env('SSO_LOGOUT_PATH', 'sso/logout'),
+
         // How long a token stays redeemable, in seconds.
         'ttl' => (int) env('LEGACY_SSO_TTL', 60),
 
