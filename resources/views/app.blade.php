@@ -11,16 +11,17 @@
         <link rel="icon" href="/favicon.png" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- The boot screens' styles (resources/css/boot.css, which app.css also
+             imports for the Vue splash) are inlined, so a screen paints at once
+             instead of waiting for app.css, and looks the same under the Vite
+             dev server. The @layer line is Tailwind's own order, set first so the
+             inlined rules sit in the same layers. Comments and whitespace are
+             stripped. --}}
+        <style>@layer theme, base, components, utilities; {!! preg_replace(['!/\*.*?\*/!s', '/\s+/'], ['', ' '], file_get_contents(resource_path('css/boot.css'))) !!}</style>
+
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @inertiaHead
-
-        {{-- The preloader's look lives in app.css (.imis-preloader), which is
-             render-blocking above. This only adds the fade-out. --}}
-        <style>
-            #boot-preloader { transition: opacity 0.6s ease, visibility 0.6s ease; }
-            #boot-preloader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        </style>
     </head>
     <body class="font-sans antialiased">
         @php($launching = ($page['component'] ?? null) === 'Portal/Applications/Launching')
@@ -76,6 +77,9 @@
                 <div class="imis-preloader__bar"></div>
             </div>
         </div>
+        {{-- When the screen started, for app.js to hold it long enough to read
+             as deliberate (and to skip it if the page was ready first). --}}
+        <script>window.__bootAt = performance.now();</script>
         @endif
         @inertia
     </body>

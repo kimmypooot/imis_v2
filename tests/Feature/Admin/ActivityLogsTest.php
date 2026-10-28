@@ -106,12 +106,13 @@ class ActivityLogsTest extends TestCase
             ->assertOk()
             ->assertSee('data-instant', false)
             ->assertSee('Opening</span> Test System', false)
-            ->assertDontSee('imis-preloader__logo-wrap', false);
+            ->assertDontSee('class="imis-preloader"', false);
 
         // Any other page keeps the boot preloader.
         auth()->logout();
-        $this->get('/login')->assertSee('imis-preloader__logo-wrap', false);
+        $this->get('/login')->assertSee('class="imis-preloader"', false);
     }
+
     public function test_launch_refuses_when_the_user_cannot_open_the_system(): void
     {
         $restricted = Application::factory()->create(['requires_access' => true, 'url' => 'https://x.example.test']);
