@@ -2,12 +2,20 @@
 
 namespace Tests\Feature\Legacy;
 
+use App\Enums\UnitType;
 use App\Enums\UserStatus;
 use App\Models\Application;
+use App\Models\ApplicationAccess;
+use App\Models\ApplicationRole;
+use App\Models\Committee;
+use App\Models\CommitteeMember;
+use App\Models\OrganizationalUnit;
 use App\Models\User;
 use App\Support\Legacy\LegacySso;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 /**
@@ -42,7 +50,7 @@ class LegacySsoTest extends TestCase
     {
         $location = null;
         $this->actingAs($user)->get("/applications/{$system->id}/launch")
-            ->assertInertia(function (\Inertia\Testing\AssertableInertia $page) use (&$location) {
+            ->assertInertia(function (AssertableInertia $page) use (&$location) {
                 $page->component('Portal/Applications/Launching');
                 $location = $page->toArray()['props']['url'];
             });
@@ -141,8 +149,8 @@ class LegacySsoTest extends TestCase
     {
         config(['legacy.sso.hub_hosts' => ['proctad.example.test:8001']]);
         $system = $this->system('http://proctad.example.test:8001/sso');
-        $role = \App\Models\ApplicationRole::factory()->for($system)->create(['name' => 'Administrator (ESD)']);
-        $user = \App\Models\ApplicationAccess::factory()->forRole($role)->create()->user;
+        $role = ApplicationRole::factory()->for($system)->create(['name' => 'Administrator (ESD)']);
+        $user = ApplicationAccess::factory()->forRole($role)->create()->user;
 
         $token = $this->launch($user, $system);
 
@@ -159,10 +167,10 @@ class LegacySsoTest extends TestCase
     {
         config(['legacy.sso.hub_hosts' => ['proctad.example.test']]);
         $system = $this->system('https://proctad.example.test/sso');
-        $role = \App\Models\ApplicationRole::factory()->for($system)->create(['name' => 'Field Office Staff', 'code' => 'fo_admin']);
-        $office = \App\Models\OrganizationalUnit::factory()->create(['code' => 'LFO-I', 'unit_type' => \App\Enums\UnitType::FieldOffice]);
-        $section = \App\Models\OrganizationalUnit::factory()->create(['parent_id' => $office->id, 'unit_type' => \App\Enums\UnitType::Other]);
-        $user = \App\Models\ApplicationAccess::factory()->forRole($role)->create()->user;
+        $role = ApplicationRole::factory()->for($system)->create(['name' => 'Field Office Staff', 'code' => 'fo_admin']);
+        $office = OrganizationalUnit::factory()->create(['code' => 'LFO-I', 'unit_type' => UnitType::FieldOffice]);
+        $section = OrganizationalUnit::factory()->create(['parent_id' => $office->id, 'unit_type' => UnitType::Other]);
+        $user = ApplicationAccess::factory()->forRole($role)->create()->user;
         $user->forceFill(['organizational_unit_id' => $section->id, 'profile_photo_path' => 'profile-photos/x.jpg'])->save();
 
         $token = $this->launch($user, $system);
@@ -170,9 +178,26 @@ class LegacySsoTest extends TestCase
         $this->redeem($token, ['audience' => 'proctad.example.test'])
             ->assertOk()
             ->assertJsonPath('user.role_code', 'fo_admin')
+            ->assertJsonPath('user.office_name', $office->name)
+            ->assertJsonPath('user.itg_member', false)
             ->assertJsonPath('user.office_code', 'LFO-I')
             ->assertJsonPath('user.office_type', 'field_office')
-            ->assertJsonPath('user.photo_url', \Illuminate\Support\Facades\Storage::disk('public')->url('profile-photos/x.jpg'));
+            ->assertJsonPath('user.photo_url', Storage::disk('public')->url('profile-photos/x.jpg'));
+    }
+
+    public function test_a_hub_system_is_told_whether_the_person_is_on_the_itg_committee(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['ictsrts.example.test'], 'ictsrts.itg_committee' => 'ITG']);
+        $system = $this->system('https://ictsrts.example.test/sso');
+        $role = ApplicationRole::factory()->for($system)->create(['code' => 'staff']);
+        $committee = Committee::factory()->create(['short_name' => 'ITG']);
+
+        $member = ApplicationAccess::factory()->forRole($role)->create()->user;
+        CommitteeMember::factory()->create(['committee_id' => $committee->id, 'user_id' => $member->id, 'effective_from' => null]);
+        $other = ApplicationAccess::factory()->forRole($role)->create()->user;
+
+        $this->redeem($this->launch($member, $system), ['audience' => 'ictsrts.example.test'])->assertJsonPath('user.itg_member', true);
+        $this->redeem($this->launch($other, $system), ['audience' => 'ictsrts.example.test'])->assertJsonPath('user.itg_member', false);
     }
 
     public function test_a_hub_token_cannot_be_redeemed_as_a_legacy_one_or_without_an_audience(): void

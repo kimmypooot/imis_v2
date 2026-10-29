@@ -6,6 +6,7 @@ use App\Enums\UnitType;
 use App\Models\Application;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
+use App\Support\IctSrts\ItgCommittee;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -133,9 +134,18 @@ class LegacySso
             'role_code' => $role?->code,
             // Public URL of the header photo (an unguessable file name), or null.
             'photo_url' => $user->profile_photo_url,
+            'office_name' => $office?->name,
+            // Whether they are on the Information Technology Group committee (ICT SRTS makes them ITG members).
+            'itg_member' => $this->inItg($user),
             'office_code' => $office?->code,
             'office_type' => $office?->unit_type->value,
         ];
+    }
+
+    /** Whether the person is an active member of the Information Technology Group committee today. */
+    private function inItg(User $user): bool
+    {
+        return ItgCommittee::includes($user->id);
     }
 
     /**
