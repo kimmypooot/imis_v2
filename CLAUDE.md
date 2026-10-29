@@ -61,6 +61,8 @@ particular:
   released on the 15th/30th, payslips requested by staff and approved by
   the head of HRD) is done; it has no legacy counterpart.
   Progress and next steps: `docs/hr-checkpoint.md`.
+- GAD Corner (`../gad-corner-v2`, a separate app under the hub like JPortal)
+  replaces the legacy GAD Corner panel (`../gad-corner`, reference only).
 - The Executive Dashboard (`/executive`, Exec-1 to Exec-3) is done:
   scheduled snapshots of every module, connected systems' summary feeds
   (contract in `docs/executive-feed.md`), targets, alerts and a weekly

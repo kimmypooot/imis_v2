@@ -1955,6 +1955,13 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   (skipped if 3.0.0 exists; rollback removes it only while still a
   draft). Publishing it in Admin → Changelogs shows it to everyone and
   makes 3.0.0 the shown version.
+- **v3.1.0** (feedback, deduction notices, single sign-out, TIMS in the
+  directory, and the legacy Leave and L&D directory entries removed from
+  the Human Resource Division) ships the same way, through migration
+  `2027_01_27_090000_add_v3_1_release_note`. Publish it after 3.0.0.
+- **v3.2.0** (a fresher look, the redesigned loading screen, optional
+  committee start dates, the ICT SRTS employee list) ships the same way,
+  through migration `2027_01_28_090000_add_v3_2_release_note`.
 
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,
@@ -2499,7 +2506,7 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
 - **Response:** `id`, `username`, `fname`, `lname`, `mname`, `email`,
   `position`, `role` (the person's `ApplicationRole` name in that system,
   null if none), `role_code` (that role's stable `code`) and
-  `office_code` / `office_type` (their organizational unit, or the
+  `office_name`, `itg_member` (active member today of the committee whose short name is `ictsrts.itg_committee`), `office_code` / `office_type` (their organizational unit, or the
   nearest ancestor that is a regional support unit, field office or
   satellite office) and `photo_url` (the public URL of their header
   photo, or null). The system stores the URL as the account's avatar, and
@@ -2547,6 +2554,27 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   wins over the system's). It also serves the public listing on its own
   host and `/api/public/*` for the cscro8.com website. Cutover steps are
   in its `CUTOVER_RUNBOOK.md`.
+- **GAD Corner** (`../gad-corner-v2`, the "Gender and Development Corner"
+  entry, `GAD-CORNER`): the admin for the public GAD Corner's articles,
+  hero carousel and knowledgebase, replacing the legacy `imis/gad-corner`
+  panel. Staff only, and only through IMIS. Its `Auth\ImisSsoController`
+  (`/sso`) takes `role_code` `admin` or `encoder`, links by
+  `users.imis_user_id`, and keeps the IMIS photo URL. Its roles must have no
+  launch URL of their own (the legacy rows pointed at the old panel).
+  It also serves the public GAD Corner site on its own host (laid out per
+  PCW MC No. 2025-05 Annex B, flat purple) and `/api/public/*` for cscro8.com;
+  `/api/imis/summary` is its Executive Dashboard feed (set up like
+  JPortal's). Content comes over with `php artisan gad:import-legacy`.
+  Locally it runs on port 8050 (8040 is ERIS).
+- **ICT SRTS** (ICT Service Request Ticketing System): reads the current
+  employees server to server at `GET /api/v1/ictsrts/employees`, guarded by
+  a bearer token (`ICTSRTS_API_TOKEN`, compared in constant time; the
+  endpoint is off while it is unset; throttled to 60 a minute). Active
+  accounts only, each with `office_name` / `office_code` (as in the SSO
+  payload) and `in_itg`: whether they are an active member today of the
+  committee whose short name is `ICTSRTS_ITG_COMMITTEE` (default `ITG`),
+  which the super-admin manages as an ordinary committee. Committee members'
+  `effective_from` is optional.
 - **Launch screen:** `ApplicationLaunchController` renders
   `Portal/Applications/Launching` ("Opening <system>" over the IMIS logo)
   before sending the browser on; `app.blade.php` draws the same screen
