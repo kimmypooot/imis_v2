@@ -26,7 +26,7 @@ defineProps({
 });
 
 const linkClass =
-    'rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+    'rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-text transition-colors hover:border-primary/40 hover:bg-info-bg hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 </script>
 
 <template>

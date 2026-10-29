@@ -49,14 +49,14 @@ const onKeydown = (event, index) => {
                 :aria-selected="tab.key === modelValue"
                 :aria-controls="`${id}-panel-${tab.key}`"
                 :tabindex="tab.key === modelValue ? 0 : -1"
-                class="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="tab.key === modelValue ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
+                class="-mb-px flex shrink-0 items-center gap-1.5 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                :class="tab.key === modelValue ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:border-border-strong/40 hover:text-text'"
                 @click="select(tab.key)"
                 @keydown="onKeydown($event, index)"
             >
                 <Icon v-if="tab.icon" :name="tab.icon" size="sm" />
                 {{ tab.label }}
-                <span v-if="tab.badge" class="rounded-full bg-danger px-1.5 text-xs text-white">{{ tab.badge }}</span>
+                <span v-if="tab.badge" class="rounded-full bg-danger px-1.5 text-[0.7rem] font-semibold leading-4 text-white">{{ tab.badge }}</span>
             </button>
         </div>
 

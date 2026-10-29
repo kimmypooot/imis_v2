@@ -30,7 +30,7 @@ const initials = computed(() =>
 
 <template>
     <img v-if="photoUrl" :src="photoUrl" alt="" class="shrink-0 rounded-full object-cover" :class="[sizes[size], ring || 'ring-2 ring-surface']" />
-    <span v-else class="flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-white" :class="[sizes[size], ring]" aria-hidden="true">
+    <span v-else class="flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-csc-blue-light to-csc-blue-dark font-semibold text-white" :class="[sizes[size], ring]" aria-hidden="true">
         {{ initials || '?' }}
     </span>
 </template>

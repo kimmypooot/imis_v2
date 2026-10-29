@@ -46,14 +46,14 @@ const largest = computed(() => Math.max(...props.metric.breakdown.map((row) => r
 </script>
 
 <template>
-    <article class="flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-4" :class="status ? ['border-l-4', edge[status.tone]] : null">
+    <article class="flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-4 transition duration-200 hover:border-primary/40 hover:shadow-sm" :class="status ? ['border-l-4', edge[status.tone]] : null">
         <div class="flex items-start justify-between gap-2">
             <h3 class="text-sm font-medium text-text-muted">{{ metric.label }}</h3>
             <Badge v-if="status" :tone="status.tone" class="shrink-0">{{ status.label }}</Badge>
         </div>
 
         <div class="flex items-end justify-between gap-3">
-            <p class="text-2xl font-bold text-text">{{ formatValue(metric.value, metric.unit) }}</p>
+            <p class="text-3xl leading-none font-bold tracking-tight text-primary tabular-nums">{{ formatValue(metric.value, metric.unit) }}</p>
             <svg v-if="path" viewBox="0 0 100 28" preserveAspectRatio="none" class="h-7 w-24 shrink-0" role="img" :aria-label="trendSummary">
                 <polyline :points="path" fill="none" class="stroke-csc-blue-light" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
             </svg>

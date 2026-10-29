@@ -303,7 +303,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     <tr
                         v-for="(row, index) in visibleRows"
                         :key="row[rowKey] ?? index"
-                        class="transition-colors hover:bg-surface-muted/70"
+                        class="transition-colors even:bg-surface-muted/40 hover:bg-info-bg/60"
                         :class="rowClass ? rowClass(row) : undefined"
                     >
                         <td v-if="numbered" class="px-3 py-2 text-center text-text-muted">{{ firstIndex + index }}</td>

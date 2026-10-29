@@ -26,15 +26,18 @@ defineProps({
     <section>
         <div class="flex items-baseline justify-between gap-3">
             <div>
-                <h2 class="text-base font-semibold text-text">{{ title }}</h2>
+                <h2 class="flex items-center gap-2 text-base font-semibold text-text">
+                    <span class="h-4 w-1 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+                    {{ title }}
+                </h2>
                 <p v-if="description" class="mt-0.5 text-sm text-text-muted">{{ description }}</p>
             </div>
             <Link
                 v-if="viewAllHref"
                 :href="viewAllHref"
-                class="shrink-0 text-sm font-medium text-primary hover:text-primary-hover"
+                class="shrink-0 text-sm font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
             >
-                View all
+                View all →
             </Link>
         </div>
 

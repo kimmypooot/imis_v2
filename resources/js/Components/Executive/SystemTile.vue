@@ -17,7 +17,7 @@ const edge = { success: 'border-l-success', warning: 'border-l-warning', danger:
 </script>
 
 <template>
-    <article class="flex h-full flex-col gap-2 rounded-lg border border-l-4 border-border bg-surface p-3" :class="edge[state.tone]">
+    <article class="flex h-full flex-col gap-2 rounded-lg border border-l-4 border-border bg-surface p-3 transition duration-200 hover:shadow-sm" :class="edge[state.tone]">
         <div class="flex items-start justify-between gap-2">
             <h3 class="flex min-w-0 items-center gap-2 text-sm font-semibold text-text" :title="system.fullName">
                 <Icon :name="system.icon" size="sm" class="shrink-0 text-primary" />

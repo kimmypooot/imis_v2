@@ -58,6 +58,11 @@ defineProps({
 
 .table-styled :deep(tbody tr) {
     border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.15s;
+}
+
+.table-styled :deep(tbody tr:hover) {
+    background-color: color-mix(in srgb, var(--color-info-bg) 55%, transparent);
 }
 
 .table-styled :deep(tbody tr:last-child) {

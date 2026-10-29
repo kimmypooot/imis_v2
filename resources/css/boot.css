@@ -9,10 +9,12 @@
  * value as a fallback; a test keeps those in step with @theme.
  */
 /**
- * The legacy IMIS page-load preloader (old-imis assets/css/preloader.css),
- * used by the boot preloader in app.blade.php: dotted navy field, red accent strip, the logo on
- * a white disc inside a breathing red halo, the agency name on two lines,
- * a red divider, "Loading" with bouncing dots, and a red progress bar.
+ * The IMIS page-load preloader (after old-imis assets/css/preloader.css),
+ * used by the boot preloader in app.blade.php: dotted navy field, the logo
+ * on a white disc inside one breathing red halo, the agency name over the
+ * product name, a red divider, "Loading" with bouncing dots, and an
+ * indeterminate red sweep along the bottom edge (the wait has no known
+ * length, so the bar promises none).
  */
 @layer components {
     .imis-preloader {
@@ -23,6 +25,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        min-height: 100dvh;
         padding: 0 1.5rem;
         text-align: center;
         color: #fff;
@@ -33,54 +36,43 @@
         user-select: none;
     }
 
-    .imis-preloader__accent {
-        position: absolute;
-        inset: 0 0 auto;
-        height: 4px;
-        background: var(--color-csc-red, #ec1c2d);
-    }
-
     .imis-preloader__logo-wrap {
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 120px;
-        height: 120px;
+        width: clamp(6.75rem, 30vw, 7.5rem);
+        aspect-ratio: 1;
         margin-bottom: 2rem;
     }
 
-    /* White disc behind the logo, breathing with it. */
+    /* White disc behind the logo. */
     .imis-preloader__logo-wrap::before {
         content: '';
         position: absolute;
-        inset: 24px;
+        inset: 20%;
         border-radius: 50%;
         background: #fff;
         box-shadow: 0 6px 22px rgb(0 0 0 / 0.3);
-        animation: imis-preloader-breathe 2.4s ease-in-out infinite;
     }
 
-    /* Red halo: a ring plus two concentric outer rings. */
+    /* The one moving signal: a red ring breathing outward (transform and
+       opacity only, so it stays on the compositor). */
     .imis-preloader__logo-wrap::after {
         content: '';
         position: absolute;
-        inset: 18px;
+        inset: 14%;
         border-radius: 50%;
-        border: 4px solid color-mix(in srgb, var(--color-csc-red, #ec1c2d) 65%, transparent);
-        box-shadow:
-            0 0 0 6px color-mix(in srgb, var(--color-csc-red, #ec1c2d) 28%, transparent),
-            0 0 0 12px color-mix(in srgb, var(--color-csc-red, #ec1c2d) 14%, transparent);
+        border: 3px solid color-mix(in srgb, var(--color-csc-red, #ec1c2d) 70%, transparent);
         animation: imis-preloader-halo 2.4s ease-in-out infinite;
     }
 
     .imis-preloader__logo {
         position: relative;
         z-index: 1;
-        width: 64px;
-        height: 64px;
+        width: 53%;
+        aspect-ratio: 1;
         object-fit: contain;
-        animation: imis-preloader-breathe 2.4s ease-in-out infinite;
     }
 
     .imis-preloader__agency-main,
@@ -90,25 +82,36 @@
     }
 
     .imis-preloader__agency-main {
-        margin-bottom: 0.2rem;
-        font-size: 0.8125rem;
+        margin-bottom: 0.25rem;
+        font-size: clamp(0.8125rem, 3.4vw, 0.9375rem);
         font-weight: 700;
-        letter-spacing: 2px;
-        color: rgb(255 255 255 / 0.9);
+        letter-spacing: 0.14em;
+        color: rgb(255 255 255 / 0.95);
     }
 
     .imis-preloader__agency-sub {
         font-size: 0.6875rem;
-        letter-spacing: 1.5px;
-        color: rgb(255 255 255 / 0.45);
+        letter-spacing: 0.12em;
+        color: rgb(255 255 255 / 0.75);
+    }
+
+    .imis-preloader__product {
+        display: block;
+        max-width: 22rem;
+        margin-top: 0.625rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: 0.02em;
+        color: rgb(255 255 255 / 0.75);
     }
 
     .imis-preloader__divider {
-        width: 32px;
-        height: 1px;
-        margin: 0.875rem auto;
+        width: 2.5rem;
+        height: 2px;
+        margin: 1.125rem auto;
+        border-radius: 1px;
         background: var(--color-csc-red, #ec1c2d);
-        opacity: 0.7;
     }
 
     .imis-preloader__label {
@@ -116,9 +119,9 @@
         align-items: center;
         gap: 0.25rem;
         font-size: 0.8rem;
-        letter-spacing: 1px;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: rgb(255 255 255 / 0.45);
+        color: rgb(255 255 255 / 0.75);
     }
 
     .imis-preloader__dots {
@@ -134,7 +137,7 @@
         width: 3px;
         height: 3px;
         border-radius: 50%;
-        background: rgb(255 255 255 / 0.45);
+        background: rgb(255 255 255 / 0.85);
         animation: imis-preloader-dot 1.5s ease-in-out infinite both;
     }
 
@@ -149,37 +152,20 @@
     .imis-preloader__bar-wrap {
         position: absolute;
         inset: auto 0 0;
-        height: 3px;
-        background: rgb(255 255 255 / 0.08);
+        height: 4px;
+        overflow: hidden;
+        background: rgb(255 255 255 / 0.1);
     }
 
     .imis-preloader__bar {
+        width: 35%;
         height: 100%;
-        width: 0;
+        border-radius: 2px;
         background: var(--color-csc-red, #ec1c2d);
-        animation: imis-preloader-bar 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    @media (max-width: 375px) {
-        .imis-preloader__logo-wrap {
-            width: 110px;
-            height: 110px;
-        }
-
-        .imis-preloader__logo {
-            width: 58px;
-            height: 58px;
-        }
-
-        .imis-preloader__agency-main {
-            font-size: 0.75rem;
-            letter-spacing: 1.5px;
-        }
+        animation: imis-preloader-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .imis-preloader__logo,
-        .imis-preloader__logo-wrap::before,
         .imis-preloader__logo-wrap::after,
         .imis-preloader__dots span,
         .imis-preloader__bar {
@@ -188,6 +174,33 @@
 
         .imis-preloader__bar {
             width: 100%;
+            opacity: 0.6;
+        }
+    }
+
+    /* Windows high-contrast: system colours, and the disc and bar keep an edge. */
+    @media (forced-colors: active) {
+        .imis-preloader {
+            background: Canvas;
+            color: CanvasText;
+        }
+
+        .imis-preloader__logo-wrap::before,
+        .imis-preloader__logo-wrap::after {
+            border: 2px solid CanvasText;
+        }
+
+        .imis-preloader__agency-main,
+        .imis-preloader__agency-sub,
+        .imis-preloader__product,
+        .imis-preloader__label {
+            color: CanvasText;
+        }
+
+        .imis-preloader__bar,
+        .imis-preloader__divider,
+        .imis-preloader__dots span {
+            background: Highlight;
         }
     }
 }
@@ -196,17 +209,11 @@
     0%,
     100% {
         transform: scale(1);
-        opacity: 0.75;
+        opacity: 0.85;
     }
     50% {
-        transform: scale(1.12);
-        opacity: 0.2;
-    }
-}
-
-@keyframes imis-preloader-breathe {
-    50% {
-        transform: scale(1.04);
+        transform: scale(1.22);
+        opacity: 0.15;
     }
 }
 
@@ -223,15 +230,12 @@
     }
 }
 
-@keyframes imis-preloader-bar {
-    55% {
-        width: 72%;
+@keyframes imis-preloader-sweep {
+    from {
+        transform: translateX(-100%);
     }
-    85% {
-        width: 90%;
-    }
-    100% {
-        width: 100%;
+    to {
+        transform: translateX(300%);
     }
 }
 
@@ -480,6 +484,14 @@ html {
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    #boot-preloader.imis-preloader .imis-preloader__logo-wrap {
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #boot-preloader.imis-preloader.is-hidden .imis-preloader__logo-wrap {
+        transform: scale(0.92);
     }
 
     .imis-preloader {

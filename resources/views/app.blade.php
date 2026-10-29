@@ -60,13 +60,13 @@
         {{-- Boot preloader: the legacy IMIS loading screen. Removed by app.js
              once the first page renders. --}}
         <div id="boot-preloader" class="imis-preloader" role="status" aria-live="polite" aria-busy="true" aria-label="IMIS is loading. Please wait.">
-            <div class="imis-preloader__accent" aria-hidden="true"></div>
             <div class="imis-preloader__logo-wrap" aria-hidden="true">
                 <img src="{{ \App\Support\Branding\Branding::url('app_logo') }}" class="imis-preloader__logo" alt="" draggable="false">
             </div>
             <div aria-hidden="true">
                 <span class="imis-preloader__agency-main">Civil Service Commission</span>
                 <span class="imis-preloader__agency-sub">Regional Office VIII</span>
+                <span class="imis-preloader__product">Integrated Management Information System</span>
             </div>
             <div class="imis-preloader__divider" aria-hidden="true"></div>
             <p class="imis-preloader__label" aria-hidden="true">

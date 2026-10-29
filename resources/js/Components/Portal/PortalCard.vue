@@ -44,10 +44,10 @@ defineProps({
 <template>
     <Link
         :href="href"
-        class="flex gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        class="group flex gap-3 rounded-lg border border-border bg-surface p-4 transition duration-200 hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:hover:-translate-y-0.5"
     >
         <span
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-muted text-primary"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-white"
             aria-hidden="true"
         >
             <Icon :name="icon" />

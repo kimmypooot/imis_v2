@@ -17,7 +17,7 @@ defineProps({
 </script>
 
 <template>
-    <section class="relative overflow-hidden rounded-lg bg-primary p-6 text-center text-white md:p-8">
+    <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-center text-white shadow-md md:p-8">
         <OrbitCircles />
 
         <div class="relative z-10">
