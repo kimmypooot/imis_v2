@@ -24,7 +24,7 @@ class UpdateCommitteeMemberRequest extends FormRequest
     {
         return [
             'position' => ['required', 'string', 'max:100'],
-            'effective_from' => ['required', 'date'],
+            'effective_from' => ['nullable', 'date'],
             'effective_until' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'status' => ['required', new Enum(Status::class)],
         ];

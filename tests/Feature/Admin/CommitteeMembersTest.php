@@ -52,6 +52,21 @@ class CommitteeMembersTest extends TestCase
         ]);
     }
 
+    public function test_a_member_can_be_added_without_effective_dates(): void
+    {
+        $actor = $this->userWithPermission('committees.update');
+        $committee = Committee::factory()->create();
+        $target = User::factory()->create();
+
+        $this->actingAs($actor)->post("/admin/committees/{$committee->id}/members", [
+            'user_id' => $target->id,
+            'position' => 'Member',
+            'status' => 'active',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('committee_members', ['user_id' => $target->id, 'effective_from' => null, 'effective_until' => null]);
+    }
+
     public function test_required_fields_are_validated_when_adding_a_member(): void
     {
         $actor = $this->userWithPermission('committees.update');
@@ -59,7 +74,7 @@ class CommitteeMembersTest extends TestCase
 
         $response = $this->actingAs($actor)->post("/admin/committees/{$committee->id}/members", []);
 
-        $response->assertSessionHasErrors(['user_id', 'position', 'effective_from', 'status']);
+        $response->assertSessionHasErrors(['user_id', 'position', 'status'])->assertSessionDoesntHaveErrors(['effective_from', 'effective_until']);
     }
 
     public function test_effective_until_must_not_precede_effective_from_for_a_member(): void

@@ -147,7 +147,6 @@ const confirmStatusChange = () => {
                                 v-model="editForm.effective_from"
                                 type="date"
                                 label="Effective from"
-                                required
                                 :invalid="!!editForm.errors.effective_from"
                             />
                             <InputError :message="editForm.errors.effective_from" />
@@ -178,7 +177,7 @@ const confirmStatusChange = () => {
                             <Badge :tone="member.status === 'active' ? 'success' : 'neutral'">{{ member.status }}</Badge>
                         </div>
                         <div class="mt-1 text-sm text-text-muted">
-                            {{ member.effective_from }} – {{ member.effective_until ?? 'present' }}
+                            {{ member.effective_from ?? 'No start date' }} – {{ member.effective_until ?? 'present' }}
                         </div>
                     </div>
 
@@ -224,7 +223,6 @@ const confirmStatusChange = () => {
                         v-model="addForm.effective_from"
                         type="date"
                         label="Effective from"
-                        required
                         :invalid="!!addForm.errors.effective_from"
                     />
                     <InputError :message="addForm.errors.effective_from" />

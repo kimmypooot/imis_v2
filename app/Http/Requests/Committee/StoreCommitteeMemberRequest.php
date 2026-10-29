@@ -25,7 +25,7 @@ class StoreCommitteeMemberRequest extends FormRequest
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'position' => ['required', 'string', 'max:100'],
-            'effective_from' => ['required', 'date'],
+            'effective_from' => ['nullable', 'date'],
             'effective_until' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'status' => ['required', new Enum(Status::class)],
         ];
