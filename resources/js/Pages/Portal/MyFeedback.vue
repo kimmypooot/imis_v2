@@ -1,13 +1,14 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import AccountLayout from '../../Layouts/AccountLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
-defineOptions({ layout: PortalLayout });
+defineOptions({ layout: [PortalLayout, AccountLayout] });
 
 /**
  * What you have sent through "Send feedback", with its status and any

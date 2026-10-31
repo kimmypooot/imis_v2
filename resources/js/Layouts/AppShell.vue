@@ -5,6 +5,7 @@ import Icon from '../Components/UI/Icon.vue';
 import SidebarNav from '../Components/Navigation/SidebarNav.vue';
 import UserMenu from '../Components/Navigation/UserMenu.vue';
 import NotificationMenu from '../Components/Navigation/NotificationMenu.vue';
+import AppFooter from '../Components/Navigation/AppFooter.vue';
 import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
 import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
@@ -203,7 +204,7 @@ onBeforeUnmount(() => {
 
             <div class="ml-auto flex items-center gap-1">
                 <NotificationMenu v-if="page.props.notifications" :unread="unread" />
-                <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @about="aboutOpen = true" @feedback="feedbackOpen = true" />
+                <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @feedback="feedbackOpen = true" />
             </div>
         </header>
 
@@ -234,15 +235,6 @@ onBeforeUnmount(() => {
                 <slot name="sidebar-header" />
                 <SidebarNav :items="navItems" :variant="variant" />
             </div>
-
-            <!-- Version and agency, as in the legacy About footer. -->
-            <footer
-                class="shrink-0 border-t px-6 py-3 text-xs leading-relaxed"
-                :class="variant === 'admin' ? 'border-border text-text-muted' : 'border-white/10 text-white/70'"
-            >
-                <p class="font-medium">IMIS v{{ page.props.app?.version }}</p>
-                <p>CSC Regional Office VIII</p>
-            </footer>
         </aside>
 
         <div
@@ -267,6 +259,8 @@ onBeforeUnmount(() => {
             <main id="main-content" tabindex="-1" class="flex-1 px-4 py-6 focus:outline-none sm:px-6 lg:px-8">
                 <slot />
             </main>
+
+            <AppFooter @about="aboutOpen = true" @feedback="feedbackOpen = true" />
         </div>
     </div>
 </template>

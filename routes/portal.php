@@ -12,13 +12,13 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\My201FileController;
+use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyEmployeeRecordController;
 use App\Http\Controllers\MyFlexibleWorkController;
 use App\Http\Controllers\MyLearningDevelopmentController;
 use App\Http\Controllers\MyLeaveApplicationController;
 use App\Http\Controllers\MyLeaveController;
 use App\Http\Controllers\MyMonetizationController;
-use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
 use App\Http\Controllers\MyRecordAccessController;
@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
     Route::post('whats-new/seen', [WhatsNewController::class, 'seen'])->name('whats-new.seen');
 
     // Self-service account actions (the legacy profile menu).
+    Route::redirect('account', '/account/password')->name('account.index');
     Route::get('account/password', [PasswordController::class, 'edit'])->name('account.password.edit');
     // Admin-3: which notifications also come by email.
     Route::get('account/notifications', [NotificationSettingsController::class, 'edit'])->name('account.notifications.edit');

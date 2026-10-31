@@ -1,6 +1,7 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import AccountLayout from '../../Layouts/AccountLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
@@ -9,7 +10,7 @@ import InputError from '../../Components/Forms/InputError.vue';
 import PasswordRequirements from '../../Components/Forms/PasswordRequirements.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 
-defineOptions({ layout: PortalLayout });
+defineOptions({ layout: [PortalLayout, AccountLayout] });
 
 defineProps({
     requirements: { type: Array, default: () => [] },

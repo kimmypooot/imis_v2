@@ -13,7 +13,6 @@ import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
 import AnnouncementCard from '../../Components/Announcements/AnnouncementCard.vue';
-import PortalFooter from '../../Components/Portal/PortalFooter.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -28,7 +27,6 @@ const props = defineProps({
     welcomeMessage: { type: String, default: null },
     // The user's division, shown as a badge beside the greeting.
     userDivision: { type: String, default: null },
-    contact: { type: Object, default: () => ({}) },
 });
 
 // "What's New": pops up once for the latest unseen release. Closing it
@@ -103,8 +101,6 @@ const greeting = computed(() => {
                 />
             </div>
         </PortalSection>
-
-        <PortalFooter :contact="contact" />
     </div>
 
     <Modal v-if="whatsNew" :open="whatsNewOpen" title="What's New in IMIS" size="lg" @close="dismissWhatsNew">

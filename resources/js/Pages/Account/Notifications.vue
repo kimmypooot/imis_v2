@@ -1,12 +1,13 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import AccountLayout from '../../Layouts/AccountLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
 import Checkbox from '../../Components/Forms/Checkbox.vue';
 
-defineOptions({ layout: PortalLayout });
+defineOptions({ layout: [PortalLayout, AccountLayout] });
 
 /**
  * Admin-3: which notifications also come by email. Everything always

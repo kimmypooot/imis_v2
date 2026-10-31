@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import AccountLayout from '../../Layouts/AccountLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Table from '../../Components/UI/Table.vue';
@@ -9,7 +10,7 @@ import Pagination from '../../Components/UI/Pagination.vue';
 import Select from '../../Components/Forms/Select.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
-defineOptions({ layout: PortalLayout });
+defineOptions({ layout: [PortalLayout, AccountLayout] });
 
 /**
  * Admin-2: who else opened or printed your HR records, and when — the

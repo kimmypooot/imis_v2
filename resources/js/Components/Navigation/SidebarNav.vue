@@ -20,7 +20,8 @@ import { useAuthorization } from '../../Composables/useAuthorization';
  *   marked with a dot, expanded automatically when they hold the current
  *   page. A group may also hold sections ({ section: label, icon?, items })
  *   — collapsible categories one level down (Human Resources → Leave),
- *   opened the same way. The portal variant lists a section's links flat.
+ *   opened the same way. The portal variant keeps its groups open under
+ *   plain headings and collapses only the sections.
  */
 const props = defineProps({
     items: {
@@ -70,10 +71,7 @@ const groupChildren = (group) =>
         const visible = child.items.filter(isPermitted).map((link) => ({ type: 'link', ...link }));
         if (!visible.length) return list;
 
-        // Sections only collapse in the admin sidebar; elsewhere their links sit flat.
-        props.variant === 'admin'
-            ? list.push({ type: 'section', label: child.section, icon: child.icon, key: `${group.group}/${child.section}`, items: visible })
-            : list.push(...visible);
+        list.push({ type: 'section', label: child.section, icon: child.icon, key: `${group.group}/${child.section}`, items: visible });
 
         return list;
     }, []);
@@ -233,24 +231,56 @@ const linkClass = (href) => {
                 </ul>
             </div>
 
-            <!-- Portal: group as a heading -->
+            <!-- Portal: group as a heading; only its sections collapse -->
             <div v-else role="group" :aria-labelledby="groupId(entry)" class="mt-4 first:mt-0">
                 <p :id="groupId(entry)" class="px-3 pb-1 text-xs font-semibold tracking-wide text-white/70 uppercase">
                     {{ entry.label }}
                 </p>
-                <Link
-                    v-for="item in entry.items"
-                    :key="item.href"
-                    :href="item.href"
-                    class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-                    :class="linkClass(item.href)"
-                    :aria-current="isActive(item.href) ? 'page' : undefined"
-                    @click="$emit('navigate')"
-                >
-                    <Icon :name="item.icon" size="sm" />
-                    {{ item.label }}
-                    <span v-if="badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new</span></span>
-                </Link>
+                <template v-for="item in entry.items" :key="item.type === 'section' ? item.key : item.href">
+                    <Link
+                        v-if="item.type === 'link'"
+                        :href="item.href"
+                        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                        :class="linkClass(item.href)"
+                        :aria-current="isActive(item.href) ? 'page' : undefined"
+                        @click="$emit('navigate')"
+                    >
+                        <Icon :name="item.icon" size="sm" />
+                        {{ item.label }}
+                        <span v-if="badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new</span></span>
+                    </Link>
+
+                    <div v-else>
+                        <button
+                            type="button"
+                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                            :class="holdsActive(item) ? 'text-white' : 'text-white/80'"
+                            :aria-expanded="isExpanded(item)"
+                            :aria-controls="sectionId(item)"
+                            @click="toggle(item)"
+                        >
+                            <Icon :name="item.icon || 'grid'" size="sm" />
+                            <span class="flex-1">{{ item.label }}</span>
+                            <span v-if="!isExpanded(item) && badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new inside</span></span>
+                            <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(item) }" />
+                        </button>
+                        <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
+                            <li v-for="link in item.items" :key="link.href">
+                                <Link
+                                    :href="link.href"
+                                    class="flex items-center gap-3 rounded-md py-1.5 pr-3 pl-9 text-sm transition-colors"
+                                    :class="linkClass(link.href)"
+                                    :aria-current="isActive(link.href) ? 'page' : undefined"
+                                    @click="$emit('navigate')"
+                                >
+                                    <Icon :name="link.icon" size="sm" />
+                                    {{ link.label }}
+                                    <span v-if="badgeCount(link)" :class="badgeClass">{{ badgeText(badgeCount(link)) }}<span class="sr-only"> new</span></span>
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
             </div>
         </template>
     </nav>

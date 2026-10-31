@@ -1,21 +1,17 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
 import UserAvatar from '../UI/UserAvatar.vue';
 import ConfirmDialog from '../Feedback/ConfirmDialog.vue';
-import { useAuthorization } from '../../Composables/useAuthorization';
 import { firstName, useSplash } from '../../Composables/useSplash';
-import { adminAccessPermissions, hrAccessPermissions } from '../../Utils/navigation';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
- * The account menu, following the legacy IMIS profile dropdown: who you
- * are and when you last signed in, then the links in groups — Management
- * (HR Management and Administration, each only with access to that area),
- * your account (Change password, Notification settings, Who accessed my record), feedback (Send feedback, My feedback), and about IMIS
- * (What's New, Privacy notice, About) — and Sign out (confirmed, then the "Signing Out"
- * splash carries you to the login page).
+ * The account menu: who you are and when you last signed in, your account
+ * and feedback links, and
+ * Sign out (confirmed, then the "Signing Out" splash carries you to the
+ * login page). HR Management and Administration live in the sidebar.
  */
 const props = defineProps({
     user: {
@@ -25,14 +21,9 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['about', 'feedback']);
+const emit = defineEmits(['feedback']);
 
-const { canAny } = useAuthorization();
 const { show: showSplash, hide: hideSplash } = useSplash();
-
-// Same any-of lists as the sidebar's Management entries (kept in one place).
-const canAccessAdmin = computed(() => canAny(adminAccessPermissions));
-const canAccessHr = computed(() => canAny(hrAccessPermissions));
 
 const open = ref(false);
 const rootRef = ref(null);
@@ -72,11 +63,6 @@ onBeforeUnmount(() => {
     document.removeEventListener('keydown', onKeydown);
 });
 
-const openAbout = () => {
-    close();
-    emit('about');
-};
-
 const openFeedback = () => {
     close();
     emit('feedback');
@@ -108,9 +94,7 @@ const logout = () => {
 const itemClass =
     'flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
 
-// Groups are separated by a rule, and each carries a small heading.
 const groupClass = 'border-b border-border py-1';
-const headingClass = 'px-3 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted';
 </script>
 
 <template>
@@ -136,70 +120,28 @@ const headingClass = 'px-3 pt-1.5 pb-1 text-[11px] font-semibold uppercase track
         <div
             v-if="open"
             id="user-menu-panel"
-            class="absolute right-0 z-50 mt-2 w-64 rounded-md border border-border bg-surface py-1 shadow-lg"
+            class="absolute right-0 z-50 mt-2 max-h-[calc(100vh-5rem)] w-64 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-lg"
         >
             <div class="border-b border-border px-3 py-2">
-                <p class="text-sm font-semibold break-words text-text">{{ user.name }}</p>
-                <p v-if="user.position" class="text-xs break-words text-text-muted">{{ user.position }}</p>
+                <!-- The trigger already shows name and position from sm up. -->
+                <div class="sm:hidden">
+                    <p class="text-sm font-semibold break-words text-text">{{ user.name }}</p>
+                    <p v-if="user.position" class="text-xs break-words text-text-muted">{{ user.position }}</p>
+                </div>
                 <p class="text-xs break-all text-text-muted">@{{ user.username }} · {{ user.email }}</p>
-                <p v-if="user.previous_login_at" class="mt-1 text-xs text-text-muted">
+                <p v-if="user.previous_login_at" class="text-xs text-text-muted">
                     Last login: <time :datetime="user.previous_login_at">{{ formatDateTime(user.previous_login_at) }}</time>
                 </p>
             </div>
 
-            <div v-if="canAccessHr || canAccessAdmin" role="group" aria-labelledby="user-menu-management" :class="groupClass">
-                <p id="user-menu-management" :class="headingClass">Management</p>
-                <Link v-if="canAccessHr" href="/admin/hr" :class="itemClass" @click="close">
-                    <Icon name="clipboard" size="sm" />
-                    HR Management
+            <div role="group" aria-label="My account" :class="groupClass">
+                <Link href="/account" :class="itemClass" @click="close">
+                    <Icon name="cog" size="sm" />
+                    Account settings
                 </Link>
-                <Link v-if="canAccessAdmin" href="/admin" :class="itemClass" @click="close">
-                    <Icon name="shield" size="sm" />
-                    Administration
-                </Link>
-            </div>
-
-            <div role="group" aria-labelledby="user-menu-account" :class="groupClass">
-                <p id="user-menu-account" :class="headingClass">My account</p>
-                <Link href="/account/password" :class="itemClass" @click="close">
-                    <Icon name="lock" size="sm" />
-                    Change password
-                </Link>
-                <Link href="/account/notifications" :class="itemClass" @click="close">
-                    <Icon name="bell" size="sm" />
-                    Notification settings
-                </Link>
-                <Link href="/my/record-access" :class="itemClass" @click="close">
-                    <Icon name="eye" size="sm" />
-                    Who accessed my record
-                </Link>
-            </div>
-
-            <div role="group" aria-labelledby="user-menu-feedback" :class="groupClass">
-                <p id="user-menu-feedback" :class="headingClass">Feedback</p>
                 <button type="button" :class="itemClass" @click="openFeedback">
                     <Icon name="chat" size="sm" />
                     Send feedback
-                </button>
-                <Link href="/my/feedback" :class="itemClass" @click="close">
-                    <Icon name="envelope" size="sm" />
-                    My feedback
-                </Link>
-            </div>
-
-            <div role="group" aria-labelledby="user-menu-about" :class="groupClass">
-                <p id="user-menu-about" :class="headingClass">About IMIS</p>
-                <Link href="/whats-new" :class="itemClass" @click="close">
-                    <Icon name="megaphone" size="sm" />
-                    What's New
-                </Link>
-                <Link href="/privacy" :class="itemClass" @click="close">
-                    <Icon name="documentText" size="sm" />
-                    Privacy notice
-                </Link>
-                <button type="button" :class="itemClass" @click="openAbout">
-                    <Icon name="info" size="sm" />
-                    About IMIS
                 </button>
             </div>
 

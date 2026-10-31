@@ -59,21 +59,16 @@ export const hrAccessPermissions = [
 ];
 
 /**
- * Portal sidebar: Home on its own, then headed groups. The Management
+ * Portal sidebar: Home and Announcements on their own, then headed groups
+ * (Human Resources has collapsible Records, Leave and Payroll sections). The
+ * Management
  * group holds only the Executive Dashboard and the two management areas
  * (Human Resources and Administration), so it disappears for users with none
  * (SidebarNav drops empty groups).
  */
 export const portalNavItems = [
     { label: 'Home', href: '/dashboard', icon: 'home' },
-    {
-        group: 'Updates',
-        items: [
-            { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
-            { label: "What's New", href: '/whats-new', icon: 'activity' },
-            { label: 'My Feedback', href: '/my/feedback', icon: 'chat' },
-        ],
-    },
+    { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
     {
         group: 'Directory',
         items: [
@@ -85,22 +80,39 @@ export const portalNavItems = [
     {
         group: 'Human Resources',
         items: [
-            { label: 'My Employee Record', href: '/my/employee-record', icon: 'clipboard' },
-            { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'user' },
-            { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
-            { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
-            { label: 'My Leave', href: '/my/leave', icon: 'calendar' },
-            { label: 'File Leave', href: '/my/leave/apply', icon: 'plus' },
-            { label: 'My Leave Applications', href: '/my/leave/applications', icon: 'clipboard' },
-            { label: 'Leave Calendar', href: '/my/leave/calendar', icon: 'calendar' },
-            { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'database' },
-            { label: 'Flexible Work', href: '/my/flexible-work', icon: 'clock' },
-            { label: 'Leave Approvals', href: '/leave/approvals', icon: 'checkCircle', flag: 'leaveApprover' },
-            { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar' },
-            { label: 'My Payslips', href: '/my/payslips', icon: 'database' },
-            { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
-            { label: 'My Learning & Development', href: '/my/learning-development', icon: 'chartBar' },
-            { label: 'Who Accessed My Record', href: '/my/record-access', icon: 'eye' },
+            {
+                section: 'Records',
+                icon: 'user',
+                items: [
+                    { label: 'My Employee Record', href: '/my/employee-record', icon: 'user' },
+                    { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText' },
+                    { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
+                    { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
+                    { label: 'My Learning & Development', href: '/my/learning-development', icon: 'activity' },
+                ],
+            },
+            {
+                section: 'Leave',
+                icon: 'calendar',
+                items: [
+                    { label: 'My Leave', href: '/my/leave', icon: 'chartBar' },
+                    { label: 'File Leave', href: '/my/leave/apply', icon: 'plus' },
+                    { label: 'My Leave Applications', href: '/my/leave/applications', icon: 'clipboard' },
+                    { label: 'Leave Calendar', href: '/my/leave/calendar', icon: 'calendar' },
+                    { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'tag' },
+                    { label: 'Flexible Work', href: '/my/flexible-work', icon: 'clock' },
+                    { label: 'Leave Approvals', href: '/leave/approvals', icon: 'checkCircle', flag: 'leaveApprover' },
+                ],
+            },
+            {
+                section: 'Payroll',
+                icon: 'database',
+                items: [
+                    { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar' },
+                    { label: 'My Payslips', href: '/my/payslips', icon: 'documentText' },
+                    { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
+                ],
+            },
         ],
     },
     {
