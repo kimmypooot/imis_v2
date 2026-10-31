@@ -4,6 +4,7 @@ namespace App\Support\Legacy;
 
 use App\Enums\UnitType;
 use App\Models\Application;
+use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
 use App\Support\IctSrts\ItgCommittee;
@@ -144,7 +145,28 @@ class LegacySso
             'pmt_position' => PmtCommittee::positions()->get($user->id) ?: null,
             'office_code' => $office?->code,
             'office_type' => $office?->unit_type->value,
+            // Other offices they head today by designation (OIC, Caretaker, a concurrent Director).
+            'headed_offices' => $this->headedOffices($user),
         ];
+    }
+
+    /**
+     * The field and satellite offices the person heads today by designation,
+     * apart from their own: for a system that scopes by office and lets them
+     * work as each in turn.
+     *
+     * @return list<array{code: ?string, name: string, type: string}>
+     */
+    private function headedOffices(User $user): array
+    {
+        $ids = EmployeeAssignment::officesHeadedBy($user);
+
+        return OrganizationalUnit::query()->whereIn('id', $ids)->orderBy('name')->get()
+            ->filter(fn (OrganizationalUnit $unit) => in_array($unit->unit_type, [UnitType::FieldOffice, UnitType::SatelliteOffice], true))
+            ->reject(fn (OrganizationalUnit $unit) => $unit->id === $this->office($user)?->id)
+            ->map(fn (OrganizationalUnit $unit) => ['code' => $unit->code, 'name' => $unit->name, 'type' => $unit->unit_type->value])
+            ->values()
+            ->all();
     }
 
     /** Whether the person is an active member of the Information Technology Group committee today. */

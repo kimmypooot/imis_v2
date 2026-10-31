@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Legacy;
 
+use App\Enums\AssignmentKind;
+use App\Enums\HeadCapacity;
 use App\Enums\UnitType;
 use App\Enums\UserStatus;
 use App\Models\Application;
@@ -9,6 +11,8 @@ use App\Models\ApplicationAccess;
 use App\Models\ApplicationRole;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
+use App\Models\Employee;
+use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
 use App\Support\Legacy\LegacySso;
@@ -183,6 +187,37 @@ class LegacySsoTest extends TestCase
             ->assertJsonPath('user.office_code', 'LFO-I')
             ->assertJsonPath('user.office_type', 'field_office')
             ->assertJsonPath('user.photo_url', Storage::disk('public')->url('profile-photos/x.jpg'));
+    }
+
+    public function test_a_laravel_system_is_told_which_other_offices_the_person_heads(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['proctad.example.test']]);
+        $system = $this->system('https://proctad.example.test/sso');
+        $role = ApplicationRole::factory()->for($system)->create(['code' => 'fo_admin']);
+        $home = OrganizationalUnit::factory()->create(['code' => 'BFO', 'unit_type' => UnitType::FieldOffice]);
+        $satellite = OrganizationalUnit::factory()->create(['code' => 'WLSO', 'name' => 'CSC Satellite Office - Western Leyte', 'unit_type' => UnitType::SatelliteOffice]);
+        $user = ApplicationAccess::factory()->forRole($role)->create()->user;
+        $user->forceFill(['organizational_unit_id' => $home->id])->save();
+        $employee = Employee::factory()->create(['user_id' => $user->id]);
+
+        $designate = fn (OrganizationalUnit $to, array $dates) => EmployeeAssignment::query()->forceCreate([
+            'employee_id' => $employee->id,
+            'kind' => AssignmentKind::Designation,
+            'as_head' => true,
+            'head_capacity' => HeadCapacity::OfficerInCharge,
+            'from_unit_id' => $home->id,
+            'to_unit_id' => $to->id,
+            ...$dates,
+        ]);
+        $designate($satellite, ['effective_date' => today()->subMonth()]);
+        $designate(OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice]), ['effective_date' => today()->subYear(), 'end_date' => today()->subMonth()]);
+
+        $this->redeem($this->launch($user, $system), ['audience' => 'proctad.example.test'])
+            ->assertOk()
+            ->assertJsonPath('user.office_code', 'BFO')
+            ->assertJsonCount(1, 'user.headed_offices')
+            ->assertJsonPath('user.headed_offices.0.code', 'WLSO')
+            ->assertJsonPath('user.headed_offices.0.type', 'satellite_office');
     }
 
     public function test_a_hub_system_is_told_whether_the_person_is_on_the_itg_committee(): void

@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Portal;
 
+use App\Enums\AssignmentKind;
 use App\Enums\EmploymentStatus;
+use App\Enums\HeadCapacity;
 use App\Enums\UnitType;
 use App\Models\Application;
 use App\Models\Employee;
+use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
 use App\Models\Position;
 use App\Models\Service;
@@ -116,6 +119,33 @@ class OrganizationalUnitsTest extends TestCase
             ->where('groups.0.units.0.employees.1.name', $directorThree->name)
             ->where('groups.0.units.0.employees.1.role', null)
             ->where('groups.0.units.0.employees.2.name', $aide->name));
+    }
+
+    public function test_a_director_designated_to_another_office_is_listed_there_as_well(): void
+    {
+        $viewer = User::factory()->create();
+        $home = OrganizationalUnit::factory()->create(['name' => 'CSC Field Office - Biliran', 'unit_type' => UnitType::FieldOffice, 'sort_order' => 1]);
+        $satellite = OrganizationalUnit::factory()->create(['name' => 'CSC Satellite Office - Western Leyte', 'unit_type' => UnitType::SatelliteOffice, 'sort_order' => 2]);
+
+        $director = User::factory()->create(['organizational_unit_id' => $home->id, 'position' => 'Director II']);
+        $employee = Employee::factory()->create(['user_id' => $director->id]);
+
+        EmployeeAssignment::query()->forceCreate([
+            'employee_id' => $employee->id,
+            'kind' => AssignmentKind::Designation,
+            'as_head' => true,
+            'head_capacity' => HeadCapacity::OfficerInCharge,
+            'from_unit_id' => $home->id,
+            'to_unit_id' => $satellite->id,
+            'effective_date' => today()->subMonth(),
+        ]);
+
+        $this->actingAs($viewer)->get('/organizational-units')->assertInertia(fn ($page) => $page
+            ->where('groups.0.units.0.employees.0.name', $director->name)
+            ->where('groups.0.units.0.employees.0.role', 'Head')
+            ->where('groups.0.units.1.employees.0.name', $director->name)
+            ->where('groups.0.units.1.employees.0.role', 'OIC')
+            ->where('groups.0.units.1.employee_count', 1));
     }
 
     public function test_invalid_unit_returns_404(): void

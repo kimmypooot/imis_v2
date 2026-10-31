@@ -2512,7 +2512,10 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   null if none), `role_code` (that role's stable `code`) and
   `office_name`, `itg_member` (active member today of the committee whose short name is `ictsrts.itg_committee`), `office_code` / `office_type` (their organizational unit, or the
   nearest ancestor that is a regional support unit, field office or
-  satellite office) and `photo_url` (the public URL of their header
+  satellite office), `headed_offices` (the field and satellite offices they
+  head today by designation, apart from their own, each `{code, name, type}`;
+  empty for most people — for a system that scopes by office and lets them
+  work as each in turn) and `photo_url` (the public URL of their header
   photo, or null). The system stores the URL as the account's avatar, and
   must allow the IMIS origin in its `img-src` (PROCTAD and the Recruitment
   Portal: `IMIS_ASSET_ORIGIN`).

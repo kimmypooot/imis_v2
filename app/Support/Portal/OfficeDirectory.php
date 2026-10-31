@@ -20,6 +20,9 @@ use Illuminate\Support\Collection;
  * offices), each with the people serving there now. A person is listed
  * under the office they currently serve in, so a reassignment moves them.
  *
+ * A head designated from another office (OIC, Caretaker, or a concurrent
+ * Director) is listed in the office they head as well as their own.
+ *
  * Within an office the order is: its leaders first (the head, then any
  * other leader such as the ORD's Director III), then everyone else by
  * salary grade, highest first, then by surname. Contract of Service and
@@ -119,6 +122,12 @@ class OfficeDirectory
                 $roles[$leader['user']->id] = $leader['capacity']?->shortLabel() ?? 'Head';
             }
         }
+
+        // A head designated from another office (a concurrent Director, an OIC)
+        // serves here too, so they are listed here as well as in their own office.
+        $people = $people->concat(
+            collect($leaders)->pluck('user')->reject(fn (User $leader) => $people->contains('id', $leader->id)),
+        );
 
         $employees = $people
             ->sortBy(fn (User $user) => [
