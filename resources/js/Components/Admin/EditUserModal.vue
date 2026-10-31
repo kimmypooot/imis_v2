@@ -98,6 +98,11 @@ const saveProfile = () => {
     })).put(`/users/${props.user.id}`, {
         preserveScroll: true,
         onSuccess: () => form.defaults(),
+        // The username lives on the Account tab and the rest on Profile, but they
+        // save together: show the tab holding the error so it is not missed.
+        onError: (errors) => {
+            tab.value = Object.keys(errors).some((field) => field !== 'username') ? 'profile' : 'account';
+        },
     });
 };
 
@@ -187,7 +192,7 @@ const close = () => emit('close');
 
             <Tabs v-model="tab" :tabs="tabs">
                 <template #profile>
-                    <form id="edit-user-form" class="space-y-5" @submit.prevent="saveProfile">
+                    <form id="edit-user-form" class="space-y-5" novalidate @submit.prevent="saveProfile">
                         <fieldset :disabled="!canEdit" class="space-y-5">
                             <PhotoPicker :name="user.name" :photo-url="user.profile_photo_url" :error="photoError" @select="uploadPhoto">
                                 <button
