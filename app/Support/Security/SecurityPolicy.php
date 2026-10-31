@@ -38,6 +38,12 @@ class SecurityPolicy
         }
     }
 
+    /** Whether the login page may offer saved-account cards on a device. */
+    public static function rememberAccountsEnabled(): bool
+    {
+        return (bool) Settings::get('security_remember_accounts');
+    }
+
     public static function maxLoginAttempts(): int
     {
         return (int) Settings::get('security_login_max_attempts');

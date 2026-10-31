@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Rules\Turnstile;
 use App\Support\Security\LoginHistoryRecorder;
+use App\Support\Security\SecurityPolicy;
 use App\Support\Security\SessionLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class AuthenticatedSessionController extends Controller
             // Public by design (it's embedded in the page); the secret
             // never leaves the server.
             'turnstileSiteKey' => Turnstile::enabled() ? config('services.turnstile.site_key') : null,
+            'rememberAccounts' => SecurityPolicy::rememberAccountsEnabled(),
         ]);
     }
 

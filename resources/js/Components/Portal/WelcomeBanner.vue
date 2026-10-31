@@ -1,12 +1,15 @@
 <script setup>
 import OrbitCircles from '../UI/OrbitCircles.vue';
+import { useBranding } from '../../Composables/useBranding';
 
 /**
  * The legacy dashboard's welcome banner (old-imis .welcome-banner): the
  * greeting with the user's division badge, the system title with its
  * version badge, and the welcome message from System Settings, on flat
  * CSC navy with the legacy's orbiting circles (OrbitCircles, shared with
- * the admin / HR dashboard banners). Holds the page's <h1>.
+ * the admin / HR dashboard banners). The office facade photo (the sign-in
+ * background from Admin → Branding) shows faintly through the navy tint.
+ * Holds the page's <h1>.
  */
 defineProps({
     greeting: { type: String, required: true },
@@ -14,10 +17,20 @@ defineProps({
     version: { type: String, default: null },
     message: { type: String, default: null },
 });
+
+const brand = useBranding();
 </script>
 
 <template>
     <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-center text-white shadow-md md:p-8">
+        <!-- Decorative photo under a navy tint, so the text keeps its contrast. -->
+        <div
+            class="absolute inset-0 bg-cover bg-center"
+            :style="{ backgroundImage: `url('${brand.login_background}')` }"
+            aria-hidden="true"
+        />
+        <div class="absolute inset-0 bg-linear-to-br from-csc-blue/92 via-csc-blue/90 to-csc-blue-dark/95" aria-hidden="true" />
+
         <OrbitCircles />
 
         <div class="relative z-10">

@@ -11,6 +11,7 @@ import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
 import { firstName, useSplash } from '../Composables/useSplash';
 import { useBranding } from '../Composables/useBranding';
+import { refreshRememberedAccount } from '../Composables/useRememberedAccounts';
 
 /**
  * Shared authenticated shell that PortalLayout and AdminLayout both wrap
@@ -146,6 +147,8 @@ const onMediaChange = () => {
 };
 
 onMounted(() => {
+    // Keeps this person's saved login-page card (name, photo) current.
+    refreshRememberedAccount(page.props.auth.user);
     mediaQuery = window.matchMedia(DESKTOP_QUERY);
     onMediaChange();
     mediaQuery.addEventListener('change', onMediaChange);

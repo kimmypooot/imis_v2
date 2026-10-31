@@ -229,6 +229,13 @@ final class SettingRegistry
                 'default' => 8,
                 'constraints' => ['required' => true, 'min' => 8, 'max' => 64],
             ],
+            'security_remember_accounts' => [
+                'type' => SettingType::Boolean,
+                'group' => SettingGroup::Security,
+                'label' => 'Offer "Remember this account" on the login page',
+                'description' => 'Lets people save their name, username and photo link on the browser they sign in from, so the login page can show a card to pick instead of typing the username. Passwords are never saved. Turn off if staff share computers.',
+                'default' => true,
+            ],
             'account_inactive_days' => [
                 'type' => SettingType::Integer,
                 'group' => SettingGroup::Security,

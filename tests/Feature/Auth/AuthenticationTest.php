@@ -32,6 +32,18 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
+    public function test_a_successful_login_lands_on_the_dashboard_with_the_welcome_splash(): void
+    {
+        $user = User::factory()->create();
+
+        $this->followingRedirects()
+            ->post('/login', ['username' => $user->username, 'password' => 'password'])
+            ->assertInertia(fn ($page) => $page
+                ->component('Portal/Dashboard')
+                ->where('flash.signedIn', 'portal')
+                ->where('auth.user.username', $user->username));
+    }
+
     public function test_user_cannot_authenticate_with_unknown_username(): void
     {
         User::factory()->create();

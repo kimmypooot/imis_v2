@@ -10,6 +10,23 @@
  * hard-coding values inside individual components.
  */
 @theme {
+    --animate-shake: shake 0.4s ease-in-out;
+
+    @keyframes shake {
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+        20%,
+        60% {
+            transform: translateX(-6px);
+        }
+        40%,
+        80% {
+            transform: translateX(6px);
+        }
+    }
+
     --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 

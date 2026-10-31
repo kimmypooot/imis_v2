@@ -1962,6 +1962,10 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
 - **v3.2.0** (a fresher look, the redesigned loading screen, optional
   committee start dates, the ICT SRTS employee list) ships the same way,
   through migration `2027_01_28_090000_add_v3_2_release_note`.
+- **v3.3.0** (a refreshed sign-in page, saved-account cards, the redesigned
+  privacy notice) is inserted already **published** by migration
+  `2027_01_29_090000_add_v3_3_release_note`, so it is the version shown as
+  soon as it is migrated; 3.2.0 stays a draft until an admin publishes it.
 
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,

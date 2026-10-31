@@ -7,24 +7,17 @@ use App\Http\Resources\ApplicationResource;
 use App\Http\Resources\OrganizationalUnitResource;
 use App\Http\Resources\ServiceResource;
 use App\Models\OrganizationalUnit;
+use App\Support\Portal\OfficeDirectory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OrganizationalUnitController extends Controller
 {
-    public function index(): Response
+    public function index(OfficeDirectory $directory): Response
     {
-        $organizationalUnits = OrganizationalUnit::query()
-            ->active()
-            ->roots()
-            ->withCount('children')
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Portal/OrganizationalUnits/Index', [
-            'organizationalUnits' => OrganizationalUnitResource::collection($organizationalUnits),
+            'groups' => $directory->groups(),
         ]);
     }
 

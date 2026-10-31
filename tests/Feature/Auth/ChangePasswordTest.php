@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\AuditLog;
+use App\Models\Changelog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -71,7 +72,7 @@ class ChangePasswordTest extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertInertia(fn (Assert $page) => $page
             ->where('auth.user.username', 'jdcruz')
             ->where('auth.user.previous_login_at', fn ($value) => $value !== null)
-            ->where('app.version', config('app.version'))
+            ->where('app.version', Changelog::currentVersion())
             // Hides the sidebar's Developer group outside local.
             ->where('app.local', false));
     }

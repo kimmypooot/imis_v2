@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import Icon from '../UI/Icon.vue';
 
 const props = defineProps({
     modelValue: {
@@ -26,6 +27,11 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Optional Icon name shown inside the field, before the text.
+    icon: {
+        type: String,
+        default: null,
+    },
 });
 
 defineEmits(['update:modelValue']);
@@ -38,6 +44,12 @@ const inputType = computed(() => (visible.value ? 'text' : 'password'));
     <div>
         <label :for="id" class="block text-sm font-medium text-text">{{ label }}</label>
         <div class="relative mt-1">
+            <Icon
+                v-if="icon"
+                :name="icon"
+                size="sm"
+                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+            />
             <input
                 :id="id"
                 :type="inputType"
@@ -45,17 +57,19 @@ const inputType = computed(() => (visible.value ? 'text' : 'password'));
                 :autocomplete="autocomplete"
                 :required="required"
                 :aria-invalid="invalid"
-                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 pr-16 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 pr-10 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                :class="{ 'pl-9': icon }"
                 @input="$emit('update:modelValue', $event.target.value)"
             />
             <button
                 type="button"
-                class="absolute inset-y-0 right-0 px-3 text-sm text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                class="absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 :aria-pressed="visible"
                 :aria-label="visible ? 'Hide password' : 'Show password'"
+                :title="visible ? 'Hide password' : 'Show password'"
                 @click="visible = !visible"
             >
-                {{ visible ? 'Hide' : 'Show' }}
+                <Icon :name="visible ? 'eyeSlash' : 'eye'" size="sm" />
             </button>
         </div>
     </div>

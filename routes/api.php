@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\IctSrtsController;
+use App\Http\Controllers\Api\IpcrsController;
 use App\Http\Controllers\Api\JportalController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\SsoValidateController;
 use App\Http\Middleware\AuthenticateIctSrts;
+use App\Http\Middleware\AuthenticateIpcrs;
 use App\Http\Middleware\AuthenticateJportal;
 use App\Http\Middleware\AuthenticateRecruitmentPortal;
 use Illuminate\Support\Facades\Route;
@@ -33,4 +35,9 @@ Route::middleware([AuthenticateJportal::class, 'throttle:120,1'])->prefix('api/v
 // ICT SRTS: the current employees, for its ICT Group and form signatories.
 Route::middleware([AuthenticateIctSrts::class, 'throttle:60,1'])->prefix('api/v1/ictsrts')->group(function () {
     Route::get('employees', [IctSrtsController::class, 'employees'])->name('ictsrts.employees');
+});
+
+// IPCRS: the current employees, to name on a form and cascade rows to.
+Route::middleware([AuthenticateIpcrs::class, 'throttle:60,1'])->prefix('api/v1/ipcrs')->group(function () {
+    Route::get('employees', [IpcrsController::class, 'employees'])->name('ipcrs.employees');
 });

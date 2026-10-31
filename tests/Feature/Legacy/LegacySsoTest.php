@@ -200,6 +200,27 @@ class LegacySsoTest extends TestCase
         $this->redeem($this->launch($other, $system), ['audience' => 'ictsrts.example.test'])->assertJsonPath('user.itg_member', false);
     }
 
+    public function test_a_hub_system_is_told_whether_the_person_is_on_the_pmt_committee(): void
+    {
+        config(['legacy.sso.hub_hosts' => ['ipcrs.example.test'], 'ipcrs.pmt_committee' => 'PMT']);
+        $system = $this->system('https://ipcrs.example.test/sso');
+        $role = ApplicationRole::factory()->for($system)->create(['code' => 'staff']);
+        $pmt = Committee::factory()->create(['short_name' => 'PMT']);
+        $other = Committee::factory()->create(['short_name' => 'GAD']);
+
+        $member = ApplicationAccess::factory()->forRole($role)->create()->user;
+        CommitteeMember::factory()->create(['committee_id' => $pmt->id, 'user_id' => $member->id, 'position' => 'Secretariat', 'effective_from' => null]);
+        CommitteeMember::factory()->create(['committee_id' => $pmt->id, 'user_id' => $member->id, 'position' => 'Alternate', 'effective_from' => null]);
+        $elsewhere = ApplicationAccess::factory()->forRole($role)->create()->user;
+        CommitteeMember::factory()->create(['committee_id' => $other->id, 'user_id' => $elsewhere->id, 'effective_from' => null]);
+        $ended = ApplicationAccess::factory()->forRole($role)->create()->user;
+        CommitteeMember::factory()->create(['committee_id' => $pmt->id, 'user_id' => $ended->id, 'effective_from' => null, 'effective_until' => now()->subDay()->toDateString()]);
+
+        $this->redeem($this->launch($member, $system), ['audience' => 'ipcrs.example.test'])->assertJsonPath('user.pmt_member', true)->assertJsonPath('user.pmt_position', 'Secretariat, Alternate');
+        $this->redeem($this->launch($elsewhere, $system), ['audience' => 'ipcrs.example.test'])->assertJsonPath('user.pmt_member', false)->assertJsonPath('user.pmt_position', null);
+        $this->redeem($this->launch($ended, $system), ['audience' => 'ipcrs.example.test'])->assertJsonPath('user.pmt_member', false);
+    }
+
     public function test_a_hub_token_cannot_be_redeemed_as_a_legacy_one_or_without_an_audience(): void
     {
         config(['legacy.sso.hub_hosts' => ['proctad.example.test']]);

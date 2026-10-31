@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
 use App\Support\IctSrts\ItgCommittee;
+use App\Support\Ipcrs\PmtCommittee;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -137,6 +138,10 @@ class LegacySso
             'office_name' => $office?->name,
             // Whether they are on the Information Technology Group committee (ICT SRTS makes them ITG members).
             'itg_member' => $this->inItg($user),
+            // Whether they are on the Performance Management Team committee (IPCRS lets the PMT see every rating).
+            'pmt_member' => PmtCommittee::includes($user->id),
+            // What they are in that team, as written in the committee ("Chairperson", "Secretariat, Alternate"), or null.
+            'pmt_position' => PmtCommittee::positions()->get($user->id) ?: null,
             'office_code' => $office?->code,
             'office_type' => $office?->unit_type->value,
         ];

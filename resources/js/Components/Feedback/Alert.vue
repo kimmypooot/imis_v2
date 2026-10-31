@@ -12,6 +12,11 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    // Overrides the tone's default icon.
+    icon: {
+        type: String,
+        default: null,
+    },
     dismissible: {
         type: Boolean,
         default: false,
@@ -44,7 +49,7 @@ const meta = computed(() => toneMeta[props.tone]);
         class="flex items-start gap-3 rounded-md p-4 text-sm ring-1 ring-inset"
         :class="meta.classes"
     >
-        <Icon :name="meta.icon" size="sm" class="mt-0.5 shrink-0" />
+        <Icon :name="icon ?? meta.icon" size="sm" class="mt-0.5 shrink-0" />
 
         <div class="flex-1">
             <p v-if="title" class="font-medium">{{ title }}</p>

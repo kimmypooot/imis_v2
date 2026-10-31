@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 /**
  * A user's profile photo, or their initials on navy when there is none.
@@ -12,6 +12,10 @@ const props = defineProps({
     size: { type: String, default: 'md', validator: (value) => ['sm', 'md', 'lg', 'xl'].includes(value) },
     highlight: { type: Boolean, default: false },
 });
+
+// A photo that no longer loads (removed, or a stale saved URL) falls back to initials.
+const photoFailed = ref(false);
+watch(() => props.photoUrl, () => (photoFailed.value = false));
 
 const ring = computed(() => (props.highlight ? 'border-2 border-border transition-colors group-hover:border-primary' : ''));
 
@@ -29,7 +33,7 @@ const initials = computed(() =>
 </script>
 
 <template>
-    <img v-if="photoUrl" :src="photoUrl" alt="" class="shrink-0 rounded-full object-cover" :class="[sizes[size], ring || 'ring-2 ring-surface']" />
+    <img v-if="photoUrl && !photoFailed" :src="photoUrl" alt="" class="shrink-0 rounded-full object-cover" :class="[sizes[size], ring || 'ring-2 ring-surface']" @error="photoFailed = true" />
     <span v-else class="flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-csc-blue-light to-csc-blue-dark font-semibold text-white" :class="[sizes[size], ring]" aria-hidden="true">
         {{ initials || '?' }}
     </span>

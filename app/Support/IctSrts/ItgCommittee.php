@@ -2,8 +2,7 @@
 
 namespace App\Support\IctSrts;
 
-use App\Enums\Status;
-use App\Models\Committee;
+use App\Support\Committees\CurrentMembers;
 use Illuminate\Support\Collection;
 
 /**
@@ -21,19 +20,7 @@ class ItgCommittee
      */
     public static function memberIds(): Collection
     {
-        $short = (string) config('ictsrts.itg_committee');
-        $committee = $short === '' ? null : Committee::query()->where('short_name', $short)->where('status', Status::Active)->first();
-
-        if ($committee === null) {
-            return collect();
-        }
-
-        $today = now()->toDateString();
-
-        return $committee->activeMembers()
-            ->where(fn ($q) => $q->whereNull('effective_from')->orWhere('effective_from', '<=', $today))
-            ->where(fn ($q) => $q->whereNull('effective_until')->orWhere('effective_until', '>=', $today))
-            ->pluck('user_id');
+        return CurrentMembers::idsOf((string) config('ictsrts.itg_committee'));
     }
 
     public static function includes(int $userId): bool
