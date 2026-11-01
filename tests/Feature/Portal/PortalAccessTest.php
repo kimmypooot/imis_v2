@@ -57,7 +57,7 @@ class PortalAccessTest extends TestCase
 
         $this->actingAs(User::factory()->create(['organizational_unit_id' => $unit->id]))
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('userDivision', 'ESD'));
+            ->assertInertia(fn ($page) => $page->where('userDivision', 'Examination Services Division'));
 
         $this->actingAs(User::factory()->create())
             ->get('/dashboard')

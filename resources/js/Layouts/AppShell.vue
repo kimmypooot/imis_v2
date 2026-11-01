@@ -5,6 +5,7 @@ import Icon from '../Components/UI/Icon.vue';
 import SidebarNav from '../Components/Navigation/SidebarNav.vue';
 import UserMenu from '../Components/Navigation/UserMenu.vue';
 import NotificationMenu from '../Components/Navigation/NotificationMenu.vue';
+import HelpMenu from '../Components/Navigation/HelpMenu.vue';
 import AppFooter from '../Components/Navigation/AppFooter.vue';
 import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
@@ -170,13 +171,13 @@ onBeforeUnmount(() => {
     <div class="min-h-screen bg-surface-muted" @keydown="onKeydown">
         <a
             href="#main-content"
-            class="sr-only z-50 rounded-md bg-surface px-4 py-2 text-sm font-medium text-primary shadow-sm focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-focus-ring"
+            class="sr-only z-50 rounded-md bg-surface px-4 py-2 text-sm font-medium text-primary shadow-sm print:hidden focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-focus-ring"
         >
             Skip to main content
         </a>
 
         <header
-            class="fixed inset-x-0 top-0 z-40 flex h-16 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4"
+            class="fixed inset-x-0 top-0 z-40 flex h-16 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4 print:hidden"
         >
             <button
                 ref="menuButtonRef"
@@ -195,7 +196,10 @@ onBeforeUnmount(() => {
                 class="flex items-center gap-2 rounded-md pr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
                 <img :src="brand.logo" alt="CSC" class="h-9 w-auto" />
-                <span class="hidden text-lg font-semibold text-primary sm:inline">{{ brand.header_name }}</span>
+                <span class="hidden flex-col sm:flex">
+                    <span class="text-lg leading-tight font-semibold text-primary">{{ brand.header_name }}</span>
+                    <span class="text-[11px] leading-tight text-text-muted">Integrated Management Information System</span>
+                </span>
             </Link>
 
             <div class="hidden flex-1 justify-center px-6 md:flex">
@@ -203,6 +207,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="ml-auto flex items-center gap-1">
+                <HelpMenu v-if="page.props.auth.user" @feedback="feedbackOpen = true" />
                 <NotificationMenu v-if="page.props.notifications" :unread="unread" />
                 <UserMenu v-if="page.props.auth.user" :user="page.props.auth.user" @feedback="feedbackOpen = true" />
             </div>
@@ -215,7 +220,7 @@ onBeforeUnmount(() => {
         <!-- Overlay backdrop (below desktop width only) -->
         <div
             v-if="sidebarOpen && !isDesktop"
-            class="fixed inset-0 top-16 z-30 bg-text/50"
+            class="fixed inset-0 top-16 z-30 bg-text/50 print:hidden"
             aria-hidden="true"
             @click="setSidebar(false)"
         />
@@ -223,7 +228,7 @@ onBeforeUnmount(() => {
         <aside
             id="app-sidebar"
             ref="sidebarRef"
-            class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col transition-transform duration-200 motion-reduce:transition-none"
+            class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col print:hidden transition-transform duration-200 motion-reduce:transition-none"
             :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', variant === 'admin' ? 'border-r border-border bg-surface text-text shadow-sm' : 'bg-csc-blue text-white']"
             :role="isDesktop ? undefined : 'dialog'"
             :aria-modal="isDesktop ? undefined : sidebarOpen"
@@ -238,10 +243,10 @@ onBeforeUnmount(() => {
         </aside>
 
         <div
-            class="flex min-h-screen flex-col pt-16 transition-[padding] duration-200 motion-reduce:transition-none"
+            class="flex min-h-screen flex-col pt-16 print:pt-0! print:pl-0! transition-[padding] duration-200 motion-reduce:transition-none"
             :class="{ 'lg:pl-64': sidebarOpen }"
         >
-            <div class="border-b border-border bg-surface px-4 py-2 md:hidden">
+            <div class="border-b border-border bg-surface px-4 py-2 md:hidden print:hidden">
                 <PortalSearch id="header-search-mobile" />
             </div>
 
@@ -250,7 +255,7 @@ onBeforeUnmount(() => {
             <div
                 v-if="portalNotice"
                 role="status"
-                class="flex items-start gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-sm text-text sm:px-6"
+                class="flex items-start gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-sm text-text sm:px-6 print:hidden"
             >
                 <Icon name="info" size="sm" class="mt-0.5 shrink-0 text-warning" />
                 <p class="whitespace-pre-line">{{ portalNotice }}</p>
@@ -260,7 +265,7 @@ onBeforeUnmount(() => {
                 <slot />
             </main>
 
-            <AppFooter @about="aboutOpen = true" @feedback="feedbackOpen = true" />
+            <AppFooter class="print:hidden" @about="aboutOpen = true" @feedback="feedbackOpen = true" />
         </div>
     </div>
 </template>

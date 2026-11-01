@@ -49,7 +49,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
 
     <PageHeader
         :title="`${application.type_name} — ${application.reference_number}`"
-        :breadcrumbs="isOwn ? [{ label: 'My Leave Applications', href: '/my/leave/applications' }, { label: application.reference_number }] : [{ label: 'Leave Approvals', href: '/leave/approvals' }, { label: application.reference_number }]"
+        :breadcrumbs="isOwn ? [{ label: 'Home', href: '/dashboard' }, { label: 'My Leave Applications', href: '/my/leave/applications' }, { label: application.reference_number }] : [{ label: 'Home', href: '/dashboard' }, { label: 'Leave Approvals', href: '/leave/approvals' }, { label: application.reference_number }]"
     >
         <template #actions>
             <Button variant="secondary" :href="`/leave/applications/${application.id}/form`" external>

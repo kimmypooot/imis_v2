@@ -25,6 +25,8 @@ const props = defineProps({
     leave: { type: Array, required: true },
     colleagues: { type: Array, required: true },
     division: { type: String, default: null },
+    // The head of HRD, a Director IV / III and a Super Administrator see every office.
+    seesEveryone: { type: Boolean, default: false },
     holidays: { type: Array, required: true },
 });
 
@@ -76,9 +78,9 @@ const pending = (item) => item.status !== 'approved';
 <template>
     <Head title="Leave Calendar" />
 
-    <PageHeader title="Leave Calendar" :breadcrumbs="[{ label: 'My Leave', href: '/my/leave' }, { label: 'Leave Calendar' }]">
+    <PageHeader title="Leave Calendar" :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Leave', href: '/my/leave' }, { label: 'Leave Calendar' }]">
         <template #actions>
-            <Checkbox v-if="division" id="cal-division" v-model="showDivision" label="Show my division" />
+            <Checkbox v-if="division || seesEveryone" id="cal-division" v-model="showDivision" :label="seesEveryone ? 'Show everyone' : 'Show my division'" />
             <Button variant="secondary" @click="shift(-1)" aria-label="Previous month">‹</Button>
             <Button variant="secondary" @click="shift(1)" aria-label="Next month">›</Button>
             <Link href="/my/leave/apply" class="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-sm font-medium text-white hover:brightness-95">
@@ -153,16 +155,16 @@ const pending = (item) => item.status !== 'approved';
             </table>
         </div>
         <p class="mt-3 text-xs text-text-muted">
-            Green: your leave. <template v-if="division">Blue: co-workers in {{ division }}. </template>Outlined: under review or returned. Light blue: holiday.
+            Green: your leave. <template v-if="seesEveryone">Blue: colleagues in every office. </template><template v-else-if="division">Blue: co-workers in {{ division }}. </template>Outlined: under review or returned. Light blue: holiday.
         </p>
     </Card>
 
-    <Card v-if="division && showDivision && selected" class="mt-6" icon="users" :title="`Your division on ${formatCalendarDate(selected)}`">
-        <p v-if="!selectedColleagues.length" class="text-sm text-text-muted">No one else in {{ division }} has filed leave for this day.</p>
+    <Card v-if="(division || seesEveryone) && showDivision && selected" class="mt-6" icon="users" :title="`${seesEveryone ? 'Everyone' : 'Your division'} on ${formatCalendarDate(selected)}`">
+        <p v-if="!selectedColleagues.length" class="text-sm text-text-muted">No one else {{ seesEveryone ? 'in any office' : `in ${division}` }} has filed leave for this day.</p>
         <ul v-else class="divide-y divide-border">
             <li v-for="item in selectedColleagues" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                    <div class="font-medium text-text">{{ item.name }}</div>
+                    <div class="font-medium text-text">{{ item.name }}<span v-if="seesEveryone && item.office" class="ml-2 text-xs font-normal text-text-muted">{{ item.office }}</span></div>
                     <div class="text-xs text-text-muted">{{ leaveDates(item, formatCalendarDate) }}</div>
                 </div>
                 <StatusBadge :status="leaveStatusTones[item.status]" :label="item.status_label" />

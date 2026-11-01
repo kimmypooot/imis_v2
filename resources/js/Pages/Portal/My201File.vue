@@ -1,9 +1,11 @@
 <script setup>
+import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
+import RecordSummary from '../../Components/HR/RecordSummary.vue';
 import DocumentList from '../../Components/HR/DocumentList.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -13,11 +15,21 @@ defineOptions({ layout: PortalLayout });
  * HR-2c self-service: your own 201 file, read-only — the documents HR
  * keeps for you and your verified PDS history.
  */
-defineProps({
+const props = defineProps({
     hasRecord: { type: Boolean, required: true },
     documents: { type: Array, required: true },
     pdsHistory: { type: Array, required: true },
 });
+
+const summary = computed(() => [
+    { icon: 'clipboard', label: 'Documents on file', value: String(props.documents.length) },
+    { icon: 'checkCircle', label: 'Verified PDS copies', value: String(props.pdsHistory.length) },
+    {
+        icon: 'calendar',
+        label: 'Last PDS verified',
+        value: props.pdsHistory[0]?.reviewed_at ? formatDateTime(props.pdsHistory[0].reviewed_at) : null,
+    },
+]);
 </script>
 
 <template>
@@ -26,10 +38,12 @@ defineProps({
     <PageHeader
         title="My 201 File"
         description="The documents HR keeps in your personnel file. To add or correct one, send it to the HR office."
-        :breadcrumbs="[{ label: 'My 201 File' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My 201 File' }]"
     />
 
     <div v-if="hasRecord" class="space-y-6">
+        <RecordSummary :items="summary" class="lg:grid-cols-3" />
+
         <Card title="Documents" icon="clipboard">
             <DocumentList :documents="documents" empty="HR hasn't added documents to your 201 file yet." />
         </Card>
@@ -51,5 +65,7 @@ defineProps({
             </ul>
         </Card>
     </div>
-    <EmptyState v-else icon="clipboard" title="Your employee record isn't set up yet" description="Contact the HR office." />
+    <Card v-else>
+        <EmptyState icon="clipboard" title="Your employee record isn't set up yet" description="Contact the HR office." />
+    </Card>
 </template>

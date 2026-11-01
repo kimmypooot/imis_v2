@@ -22,7 +22,7 @@ const linkClass =
 <template>
     <footer class="mt-auto border-t border-border bg-surface">
         <div
-            class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"
+            class="flex flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"
         >
             <p class="text-xs text-text-muted">
                 &copy; {{ year }} Civil Service Commission Regional Office VIII
@@ -30,6 +30,7 @@ const linkClass =
             </p>
 
             <nav aria-label="Footer" class="flex flex-wrap gap-x-5 gap-y-1">
+                <Link v-if="signedIn" href="/guide" :class="linkClass">User guide</Link>
                 <Link href="/whats-new" :class="linkClass">What's New</Link>
                 <Link href="/privacy" :class="linkClass">Privacy notice</Link>
                 <button type="button" :class="linkClass" @click="emit('about')">About IMIS</button>

@@ -73,7 +73,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
     <PageHeader
         title="Organizational Units"
         description="Regional Support Units and Field Offices of CSC RO VIII, and the people serving in each."
-        :breadcrumbs="[{ label: 'Organizational Units' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Organizational Units' }]"
     />
 
     <div v-if="groups.length" class="space-y-5">

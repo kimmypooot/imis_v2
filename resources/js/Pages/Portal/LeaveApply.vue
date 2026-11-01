@@ -102,7 +102,7 @@ const field = 'mt-1 block w-full';
     <PageHeader
         :title="resubmitting ? `Correct ${resubmitting.reference_number}` : 'File leave'"
         description="CS Form No. 6 (Application for Leave). Your immediate supervisor, HR and the Head of Agency act on it in turn."
-        :breadcrumbs="[{ label: 'My Leave', href: '/my/leave' }, { label: resubmitting ? 'Correct application' : 'File leave' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Leave', href: '/my/leave' }, { label: resubmitting ? 'Correct application' : 'File leave' }]"
     />
 
     <div class="grid gap-6 xl:grid-cols-3">

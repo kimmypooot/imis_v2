@@ -76,21 +76,22 @@ class LeaveCalendar
      * Co-workers in the employee's division (organizational unit) who have
      * filed leave this month, for the portal calendar: who is out and
      * whether it's approved yet. The type of leave and the application
-     * stay private (RA 10173).
+     * stay private (RA 10173). With `$everyone` (see CalendarAudience), every
+     * office's, each with its office.
      *
      * @return Collection<int, array<string, mixed>>
      */
-    public function colleagues(Employee $employee, Carbon $month): Collection
+    public function colleagues(Employee $employee, Carbon $month, bool $everyone = false): Collection
     {
         $office = $employee->user->organizational_unit_id;
 
-        if (! $office) {
+        if (! $everyone && ! $office) {
             return collect();
         }
 
-        return $this->leave($month, ['office' => $office, 'pending' => true])
+        return $this->leave($month, ['office' => $everyone ? null : $office, 'pending' => true])
             ->reject(fn (array $entry) => $entry['employee_id'] === $employee->id)
-            ->map(fn (array $entry) => collect($entry)->only(['id', 'name', 'surname', 'date_from', 'date_to', 'is_half_day', 'half_day_period', 'days', 'status', 'status_label', 'dates'])->all())
+            ->map(fn (array $entry) => collect($entry)->only(['id', 'name', 'surname', 'office', 'date_from', 'date_to', 'is_half_day', 'half_day_period', 'days', 'status', 'status_label', 'dates'])->all())
             ->values();
     }
 

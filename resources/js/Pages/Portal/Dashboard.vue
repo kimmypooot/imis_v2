@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
+import Icon from '../../Components/UI/Icon.vue';
 import Modal from '../../Components/Feedback/Modal.vue';
 import Button from '../../Components/UI/Button.vue';
 import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
@@ -18,6 +19,8 @@ defineOptions({ layout: PortalLayout });
 
 const props = defineProps({
     whatsNew: { type: Object, default: null },
+    // The personal "At a glance" tiles (a deferred prop).
+    glance: { type: Array, default: null },
     directory: { type: Object, required: true },
     division: { type: String, default: null },
     announcements: { type: Array, required: true },
@@ -35,6 +38,13 @@ const whatsNewOpen = ref(Boolean(props.whatsNew));
 const dismissWhatsNew = () => {
     whatsNewOpen.value = false;
     router.post('/whats-new/seen', {}, { preserveScroll: true, preserveState: true });
+};
+
+const tileTones = {
+    info: 'bg-info-bg text-primary',
+    success: 'bg-success-bg text-success',
+    warning: 'bg-warning-bg text-warning',
+    danger: 'bg-danger-bg text-danger',
 };
 
 const page = usePage();
@@ -62,6 +72,32 @@ const greeting = computed(() => {
             :version="page.props.app?.version"
             :message="welcomeMessage"
         />
+
+        <!-- At a glance: your own figures, loaded just after the page appears. -->
+        <Deferred data="glance">
+            <template #fallback>
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-hidden="true">
+                    <div v-for="n in 4" :key="n" class="h-[4.5rem] animate-pulse rounded-lg border border-border bg-surface-muted" />
+                </div>
+            </template>
+
+            <section v-if="glance?.length" aria-label="At a glance" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <Link
+                    v-for="tile in glance"
+                    :key="tile.key"
+                    :href="tile.href"
+                    class="group flex items-center gap-3.5 rounded-lg border border-border bg-surface p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-transform duration-200 group-hover:scale-105" :class="tileTones[tile.tone]" aria-hidden="true">
+                        <Icon :name="tile.icon" />
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block text-xl leading-none font-semibold text-text tabular-nums">{{ tile.value }}</span>
+                        <span class="mt-1 block truncate text-xs text-text-muted">{{ tile.label }} · {{ tile.hint }}</span>
+                    </span>
+                </Link>
+            </section>
+        </Deferred>
 
         <Alert v-if="maintenanceNotices.length" tone="warning" title="Systems under maintenance">
             <ul class="space-y-1">

@@ -29,7 +29,7 @@ const applyFilters = () => {
     <PageHeader
         title="Announcements"
         description="News and notices from CSC RO VIII."
-        :breadcrumbs="[{ label: 'Announcements' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Announcements' }]"
     />
 
     <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">

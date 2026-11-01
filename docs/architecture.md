@@ -1966,6 +1966,32 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   privacy notice) is inserted already **published** by migration
   `2027_01_29_090000_add_v3_3_release_note`, so it is the version shown as
   soon as it is migrated; 3.2.0 stays a draft until an admin publishes it.
+- **v3.3.5** (richer account, leave and record pages, the User Guide, the
+  What's New timeline, the dashboard "At a glance" row, division-only leave
+  calendars) is inserted the same way, already **published**, by migration
+  `2027_01_30_090000_add_v3_3_5_release_note`.
+
+### User Guide (`/guide`)
+- Any signed-in user. The articles are plain data in `config/user-guide.php`
+  (categories → articles with steps, tips and a link to the real page);
+  `Support/Guide/UserGuide` trims them to what the person may use (an
+  article's optional `requires` lists permissions, any one is enough).
+  `Portal/Guide.vue` adds search, a contents list that follows the scroll,
+  and a print view. Opened from the header Help menu (`HelpMenu.vue`) and
+  the footer.
+
+### Leave calendars: whose leave is shown
+Everyone sees their own division's leave, on the portal calendar
+(`/my/leave/calendar`) and on HR's (`/admin/hr/leave/calendar`, forced to
+the viewer's own division). `Support/HR/Leave/CalendarAudience` names the
+few who see every office: the head of the Human Resource Division (or
+whoever is designated head, `PayslipApprovers`), a Director IV or III by
+position, and a Super Administrator.
+
+### Dashboard "At a glance"
+`Support/Portal/AtAGlance` builds the row (leave balances, leave in
+progress, approvals waiting, unread notifications) as a deferred prop of
+`PortalController`.
 
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,

@@ -56,7 +56,7 @@ const columns = [
     <PageHeader
         title="Leave Monetization"
         :description="`Convert up to ${rules.share}% of your Vacation Leave to cash, once a year, keeping at least ${rules.keep} days of VL and SL combined.`"
-        :breadcrumbs="[{ label: 'My Leave', href: '/my/leave' }, { label: 'Leave Monetization' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Leave', href: '/my/leave' }, { label: 'Leave Monetization' }]"
     />
 
     <div class="grid gap-6 xl:grid-cols-3">

@@ -18,7 +18,7 @@ const props = defineProps({
 });
 
 const breadcrumbs = computed(() => {
-    const items = [{ label: 'Organizational Units', href: '/organizational-units' }];
+    const items = [{ label: 'Home', href: '/dashboard' }, { label: 'Organizational Units', href: '/organizational-units' }];
 
     if (props.organizationalUnit.parent) {
         items.push({

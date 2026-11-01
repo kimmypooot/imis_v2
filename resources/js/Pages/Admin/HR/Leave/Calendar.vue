@@ -22,6 +22,9 @@ const props = defineProps({
     month: { type: String, required: true },
     filters: { type: Object, required: true },
     officeOptions: { type: Array, required: true },
+    // Only the few who see every office may choose one; the rest see their own division.
+    seesEveryone: { type: Boolean, default: false },
+    division: { type: String, default: null },
     typeOptions: { type: Array, required: true },
     leave: { type: Array, required: true },
     holidays: { type: Array, required: true },
@@ -91,8 +94,9 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
 
     <PageHeader title="Leave Calendar" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Calendar' }]">
         <template #actions>
-            <label class="sr-only" for="cal-office">Office</label>
-            <select id="cal-office" :value="filters.office ?? ''" :class="selectClass" @change="visit({ office: $event.target.value || null })">
+            <span v-if="!seesEveryone && division" class="inline-flex items-center rounded-md bg-info-bg px-3 py-2 text-sm font-medium text-primary">{{ division }}</span>
+            <label v-if="seesEveryone" class="sr-only" for="cal-office">Office</label>
+            <select v-if="seesEveryone" id="cal-office" :value="filters.office ?? ''" :class="selectClass" @change="visit({ office: $event.target.value || null })">
                 <option value="">All offices</option>
                 <option v-for="option in officeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>

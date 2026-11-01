@@ -41,7 +41,7 @@ const applyFilters = () => {
     <PageHeader
         title="Services"
         description="Frontline and administrative services offered by CSC RO VIII."
-        :breadcrumbs="[{ label: 'Services' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Services' }]"
     />
 
     <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">

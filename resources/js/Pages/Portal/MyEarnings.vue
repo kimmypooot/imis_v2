@@ -58,7 +58,7 @@ const historyColumns = [
     <PageHeader
         title="My Earnings & Deductions"
         description="What your latest finalized payroll gave and took, your recurring deductions, and your payslip history."
-        :breadcrumbs="[{ label: 'My Earnings & Deductions' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Earnings & Deductions' }]"
     />
 
     <Alert tone="info" class="mb-6">

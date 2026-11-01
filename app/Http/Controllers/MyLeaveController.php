@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\LeaveApplicationStatus;
 use App\Models\LeaveApplication;
+use App\Support\HR\Leave\CalendarAudience;
 use App\Support\HR\Leave\LeaveCalendar;
 use App\Support\HR\Leave\LeaveCredits;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class MyLeaveController extends Controller
      * HR-6c: your leave and the holidays in a month (legacy leave/calendar.php),
      * plus who else in your division has filed leave.
      */
-    public function calendar(Request $request, LeaveCalendar $calendar): Response
+    public function calendar(Request $request, LeaveCalendar $calendar, CalendarAudience $audience): Response
     {
         $employee = $request->user()->employee;
 
@@ -49,6 +50,7 @@ class MyLeaveController extends Controller
             $month = today()->startOfMonth();
         }
         $end = $month->copy()->endOfMonth();
+        $everyone = $audience->seesEveryone($request->user());
 
         return Inertia::render('Portal/LeaveCalendar', [
             'month' => $month->format('Y-m'),
@@ -66,8 +68,10 @@ class MyLeaveController extends Controller
                     'is_half_day' => $application->is_half_day,
                     'half_day_period' => $application->half_day_period,
                 ]) : [],
-            // Co-workers in your division who've filed leave (no type of leave).
-            'colleagues' => $employee ? $calendar->colleagues($employee, $month) : [],
+            // Co-workers in your division who've filed leave (no type of leave); the
+            // few who see every office (CalendarAudience) get everyone's.
+            'colleagues' => $employee ? $calendar->colleagues($employee, $month, $everyone) : [],
+            'seesEveryone' => $everyone,
             'division' => $request->user()->organizationalUnit?->name,
             'holidays' => $calendar->holidays($month, $end),
         ]);

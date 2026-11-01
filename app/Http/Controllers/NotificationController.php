@@ -35,13 +35,14 @@ class NotificationController extends Controller
     }
 
     /**
-     * @return Collection<int, array{id: string, title: string, message: string, read: bool, created_at: string}>
+     * @return Collection<int, array{id: string, kind: string|null, title: string, message: string, read: bool, created_at: string}>
      */
     private function present(Request $request, int $limit): Collection
     {
         return $request->user()->notifications()->latest()->limit($limit)->get()
             ->map(fn (DatabaseNotification $notification) => [
                 'id' => $notification->id,
+                'kind' => $notification->data['kind'] ?? null,
                 'title' => $notification->data['title'] ?? 'Notification',
                 'message' => $notification->data['message'] ?? '',
                 'read' => $notification->read_at !== null,

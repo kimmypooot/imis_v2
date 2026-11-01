@@ -49,7 +49,7 @@ const columns = [
     <PageHeader
         title="Payslip Approvals"
         description="Requests from staff for their payslips. Approving lets them view and print that month's payslip."
-        :breadcrumbs="[{ label: 'Payslip Approvals' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Payslip Approvals' }]"
     />
 
     <Card title="Waiting for you" icon="checkCircle">

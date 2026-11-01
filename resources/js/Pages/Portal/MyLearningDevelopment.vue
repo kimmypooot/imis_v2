@@ -56,7 +56,7 @@ const remove = async (record) => {
     <PageHeader
         title="My Learning & Development"
         :description="employee ? [employee.name, employee.position, employee.unit].filter(Boolean).join(' · ') : null"
-        :breadcrumbs="[{ label: 'My Learning & Development' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Learning & Development' }]"
     >
         <template v-if="employee" #actions>
             <label class="sr-only" for="ld-year">Year</label>

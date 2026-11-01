@@ -41,7 +41,7 @@ const recentColumns = [
 <template>
     <Head title="Leave Approvals" />
 
-    <PageHeader title="Leave Approvals" description="Applications waiting for your recommendation, certification or approval." :breadcrumbs="[{ label: 'Leave Approvals' }]" />
+    <PageHeader title="Leave Approvals" description="Applications waiting for your recommendation, certification or approval." :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Leave Approvals' }]" />
 
     <div class="space-y-6">
         <Card :title="`Waiting for you (${queue.length})`" icon="checkCircle">

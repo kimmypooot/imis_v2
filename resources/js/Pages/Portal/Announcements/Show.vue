@@ -19,7 +19,7 @@ defineProps({
 
     <PageHeader
         :title="announcement.title"
-        :breadcrumbs="[{ label: 'Announcements', href: '/announcements' }, { label: announcement.title }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Announcements', href: '/announcements' }, { label: announcement.title }]"
     >
         <div class="flex flex-wrap items-center gap-2 text-sm text-text-muted">
             <Badge v-if="announcement.featured" tone="info">Featured</Badge>

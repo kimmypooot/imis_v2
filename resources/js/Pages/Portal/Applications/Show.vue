@@ -22,7 +22,7 @@ defineProps({
     <PageHeader
         :title="application.name"
         :description="application.short_name"
-        :breadcrumbs="[{ label: 'Systems', href: '/applications' }, { label: application.name }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Systems', href: '/applications' }, { label: application.name }]"
     />
 
     <Card class="max-w-2xl">

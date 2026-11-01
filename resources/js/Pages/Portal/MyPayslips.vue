@@ -54,7 +54,7 @@ const columns = [
     <PageHeader
         title="My Payslips"
         description="Ask for the payslip of a month whose payroll is final. Once the head of HRD approves it, you can view and print it here."
-        :breadcrumbs="[{ label: 'My Payslips' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Payslips' }]"
     />
 
     <div class="grid gap-6 xl:grid-cols-3">

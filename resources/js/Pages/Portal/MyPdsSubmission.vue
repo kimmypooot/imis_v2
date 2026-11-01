@@ -26,7 +26,7 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
 
     <PageHeader
         :title="`PDS signed ${formatDateTime(submission.signed_at)}`"
-        :breadcrumbs="[{ label: 'My Personal Data Sheet', href: '/my/pds' }, { label: 'Submission' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Personal Data Sheet', href: '/my/pds' }, { label: 'Submission' }]"
     />
 
     <div class="space-y-6">

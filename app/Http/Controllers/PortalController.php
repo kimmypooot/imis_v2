@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\Changelog;
 use App\Models\Service;
+use App\Support\Portal\AtAGlance;
 use App\Support\Portal\SystemDirectory;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ use Inertia\Response;
  */
 class PortalController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AtAGlance $glance): Response
     {
         $user = $request->user();
 
@@ -54,10 +55,12 @@ class PortalController extends Controller
             // Which division is open (?division=unit-3). Bookmarkable, and
             // the browser's Back button returns to the directory.
             'division' => $request->string('division')->limit(40, '')->value() ?: null,
+            // The personal "At a glance" row, loaded after the page appears.
+            'glance' => Inertia::defer(fn () => $glance->for($user)),
             'whatsNew' => $whatsNew,
             'welcomeMessage' => Settings::get('portal_welcome_message'),
             // The legacy greeting's division badge (the user's fo_rsu).
-            'userDivision' => $user->organizationalUnit?->short_name ?: $user->organizationalUnit?->name,
+            'userDivision' => $user->organizationalUnit?->name ?: $user->organizationalUnit?->short_name,
             'contact' => [
                 'email' => Settings::get('contact_email'),
                 'phone' => Settings::get('contact_phone'),

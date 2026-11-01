@@ -10,6 +10,8 @@ use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\HR\Leave\CalendarAudience;
+use App\Support\HR\Payroll\PayslipApprovers;
 use Database\Seeders\LeaveTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -33,7 +35,9 @@ class LeaveCalendarTest extends TestCase
 
         $this->travelTo('2026-06-01 09:00:00');
         $this->seed(LeaveTypeSeeder::class);
+        // A Director IV: one of the few who see every office.
         $this->hr = $this->userWith(['leave.view']);
+        $this->hr->update(['position' => 'Director IV']);
         $this->office = OrganizationalUnit::factory()->create();
         Holiday::query()->create(['date' => '2026-06-12', 'name' => 'Independence Day', 'type' => 'regular']);
     }
@@ -102,6 +106,66 @@ class LeaveCalendarTest extends TestCase
         $loner->user->update(['organizational_unit_id' => null]);
         $this->actingAs($loner->user->fresh())->get('/my/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
             ->has('colleagues', 0));
+    }
+
+    public function test_hr_staff_outside_the_wide_audience_see_only_their_own_division(): void
+    {
+        $staff = $this->userWith(['leave.view']);
+        $staff->update(['organizational_unit_id' => $this->office->id, 'position' => 'Human Resource Specialist']);
+        $mine = $this->employee($this->office);
+        $other = $this->employee(OrganizationalUnit::factory()->create());
+        $this->file($mine, 'VL', '2026-06-08', '2026-06-08', 'approved');
+        $this->file($other, 'VL', '2026-06-09', '2026-06-09', 'approved');
+
+        // Asking for another office, or for everyone, still returns only theirs.
+        foreach (['', '&office='.$other->user->organizational_unit_id] as $query) {
+            $this->actingAs($staff)->get('/admin/hr/leave/calendar?month=2026-06'.$query)->assertInertia(fn (Assert $page) => $page
+                ->where('seesEveryone', false)
+                ->where('filters.office', $this->office->id)
+                ->has('leave', 1)
+                ->where('leave.0.name', $mine->user->name));
+        }
+
+        // The wide audience still gets everyone.
+        $this->actingAs($this->hr)->get('/admin/hr/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
+            ->where('seesEveryone', true)
+            ->has('leave', 2));
+    }
+
+    public function test_the_portal_calendar_shows_every_office_only_to_the_wide_audience(): void
+    {
+        $elsewhere = $this->employee(OrganizationalUnit::factory()->create());
+        $this->file($elsewhere, 'VL', '2026-06-09', '2026-06-09', 'approved');
+
+        $director = $this->employee($this->office);
+        $director->user->update(['position' => 'Director III']);
+        $this->actingAs($director->user->fresh())->get('/my/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
+            ->where('seesEveryone', true)
+            ->has('colleagues', 1)
+            ->where('colleagues.0.name', $elsewhere->user->name));
+
+        $regular = $this->employee($this->office);
+        $this->actingAs($regular->user)->get('/my/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
+            ->where('seesEveryone', false)
+            ->has('colleagues', 0));
+    }
+
+    public function test_who_sees_every_office(): void
+    {
+        $audience = app(CalendarAudience::class);
+
+        $this->assertTrue($audience->seesEveryone(User::factory()->create(['position' => ' director iv '])));
+        $this->assertTrue($audience->seesEveryone(User::factory()->create(['position' => 'Director III'])));
+        $this->assertFalse($audience->seesEveryone(User::factory()->create(['position' => 'Director II'])));
+        $this->assertFalse($audience->seesEveryone(User::factory()->create(['position' => 'Chief Human Resource Specialist'])));
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::factory()->create(['name' => 'super-admin']));
+        $this->assertTrue($audience->seesEveryone($admin));
+
+        // The head of the Human Resource Division (or whoever is designated head).
+        $this->mock(PayslipApprovers::class, fn ($mock) => $mock->shouldReceive('isApprover')->andReturn(true));
+        $this->assertTrue(app(CalendarAudience::class)->seesEveryone(User::factory()->create(['position' => 'Chief Human Resource Specialist'])));
     }
 
     public function test_it_needs_a_leave_permission_and_valid_filters(): void

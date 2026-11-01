@@ -68,7 +68,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
 <template>
     <Head title="Flexible Work" />
 
-    <PageHeader title="Flexible Work" description="Flexitime, compressed work week or work from home (CSC MC No. 06, s. 2022), and your weekly field activity reports." :breadcrumbs="[{ label: 'Flexible Work' }]">
+    <PageHeader title="Flexible Work" description="Flexitime, compressed work week or work from home (CSC MC No. 06, s. 2022), and your weekly field activity reports." :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Flexible Work' }]">
         <template #actions>
             <Button variant="success" @click="openApply"><Icon name="plus" size="sm" />Request an arrangement</Button>
         </template>

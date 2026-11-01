@@ -18,7 +18,7 @@ defineProps({
     <PageHeader
         title="Systems"
         description="CSC RO VIII ITG systems you can access."
-        :breadcrumbs="[{ label: 'Systems' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Systems' }]"
     />
 
     <div v-if="applications.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -36,7 +36,7 @@ const signing = ref(false);
     <PageHeader
         title="My Personal Data Sheet"
         description="CS Form No. 212 (Revised 2026). Keep it complete and current. Indicate N/A if not applicable, and don't abbreviate. Misrepresentation may lead to administrative or criminal cases."
-        :breadcrumbs="[{ label: 'My Personal Data Sheet' }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Personal Data Sheet' }]"
     />
 
     <div v-if="pds" class="space-y-6">

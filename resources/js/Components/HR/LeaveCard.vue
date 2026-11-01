@@ -32,9 +32,10 @@ const forwardOf = (typeId) => props.card.forward[typeId] ?? 0;
 <template>
     <div class="space-y-6">
         <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div v-for="balance in balances" :key="balance.type_id" class="rounded-lg bg-surface p-4 shadow-sm ring-1 ring-border/60">
+            <div v-for="balance in balances" :key="balance.type_id" class="relative overflow-hidden rounded-lg border border-border bg-surface p-4 transition-colors hover:border-primary/40">
+                <span class="absolute inset-x-0 top-0 h-0.5" :class="balance.balance > 0 ? 'bg-primary' : 'bg-border-strong'" aria-hidden="true" />
                 <dt class="text-xs font-medium text-text-muted" :title="balance.name">{{ balance.code }} · {{ balance.name }}</dt>
-                <dd class="mt-1 text-2xl font-bold tabular-nums text-text">{{ days(balance.balance) }}</dd>
+                <dd class="mt-1 flex items-baseline gap-1.5 text-2xl font-bold tabular-nums text-text">{{ days(balance.balance) }}<span class="text-xs font-normal text-text-muted">days</span></dd>
             </div>
         </dl>
 

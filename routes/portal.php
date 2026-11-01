@@ -9,6 +9,7 @@ use App\Http\Controllers\EmployeeDocumentFileController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\ExecutiveSettingsController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\My201FileController;
@@ -52,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::get('my/feedback', [FeedbackController::class, 'index'])->name('my.feedback');
     Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,1')->name('feedback.store');
 
+    Route::get('guide', GuideController::class)->name('guide');
     Route::get('whats-new', [WhatsNewController::class, 'index'])->name('whats-new');
     Route::post('whats-new/seen', [WhatsNewController::class, 'seen'])->name('whats-new.seen');
 

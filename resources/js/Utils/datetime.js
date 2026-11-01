@@ -47,3 +47,31 @@ export function formatCalendarDate(value) {
 
     return new Date(year, month - 1, day).toLocaleDateString(undefined, { dateStyle: 'long' });
 }
+
+/** ISO-8601 string → "just now", "5 min ago", "3 h ago", "Yesterday", or the date once it is older. */
+export function timeAgo(iso) {
+    if (!iso) return '';
+
+    const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (minutes < 60 * 24) return `${Math.round(minutes / 60)} h ago`;
+    if (minutes < 60 * 48) return 'Yesterday';
+    if (minutes < 60 * 24 * 7) return `${Math.round(minutes / (60 * 24))} days ago`;
+
+    return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+}
+
+/** ISO-8601 string → which group a list should file it under: Today, Yesterday, This week or Earlier. */
+export function dayGroup(iso) {
+    const date = new Date(iso);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const days = Math.floor((startOfToday.getTime() - date.getTime()) / 86400000) + 1;
+
+    if (date >= startOfToday) return 'Today';
+    if (days <= 1) return 'Yesterday';
+    if (days <= 7) return 'This week';
+
+    return 'Earlier';
+}

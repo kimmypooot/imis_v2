@@ -33,7 +33,7 @@ const details = computed(() =>
     <PageHeader
         :title="service.name"
         :description="service.short_name"
-        :breadcrumbs="[{ label: 'Services', href: '/services' }, { label: service.name }]"
+        :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Services', href: '/services' }, { label: service.name }]"
     />
 
     <div class="grid gap-6 lg:grid-cols-3">
