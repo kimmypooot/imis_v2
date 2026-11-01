@@ -4,15 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The v3.3.5 What's New release: richer account, leave and record pages, a
+ * The v3.4.0 What's New release: richer account, leave and record pages, a
  * built-in User Guide, a clearer What's New and dashboard, and leave
  * calendars limited to your own division. Added already published, so it
- * is shown to everyone and becomes the version shown. Skipped when 3.3.5
+ * is shown to everyone and becomes the version shown. Skipped when 3.4.0
  * already exists.
  */
 return new class extends Migration
 {
-    private const VERSION = '3.3.5';
+    private const VERSION = '3.4.0';
 
     public function up(): void
     {

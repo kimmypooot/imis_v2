@@ -1966,10 +1966,10 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   privacy notice) is inserted already **published** by migration
   `2027_01_29_090000_add_v3_3_release_note`, so it is the version shown as
   soon as it is migrated; 3.2.0 stays a draft until an admin publishes it.
-- **v3.3.5** (richer account, leave and record pages, the User Guide, the
+- **v3.4.0** (richer account, leave and record pages, the User Guide, the
   What's New timeline, the dashboard "At a glance" row, division-only leave
   calendars) is inserted the same way, already **published**, by migration
-  `2027_01_30_090000_add_v3_3_5_release_note`.
+  `2027_01_30_090000_add_v3_4_release_note`.
 
 ### User Guide (`/guide`)
 - Any signed-in user. The articles are plain data in `config/user-guide.php`
