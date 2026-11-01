@@ -8,6 +8,8 @@ import DataTable from '../../Components/UI/DataTable.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
+import Icon from '../../Components/UI/Icon.vue';
+import OrbitCircles from '../../Components/UI/OrbitCircles.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 import { formatPeso } from '../../Utils/money';
 
@@ -43,6 +45,23 @@ const scheduleTones = { scheduled: 'draft', reflected: 'info', confirmed: 'pendi
 const activeLoans = computed(() => props.loans.filter((loan) => loan.status === 'active' || loan.status === 'stopped'));
 const pastLoans = computed(() => props.loans.filter((loan) => loan.status === 'paid' || loan.status === 'cancelled'));
 
+// Share of the loan already deducted; null when the schedule's length is unknown.
+const loanProgress = (loan) => {
+    if (loan.status === 'paid') return 100;
+    if (loan.months_left === null || loan.months_left === undefined) return null;
+    const total = loan.installments_paid + loan.months_left;
+
+    return total > 0 ? Math.min(100, Math.round((loan.installments_paid / total) * 100)) : null;
+};
+
+// The last six finalized months, oldest first, scaled to the largest net pay.
+const trend = computed(() => {
+    const recent = props.history.slice(0, 6).reverse();
+    const top = Math.max(0, ...recent.map((row) => row.net_pay));
+
+    return recent.map((row) => ({ period: row.period, net_pay: row.net_pay, share: top ? Math.max(4, Math.round((row.net_pay / top) * 100)) : 0 }));
+});
+
 const historyColumns = [
     { key: 'period', label: 'Compensation period' },
     { key: 'gross_pay', label: 'Total earnings', align: 'right' },
@@ -71,6 +90,30 @@ const historyColumns = [
     </Card>
 
     <template v-else>
+        <!-- The latest finalized payroll at a glance. -->
+        <section class="relative mb-6 overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-white md:p-8" aria-label="Latest payroll summary">
+            <OrbitCircles />
+            <div class="relative z-10">
+                <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/75 uppercase">
+                    <Icon name="database" size="sm" />Latest finalized payroll · {{ latest.period }}
+                </p>
+                <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                    <div class="rounded-lg bg-white/10 p-4 ring-1 ring-white/15">
+                        <p class="text-xs text-white/75">Total earnings</p>
+                        <p class="mt-1 text-xl font-semibold tabular-nums">{{ formatPeso(latest.total_earnings) }}</p>
+                    </div>
+                    <div class="rounded-lg bg-white/10 p-4 ring-1 ring-white/15">
+                        <p class="text-xs text-white/75">Total deductions</p>
+                        <p class="mt-1 text-xl font-semibold tabular-nums">{{ formatPeso(latest.total_deductions) }}</p>
+                    </div>
+                    <div class="rounded-lg bg-white p-4 text-text">
+                        <p class="text-xs text-text-muted">Net pay</p>
+                        <p class="mt-1 text-2xl font-bold text-primary tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="mb-6 grid gap-6 lg:grid-cols-2">
             <Card :title="`Earnings — ${latest.period}`" icon="chartBar">
                 <table class="w-full text-sm">
@@ -118,6 +161,16 @@ const historyColumns = [
                     </div>
                     <StatusBadge :status="loanTones[loan.status]" :label="loan.status_label" />
                 </div>
+                <!-- How much of the loan has been deducted. -->
+                <div v-if="loanProgress(loan) !== null" class="mt-3">
+                    <div class="flex justify-between text-xs text-text-muted">
+                        <span>{{ loanProgress(loan) }}% deducted</span>
+                        <span>{{ loan.installments_paid }} of {{ loan.installments_paid + (loan.status === 'active' || loan.status === 'stopped' ? loan.months_left : 0) }} installments</span>
+                    </div>
+                    <div class="mt-1 h-2 overflow-hidden rounded-full bg-surface-muted" role="progressbar" :aria-valuenow="loanProgress(loan)" aria-valuemin="0" aria-valuemax="100" :aria-label="`${loan.type} progress`">
+                        <div class="h-full rounded-full bg-success transition-[width] duration-500" :style="{ width: `${loanProgress(loan)}%` }" />
+                    </div>
+                </div>
                 <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
                     <div><dt class="text-text-muted">Monthly deduction</dt><dd class="font-medium tabular-nums text-text">{{ formatPeso(loan.monthly_amortization) }}</dd></div>
                     <div><dt class="text-text-muted">Deducted so far</dt><dd class="tabular-nums text-text">{{ loan.installments_paid }} time{{ loan.installments_paid === 1 ? '' : 's' }}</dd></div>
@@ -147,6 +200,19 @@ const historyColumns = [
             <li v-for="(item, index) in items" :key="index" class="flex flex-wrap justify-between gap-2 py-2">
                 <span class="text-text">{{ item.component }} <span class="text-xs text-text-muted">· {{ item.kind === 'earning' ? 'Earning' : 'Deduction' }}</span></span>
                 <span class="tabular-nums text-text-muted">{{ item.amount === null ? item.rule : formatPeso(item.amount) }}</span>
+            </li>
+        </ul>
+    </Card>
+
+    <!-- Net pay over the last few finalized months, oldest to newest. -->
+    <Card v-if="trend.length > 1" title="Net pay, recent months" icon="chartBar" class="mb-6">
+        <ul class="space-y-2.5" aria-label="Net pay by month">
+            <li v-for="point in trend" :key="point.period" class="flex items-center gap-3 text-sm">
+                <span class="w-32 shrink-0 text-text-muted">{{ point.period }}</span>
+                <span class="h-3 flex-1 overflow-hidden rounded-full bg-surface-muted">
+                    <span class="block h-full rounded-full bg-chart-1" :style="{ width: `${point.share}%` }" />
+                </span>
+                <span class="w-28 shrink-0 text-right font-medium tabular-nums text-text">{{ formatPeso(point.net_pay) }}</span>
             </li>
         </ul>
     </Card>

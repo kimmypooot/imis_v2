@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
+import BusyRegion from '../../../../Components/UI/BusyRegion.vue';
+import { useBusy } from '../../../../Composables/useBusy';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -40,10 +42,11 @@ const parts = computed(() => props.month.split('-').map(Number));
 const first = computed(() => new Date(parts.value[0], parts.value[1] - 1, 1));
 const title = computed(() => first.value.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
 
+const { busy, handlers } = useBusy();
 const visit = (changes) => {
     const query = { month: props.month, ...props.filters, ...changes };
     query.pending = query.pending ? 1 : null;
-    router.get('/admin/hr/leave/calendar', Object.fromEntries(Object.entries(query).filter(([, value]) => value !== null && value !== '')), { preserveScroll: true, preserveState: true });
+    router.get('/admin/hr/leave/calendar', Object.fromEntries(Object.entries(query).filter(([, value]) => value !== null && value !== '')), { preserveScroll: true, preserveState: true, ...handlers });
 };
 const shift = (by) => {
     const target = new Date(parts.value[0], parts.value[1] - 1 + by, 1);
@@ -51,11 +54,11 @@ const shift = (by) => {
 };
 const thisMonth = today.slice(0, 7);
 
-// Weeks from Monday, with days outside the month left blank.
+// Weeks from Sunday (Gregorian), with days outside the month left blank.
 const weeks = computed(() => {
     const [year, month] = parts.value;
     const cells = [];
-    const lead = (first.value.getDay() + 6) % 7;
+    const lead = first.value.getDay();
     for (let i = 0; i < lead; i++) cells.push(null);
     const last = new Date(year, month, 0).getDate();
     for (let day = 1; day <= last; day++) cells.push(new Date(year, month - 1, day));
@@ -109,7 +112,8 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
         </template>
     </PageHeader>
 
-    <Card icon="calendar">
+    <BusyRegion :busy="busy">
+        <Card icon="calendar">
         <template #header>
             <div class="flex flex-wrap items-center gap-2">
                 <Button variant="secondary" size="sm" aria-label="Previous month" @click="shift(-1)">‹</Button>
@@ -125,7 +129,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                 <caption class="sr-only">Employees on leave and holidays, {{ title }}</caption>
                 <thead>
                     <tr>
-                        <th v-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day" scope="col" class="border-b border-border py-2 text-center text-xs font-medium text-text-muted">{{ day }}</th>
+                        <th v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" scope="col" class="border-b border-border py-2 text-center text-xs font-medium text-text-muted">{{ day }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,7 +139,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                             :key="column"
                             class="h-28 border border-border p-1 align-top"
                             :class="[
-                                date && column >= 5 ? 'bg-surface-muted' : '',
+                                date && (date.getDay() === 0 || date.getDay() === 6) ? 'bg-surface-muted' : '',
                                 date && iso(date) === today ? 'ring-2 ring-inset ring-primary' : '',
                                 date && iso(date) === selected ? 'bg-primary/5' : '',
                             ]"
@@ -181,6 +185,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
             Weekends and non-working holidays aren't marked, except for leave counted in calendar days. Pick a day to see everyone out.
         </p>
     </Card>
+    </BusyRegion>
 
     <Card v-if="selected" class="mt-6" icon="users" :title="`On leave — ${formatCalendarDate(selected)}`">
         <p v-if="selectedHoliday" class="mb-3 text-sm text-info">{{ selectedHoliday.name }}</p>

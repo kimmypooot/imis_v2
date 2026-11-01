@@ -75,3 +75,10 @@ export function dayGroup(iso) {
 
     return 'Earlier';
 }
+
+/** ISO-8601 string → whole days since then (0 for today). */
+export function daysSince(iso) {
+    if (!iso) return 0;
+
+    return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}

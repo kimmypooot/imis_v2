@@ -1,12 +1,13 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
+import BusyRegion from '../../../Components/UI/BusyRegion.vue';
+import { useBusy } from '../../../Composables/useBusy';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
 import PortalCard from '../../../Components/Portal/PortalCard.vue';
 import EmptyState from '../../../Components/UI/EmptyState.vue';
-import Button from '../../../Components/UI/Button.vue';
-import TextInput from '../../../Components/Forms/TextInput.vue';
+import Icon from '../../../Components/UI/Icon.vue';
 import Select from '../../../Components/Forms/Select.vue';
 
 defineOptions({ layout: PortalLayout });
@@ -18,6 +19,7 @@ const props = defineProps({
     organizationalUnitOptions: { type: Array, required: true },
 });
 
+const { busy, handlers } = useBusy();
 const search = ref(props.filters.search ?? '');
 const categoryId = ref(props.filters.category_id ?? '');
 const organizationalUnitId = ref(props.filters.organizational_unit_id ?? '');
@@ -30,8 +32,24 @@ const applyFilters = () => {
             category_id: categoryId.value,
             organizational_unit_id: organizationalUnitId.value,
         },
-        { preserveState: true, replace: true },
+        { preserveState: true, replace: true, ...handlers },
     );
+};
+
+// Filter as you go: selects apply at once, typing a moment after the last key.
+let timer = null;
+watch([categoryId, organizationalUnitId], applyFilters);
+watch(search, () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(applyFilters, 350);
+});
+onBeforeUnmount(() => window.clearTimeout(timer));
+
+const filtering = computed(() => Boolean(props.filters.search || props.filters.category_id || props.filters.organizational_unit_id));
+const clear = () => {
+    search.value = '';
+    categoryId.value = '';
+    organizationalUnitId.value = '';
 };
 </script>
 
@@ -46,7 +64,11 @@ const applyFilters = () => {
 
     <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">
         <div class="w-full max-w-xs">
-            <TextInput id="search" v-model="search" label="Search" placeholder="Service name or description" />
+            <label for="search" class="block text-sm font-medium text-text">Search</label>
+            <div class="relative mt-1">
+                <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted" />
+                <input id="search" v-model="search" type="search" autocomplete="off" placeholder="Service name or description" class="block w-full rounded-md border border-border-strong bg-surface py-2 pr-3 pl-9 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+            </div>
         </div>
         <div class="w-56">
             <label for="category-filter" class="block text-sm font-medium text-text">Category</label>
@@ -70,10 +92,12 @@ const applyFilters = () => {
                 />
             </div>
         </div>
-        <Button type="submit" variant="secondary">Filter</Button>
+        <button v-if="filtering" type="button" class="rounded-sm pb-2 text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="clear">Clear filters</button>
+        <p class="pb-2 text-sm text-text-muted sm:ml-auto" role="status">{{ services.length }} service{{ services.length === 1 ? '' : 's' }}</p>
     </form>
 
-    <div v-if="services.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <BusyRegion :busy="busy">
+        <div v-if="services.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <PortalCard
             v-for="service in services"
             :key="service.id"
@@ -91,4 +115,5 @@ const applyFilters = () => {
         title="No services found"
         description="Try a different search or filter, or check back later."
     />
+    </BusyRegion>
 </template>

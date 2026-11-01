@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import BusyRegion from '../../Components/UI/BusyRegion.vue';
+import { useBusy } from '../../Composables/useBusy';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Button from '../../Components/UI/Button.vue';
 import Icon from '../../Components/UI/Icon.vue';
@@ -23,7 +25,8 @@ defineProps({
     card: { type: Object, default: null },
 });
 
-const changeYear = (value) => router.get('/my/leave', { year: value }, { preserveScroll: true });
+const { busy, handlers } = useBusy();
+const changeYear = (value) => router.get('/my/leave', { year: value }, { preserveScroll: true, ...handlers });
 
 const shortcuts = [
     { label: 'My applications', hint: 'Track and print what you filed', href: '/my/leave/applications', icon: 'clipboard' },
@@ -65,7 +68,9 @@ const shortcuts = [
             </Link>
         </nav>
 
+        <BusyRegion :busy="busy">
         <LeaveCard :year="year" :years="years" :balances="balances" :card="card" @year="changeYear" />
+    </BusyRegion>
     </div>
     <Card v-else>
         <EmptyState

@@ -11,6 +11,16 @@
  */
 @theme {
     --animate-shake: shake 0.4s ease-in-out;
+    --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+
+    @keyframes shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
 
     @keyframes shake {
         0%,
@@ -113,6 +123,25 @@
     }
 }
 
+
+/*
+ * A placeholder block for content that is still loading: a soft light
+ * band sweeping over a tinted base. Pair it with `motion-reduce:animate-none`
+ * (the Skeleton component does) so it holds still for people who ask for
+ * less motion.
+ */
+@utility skeleton {
+    background-color: var(--color-border);
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-surface) 75%, transparent) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: var(--radius-md);
+}
 
 /*
  * The header row of a list table (DataTable, dashboard tables, log

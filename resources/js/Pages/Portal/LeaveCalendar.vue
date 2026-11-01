@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import BusyRegion from '../../Components/UI/BusyRegion.vue';
+import { useBusy } from '../../Composables/useBusy';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
@@ -37,15 +39,16 @@ const first = new Date(year, monthNumber - 1, 1);
 const title = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 const pad = (n) => String(n).padStart(2, '0');
 const iso = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const { busy, handlers } = useBusy();
 const shift = (by) => {
     const target = new Date(year, monthNumber - 1 + by, 1);
-    router.get('/my/leave/calendar', { month: `${target.getFullYear()}-${pad(target.getMonth() + 1)}` }, { preserveScroll: true });
+    router.get('/my/leave/calendar', { month: `${target.getFullYear()}-${pad(target.getMonth() + 1)}` }, { preserveScroll: true, ...handlers });
 };
 
-// Weeks from Monday, with days outside the month left blank.
+// Weeks from Sunday (Gregorian), with days outside the month left blank.
 const weeks = computed(() => {
     const cells = [];
-    const lead = (first.getDay() + 6) % 7;
+    const lead = first.getDay();
     for (let i = 0; i < lead; i++) cells.push(null);
     const last = new Date(year, monthNumber, 0).getDate();
     for (let day = 1; day <= last; day++) cells.push(new Date(year, monthNumber - 1, day));
@@ -89,13 +92,14 @@ const pending = (item) => item.status !== 'approved';
         </template>
     </PageHeader>
 
-    <Card :title="title" icon="calendar">
+    <BusyRegion :busy="busy">
+        <Card :title="title" icon="calendar">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[42rem] table-fixed border-collapse text-sm">
                 <caption class="sr-only">Your leave, your division's leave and holidays, {{ title }}</caption>
                 <thead>
                     <tr>
-                        <th v-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day" scope="col" class="border-b border-border py-2 text-center text-xs font-medium text-text-muted">{{ day }}</th>
+                        <th v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" scope="col" class="border-b border-border py-2 text-center text-xs font-medium text-text-muted">{{ day }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,7 +109,7 @@ const pending = (item) => item.status !== 'approved';
                             :key="column"
                             class="h-24 border border-border p-1 align-top"
                             :class="[
-                                date && column >= 5 ? 'bg-surface-muted' : '',
+                                date && (date.getDay() === 0 || date.getDay() === 6) ? 'bg-surface-muted' : '',
                                 date && iso(date) === today ? 'ring-2 ring-inset ring-primary' : '',
                                 date && iso(date) === selected ? 'bg-primary/5' : '',
                             ]"
@@ -158,6 +162,7 @@ const pending = (item) => item.status !== 'approved';
             Green: your leave. <template v-if="seesEveryone">Blue: colleagues in every office. </template><template v-else-if="division">Blue: co-workers in {{ division }}. </template>Outlined: under review or returned. Light blue: holiday.
         </p>
     </Card>
+    </BusyRegion>
 
     <Card v-if="(division || seesEveryone) && showDivision && selected" class="mt-6" icon="users" :title="`${seesEveryone ? 'Everyone' : 'Your division'} on ${formatCalendarDate(selected)}`">
         <p v-if="!selectedColleagues.length" class="text-sm text-text-muted">No one else {{ seesEveryone ? 'in any office' : `in ${division}` }} has filed leave for this day.</p>

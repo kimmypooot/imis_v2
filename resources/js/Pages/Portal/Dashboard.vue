@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
 import Icon from '../../Components/UI/Icon.vue';
+import Skeleton from '../../Components/UI/Skeleton.vue';
 import Modal from '../../Components/Feedback/Modal.vue';
 import Button from '../../Components/UI/Button.vue';
 import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
@@ -76,8 +77,15 @@ const greeting = computed(() => {
         <!-- At a glance: your own figures, loaded just after the page appears. -->
         <Deferred data="glance">
             <template #fallback>
-                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-hidden="true">
-                    <div v-for="n in 4" :key="n" class="h-[4.5rem] animate-pulse rounded-lg border border-border bg-surface-muted" />
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4" role="status" aria-label="Loading your summary">
+                    <div v-for="n in 4" :key="n" class="flex items-center gap-3.5 rounded-lg border border-border bg-surface p-4">
+                        <Skeleton class="h-10 w-10 shrink-0" />
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <Skeleton class="h-5 w-12" />
+                            <Skeleton class="h-3 w-24 max-w-full" />
+                        </div>
+                    </div>
+                    <span class="sr-only">Loading your summary…</span>
                 </div>
             </template>
 

@@ -7,6 +7,7 @@ import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Button from '../../Components/UI/Button.vue';
+import Icon from '../../Components/UI/Icon.vue';
 import Select from '../../Components/Forms/Select.vue';
 import InputError from '../../Components/Forms/InputError.vue';
 import { confirm } from '../../Composables/useDialog';
@@ -24,6 +25,14 @@ const props = defineProps({
     requests: { type: Array, required: true },
     approvers: { type: Array, required: true },
 });
+
+const count = (...statuses) => props.requests.filter((row) => statuses.includes(row.status)).length;
+const stats = computed(() => [
+    { label: 'Months available', value: props.months.length, icon: 'calendar', tile: 'bg-info-bg text-primary' },
+    { label: 'Pending approval', value: count('pending'), icon: 'clock', tile: 'bg-warning-bg text-warning' },
+    { label: 'Ready to view', value: count('approved'), icon: 'check', tile: 'bg-success-bg text-success' },
+    { label: 'Rejected or cancelled', value: count('rejected', 'cancelled'), icon: 'exclamation', tile: 'bg-surface-muted text-text-muted' },
+]);
 
 // Months without an open (pending or approved) request.
 const requestable = computed(() => props.months.filter((month) => !month.request_status).map((month) => ({ value: month.entry_id, label: month.period })));
@@ -56,6 +65,16 @@ const columns = [
         description="Ask for the payslip of a month whose payroll is final. Once the head of HRD approves it, you can view and print it here."
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Payslips' }]"
     />
+
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div v-for="stat in stats" :key="stat.label" class="flex items-center gap-3.5 rounded-lg border border-border bg-surface p-4">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md" :class="stat.tile" aria-hidden="true"><Icon :name="stat.icon" /></span>
+            <div class="min-w-0">
+                <p class="text-xl leading-none font-semibold text-text tabular-nums">{{ stat.value }}</p>
+                <p class="mt-1 truncate text-xs text-text-muted">{{ stat.label }}</p>
+            </div>
+        </div>
+    </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Request a payslip" icon="clipboard" class="xl:col-span-1">

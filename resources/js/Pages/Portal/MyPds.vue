@@ -6,6 +6,7 @@ import PageHeader from '../../Components/UI/PageHeader.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Button from '../../Components/UI/Button.vue';
 import Icon from '../../Components/UI/Icon.vue';
+import PdsProgress from '../../Components/HR/Pds/PdsProgress.vue';
 import PdsEditor from '../../Components/HR/Pds/PdsEditor.vue';
 import PdsStatusCard from '../../Components/HR/Pds/PdsStatusCard.vue';
 import PdsPhotoCard from '../../Components/HR/Pds/PdsPhotoCard.vue';
@@ -28,6 +29,13 @@ defineProps({
 });
 
 const signing = ref(false);
+const editor = ref(null);
+
+// Jump to a part of the form from the completion card.
+const openPart = (key) => {
+    editor.value?.openTab(key);
+    document.getElementById('pds-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 </script>
 
 <template>
@@ -57,7 +65,11 @@ const signing = ref(false);
             <PdsPhotoCard :photo-url="photoUrl" url="/my/pds/photo" />
         </div>
 
-        <PdsEditor :schema="schema" :pds="pds" url="/my/pds" manage-links />
+        <PdsProgress :schema="schema" :pds="pds" @open="openPart" />
+
+        <div id="pds-editor" class="scroll-mt-20">
+            <PdsEditor ref="editor" :schema="schema" :pds="pds" url="/my/pds" manage-links />
+        </div>
 
         <PdsHistory :history="history" :view-url="(item) => `/my/pds/submissions/${item.id}`" />
     </div>

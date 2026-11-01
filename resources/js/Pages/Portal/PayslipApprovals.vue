@@ -5,11 +5,12 @@ import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
+import QueueSummary from '../../Components/Portal/QueueSummary.vue';
 import Button from '../../Components/UI/Button.vue';
 import Modal from '../../Components/Feedback/Modal.vue';
 import Textarea from '../../Components/Forms/Textarea.vue';
 import InputError from '../../Components/Forms/InputError.vue';
-import { formatDateTime } from '../../Utils/datetime';
+import { daysSince, formatDateTime } from '../../Utils/datetime';
 
 defineOptions({ layout: PortalLayout });
 
@@ -19,9 +20,15 @@ defineOptions({ layout: PortalLayout });
  * that month's payslip; rejecting needs a reason. Your own requests go
  * to someone else.
  */
-defineProps({
+const props = defineProps({
     requests: { type: Array, required: true },
 });
+
+const waitingSince = () => props.requests.map((row) => row.requested_at);
+
+// How long something has waited: calm at first, then amber, then red.
+const ageClass = (iso) => (daysSince(iso) >= 7 ? "bg-danger-bg text-danger" : daysSince(iso) >= 3 ? "bg-warning-bg text-warning" : "bg-surface-muted text-text-muted");
+const ageLabel = (iso) => (daysSince(iso) === 0 ? "today" : `${daysSince(iso)} d`);
 
 const deciding = ref(null);
 const form = useForm({ decision: 'approved', remarks: '' });
@@ -52,14 +59,19 @@ const columns = [
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Payslip Approvals' }]"
     />
 
-    <Card title="Waiting for you" icon="checkCircle">
+    <QueueSummary :since="waitingSince()" noun="payslip request" :late-after="2" class="mb-6" />
+
+    <Card :title="`Waiting for you (${requests.length})`" icon="checkCircle">
         <DataTable :columns="columns" :rows="requests" caption="Payslip requests waiting for approval" export-name="imis-payslip-approvals" empty-text="Nothing waiting.">
             <template #cell-employee="{ row }">
                 <span class="font-medium text-text">{{ row.employee }}</span>
                 <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></div>
             </template>
             <template #cell-purpose="{ row }">{{ row.purpose || '—' }}</template>
-            <template #cell-requested_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span></template>
+            <template #cell-requested_at="{ row }">
+                    <span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span>
+                    <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.requested_at)">{{ ageLabel(row.requested_at) }}</span>
+                </template>
             <template #cell-actions="{ row }">
                 <div class="flex justify-end gap-3 text-sm whitespace-nowrap">
                     <button type="button" class="text-success hover:underline" @click="open(row, 'approved')">Approve<span class="sr-only"> {{ row.reference_number }}</span></button>

@@ -28,6 +28,9 @@ const props = defineProps({
 const tab = ref(props.schema.tabs[0].key);
 const dirty = reactive({});
 
+// Lets a page (the completion card on My PDS) jump to a part of the form.
+defineExpose({ openTab: (key) => (tab.value = key) });
+
 const markDirty = (section, isDirty) => (dirty[section] = isDirty);
 const anyDirty = computed(() => Object.values(dirty).some(Boolean));
 

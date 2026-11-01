@@ -1988,6 +1988,9 @@ few who see every office: the head of the Human Resource Division (or
 whoever is designated head, `PayslipApprovers`), a Director IV or III by
 position, and a Super Administrator.
 
+### Loading states
+Placeholders and in-place updates share three pieces: `UI/Skeleton.vue` (a shimmering block built on the `skeleton` utility in `app.css`, still under reduced motion), `UI/BusyRegion.vue` (dims a list and shows a spinner after 150 ms while a search, filter or month change loads) with the `useBusy` composable that feeds it, and the Inertia progress bar, shown for visits slower than 100 ms (`app.js`). The dashboard "At a glance" row and the notification bell use skeletons.
+
 ### Dashboard "At a glance"
 `Support/Portal/AtAGlance` builds the row (leave balances, leave in
 progress, approvals waiting, unread notifications) as a deferred prop of

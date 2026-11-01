@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
+import Skeleton from '../UI/Skeleton.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
@@ -160,7 +161,17 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
-                <p v-if="loading && !items.length" class="px-3 py-6 text-center text-sm text-text-muted">Loading…</p>
+                <div v-if="loading && !items.length" class="divide-y divide-border" role="status" aria-label="Loading notifications">
+                    <div v-for="n in 3" :key="n" class="flex gap-3 px-3 py-3">
+                        <Skeleton class="mt-1.5 h-2 w-2 shrink-0 rounded-full" />
+                        <div class="min-w-0 flex-1 space-y-2">
+                            <Skeleton class="h-3.5 w-2/3" />
+                            <Skeleton class="h-3 w-full" />
+                            <Skeleton class="h-3 w-16" />
+                        </div>
+                    </div>
+                    <span class="sr-only">Loading…</span>
+                </div>
                 <p v-else-if="failed" class="px-3 py-6 text-center text-sm text-danger">Couldn't load notifications. Try again.</p>
                 <p v-else-if="!items.length" class="px-3 py-6 text-center text-sm text-text-muted">You're all caught up.</p>
                 <ul v-else class="divide-y divide-border">

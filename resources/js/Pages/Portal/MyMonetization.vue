@@ -7,6 +7,7 @@ import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Button from '../../Components/UI/Button.vue';
+import Icon from '../../Components/UI/Icon.vue';
 import Textarea from '../../Components/Forms/Textarea.vue';
 import InputError from '../../Components/Forms/InputError.vue';
 import { confirm } from '../../Composables/useDialog';
@@ -37,6 +38,12 @@ const cancel = async (row) => {
 };
 
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
+const summary = computed(() => [
+    { label: 'Vacation Leave', value: `${days(props.terms.vl)} days`, icon: 'calendar', tile: 'bg-info-bg text-primary' },
+    { label: 'Sick Leave', value: `${days(props.terms.sl)} days`, icon: 'calendar', tile: 'bg-info-bg text-primary' },
+    { label: 'You can monetize up to', value: `${days(props.terms.max_days)} days`, icon: 'check', tile: props.terms.max_days > 0 ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted' },
+    { label: 'Worth about', value: props.terms.daily_rate ? formatPeso(props.terms.daily_rate * props.terms.max_days) : '—', icon: 'database', tile: 'bg-warning-bg text-warning' },
+]);
 const tones = { pending: 'warning', approved: 'active', released: 'info', rejected: 'inactive', cancelled: 'logged_out' };
 
 const columns = [
@@ -58,6 +65,16 @@ const columns = [
         :description="`Convert up to ${rules.share}% of your Vacation Leave to cash, once a year, keeping at least ${rules.keep} days of VL and SL combined.`"
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Leave', href: '/my/leave' }, { label: 'Leave Monetization' }]"
     />
+
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div v-for="item in summary" :key="item.label" class="flex items-center gap-3.5 rounded-lg border border-border bg-surface p-4">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md" :class="item.tile" aria-hidden="true"><Icon :name="item.icon" /></span>
+            <div class="min-w-0">
+                <p class="truncate text-lg leading-none font-semibold text-text tabular-nums">{{ item.value }}</p>
+                <p class="mt-1 truncate text-xs text-text-muted">{{ item.label }}</p>
+            </div>
+        </div>
+    </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Request" icon="database" class="xl:col-span-1">

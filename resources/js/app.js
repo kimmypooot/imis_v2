@@ -55,8 +55,8 @@ const dismissBootPreloader = async () => {
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     // Navigation progress bar in the brand accent (a design token, not a
-    // hard-coded hex), shown only for visits slower than 250ms.
-    progress: { color: 'var(--color-accent)', delay: 250 },
+    // hard-coded hex), shown only for visits slower than 100ms.
+    progress: { color: 'var(--color-accent)', delay: 100 },
     resolve: (name) =>
         resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {

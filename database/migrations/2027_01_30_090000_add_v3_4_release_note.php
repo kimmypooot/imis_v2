@@ -69,7 +69,11 @@ return new class extends Migration
             ['improvement', 'My Employee Record, My 201 File and My Service Record open with a strip of key facts.'],
             ['improvement', 'The dashboard has an At a glance row with your leave balances, leave in progress, approvals waiting for you and unread notifications, and the welcome banner now shows your division\'s full name.'],
             ['improvement', 'What\'s New is a timeline with the latest release highlighted, filters for New, Improved and Fixed, and older releases tucked behind a button.'],
-            ['improvement', 'Leave calendars show only your own division\'s leave. The head of the Human Resource Division, a Director IV or III and a Super Administrator still see every office.'],
+            ['improvement', 'Leave calendars show only your own division\'s leave, and the week now starts on Sunday. The head of the Human Resource Division, a Director IV or III and a Super Administrator still see every office.'],
+            ['improvement', 'Leave Approvals and Payslip Approvals open with how many are waiting and how long the oldest has waited, and each row shows its age.'],
+            ['improvement', 'My Earnings opens with your latest earnings, deductions and net pay, with a progress bar for each loan and a chart of recent net pay. My Payslips and Leave Monetization have summary figures, and My PDS shows how complete each part of the form is.'],
+            ['improvement', 'Announcements, Systems and Services have richer cards and detail pages, and their search updates as you type.'],
+            ['improvement', 'Clearer loading: placeholder shapes while the dashboard summary and the notification bell load, a dimmed list with a small spinner while a search, filter or month changes, and a progress bar that appears sooner.'],
             ['improvement', 'The header names the system under the office name, the footer spans the full page width, printing a page leaves out the menus, and every page\'s breadcrumbs now start from Home.'],
         ];
     }

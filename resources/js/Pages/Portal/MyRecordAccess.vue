@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
+import BusyRegion from '../../Components/UI/BusyRegion.vue';
+import { useBusy } from '../../Composables/useBusy';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Badge from '../../Components/UI/Badge.vue';
@@ -27,8 +29,9 @@ const props = defineProps({
     keptMonths: { type: Number, required: true },
 });
 
+const { busy, handlers } = useBusy();
 const yearOptions = [{ value: '', label: 'All years' }, ...props.years.map((year) => ({ value: String(year), label: String(year) }))];
-const filterYear = (value) => router.get('/my/record-access', value ? { year: value } : {}, { preserveState: true, preserveScroll: true });
+const filterYear = (value) => router.get('/my/record-access', value ? { year: value } : {}, { preserveState: true, preserveScroll: true, ...handlers });
 
 // Entries arrive newest first, so page 1's first row is the latest access.
 const total = computed(() => props.entries?.total ?? props.entries?.data.length ?? 0);
@@ -96,6 +99,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
             </div>
         </div>
 
+        <BusyRegion :busy="busy">
         <Card title="Access log" icon="clipboard" description="Newest first.">
             <template #actions>
                 <div v-if="years.length" class="w-40">
@@ -162,5 +166,6 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
                 </p>
             </template>
         </Card>
+    </BusyRegion>
     </div>
 </template>
