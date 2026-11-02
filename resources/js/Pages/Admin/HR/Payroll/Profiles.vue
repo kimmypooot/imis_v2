@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 
@@ -43,7 +44,7 @@ const columns = [
             <template #cell-items="{ row }"><span class="tabular-nums">{{ row.items }}</span></template>
             <template #cell-loans="{ row }"><span class="tabular-nums">{{ row.loans }}</span></template>
             <template #cell-actions="{ row }">
-                <Link :href="`/admin/hr/payroll/profiles/${row.id}`" class="text-sm text-primary hover:underline">Open<span class="sr-only"> {{ row.name }}</span></Link>
+                <ActionButton icon="eye" tone="neutral" :label="`Open the pay profile of ${row.name}`" :href="`/admin/hr/payroll/profiles/${row.id}`" />
             </template>
         </DataTable>
     </Card>

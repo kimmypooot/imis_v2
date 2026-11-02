@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -76,9 +77,9 @@ const columns = [
             <template #cell-type_label="{ row }"><StatusBadge :status="row.day_off ? 'info' : 'draft'" :label="row.type_label" /></template>
             <template #cell-proclamation="{ row }">{{ row.proclamation || '—' }}</template>
             <template #cell-actions="{ row }">
-                <div v-if="canManage" class="flex justify-center gap-3 text-sm">
-                    <button type="button" class="text-primary hover:underline" @click="edit(row)">Edit<span class="sr-only"> {{ row.name }}</span></button>
-                    <button type="button" class="text-danger hover:underline" @click="remove(row)">Remove<span class="sr-only"> {{ row.name }}</span></button>
+                <div v-if="canManage" class="flex justify-center gap-1">
+                    <ActionButton icon="pencil" :label="`Edit ${row.name}`" @click="edit(row)" />
+                    <ActionButton icon="trash" tone="danger" :label="`Remove ${row.name}`" @click="remove(row)" />
                 </div>
             </template>
         </DataTable>

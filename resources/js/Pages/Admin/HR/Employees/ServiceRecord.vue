@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import Button from '../../../../Components/UI/Button.vue';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
@@ -107,9 +108,9 @@ const remove = async (line) => {
     <Card title="Service" icon="clipboard" :description="`Born ${person.date_of_birth ? formatCalendarDate(person.date_of_birth) : '—'}${person.place_of_birth ? ` in ${person.place_of_birth}` : ''}`">
         <ServiceRecordTable :lines="lines">
             <template v-if="canManage" #actions="{ line }">
-                <div v-if="line.source === 'entry'" class="flex justify-end gap-3">
-                    <button type="button" class="text-primary hover:underline" @click="openEdit(line)">Edit</button>
-                    <button type="button" class="text-danger hover:underline" @click="remove(line)">Remove</button>
+                <div v-if="line.source === 'entry'" class="flex justify-end gap-1">
+                    <ActionButton icon="pencil" :label="`Edit ${line.designation}`" @click="openEdit(line)" />
+                    <ActionButton icon="trash" tone="danger" :label="`Remove ${line.designation}`" @click="remove(line)" />
                 </div>
             </template>
         </ServiceRecordTable>

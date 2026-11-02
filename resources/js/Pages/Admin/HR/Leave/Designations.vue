@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -74,9 +75,9 @@ const columns = [
             <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }} – {{ formatCalendarDate(row.date_to) }}</span></template>
             <template #cell-order_number="{ row }">{{ row.order_number || '—' }}</template>
             <template #cell-actions="{ row }">
-                <div v-if="canManage" class="flex justify-center gap-3 text-sm">
-                    <button type="button" class="text-primary hover:underline" @click="edit(row)">Edit</button>
-                    <button type="button" class="text-danger hover:underline" @click="remove(row)">Remove</button>
+                <div v-if="canManage" class="flex justify-center gap-1">
+                    <ActionButton icon="pencil" :label="`Edit the designation of ${row.name}`" @click="edit(row)" />
+                    <ActionButton icon="trash" tone="danger" :label="`Remove the designation of ${row.name}`" @click="remove(row)" />
                 </div>
             </template>
         </DataTable>

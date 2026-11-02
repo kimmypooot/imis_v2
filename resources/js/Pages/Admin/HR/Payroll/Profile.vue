@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -151,9 +152,9 @@ const recentColumns = [
                     <template #cell-amount="{ row }"><span class="tabular-nums">{{ row.amount === null ? 'By rule' : formatPeso(row.amount) }}</span></template>
                     <template #cell-period="{ row }"><span class="whitespace-nowrap">{{ row.effective_from }} – {{ row.effective_to ?? 'onward' }}</span></template>
                     <template #cell-actions="{ row }">
-                        <div v-if="canManage" class="flex justify-end gap-3 text-sm">
-                            <button type="button" class="text-primary hover:underline" @click="editItem(row)">Edit<span class="sr-only"> {{ row.component }}</span></button>
-                            <button type="button" class="text-danger hover:underline" @click="removeItem(row)">Remove<span class="sr-only"> {{ row.component }}</span></button>
+                        <div v-if="canManage" class="flex justify-end gap-1">
+                            <ActionButton icon="pencil" :label="`Edit ${row.component}`" @click="editItem(row)" />
+                            <ActionButton icon="trash" tone="danger" :label="`Remove ${row.component}`" @click="removeItem(row)" />
                         </div>
                     </template>
                 </DataTable>

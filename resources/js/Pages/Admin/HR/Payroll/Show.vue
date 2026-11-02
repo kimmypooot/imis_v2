@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -185,9 +186,9 @@ const columns = [
             <template #cell-first_half="{ row }"><span class="tabular-nums">{{ formatPeso(row.first_half) }}</span></template>
             <template #cell-second_half="{ row }"><span class="tabular-nums">{{ formatPeso(row.second_half) }}</span></template>
             <template #cell-actions="{ row }">
-                <div class="flex justify-end gap-3 text-sm whitespace-nowrap">
-                    <button type="button" class="text-primary hover:underline" @click="openId = row.id">Details<span class="sr-only"> for {{ row.name }}</span></button>
-                    <a v-if="!isDraft" :href="`/payslips/${row.id}`" target="_blank" rel="noopener" class="text-primary hover:underline">Payslip<span class="sr-only"> of {{ row.name }}</span></a>
+                <div class="flex justify-end gap-1">
+                    <ActionButton icon="eye" tone="neutral" :label="`Details of ${row.name}`" @click="openId = row.id" />
+                    <ActionButton v-if="!isDraft" icon="printer" :label="`Payslip of ${row.name}`" :href="`/payslips/${row.id}`" external />
                 </div>
             </template>
         </DataTable>
@@ -257,9 +258,11 @@ const columns = [
                                 <InputError v-if="editingLine === line.id" :message="lineForm.errors.amount || lineForm.errors.run" />
                             </td>
                             <td v-if="canAdjust" class="py-1.5 text-right text-sm whitespace-nowrap">
-                                <button v-if="editingLine !== line.id" type="button" class="text-primary hover:underline" @click="editLine(line)">Change</button>
-                                <button v-else type="button" class="text-text-muted hover:underline" @click="editingLine = null">Cancel</button>
-                                <button type="button" class="ml-3 text-danger hover:underline" @click="removeLine(line)">Remove</button>
+                                <span class="inline-flex gap-1">
+                                    <ActionButton v-if="editingLine !== line.id" icon="pencil" :label="`Change ${line.label}`" @click="editLine(line)" />
+                                    <ActionButton v-else icon="close" tone="neutral" :label="`Cancel changing ${line.label}`" @click="editingLine = null" />
+                                    <ActionButton icon="trash" tone="danger" :label="`Remove ${line.label}`" @click="removeLine(line)" />
+                                </span>
                             </td>
                         </tr>
                     </template>

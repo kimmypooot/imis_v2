@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -117,7 +118,7 @@ const checks = [
             </template>
             <template #cell-is_active="{ row }"><StatusBadge :status="row.is_active ? 'active' : 'inactive'" :label="row.is_active ? 'Active' : 'Inactive'" /></template>
             <template #cell-actions="{ row }">
-                <button v-if="canManage" type="button" class="text-sm text-primary hover:underline" @click="edit(row)">Edit<span class="sr-only"> {{ row.name }}</span></button>
+                <ActionButton v-if="canManage" icon="pencil" :label="`Edit ${row.name}`" @click="edit(row)" />
             </template>
         </DataTable>
     </Card>

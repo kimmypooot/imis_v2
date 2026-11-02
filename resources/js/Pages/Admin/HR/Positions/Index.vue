@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
+import ActionButton from '../../../../Components/UI/ActionButton.vue';
 import Card from '../../../../Components/UI/Card.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
@@ -165,10 +166,10 @@ const columns = [
                 </div>
             </template>
             <template #cell-actions="{ row }">
-                <div v-if="canManage" class="flex justify-center gap-3 text-sm">
-                    <button type="button" class="text-primary hover:underline" @click="addItem(row)">Add item<span class="sr-only"> to {{ row.title }}</span></button>
-                    <button type="button" class="text-primary hover:underline" @click="edit(row)">Edit<span class="sr-only"> {{ row.title }}</span></button>
-                    <button v-if="!row.items_count" type="button" class="text-danger hover:underline" @click="remove(row)">Delete<span class="sr-only"> {{ row.title }}</span></button>
+                <div v-if="canManage" class="flex justify-center gap-1">
+                    <ActionButton icon="plus" tone="success" :label="`Add an item to ${row.title}`" @click="addItem(row)" />
+                    <ActionButton icon="pencil" :label="`Edit ${row.title}`" @click="edit(row)" />
+                    <ActionButton v-if="!row.items_count" icon="trash" tone="danger" :label="`Delete ${row.title}`" @click="remove(row)" />
                 </div>
             </template>
         </DataTable>
