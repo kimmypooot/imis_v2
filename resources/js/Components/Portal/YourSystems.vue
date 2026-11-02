@@ -5,22 +5,33 @@ import ExternalLinkIndicator from './ExternalLinkIndicator.vue';
 
 /**
  * A one-click row of the systems you already have a role in, above the
- * Systems Directory. It comes from your access records, nothing is tracked
- * about what you open. A system under maintenance that you may still open
+ * Systems Directory: the four you opened most recently (from the launch
+ * records IMIS already keeps), filled up from your other systems when you
+ * have opened fewer. Nothing extra is tracked. A system under maintenance that you may still open
  * is marked in amber. The directory below stays the full list.
  */
 const props = defineProps({
     directory: { type: Object, required: true /** { categories, systems } */ },
+    // Ids of the systems opened most recently, newest first.
+    recent: { type: Array, default: () => [] },
 });
 
-const SHOWN = 8;
+const SHOWN = 4;
 const expanded = ref(false);
 
-const mine = computed(() =>
-    Object.values(props.directory.systems)
+// Systems you can open: the ones you opened lately first, then the rest A to Z.
+const mine = computed(() => {
+    const rank = (system) => {
+        const position = props.recent.indexOf(system.id);
+
+        return position === -1 ? Infinity : position;
+    };
+
+    return Object.values(props.directory.systems)
         .filter((system) => system.role && system.url)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-);
+        .sort((a, b) => (rank(a) === rank(b) ? a.name.localeCompare(b.name) : rank(a) - rank(b)));
+});
+const hasRecent = computed(() => mine.value.some((system) => props.recent.includes(system.id)));
 const shown = computed(() => (expanded.value ? mine.value : mine.value.slice(0, SHOWN)));
 </script>
 
@@ -29,7 +40,7 @@ const shown = computed(() => (expanded.value ? mine.value : mine.value.slice(0, 
         <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
                 <h2 id="your-systems-heading" class="text-lg font-semibold text-text">Your systems</h2>
-                <p class="text-sm text-text-muted">The systems you have a role in, one click away.</p>
+                <p class="text-sm text-text-muted">{{ hasRecent ? 'The ones you opened most recently, one click away.' : 'The systems you have a role in, one click away.' }}</p>
             </div>
             <button
                 v-if="mine.length > SHOWN"
