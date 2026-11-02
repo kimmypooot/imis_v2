@@ -132,6 +132,11 @@ class LegacySso
             'mname' => (string) $user->middle_name,
             'email' => (string) $user->email,
             'position' => (string) $user->position,
+            // The plain name parts and sex, for a system that keeps its own record of the person
+            // (PROCTAD registers its employee test administrators from these).
+            'given_name' => (string) $user->first_name,
+            'suffix' => (string) $user->name_extension,
+            'sex' => $user->sex,
             'role' => $role?->name,
             'role_code' => $role?->code,
             // Public URL of the header photo (an unguessable file name), or null.

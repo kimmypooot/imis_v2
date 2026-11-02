@@ -3,11 +3,13 @@
 use App\Http\Controllers\Api\IctSrtsController;
 use App\Http\Controllers\Api\IpcrsController;
 use App\Http\Controllers\Api\JportalController;
+use App\Http\Controllers\Api\ProctadController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\SsoValidateController;
 use App\Http\Middleware\AuthenticateIctSrts;
 use App\Http\Middleware\AuthenticateIpcrs;
 use App\Http\Middleware\AuthenticateJportal;
+use App\Http\Middleware\AuthenticateProctad;
 use App\Http\Middleware\AuthenticateRecruitmentPortal;
 use Illuminate\Support\Facades\Route;
 
@@ -40,4 +42,9 @@ Route::middleware([AuthenticateIctSrts::class, 'throttle:60,1'])->prefix('api/v1
 // IPCRS: the current employees, to name on a form and cascade rows to.
 Route::middleware([AuthenticateIpcrs::class, 'throttle:60,1'])->prefix('api/v1/ipcrs')->group(function () {
     Route::get('employees', [IpcrsController::class, 'employees'])->name('ipcrs.employees');
+});
+
+// PROCTAD: the staff who hold a PROCTAD role, for its Users page.
+Route::middleware([AuthenticateProctad::class, 'throttle:60,1'])->prefix('api/v1/proctad')->group(function () {
+    Route::get('users', [ProctadController::class, 'users'])->name('proctad.users');
 });
