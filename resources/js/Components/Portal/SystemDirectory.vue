@@ -272,7 +272,7 @@ watch(selected, async (now, before) => {
                                             class="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium whitespace-nowrap text-white transition group-hover:bg-primary-hover group-hover:shadow-md"
                                             aria-hidden="true"
                                         >
-                                            <Icon name="chevronRight" size="sm" />
+                                            <Icon name="arrowCircleRight" size="sm" />
                                             View Systems ({{ division.system_ids.length }})
                                         </span>
                                         <span class="sr-only">View {{ division.system_ids.length }} systems</span>
