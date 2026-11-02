@@ -43,7 +43,7 @@ const base =
 
 const root = ref(null);
 const open = ref(false);
-const tip = ref({ x: 0, y: 0, below: false });
+const tip = ref({ x: 0, y: 0, below: false, end: false });
 let timer = null;
 
 const place = () => {
@@ -51,7 +51,9 @@ const place = () => {
     if (!rect) return;
 
     const below = rect.top < 44; // no room above: drop it underneath
-    tip.value = { x: rect.left + rect.width / 2, y: below ? rect.bottom + 6 : rect.top - 6, below };
+    // Near the right edge the label lines up with the button's right side instead of centering.
+    const end = rect.left + rect.width / 2 > window.innerWidth - 180;
+    tip.value = { x: end ? window.innerWidth - rect.right : rect.left + rect.width / 2, y: below ? rect.bottom + 6 : rect.top - 6, below, end };
 };
 
 const hide = () => {
@@ -105,9 +107,9 @@ onBeforeUnmount(hide);
             <span
                 v-if="open"
                 aria-hidden="true"
-                class="pointer-events-none fixed z-[70] max-w-xs -translate-x-1/2 rounded-md bg-text px-2.5 py-1.5 text-xs leading-snug font-medium text-white shadow-lg"
-                :class="tip.below ? '' : '-translate-y-full'"
-                :style="{ left: `${tip.x}px`, top: `${tip.y}px` }"
+                class="pointer-events-none fixed z-[70] w-max max-w-xs rounded-md bg-text px-2.5 py-1.5 text-xs leading-snug font-medium text-white shadow-lg"
+                :class="[tip.below ? '' : '-translate-y-full', tip.end ? '' : '-translate-x-1/2']"
+                :style="tip.end ? { right: `${tip.x}px`, top: `${tip.y}px` } : { left: `${tip.x}px`, top: `${tip.y}px` }"
             >
                 {{ label }}
             </span>

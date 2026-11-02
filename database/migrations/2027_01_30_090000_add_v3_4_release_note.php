@@ -73,6 +73,9 @@ return new class extends Migration
             ['improvement', 'Leave Approvals and Payslip Approvals open with how many are waiting and how long the oldest has waited, and each row shows its age.'],
             ['improvement', 'My Earnings opens with your latest earnings, deductions and net pay, with a progress bar for each loan and a chart of recent net pay. My Payslips and Leave Monetization have summary figures, and My PDS shows how complete each part of the form is.'],
             ['improvement', 'Announcements, Systems and Services have richer cards and detail pages, and their search updates as you type.'],
+            ['improvement', 'The dashboard has a Your systems row with the four systems you opened most recently, from your launch history, one click from launching. The directory search now finds systems directly, and pressing / jumps to it. The welcome banner is centered and roomier.'],
+            ['improvement', 'Payroll shows the net pay as the 1st quincena (15th) and the 2nd quincena (30th) on the payroll register, the payslip and My Earnings, and My Earnings puts your profile items and your recent net pay side by side.'],
+            ['improvement', 'Row actions in the HR tables (edit, delete, view, print) are icon buttons with a tooltip that also appears when you tab to them, and they are larger on touch screens. Words stay for decisions such as Approve and Reject.'],
             ['improvement', 'Clearer loading: placeholder shapes while the dashboard summary and the notification bell load, a dimmed list with a small spinner while a search, filter or month changes, and a progress bar that appears sooner.'],
             ['improvement', 'The header names the system under the office name, the footer spans the full page width, printing a page leaves out the menus, and every page\'s breadcrumbs now start from Home.'],
         ];

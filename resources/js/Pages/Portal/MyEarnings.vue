@@ -201,7 +201,7 @@ const historyColumns = [
     </Card>
 
     <!-- Profile items and the net-pay chart share a row when both are shown. -->
-    <div v-if="items.length || trend.length > 1" class="mb-6 grid items-start gap-6" :class="items.length && trend.length > 1 ? 'lg:grid-cols-2' : ''">
+    <div v-if="items.length || trend.length > 1" class="mb-6 grid gap-6" :class="items.length && trend.length > 1 ? 'md:grid-cols-2' : ''">
     <Card v-if="items.length" title="Allowances and deductions on your profile" icon="clipboard" description="Set by HR for you, on top of the items everyone gets.">
         <ul class="divide-y divide-border text-sm">
             <li v-for="(item, index) in items" :key="index" class="flex flex-wrap justify-between gap-2 py-2">
