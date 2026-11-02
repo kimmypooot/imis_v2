@@ -13,6 +13,7 @@ import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
+import YourSystems from '../../Components/Portal/YourSystems.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
 import AnnouncementCard from '../../Components/Announcements/AnnouncementCard.vue';
 
@@ -129,6 +130,8 @@ const greeting = computed(() => {
                 />
             </div>
         </PortalSection>
+
+        <YourSystems :directory="directory" />
 
         <SystemDirectory :directory="directory" :division="division" />
 

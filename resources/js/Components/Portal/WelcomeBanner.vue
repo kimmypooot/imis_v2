@@ -22,7 +22,7 @@ const brand = useBranding();
 </script>
 
 <template>
-    <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-center text-white shadow-md md:p-8">
+    <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark px-5 py-4 text-white shadow-md md:px-7 md:py-5">
         <!-- Decorative photo under a navy tint, so the text keeps its contrast. -->
         <div
             class="absolute inset-0 bg-cover bg-center"
@@ -34,13 +34,13 @@ const brand = useBranding();
         <OrbitCircles />
 
         <div class="relative z-10">
-            <p class="mb-1 text-sm text-white/80">
+            <p class="mb-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/80">
                 {{ greeting }}
-                <span v-if="division" class="ml-1 rounded-full bg-white/15 px-2.5 py-px text-xs font-medium whitespace-nowrap text-white/85">
+                <span v-if="division" class="rounded-full bg-white/15 px-2.5 py-px text-xs font-medium whitespace-nowrap text-white/85">
                     {{ division }}
                 </span>
             </p>
-            <h1 class="mb-2 text-xl font-bold md:text-2xl">
+            <h1 class="text-lg font-bold md:text-xl">
                 CSC RO VIII — Integrated Management Information System
                 <span
                     v-if="version"
@@ -49,7 +49,7 @@ const brand = useBranding();
                     v{{ version }}
                 </span>
             </h1>
-            <p class="text-base text-white/90">
+            <p class="mt-1 line-clamp-2 text-sm text-white/85">
                 {{ message || 'Enhancing public service delivery through innovation and digital transformation.' }}
             </p>
         </div>
