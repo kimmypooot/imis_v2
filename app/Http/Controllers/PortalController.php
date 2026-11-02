@@ -31,6 +31,7 @@ class PortalController extends Controller
 
         $services = Service::query()
             ->visibleTo($user)
+            ->when(! Settings::get('portal_services_enabled'), fn ($query) => $query->whereRaw('1 = 0'))
             ->orderBy('sort_order')
             ->orderBy('name')
             ->limit(6)

@@ -79,6 +79,8 @@ class HandleInertiaRequests extends Middleware
                 'leaveApprover' => app(LeaveApplications::class)->isApprover($user),
                 // HR-8: the head of HRD, or someone designated head of HRD.
                 'payslipApprover' => app(PayslipApprovers::class)->isApprover($user),
+                // Settings → Portal: the Services directory is switched on.
+                'services' => (bool) Settings::get('portal_services_enabled'),
             ] : [],
             // Counts shown on sidebar entries (navigation `badge`), only to
             // those who may open the page behind them.

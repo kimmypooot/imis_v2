@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\OrganizationalUnit;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Settings\Settings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -160,7 +161,8 @@ class PortalSearch
     private function matching(SearchType $type, string $query): Builder
     {
         $builder = match ($type) {
-            SearchType::Services => Service::query()->visibleTo($this->user),
+            SearchType::Services => Service::query()->visibleTo($this->user)
+                ->when(! Settings::get('portal_services_enabled'), fn ($query) => $query->whereRaw('1 = 0')),
             SearchType::Applications => Application::query()->visibleTo($this->user),
             SearchType::OrganizationalUnits => OrganizationalUnit::query()->active(),
             SearchType::Announcements => Announcement::query()->published(),

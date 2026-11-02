@@ -73,7 +73,7 @@ export const portalNavItems = [
         group: 'Directory',
         items: [
             { label: 'Systems', href: '/applications', icon: 'grid' },
-            { label: 'Services', href: '/services', icon: 'clipboard' },
+            { label: 'Services', href: '/services', icon: 'clipboard', flag: 'services' },
             { label: 'Organizational Units', href: '/organizational-units', icon: 'building' },
         ],
     },

@@ -5,7 +5,9 @@ namespace Tests\Feature\Portal;
 use App\Models\OrganizationalUnit;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\Setting;
 use App\Models\User;
+use App\Support\Settings\SettingRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -30,6 +32,20 @@ class ServicesTest extends TestCase
             ->component('Portal/Services/Index')
             ->has('services', 1)
             ->where('services.0.name', $service->name));
+    }
+
+    public function test_turning_services_off_closes_the_pages_and_empties_the_home_and_search(): void
+    {
+        $user = User::factory()->create();
+        $service = Service::factory()->create(['name' => 'Hidden Service']);
+        SettingRegistry::sync();
+        Setting::query()->where('key', 'portal_services_enabled')->first()->forceFill(['value' => '0'])->save();
+
+        $this->actingAs($user)->get('/services')->assertNotFound();
+        $this->actingAs($user)->get("/services/{$service->id}")->assertNotFound();
+        $this->actingAs($user)->get('/dashboard')->assertInertia(fn ($page) => $page
+            ->has('services', 0)
+            ->where('flags.services', false));
     }
 
     public function test_inactive_service_is_not_exposed(): void

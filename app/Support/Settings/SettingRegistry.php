@@ -88,6 +88,13 @@ final class SettingRegistry
                 'default' => 3,
                 'constraints' => ['required' => true, 'min' => 1, 'max' => 10],
             ],
+            'portal_services_enabled' => [
+                'type' => SettingType::Boolean,
+                'group' => SettingGroup::Portal,
+                'label' => 'Show the Services directory',
+                'description' => 'Turn off to hide Services from the menu, the portal home and search, and to close the /services pages. Admin → Services stays available for filling it in.',
+                'default' => true,
+            ],
             'portal_notice_enabled' => [
                 'type' => SettingType::Boolean,
                 'group' => SettingGroup::Portal,

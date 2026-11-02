@@ -76,6 +76,7 @@ return new class extends Migration
             ['improvement', 'The dashboard has a Your systems row with the four systems you opened most recently, from your launch history, one click from launching. The directory search now finds systems directly, and pressing / jumps to it. The welcome banner is centered and roomier, and the division cards use a circled arrow.'],
             ['improvement', 'Payroll shows the net pay as the 1st quincena (15th) and the 2nd quincena (30th) on the payroll register, the payslip and My Earnings, and My Earnings puts your profile items and your recent net pay side by side.'],
             ['improvement', 'Row actions in the HR tables (edit, delete, view, print) are icon buttons with a tooltip that also appears when you tab to them, and they are larger on touch screens. Words stay for decisions such as Approve and Reject.'],
+            ['improvement', 'A Super Administrator can switch the Services directory off in System Settings (Portal), which hides it from the menu, the portal home and search.'],
             ['improvement', 'Clearer loading: placeholder shapes while the dashboard summary and the notification bell load, a dimmed list with a small spinner while a search, filter or month changes, and a progress bar that appears sooner.'],
             ['improvement', 'The header names the system under the office name, the footer spans the full page width, printing a page leaves out the menus, and every page\'s breadcrumbs now start from Home.'],
         ];

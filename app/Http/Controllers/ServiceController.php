@@ -6,6 +6,7 @@ use App\Http\Resources\ServiceResource;
 use App\Models\OrganizationalUnit;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,6 +15,8 @@ class ServiceController extends Controller
 {
     public function index(Request $request): Response
     {
+        abort_unless(Settings::get('portal_services_enabled'), 404);
+
         $services = Service::query()
             ->visibleTo($request->user())
             ->with(['organizationalUnit:id,name', 'category:id,name'])
@@ -46,7 +49,7 @@ class ServiceController extends Controller
 
     public function show(Request $request, Service $service): Response
     {
-        abort_unless($service->isVisibleTo($request->user()), 404);
+        abort_unless(Settings::get('portal_services_enabled') && $service->isVisibleTo($request->user()), 404);
 
         $service->load(['organizationalUnit:id,name', 'category:id,name']);
 
