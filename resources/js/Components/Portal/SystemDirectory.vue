@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
 import EmptyState from '../UI/EmptyState.vue';
@@ -62,6 +62,43 @@ const visibleSystems = computed(() => {
         (system) => !term || [system.name, system.short_name, system.description].some((text) => matches(text, term)),
     );
 });
+
+// Systems matching the search, so typing a system's name lands on the system
+// itself (with the offices it sits under) instead of only on its division.
+const MAX_SYSTEM_RESULTS = 12;
+const divisionsOf = computed(() => {
+    const map = {};
+    for (const category of props.directory.categories) {
+        for (const division of category.divisions) {
+            for (const id of division.system_ids) (map[id] ??= []).push(division.name);
+        }
+    }
+
+    return map;
+});
+const systemMatches = computed(() => {
+    const term = query.value.trim().toLowerCase();
+    if (!term) return [];
+
+    return Object.values(props.directory.systems).filter((system) => [system.name, system.short_name, system.description].some((text) => matches(text, term)));
+});
+
+// Press / anywhere (outside a field) to jump to the directory search.
+const focusSearch = (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+
+    const input = document.getElementById(selected.value ? 'system-search' : 'division-search');
+    if (!input) return;
+
+    event.preventDefault();
+    input.focus();
+    input.select();
+};
+onMounted(() => document.addEventListener('keydown', focusSearch));
+onBeforeUnmount(() => document.removeEventListener('keydown', focusSearch));
 
 const systemCount = (category) => new Set(category.divisions.flatMap((division) => division.system_ids)).size;
 
@@ -158,7 +195,7 @@ watch(selected, async (now, before) => {
                         id="division-search"
                         v-model="query"
                         type="search"
-                        placeholder="Search divisions or systems…"
+                        placeholder="Search divisions or systems…  ( / )"
                         class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                 </div>
@@ -170,9 +207,28 @@ watch(selected, async (now, before) => {
                 title="No systems available yet"
                 description="Systems registered in the directory will appear here."
             />
-            <EmptyState v-else-if="visibleCategories.length === 0" icon="search" title="No matches" description="Try a different search." />
+            <EmptyState v-else-if="visibleCategories.length === 0 && systemMatches.length === 0" icon="search" title="No matches" description="Try a different search." />
 
-            <div v-else class="space-y-11">
+            <!-- Typing a system's name: the systems themselves first, one click from launch. -->
+            <div v-if="systemMatches.length" class="mb-10">
+                <h3 class="mb-4 flex items-center gap-2.5 text-xs font-bold tracking-widest text-text-muted uppercase">
+                    <span class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md bg-success-bg text-success" aria-hidden="true"><Icon name="grid" size="sm" /></span>
+                    Systems
+                    <span class="shrink-0 rounded-full bg-success-bg px-2 py-px text-xs font-semibold tracking-normal text-success normal-case">{{ systemMatches.length }} found</span>
+                    <span class="h-px flex-1 bg-border" aria-hidden="true" />
+                </h3>
+                <ul class="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+                    <li v-for="system in systemMatches.slice(0, MAX_SYSTEM_RESULTS)" :key="system.id">
+                        <SystemLaunchCard :system="system" />
+                        <p v-if="divisionsOf[system.id]?.length" class="mt-1.5 px-1 text-xs text-text-muted">In {{ divisionsOf[system.id].join(', ') }}</p>
+                    </li>
+                </ul>
+                <p v-if="systemMatches.length > MAX_SYSTEM_RESULTS" class="mt-3 text-sm text-text-muted">
+                    Showing {{ MAX_SYSTEM_RESULTS }} of {{ systemMatches.length }}. Type more of the name to narrow it down.
+                </p>
+            </div>
+
+            <div v-if="visibleCategories.length" class="space-y-11">
                 <div v-for="category in visibleCategories" :key="category.key">
                     <!-- Legacy category label: small caps, tinted icon, count badge, trailing rule. -->
                     <h3 class="mb-4 flex items-center gap-2.5 text-xs font-bold tracking-widest text-text-muted uppercase">
