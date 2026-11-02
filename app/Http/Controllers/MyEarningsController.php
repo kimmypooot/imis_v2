@@ -101,6 +101,9 @@ class MyEarningsController extends Controller
             'total_earnings' => (float) $entry->gross_pay,
             'total_deductions' => (float) $entry->total_deductions,
             'net_pay' => (float) $entry->net_pay,
+            // The net pay as released: the 1st quincena (15th) and the 2nd (30th).
+            'first_half' => (float) $entry->first_half,
+            'second_half' => (float) $entry->second_half,
             'subtotals' => [
                 'mandatory' => $sum($mandatory),
                 'government_loans' => $sum($government),

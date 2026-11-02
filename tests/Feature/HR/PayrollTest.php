@@ -102,6 +102,19 @@ class PayrollTest extends TestCase
         $this->assertSame(4435.01, (float) $entry->second_half);
     }
 
+    public function test_my_earnings_shows_the_net_pay_as_released_in_the_two_quincenas(): void
+    {
+        $employee = $this->staff('Administrative Officer IV', 15);
+        $run = $this->payroll('2026-10');
+        $entry = $run->entries()->sole();
+        app(Payrolls::class)->finalize($run, $this->hr());
+
+        $this->actingAs($employee->user)->get('/my/earnings')->assertInertia(fn (Assert $page) => $page
+            ->component('Portal/MyEarnings')
+            ->where('latest.first_half', fn ($net) => abs($net - (float) $entry->first_half) < 0.001)
+            ->where('latest.second_half', fn ($net) => abs($net - (float) $entry->second_half) < 0.001));
+    }
+
     public function test_a_profile_amount_overrides_an_automatic_item_and_zero_exempts(): void
     {
         $employee = $this->staff('Administrative Officer IV', 15);

@@ -94,8 +94,8 @@ const print = () => window.print();
             <table class="net">
                 <tbody>
                     <tr class="total"><th scope="row">NET PAY</th><td class="right">₱ {{ money(entry.net_pay) }}</td></tr>
-                    <tr><th scope="row">15th of the month</th><td class="right">{{ money(entry.first_half) }}</td></tr>
-                    <tr><th scope="row">30th of the month</th><td class="right">{{ money(entry.second_half) }}</td></tr>
+                    <tr><th scope="row">1st quincena (15th)</th><td class="right">{{ money(entry.first_half) }}</td></tr>
+                    <tr><th scope="row">2nd quincena (30th)</th><td class="right">{{ money(entry.second_half) }}</td></tr>
                 </tbody>
             </table>
 

@@ -4285,7 +4285,10 @@ approved by the head of HRD or whoever is designated head of HRD.
   loan's amortization (or what's left). Earnings first, then deductions.
 - **Releases:** the first half is net ÷ 2 rounded down to the centavo
   (integer centavos), the second takes the rest. Releases on the 15th and
-  the 30th (the last day in February).
+  the 30th (the last day in February). They are called the **1st quincena**
+  (15th) and **2nd quincena** (30th) and shown after the net pay on the
+  payroll page, the payslip and My Earnings; earnings and deductions are
+  not broken down per quincena.
 - **Net pay below ₱5,000** (the GAA floor) is flagged, not blocked.
 - **Draft:** HR changes, adds or removes lines, rebuilds one entry, or
   regenerates everything (discarding adjustments). **Finalized:** locked;

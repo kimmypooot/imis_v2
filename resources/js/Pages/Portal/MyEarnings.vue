@@ -109,6 +109,7 @@ const historyColumns = [
                     <div class="rounded-lg bg-white p-4 text-text">
                         <p class="text-xs text-text-muted">Net pay</p>
                         <p class="mt-1 text-2xl font-bold text-primary tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
+                        <p class="mt-1 text-xs text-text-muted tabular-nums">1st quincena {{ formatPeso(latest.first_half) }} · 2nd quincena {{ formatPeso(latest.second_half) }}</p>
                     </div>
                 </div>
             </div>
@@ -146,6 +147,10 @@ const historyColumns = [
                     <tfoot><tr><th scope="row" class="pt-2 text-left font-semibold text-text">Total deductions</th><td class="pt-2 text-right font-semibold tabular-nums">{{ formatPeso(latest.total_deductions) }}</td></tr></tfoot>
                 </table>
                 <p class="mt-4 flex justify-between border-t-2 border-border pt-2 text-base font-semibold text-text"><span>Net pay</span><span class="tabular-nums">{{ formatPeso(latest.net_pay) }}</span></p>
+                <dl class="mt-2 space-y-1 text-sm text-text-muted">
+                    <div class="flex justify-between"><dt>1st quincena (15th)</dt><dd class="tabular-nums">{{ formatPeso(latest.first_half) }}</dd></div>
+                    <div class="flex justify-between"><dt>2nd quincena (30th)</dt><dd class="tabular-nums">{{ formatPeso(latest.second_half) }}</dd></div>
+                </dl>
             </Card>
         </div>
     </template>
@@ -195,7 +200,9 @@ const historyColumns = [
         </ul>
     </Card>
 
-    <Card v-if="items.length" title="Allowances and deductions on your profile" icon="clipboard" class="mb-6" description="Set by HR for you, on top of the items everyone gets.">
+    <!-- Profile items and the net-pay chart share a row when both are shown. -->
+    <div v-if="items.length || trend.length > 1" class="mb-6 grid items-start gap-6" :class="items.length && trend.length > 1 ? 'lg:grid-cols-2' : ''">
+    <Card v-if="items.length" title="Allowances and deductions on your profile" icon="clipboard" description="Set by HR for you, on top of the items everyone gets.">
         <ul class="divide-y divide-border text-sm">
             <li v-for="(item, index) in items" :key="index" class="flex flex-wrap justify-between gap-2 py-2">
                 <span class="text-text">{{ item.component }} <span class="text-xs text-text-muted">· {{ item.kind === 'earning' ? 'Earning' : 'Deduction' }}</span></span>
@@ -205,7 +212,7 @@ const historyColumns = [
     </Card>
 
     <!-- Net pay over the last few finalized months, oldest to newest. -->
-    <Card v-if="trend.length > 1" title="Net pay, recent months" icon="chartBar" class="mb-6">
+    <Card v-if="trend.length > 1" title="Net pay, recent months" icon="chartBar">
         <ul class="space-y-2.5" aria-label="Net pay by month">
             <li v-for="point in trend" :key="point.period" class="flex items-center gap-3 text-sm">
                 <span class="w-32 shrink-0 text-text-muted">{{ point.period }}</span>
@@ -216,6 +223,7 @@ const historyColumns = [
             </li>
         </ul>
     </Card>
+    </div>
 
     <Card title="Payslip history" icon="database">
         <DataTable :columns="historyColumns" :rows="history" caption="Your payslip history" export-name="imis-my-payslips" :searchable="false" empty-text="No finalized payslips yet.">

@@ -115,8 +115,8 @@ const columns = [
     { key: 'gross_pay', label: 'Gross', align: 'right' },
     { key: 'total_deductions', label: 'Deductions', align: 'right' },
     { key: 'net_pay', label: 'Net pay', align: 'right' },
-    { key: 'first_half', label: '15th', align: 'right' },
-    { key: 'second_half', label: '30th', align: 'right' },
+    { key: 'first_half', label: '1st Quincena', align: 'right' },
+    { key: 'second_half', label: '2nd Quincena', align: 'right' },
     { key: 'actions', label: '', sortable: false, export: false },
 ];
 </script>
@@ -155,8 +155,8 @@ const columns = [
                 <div><dt class="text-text-muted">Gross</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.gross) }}</dd></div>
                 <div><dt class="text-text-muted">Deductions</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.deductions) }}</dd></div>
                 <div><dt class="text-text-muted">Net pay</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.net) }}</dd></div>
-                <div><dt class="text-text-muted">15th release</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.first_half) }}</dd></div>
-                <div><dt class="text-text-muted">30th release</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.second_half) }}</dd></div>
+                <div><dt class="text-text-muted">1st quincena (15th)</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.first_half) }}</dd></div>
+                <div><dt class="text-text-muted">2nd quincena (30th)</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.second_half) }}</dd></div>
             </dl>
         </Card>
     </div>
@@ -268,7 +268,8 @@ const columns = [
                     <tr><th scope="row" class="pt-2 text-left font-medium text-text">Gross pay</th><td class="pt-2 text-right tabular-nums">{{ formatPeso(entry.gross_pay) }}</td><td v-if="canAdjust" /></tr>
                     <tr><th scope="row" class="text-left font-medium text-text">Total deductions</th><td class="text-right tabular-nums">{{ formatPeso(entry.total_deductions) }}</td><td v-if="canAdjust" /></tr>
                     <tr><th scope="row" class="pt-1 text-left font-semibold text-text">Net pay</th><td class="pt-1 text-right font-semibold tabular-nums">{{ formatPeso(entry.net_pay) }}</td><td v-if="canAdjust" /></tr>
-                    <tr class="text-text-muted"><td class="text-xs">15th / 30th</td><td class="text-right text-xs tabular-nums">{{ formatPeso(entry.first_half) }} / {{ formatPeso(entry.second_half) }}</td><td v-if="canAdjust" /></tr>
+                    <tr class="text-text-muted"><th scope="row" class="pt-1 text-left text-xs font-normal">1st quincena (15th)</th><td class="pt-1 text-right text-xs tabular-nums">{{ formatPeso(entry.first_half) }}</td><td v-if="canAdjust" /></tr>
+                    <tr class="text-text-muted"><th scope="row" class="text-left text-xs font-normal">2nd quincena (30th)</th><td class="text-right text-xs tabular-nums">{{ formatPeso(entry.second_half) }}</td><td v-if="canAdjust" /></tr>
                 </tfoot>
             </table>
 
