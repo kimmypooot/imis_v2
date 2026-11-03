@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\IpcrsController;
 use App\Http\Controllers\Api\JportalController;
 use App\Http\Controllers\Api\ProctadController;
 use App\Http\Controllers\Api\RecruitmentController;
+use App\Http\Controllers\Api\RecruitmentEmployeeController;
 use App\Http\Controllers\Api\SsoValidateController;
 use App\Http\Middleware\AuthenticateIctSrts;
 use App\Http\Middleware\AuthenticateIpcrs;
@@ -27,6 +28,11 @@ Route::post(config('legacy.sso.validate_path'), SsoValidateController::class)
 Route::middleware([AuthenticateRecruitmentPortal::class, 'throttle:120,1'])->prefix('api/v1/recruitment')->group(function () {
     Route::get('vacant-positions', [RecruitmentController::class, 'vacantPositions'])->name('recruitment.vacant');
     Route::post('items/{item}/selection', [RecruitmentController::class, 'selection'])->name('recruitment.selection');
+    // An employee who applies: their verified PDS and the few 201-file documents an application uses.
+    Route::get('employees/{user}/pds', [RecruitmentEmployeeController::class, 'pds'])->name('recruitment.employee.pds');
+    Route::get('employees/{user}/documents', [RecruitmentEmployeeController::class, 'documents'])->name('recruitment.employee.documents');
+    Route::get('employees/{user}/documents/{document}/file', [RecruitmentEmployeeController::class, 'document'])
+        ->whereNumber('document')->name('recruitment.employee.document');
 });
 
 // JPortal's public office directory (portal.cscro8.com/directory).
