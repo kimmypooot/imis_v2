@@ -31,6 +31,7 @@ class SyncLegacyImis extends Command
         $failed = 0;
 
         User::query()
+            ->with('organizationalUnit')
             ->when($this->option('user'), fn ($query, $username) => $query->where('username', $username))
             ->chunkById(100, function ($users) use ($bridge, &$synced, &$failed) {
                 foreach ($users as $user) {

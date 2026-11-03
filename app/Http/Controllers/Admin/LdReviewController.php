@@ -27,7 +27,7 @@ class LdReviewController extends Controller
 
         $pending = PdsLearningDevelopment::query()
             ->where('approval_status', LdApprovalStatus::Pending)
-            ->with('employee.user.organizationalUnit')
+            ->with(['employee.user.organizationalUnit', 'reviewer:id,name'])
             ->oldest('created_at')
             ->oldest('id')
             ->get()

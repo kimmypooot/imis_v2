@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
+import { trapTabKey } from '../../Utils/focusTrap';
 import { toast, useDialog } from '../../Composables/useDialog';
 
 /**
@@ -13,6 +14,7 @@ import { toast, useDialog } from '../../Composables/useDialog';
 const { state, settle, dismissToast } = useDialog();
 
 const confirmRef = ref(null);
+const alertRef = ref(null);
 let returnFocus = null;
 
 const icons = {
@@ -39,6 +41,8 @@ watch(
 );
 
 const onKeydown = (event) => {
+    if (state.dialog) trapTabKey(event, alertRef.value);
+
     if (event.key === 'Escape' && state.dialog) {
         event.stopPropagation();
         settle(false);
@@ -78,6 +82,7 @@ const toastStyles = {
             <div v-if="state.dialog" class="fixed inset-0 z-[90] flex items-center justify-center p-4">
                 <div class="fixed inset-0 bg-text/50" aria-hidden="true" @click="settle(false)" />
                 <div
+                    ref="alertRef"
                     role="alertdialog"
                     aria-modal="true"
                     aria-labelledby="dialog-title"

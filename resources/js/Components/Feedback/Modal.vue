@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import Icon from '../UI/Icon.vue';
+import { trapTabKey } from '../../Utils/focusTrap';
 
 /**
  * Generic accessible dialog, styled after the legacy IMIS Bootstrap
@@ -57,6 +58,8 @@ const onKeydown = (event) => {
     if (event.key === 'Escape') {
         close();
     }
+
+    trapTabKey(event, dialogRef.value);
 };
 
 watch(
@@ -85,6 +88,7 @@ onBeforeUnmount(() => {
 
 <template>
     <Teleport to="body">
+        <Transition enter-active-class="transition-opacity duration-150" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-100" leave-to-class="opacity-0">
         <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="fixed inset-0 bg-text/50" aria-hidden="true" @click="close" />
 
@@ -126,5 +130,6 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
+        </Transition>
     </Teleport>
 </template>

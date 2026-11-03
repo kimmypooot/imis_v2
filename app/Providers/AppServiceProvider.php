@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\Changelog;
-use App\Models\Feedback;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
 use App\Models\Employee;
@@ -14,6 +13,7 @@ use App\Models\EmployeeAssignment;
 use App\Models\EmployeeDocument;
 use App\Models\EmployeeLoan;
 use App\Models\EmployeePayItem;
+use App\Models\Feedback;
 use App\Models\FwaArrangement;
 use App\Models\FwaReport;
 use App\Models\Holiday;
@@ -48,6 +48,7 @@ use App\Support\System\ScheduleMonitor;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Cache;
@@ -114,6 +115,13 @@ class AppServiceProvider extends ServiceProvider
         // as a versioned JSON API — the default {"data": [...]} envelope
         // would only complicate every prop on the frontend for no benefit.
         JsonResource::withoutWrapping();
+
+        // Surface N+1 queries: they fail the test suite and are logged in
+        // development, but never break a page in production.
+        EloquentModel::preventLazyLoading(! $this->app->isProduction());
+        if (! $this->app->runningUnitTests()) {
+            EloquentModel::handleLazyLoadingViolationUsing(fn (EloquentModel $model, string $relation) => logger()->warning("Lazy loaded {$relation} on ".$model::class));
+        }
 
         $this->configureAuthorization();
         $this->configureAuditing();

@@ -54,7 +54,7 @@ class ReassignmentReportController extends Controller
             ->whereDate('effective_date', '<=', $to)
             ->when($filters['kind'] ?? null, fn (Builder $query, string $kind) => $query->where('kind', $kind))
             ->when($office, fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('from_unit_id', $office)->orWhere('to_unit_id', $office)))
-            ->with(['employee.user', 'fromUnit', 'toUnit', 'document'])
+            ->with(['employee.user', 'fromUnit', 'toUnit', 'document', 'recorder:id,name'])
             ->orderByDesc('effective_date')->orderByDesc('id')
             ->get()
             ->map(fn (EmployeeAssignment $entry) => [

@@ -15,6 +15,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class LeaveType extends Model
 {
+    /**
+     * Always loaded: creditType() reads it wherever a type is used, and
+     * there are only a handful of leave types.
+     *
+     * @var array<int, string>
+     */
+    protected $with = ['chargedTo'];
+
     protected $fillable = [
         'code', 'name', 'description', 'workflow', 'requires_balance', 'charged_to_id', 'monthly_accrual', 'annual_grant',
         'lapses_yearly', 'max_days_per_year', 'max_days_per_filing', 'max_consecutive_days', 'sex', 'eligible_statuses', 'min_service_months',

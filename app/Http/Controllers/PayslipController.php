@@ -39,7 +39,7 @@ class PayslipController extends Controller
 
     public function show(Request $request, PayrollEntry $entry, Payrolls $payrolls): Response
     {
-        $entry->load(['run', 'employee', 'lines']);
+        $entry->load(['run', 'employee', 'lines.adjuster']);
         $this->authorize('viewPayslip', [PayrollRun::class, $entry]);
 
         if ($entry->employee->user_id !== $request->user()->id) {

@@ -21,6 +21,9 @@ use Illuminate\Validation\ValidationException;
  */
 class LoginRequest extends FormRequest
 {
+    /** Failures across all addresses allowed per account, as a multiple of the per-address limit. */
+    private const ACCOUNT_LIMIT_FACTOR = 4;
+
     // How many failures lock sign-in, and for how long, are set on System
     // Settings → Security (SecurityPolicy); 5 and 15 minutes by default,
     // as in the legacy IMIS.
@@ -76,8 +79,15 @@ class LoginRequest extends FormRequest
         $username = $this->string('username')->value();
         $user = User::where('username', $username)->first();
 
+        // An unknown username still pays for one hash, so response time
+        // doesn't reveal which usernames exist.
+        if (! $user) {
+            Hash::make($this->string('password')->value());
+        }
+
         if (! $user || ! Hash::check($this->string('password'), $user->password)) {
             RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
+            RateLimiter::hit($this->accountThrottleKey(), SecurityPolicy::lockoutSeconds());
 
             // Only the attempted username is kept — never the password.
             app(AuditLogger::class)->recordFor(
@@ -95,6 +105,7 @@ class LoginRequest extends FormRequest
 
         if (! $user->isActive()) {
             RateLimiter::hit($this->throttleKey(), SecurityPolicy::lockoutSeconds());
+            RateLimiter::hit($this->accountThrottleKey(), SecurityPolicy::lockoutSeconds());
 
             app(AuditLogger::class)->recordFor(
                 null,
@@ -113,6 +124,7 @@ class LoginRequest extends FormRequest
         $user->recordLogin();
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->accountThrottleKey());
     }
 
     /**
@@ -124,13 +136,19 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), SecurityPolicy::maxLoginAttempts())) {
+        $perClient = RateLimiter::tooManyAttempts($this->throttleKey(), SecurityPolicy::maxLoginAttempts());
+        $perAccount = RateLimiter::tooManyAttempts($this->accountThrottleKey(), SecurityPolicy::maxLoginAttempts() * self::ACCOUNT_LIMIT_FACTOR);
+
+        if (! $perClient && ! $perAccount) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = max(
+            $perClient ? RateLimiter::availableIn($this->throttleKey()) : 0,
+            $perAccount ? RateLimiter::availableIn($this->accountThrottleKey()) : 0,
+        );
         $this->session()->flash('lockout_seconds', $seconds);
 
         throw ValidationException::withMessages([
@@ -147,5 +165,14 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate($this->string('username')->lower().'|'.$this->ip());
+    }
+
+    /**
+     * The same account from any address, so rotating IPs can't keep
+     * guessing at one username.
+     */
+    public function accountThrottleKey(): string
+    {
+        return 'login-account|'.Str::transliterate($this->string('username')->lower()->value());
     }
 }
