@@ -34,7 +34,6 @@ const form = useForm({
 
 // ── Saved accounts (this browser only; name + username, never a password) ──
 const { accounts, remember: rememberAccount, forget: forgetAccount, forgetAll } = useRememberedAccounts();
-const saveAccount = ref(false);
 
 // With saved accounts the page opens on the list; the form comes after a pick.
 const selected = ref(null);
@@ -44,16 +43,51 @@ const pickAccount = (account) => {
     selected.value = account;
     form.username = account.username;
     form.clearErrors();
-    saveAccount.value = true;
     choosing.value = false;
     nextTick(() => document.getElementById('password')?.focus());
 };
+
+// The card is centred on the page, so swapping the account list for the
+// form (different heights) would make it jump. Grow or shrink it instead.
+const swapRef = ref(null);
+
+const chooserRef = ref(null);
+const formRef = ref(null);
+
+const animateSwap = async () => {
+    const el = swapRef.value;
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // This runs before the DOM updates: pin the current height, let the swap
+    // happen, then grow or shrink to the new one and give the new block a short rise.
+    const from = el.offsetHeight;
+    el.style.height = `${from}px`;
+    el.style.overflow = 'hidden';
+
+    await nextTick();
+
+    const incoming = choosing.value ? chooserRef.value : formRef.value;
+    incoming?.classList.add('animate-rise');
+
+    el.style.height = 'auto';
+    const to = el.offsetHeight;
+    el.style.height = `${from}px`;
+    void el.offsetHeight;
+    el.style.transition = 'height 0.25s ease-out';
+    el.style.height = `${to}px`;
+
+    window.setTimeout(() => {
+        el.style.height = el.style.overflow = el.style.transition = '';
+        incoming?.classList.remove('animate-rise');
+    }, 320);
+};
+
+watch([choosing, selected], animateSwap, { flush: 'pre' });
 
 const backToList = () => {
     selected.value = null;
     form.reset('username', 'password');
     form.clearErrors();
-    saveAccount.value = false;
     choosing.value = props.rememberAccounts && accounts.value.length > 0;
 };
 
@@ -183,7 +217,7 @@ const submit = () => {
     })).post('/login', {
         onSuccess: (page) => {
             const user = page.props.auth?.user;
-            if (props.rememberAccounts && saveAccount.value && user) {
+            if (props.rememberAccounts && user) {
                 rememberAccount({ name: user.name, username: user.username, photoUrl: user.profile_photo_url });
             }
         },
@@ -210,158 +244,157 @@ const submit = () => {
         again.
     </Alert>
 
-    <div v-if="choosing">
-        <div class="mb-4 text-center">
-            <span class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-info-bg text-primary">
-                <Icon name="users" />
-            </span>
-            <p class="text-base font-semibold">Choose an account</p>
-            <p class="text-xs text-muted">Pick who is signing in on this device.</p>
-        </div>
-        <ul class="space-y-2">
-            <li
-                v-for="account in accounts"
-                :key="account.username"
-                class="group flex items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-primary hover:bg-info-bg"
-            >
-                <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" @click="pickAccount(account)">
-                    <UserAvatar :name="account.name" :photo-url="account.photoUrl" size="lg" highlight />
-                    <span class="min-w-0">
-                        <span class="block truncate text-sm font-medium">{{ account.name }}</span>
-                        <span class="block truncate text-xs text-muted">{{ account.username }}</span>
-                    </span>
-                </button>
-                <button
-                    type="button"
-                    class="rounded-full p-1 text-muted transition-colors hover:text-danger"
-                    :title="`Remove ${account.name} from this device`"
-                    :aria-label="`Remove ${account.name} from this device`"
-                    @click="removeAccount(account.username)"
+    <div ref="swapRef">
+        <div v-if="choosing" ref="chooserRef">
+            <div class="mb-4 text-center">
+                <span class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-info-bg text-primary">
+                    <Icon name="users" />
+                </span>
+                <p class="text-base font-semibold">Choose an account</p>
+                <p class="text-xs text-muted">Pick who is signing in on this device.</p>
+            </div>
+            <ul class="space-y-2">
+                <li
+                    v-for="account in accounts"
+                    :key="account.username"
+                    class="group flex items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-primary hover:bg-info-bg"
                 >
-                    <Icon name="xCircle" />
-                </button>
-            </li>
-        </ul>
-        <button
-            type="button"
-            class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm font-medium text-primary hover:border-primary hover:bg-info-bg"
-            @click="useAnotherAccount"
-        >
-            <Icon name="plus" size="sm" />
-            Use another account
-        </button>
-    </div>
-
-    <form
-        v-show="!choosing"
-        class="space-y-5"
-        :class="{ '[&_input]:border-danger': credentialError }"
-        @submit.prevent="submit"
-    >
-        <!-- Re-keyed on every failure so it shakes again, even for the same message. -->
-        <Alert
-            v-if="credentialError"
-            :key="failureCount"
-            tone="danger"
-            icon="xCircle"
-            class="motion-safe:animate-shake"
-        >
-            <p class="font-medium">{{ credentialError }}</p>
-            <p v-if="credentialError.startsWith('Invalid')" class="mt-0.5 text-xs">
-                Check them and try again, or
-                <Link href="/forgot-password" class="font-medium underline">reset your password</Link>.
-            </p>
-        </Alert>
-
-        <div v-if="selected" class="relative rounded-xl bg-info-bg px-4 py-5 text-center">
+                    <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" @click="pickAccount(account)">
+                        <UserAvatar :name="account.name" :photo-url="account.photoUrl" size="lg" highlight />
+                        <span class="min-w-0">
+                            <span class="block truncate text-sm font-medium">{{ account.name }}</span>
+                            <span class="block truncate text-xs text-muted">{{ account.username }}</span>
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-full p-1 text-muted transition-colors hover:text-danger"
+                        :title="`Remove ${account.name} from this device`"
+                        :aria-label="`Remove ${account.name} from this device`"
+                        @click="removeAccount(account.username)"
+                    >
+                        <Icon name="xCircle" />
+                    </button>
+                </li>
+            </ul>
             <button
                 type="button"
-                class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-primary shadow-xs ring-1 ring-border transition-colors hover:bg-primary hover:text-white"
-                title="Switch account"
-                aria-label="Switch account"
+                class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm font-medium text-primary hover:border-primary hover:bg-info-bg"
+                @click="useAnotherAccount"
+            >
+                <Icon name="plus" size="sm" />
+                Use another account
+            </button>
+        </div>
+
+        <form
+            ref="formRef"
+            v-show="!choosing"
+            class="space-y-5"
+            :class="{ '[&_input]:border-danger': credentialError }"
+            @submit.prevent="submit"
+        >
+            <!-- Re-keyed on every failure so it shakes again, even for the same message. -->
+            <Alert
+                v-if="credentialError"
+                :key="failureCount"
+                tone="danger"
+                icon="xCircle"
+                class="motion-safe:animate-shake"
+            >
+                <p class="font-medium">{{ credentialError }}</p>
+                <p v-if="credentialError.startsWith('Invalid')" class="mt-0.5 text-xs">
+                    Check them and try again, or
+                    <Link href="/forgot-password" class="font-medium underline">reset your password</Link>.
+                </p>
+            </Alert>
+
+            <div v-if="selected" class="relative rounded-xl bg-info-bg px-4 py-5 text-center">
+                <button
+                    type="button"
+                    class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-primary shadow-xs ring-1 ring-border transition-colors hover:bg-primary hover:text-white"
+                    title="Switch account"
+                    aria-label="Switch account"
+                    @click="backToList"
+                >
+                    <Icon name="users" size="sm" />
+                </button>
+                <UserAvatar :name="selected.name" :photo-url="selected.photoUrl" size="xl" highlight class="mx-auto" />
+                <p class="mt-3 text-xs font-medium text-primary">Welcome back, {{ firstName(selected.name) }}</p>
+                <p class="truncate text-base font-semibold">{{ selected.name }}</p>
+                <p class="truncate text-xs text-muted">{{ selected.username }}</p>
+            </div>
+
+            <button
+                v-if="!selected && rememberAccounts && accounts.length"
+                type="button"
+                class="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover"
                 @click="backToList"
             >
-                <Icon name="users" size="sm" />
+                <Icon name="chevronLeft" size="sm" />
+                Back to saved accounts
             </button>
-            <UserAvatar :name="selected.name" :photo-url="selected.photoUrl" size="xl" highlight class="mx-auto" />
-            <p class="mt-3 text-xs font-medium text-primary">Welcome back, {{ firstName(selected.name) }}</p>
-            <p class="truncate text-base font-semibold">{{ selected.name }}</p>
-            <p class="truncate text-xs text-muted">{{ selected.username }}</p>
-        </div>
 
-        <button
-            v-if="!selected && rememberAccounts && accounts.length"
-            type="button"
-            class="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover"
-            @click="backToList"
-        >
-            <Icon name="chevronLeft" size="sm" />
-            Back to saved accounts
-        </button>
-
-        <!-- Lets password managers pair the password with the picked account. -->
-        <input
-            v-if="selected"
-            v-model="form.username"
-            type="text"
-            name="username"
-            autocomplete="username"
-            tabindex="-1"
-            aria-hidden="true"
-            class="sr-only"
-        />
-
-        <div>
-            <TextInput
-                v-if="!selected"
-                id="username"
+            <!-- Lets password managers pair the password with the picked account. -->
+            <input
+                v-if="selected"
                 v-model="form.username"
-                label="Username"
-                icon="user"
+                type="text"
+                name="username"
                 autocomplete="username"
-                required
-                autofocus
-                :invalid="!!form.errors.username"
+                tabindex="-1"
+                aria-hidden="true"
+                class="sr-only"
             />
-        </div>
 
-        <div @keydown="trackCapsLock" @keyup="trackCapsLock" @focusout="capsLockOn = false">
-            <PasswordInput
-                id="password"
-                v-model="form.password"
-                label="Password"
-                icon="lock"
-                autocomplete="current-password"
-                required
-                :invalid="!!form.errors.password"
-            />
-            <p v-if="capsLockOn" class="mt-1 flex items-center gap-1 text-xs font-medium text-warning" role="status">
-                <Icon name="exclamation" size="sm" />
-                Caps Lock is on
-            </p>
-            <InputError :message="form.errors.password" />
-        </div>
+            <div>
+                <TextInput
+                    v-if="!selected"
+                    id="username"
+                    v-model="form.username"
+                    label="Username"
+                    icon="user"
+                    autocomplete="username"
+                    required
+                    autofocus
+                    :invalid="!!form.errors.username"
+                />
+            </div>
 
-        <div v-if="turnstileSiteKey">
-            <div ref="turnstileRef" class="flex justify-center" />
-            <InputError :message="form.errors['cf-turnstile-response']" class="text-center" />
-        </div>
+            <div @keydown="trackCapsLock" @keyup="trackCapsLock" @focusout="capsLockOn = false">
+                <PasswordInput
+                    id="password"
+                    v-model="form.password"
+                    label="Password"
+                    icon="lock"
+                    autocomplete="current-password"
+                    required
+                    :invalid="!!form.errors.password"
+                />
+                <p v-if="capsLockOn" class="mt-1 flex items-center gap-1 text-xs font-medium text-warning" role="status">
+                    <Icon name="exclamation" size="sm" />
+                    Caps Lock is on
+                </p>
+                <InputError :message="form.errors.password" />
+            </div>
 
-        <div v-if="rememberAccounts && !selected">
-            <Checkbox id="save-account" v-model="saveAccount" label="Save my account on this device" />
-        </div>
+            <div v-if="turnstileSiteKey">
+                <div ref="turnstileRef" class="flex justify-center" />
+                <InputError :message="form.errors['cf-turnstile-response']" class="text-center" />
+            </div>
 
-        <div class="flex items-center justify-between">
-            <Checkbox id="remember" v-model="form.remember" label="Keep me signed in" />
+            <div class="flex items-center justify-between">
+                <Checkbox id="remember" v-model="form.remember" label="Keep me signed in" />
 
-            <Link href="/forgot-password" class="text-sm font-medium text-primary hover:text-primary-hover">
-                Forgot password?
-            </Link>
-        </div>
+                <Link href="/forgot-password" class="text-sm font-medium text-primary hover:text-primary-hover">
+                    Forgot password?
+                </Link>
+            </div>
 
-        <Button type="submit" class="w-full" :class="{ 'bg-csc-red!': form.processing }" :loading="form.processing" :disabled="form.processing || isLockedOut">
-            <Icon v-if="!form.processing" name="lock" size="sm" class="mr-2" />
-            {{ form.processing ? 'Logging in…' : 'Login' }}
-        </Button>
-    </form>
+            <Button type="submit" class="w-full" :class="{ 'bg-csc-red!': form.processing }" :loading="form.processing" :disabled="form.processing || isLockedOut">
+                <Icon v-if="!form.processing" name="lock" size="sm" class="mr-2" />
+                {{ form.processing ? 'Logging in…' : 'Login' }}
+            </Button>
+        </form>
+    </div>
 </template>

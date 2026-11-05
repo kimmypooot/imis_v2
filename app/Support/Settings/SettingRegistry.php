@@ -239,8 +239,8 @@ final class SettingRegistry
             'security_remember_accounts' => [
                 'type' => SettingType::Boolean,
                 'group' => SettingGroup::Security,
-                'label' => 'Offer "Remember this account" on the login page',
-                'description' => 'Lets people save their name, username and photo link on the browser they sign in from, so the login page can show a card to pick instead of typing the username. Passwords are never saved. Turn off if staff share computers.',
+                'label' => 'Remember accounts on the login page',
+                'description' => 'After someone signs in, their name, username and photo link are saved automatically on that browser, so the login page can show a card to pick instead of typing the username. People can remove a card themselves. Passwords are never saved. Turn off if staff share computers.',
                 'default' => true,
             ],
             'account_inactive_days' => [

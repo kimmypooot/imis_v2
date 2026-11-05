@@ -58,7 +58,7 @@ const agencyLogos = computed(() => [
         >
             <div class="absolute inset-0 bg-linear-to-br from-csc-blue-dark/95 via-csc-blue/90 to-csc-blue-light/85" />
 
-            <div class="relative flex w-full max-w-md flex-col items-center">
+            <div class="relative flex w-full max-w-md flex-col items-center motion-safe:animate-fade-in">
                 <div class="flex items-center justify-center gap-6">
                     <img
                         v-for="logo in agencyLogos"
@@ -122,7 +122,6 @@ const agencyLogos = computed(() => [
 
             <div class="auth-card relative w-full max-w-md">
                 <div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
-                    <div class="h-1.5 bg-csc-red" />
                     <div class="px-6 py-8 sm:px-10">
                     <!-- Agency logos live in the brand panel on desktop -->
                     <div class="mb-5 flex items-center justify-center gap-5 border-b border-border pb-5 lg:hidden">
@@ -167,14 +166,14 @@ const agencyLogos = computed(() => [
 <style scoped>
 @media (prefers-reduced-motion: no-preference) {
     .auth-card {
-        animation: auth-rise 0.5s ease-out both;
+        animation: auth-rise 0.4s ease-out both;
     }
 }
 
 @keyframes auth-rise {
     from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translateY(6px);
     }
     to {
         opacity: 1;

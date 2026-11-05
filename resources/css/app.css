@@ -11,7 +11,30 @@
  */
 @theme {
     --animate-shake: shake 0.4s ease-in-out;
+    --animate-fade-in: fade-in 0.35s ease-out both;
+    --animate-rise: rise 0.3s ease-out both;
     --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+
+    /* Starts half visible, so swapping content never flashes blank. */
+    @keyframes rise {
+        from {
+            opacity: 0.5;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
 
     @keyframes shimmer {
         0% {
