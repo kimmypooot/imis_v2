@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\ChangelogController;
-use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\DashboardLayoutController;
@@ -21,6 +20,7 @@ use App\Http\Controllers\Admin\EmployeeLearningDevelopmentController;
 use App\Http\Controllers\Admin\EmployeeLeaveController;
 use App\Http\Controllers\Admin\EmployeePdsController;
 use App\Http\Controllers\Admin\EmployeeServiceRecordController;
+use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\FlexibleWorkController;
 use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\HrDashboardController;
@@ -589,6 +589,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('admin/sessions/{key}', [SessionController::class, 'destroy'])
             ->where('key', '[a-f0-9]{64}')
             ->name('admin.sessions.destroy');
+        Route::delete('admin/sessions/user/{user}', [SessionController::class, 'destroyUser'])->name('admin.sessions.destroy-user');
     });
 
     Route::middleware('permission:settings.view')->group(function () {

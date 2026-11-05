@@ -214,14 +214,55 @@ class ActivityLogsTest extends TestCase
         $this->assertDatabaseHas('sessions', ['id' => 'protected-session']);
     }
 
-    private function storeSession(User $user, string $id, ?int $lastActivity = null): void
+    public function test_sessions_past_the_absolute_limit_are_not_listed(): void
+    {
+        config(['session.driver' => 'database', 'session.absolute_lifetime' => 480]);
+        $this->storeSession(User::factory()->create(), 'too-old', null, ['auth.started_at' => now()->subHours(9)->getTimestamp(), 'auth.remembered' => false]);
+        $this->storeSession(User::factory()->create(), 'remembered', null, ['auth.started_at' => now()->subHours(9)->getTimestamp(), 'auth.remembered' => true]);
+
+        $this->actingAs($this->userWith('sessions.view'))->get('/admin/sessions')
+            ->assertInertia(fn (Assert $page) => $page->has('sessions', 1)->where('sessions.0.key', hash('sha256', 'remembered')));
+    }
+
+    public function test_sign_out_all_ends_every_other_session_of_a_person(): void
+    {
+        config(['session.driver' => 'database']);
+        $owner = User::factory()->create();
+        $this->storeSession($owner, 'laptop');
+        $this->storeSession($owner, 'phone');
+        $this->storeSession(User::factory()->create(), 'someone-else');
+
+        $this->actingAs($this->userWith('sessions.revoke'))
+            ->delete("/admin/sessions/user/{$owner->id}")
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseMissing('sessions', ['id' => 'laptop']);
+        $this->assertDatabaseMissing('sessions', ['id' => 'phone']);
+        $this->assertDatabaseHas('sessions', ['id' => 'someone-else']);
+    }
+
+    public function test_sign_out_all_is_refused_for_a_super_admin_unless_you_are_one(): void
+    {
+        config(['session.driver' => 'database']);
+        $owner = User::factory()->create();
+        $owner->roles()->attach(Role::factory()->create(['name' => RoleName::SuperAdmin->value]));
+        $this->storeSession($owner, 'protected-session');
+
+        $this->actingAs($this->userWith('sessions.revoke'))
+            ->delete("/admin/sessions/user/{$owner->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('sessions', ['id' => 'protected-session']);
+    }
+
+    private function storeSession(User $user, string $id, ?int $lastActivity = null, array $payload = []): void
     {
         DB::table('sessions')->insert([
             'id' => $id,
             'user_id' => $user->id,
             'ip_address' => '10.0.0.5',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0) Chrome/130.0',
-            'payload' => base64_encode(serialize([])),
+            'payload' => base64_encode(serialize($payload)),
             'last_activity' => $lastActivity ?? now()->getTimestamp(),
         ]);
     }

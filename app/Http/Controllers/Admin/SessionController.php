@@ -32,11 +32,15 @@ class SessionController extends Controller
             ->whereNotNull('user_id')
             ->where('last_activity', '>=', now()->subMinutes((int) config('session.lifetime'))->getTimestamp())
             ->orderByDesc('last_activity')
-            ->get(['id', 'user_id', 'ip_address', 'user_agent', 'last_activity']);
+            ->get(['id', 'user_id', 'ip_address', 'user_agent', 'last_activity', 'payload'])
+            ->reject(fn (object $session) => $this->pastAbsoluteLimit($session->payload))
+            ->values();
 
-        $users = User::query()->whereKey($sessions->pluck('user_id')->unique()->all())->get(['id', 'name', 'username', 'profile_photo_path'])->keyBy('id');
+        $users = User::query()->with('activeRoles')->whereKey($sessions->pluck('user_id')->unique()->all())->get()->keyBy('id');
         $logins = LoginHistory::query()->whereIn('session_id', $sessions->pluck('id')->all())->pluck('logged_in_at', 'session_id');
         $current = $request->session()->getId();
+        $viewerIsSuperAdmin = $request->user()->hasRole(RoleName::SuperAdmin);
+        $activeWithin = now()->subMinutes(5)->getTimestamp();
 
         return Inertia::render('Admin/Sessions/Index', [
             'sessions' => $sessions->map(fn (object $session) => [
@@ -47,12 +51,56 @@ class SessionController extends Controller
                 'ip_address' => $session->ip_address,
                 'browser' => UserAgents::describe($session->user_agent),
                 'user_agent' => $session->user_agent,
+                'roles' => $users->get($session->user_id)?->activeRoles->pluck('name')->implode(', '),
+                'is_active' => $session->last_activity >= $activeWithin,
+                // Only a Super Administrator may end a Super Administrator's session.
+                'can_end' => $viewerIsSuperAdmin || ! $users->get($session->user_id)?->activeRoles->contains('name', RoleName::SuperAdmin->value),
                 'logged_in_at' => isset($logins[$session->id]) ? $logins[$session->id]->toIso8601String() : null,
                 'last_activity' => now()->setTimestamp($session->last_activity)->toIso8601String(),
                 'is_current' => $session->id === $current,
             ])->values(),
             'canRevoke' => $request->user()->hasPermission(PermissionName::SessionsRevoke->value),
         ]);
+    }
+
+    /**
+     * A sign-in that is past the 8-hour cap (and not "remember me") is
+     * already dead — the next request would end it — so it is not listed.
+     */
+    private function pastAbsoluteLimit(string $payload): bool
+    {
+        $data = @unserialize(base64_decode($payload), ['allowed_classes' => false]);
+
+        if (! is_array($data) || ($data['auth.remembered'] ?? false) || ! isset($data['auth.started_at'])) {
+            return false;
+        }
+
+        return (int) $data['auth.started_at'] + (int) config('session.absolute_lifetime') * 60 < now()->getTimestamp();
+    }
+
+    /**
+     * Ends all of one person's other sessions (their laptop, their phone…).
+     * The session you are using right now is left alone.
+     */
+    public function destroyUser(Request $request, User $user, LoginHistoryRecorder $recorder): RedirectResponse
+    {
+        abort_unless($request->user()->hasPermission(PermissionName::SessionsRevoke->value), 403);
+        abort_if($user->hasRole(RoleName::SuperAdmin) && ! $request->user()->hasRole(RoleName::SuperAdmin), 403);
+
+        $sessionIds = DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $request->session()->getId())
+            ->pluck('id');
+
+        if ($sessionIds->isEmpty()) {
+            return back()->with('error', "{$user->name} has no other session to end.");
+        }
+
+        $sessionIds->each(fn (string $id) => $recorder->forceEnd($id));
+
+        $this->audit()->record(AuditEvent::SessionEnded, "Ended {$sessionIds->count()} sessions of {$user->name}", $user);
+
+        return back()->with('status', "{$sessionIds->count()} sessions of {$user->name} were ended.");
     }
 
     /**
