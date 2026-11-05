@@ -6,11 +6,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Adds the Examination Transaction Tracking System (ETTS) to the portal as a
  * hub system owned by the Examination Services Division, with the two roles
- * its sign-in accepts. Before this it existed only in the local database.
+ * its sign-in accepts. Before this it existed only in the local database, so
+ * it never appeared in the hub on other servers.
  *
  * - The launch URL is left empty: set ETTS's real address in System
  *   management once it is live (and list its host[:port] in SSO_HUB_HOSTS).
- *   Until then nobody can launch it.
+ *   Until then it is listed but nobody can launch it.
  * - No access is granted; assign people from System management.
  * - Safe to run twice (it does nothing if ETTS is already there).
  *
