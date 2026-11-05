@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
 import Button from '../UI/Button.vue';
 import Icon from '../UI/Icon.vue';
@@ -26,6 +26,8 @@ const props = defineProps({
     saving: { type: Boolean, default: false },
     rowLabel: { type: String, default: 'Name' },
     errors: { type: Object, default: () => ({}) },
+    // Inactive accounts left out of the rows (they show only on the Users page).
+    hiddenInactive: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['close', 'save']);
@@ -62,6 +64,24 @@ const visibleRows = computed(() => {
 
         return matches && filter;
     });
+});
+
+// When rows carry a `group` (e.g. the person's unit), the grid is ordered by
+// `groupRank`, then highest `grade` first, with a full-width (colspan)
+// heading row at the start of each group.
+const grouped = computed(() => visibleRows.value.some((row) => row.group));
+
+const tableRows = computed(() => {
+    if (!grouped.value) return visibleRows.value.map((row) => ({ row, heading: null }));
+
+    const sorted = [...visibleRows.value].sort(
+        (a, b) =>
+            (a.groupRank ?? '9').localeCompare(b.groupRank ?? '9') ||
+            (a.group ?? '').localeCompare(b.group ?? '') ||
+            (b.grade ?? 0) - (a.grade ?? 0),
+    );
+
+    return sorted.map((row, index) => ({ row, heading: sorted[index - 1]?.group === row.group ? null : row.group }));
 });
 
 const optionsFor = (row) => {
@@ -145,6 +165,10 @@ const rowErrors = computed(() => {
                     <Button variant="secondary" @click="applyBulk">Apply to visible</Button>
                 </div>
             </div>
+            <p v-if="hiddenInactive" class="mt-2 text-xs text-text-muted">
+                {{ hiddenInactive }} inactive account{{ hiddenInactive === 1 ? ' is' : 's are' }} not listed.
+                <Link href="/users?status=inactive" class="font-medium text-primary hover:underline">View inactive accounts</Link>
+            </p>
         </template>
 
         <div v-if="loading || rows === null" class="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
@@ -166,7 +190,11 @@ const rowErrors = computed(() => {
                     <tr v-if="!visibleRows.length">
                         <td colspan="3" class="px-3 py-8 text-center text-text-muted">Nothing matches.</td>
                     </tr>
-                    <tr v-for="row in visibleRows" :key="row.key" :class="changed(row) ? 'bg-warning-bg/50' : ''">
+                    <template v-for="{ row, heading } in tableRows" :key="row.key">
+                    <tr v-if="heading">
+                        <th colspan="3" scope="colgroup" class="bg-surface-muted px-3 py-2 text-left text-xs font-semibold tracking-wide text-text uppercase">{{ heading }}</th>
+                    </tr>
+                    <tr :class="changed(row) ? 'bg-warning-bg/50' : ''">
                         <td class="px-3 py-2">
                             <div class="flex items-center gap-3">
                                 <UserAvatar v-if="row.avatar" :name="row.title" :photo-url="row.photoUrl" size="sm" />
@@ -202,6 +230,7 @@ const rowErrors = computed(() => {
                             <span v-if="row.locked === 'inactive'" class="block text-text-muted">{{ lockText.inactive }}</span>
                         </td>
                     </tr>
+                    </template>
                 </tbody>
             </table>
         </div>

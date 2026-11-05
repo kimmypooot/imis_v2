@@ -75,6 +75,9 @@ const rows = computed(() => {
         title: user.name,
         subtitle: [user.position, user.office].filter(Boolean).join(' · ') || `@${user.username}`,
         avatar: true,
+        group: user.unit ?? 'No unit assigned',
+        groupRank: user.unit_rank,
+        grade: user.salary_grade,
         photoUrl: user.profile_photo_url,
         roleId: user.role_id,
         roles: props.access.roles,
@@ -140,6 +143,7 @@ const save = (changes) => {
         :loading="loading"
         :saving="saving"
         :errors="errors"
+        :hidden-inactive="access?.hidden_inactive ?? 0"
         @save="save"
         @close="close"
     />

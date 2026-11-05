@@ -24,7 +24,9 @@ class UserAccessController extends Controller
         $this->authorize('viewAny', User::class);
 
         return Inertia::render('Admin/UserAccess/Index', [
+            'hiddenInactive' => User::query()->where('status', 'inactive')->count(),
             'users' => User::query()
+                ->where('status', '!=', 'inactive')
                 ->with('organizationalUnit:id,name,short_name')
                 ->withCount('applicationAccess')
                 ->orderBy('name')

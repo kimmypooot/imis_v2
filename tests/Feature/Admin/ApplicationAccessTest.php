@@ -19,6 +19,14 @@ class ApplicationAccessTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems (e.g. TIMS); these tests count their own.
+        Application::query()->delete();
+    }
+
     // ── System Access page (legacy "Roles and Permissions") ──────────
 
     public function test_system_access_page_requires_manage_access(): void
@@ -52,6 +60,34 @@ class ApplicationAccessTest extends TestCase
                         && $users[$actor->id]['locked'] === 'self'
                         && $users[$superAdmin->id]['locked'] === 'protected';
                 })));
+    }
+
+    public function test_system_access_grid_leaves_out_inactive_users(): void
+    {
+        $actor = $this->userWithPermissions('applications.manage_access');
+        $role = ApplicationRole::factory()->create();
+        $inactive = User::factory()->inactive()->create();
+        $active = User::factory()->create();
+
+        $this->actingAs($actor)
+            ->get("/admin/system-access?system={$role->application_id}")
+            ->assertInertia(fn (Assert $page) => $page->reloadOnly('access', fn (Assert $reload) => $reload
+                ->where('access.users', function ($users) use ($inactive, $active) {
+                    $ids = collect($users)->pluck('id');
+
+                    return $ids->contains($active->id) && ! $ids->contains($inactive->id);
+                })));
+    }
+
+    public function test_user_access_list_leaves_out_inactive_users(): void
+    {
+        $actor = $this->userWithPermissions('applications.manage_access', 'users.view');
+        $inactive = User::factory()->inactive()->create();
+        $active = User::factory()->create();
+
+        $this->actingAs($actor)->get('/admin/user-access')
+            ->assertInertia(fn (Assert $page) => $page->where('users', fn ($users) => collect($users)->pluck('id')->contains($active->id)
+                && ! collect($users)->pluck('id')->contains($inactive->id)));
     }
 
     public function test_bulk_save_grants_changes_and_revokes_together(): void

@@ -78,7 +78,7 @@ class Positions
         $known = Position::query()->pluck('title')->map(fn (string $title) => mb_strtolower(trim($title)));
 
         // Titles of non-plantilla staff (casual, contractual, JO, COS) aren't plantilla positions.
-        $missing = User::query()->whereNotNull('position')
+        $missing = User::query()->where('status', 'active')->whereNotNull('position')
             ->whereDoesntHave('employee', fn ($query) => $query->whereIn('employment_status', EmploymentStatus::nonPlantilla()))
             ->distinct()->pluck('position')
             ->merge(PlantillaItem::query()->distinct()->pluck('position_title'))
@@ -129,7 +129,7 @@ class Positions
      */
     public function list(): Collection
     {
-        $staff = User::query()->whereNotNull('position')->with('organizationalUnit:id,name,short_name')->get(['id', 'position', 'organizational_unit_id'])
+        $staff = User::query()->where('status', 'active')->whereNotNull('position')->with('organizationalUnit:id,name,short_name')->get(['id', 'position', 'organizational_unit_id'])
             ->groupBy(fn (User $user) => mb_strtolower(trim($user->position)));
 
         $positions = Position::query()

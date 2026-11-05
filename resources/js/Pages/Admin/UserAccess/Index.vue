@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
 import Card from '../../../Components/UI/Card.vue';
@@ -19,6 +19,7 @@ defineOptions({ layout: AdminLayout });
  */
 const props = defineProps({
     users: { type: Array, required: true },
+    hiddenInactive: { type: Number, default: 0 },
     access: { type: Object, default: null },
 });
 
@@ -98,6 +99,10 @@ const save = (changes) => {
     />
 
     <Card title="Users" icon="users">
+        <p v-if="hiddenInactive" class="mb-3 text-xs text-text-muted">
+            {{ hiddenInactive }} inactive account{{ hiddenInactive === 1 ? ' is' : 's are' }} not listed.
+            <Link href="/users?status=inactive" class="font-medium text-primary hover:underline">View inactive accounts</Link>
+        </p>
         <DataTable :columns="columns" :rows="users" caption="Users and their system access" export-name="imis-user-access" :default-sort="{ key: 'name', direction: 'asc' }">
             <template #cell-name="{ row }">
                 <div class="flex items-center gap-3">
