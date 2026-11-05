@@ -51,7 +51,23 @@ const fill = (text) => (text ?? '').replace(/\{([a-z_]+)\}/g, (match, name) => p
 const paragraphs = (text) => fill(text).split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 // Written in braces; built here because "}}" inside a template expression ends it.
 const braced = (placeholder) => `{${placeholder}}`;
-const insert = (placeholder) => (form.intro = `${form.intro}${braced(placeholder)}`);
+
+// Placeholder chips go into the field last clicked in, at the cursor.
+const fieldIds = { 'template-subject': 'subject', 'template-intro': 'intro', 'template-button': 'button', 'template-outro': 'outro' };
+const lastFieldId = ref('template-intro');
+const rememberField = (event) => {
+    if (fieldIds[event.target.id]) {
+        lastFieldId.value = event.target.id;
+    }
+};
+const insert = (placeholder) => {
+    const element = document.getElementById(lastFieldId.value);
+    const field = fieldIds[lastFieldId.value];
+    const text = form[field] ?? '';
+    const start = element?.selectionStart ?? text.length;
+    const end = element?.selectionEnd ?? text.length;
+    form[field] = `${text.slice(0, start)}${braced(placeholder)}${text.slice(end)}`;
+};
 </script>
 
 <template>
@@ -86,7 +102,7 @@ const insert = (placeholder) => (form.intro = `${form.intro}${braced(placeholder
                     <Badge v-else tone="neutral">Default</Badge>
                 </template>
 
-                <form class="space-y-4" @submit.prevent="save">
+                <form class="space-y-4" @submit.prevent="save" @focusin="rememberField">
                     <fieldset :disabled="!canUpdate" class="space-y-4">
                         <div>
                             <TextInput id="template-subject" v-model="form.subject" label="Subject" required :invalid="!!form.errors.subject" />
@@ -112,7 +128,7 @@ const insert = (placeholder) => (form.intro = `${form.intro}${braced(placeholder
                             type="button"
                             class="mr-1 mb-1 rounded bg-surface-muted px-1.5 py-0.5 font-mono text-text hover:bg-border disabled:cursor-default"
                             :disabled="!canUpdate"
-                            :title="canUpdate ? 'Add to the opening' : undefined"
+                            :title="canUpdate ? 'Insert where you last clicked' : undefined"
                             @click="insert(placeholder)"
                         >
                             {{ braced(placeholder) }}

@@ -296,8 +296,14 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                 </thead>
                 <tbody class="divide-y divide-border bg-surface">
                     <tr v-if="visibleRows.length === 0">
-                        <td :colspan="columns.length + (numbered ? 1 : 0)" class="px-3 py-8 text-center text-text-muted">
-                            {{ search ? 'No matching records found' : emptyText }}
+                        <td :colspan="columns.length + (numbered ? 1 : 0)" class="px-3 py-10 text-center text-text-muted">
+                            <template v-if="search">
+                                <p>No records match “{{ search }}”.</p>
+                                <button type="button" class="mt-2 text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="search = ''">
+                                    Clear search
+                                </button>
+                            </template>
+                            <template v-else>{{ emptyText }}</template>
                         </td>
                     </tr>
                     <tr
