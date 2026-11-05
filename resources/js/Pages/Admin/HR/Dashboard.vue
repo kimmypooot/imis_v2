@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import Card from '../../../Components/UI/Card.vue';
 import EmptyState from '../../../Components/UI/EmptyState.vue';
@@ -18,6 +18,7 @@ defineOptions({ layout: AdminLayout });
  */
 defineProps({
     hr: { type: Object, default: null },
+    readiness: { type: Object, default: null },
     generatedAt: { type: String, required: true },
 });
 
@@ -52,8 +53,19 @@ const quickActions = computed(() =>
         @refresh="refresh"
     />
 
-    <template v-if="hr">
+    <Link
+        v-if="readiness"
+        href="/admin/hr/readiness"
+        class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text hover:border-warning focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+    >
+        <span>
+            <strong>Cutover readiness:</strong>
+            {{ readiness.remaining }} of {{ readiness.total }} checks still to do before the legacy LMS and ldms can be retired.
+        </span>
+        <span class="font-medium text-primary">Open checklist</span>
+    </Link>
 
+    <template v-if="hr">
         <HrAnalytics :hr="hr" />
     </template>
 

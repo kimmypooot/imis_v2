@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\HR\CutoverReadiness;
 use App\Support\HR\HrDashboard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,8 +28,33 @@ class HrDashboardController extends Controller
 
         return Inertia::render('Admin/HR/Dashboard', [
             'hr' => fn () => $this->analytics($user),
+            'readiness' => fn () => $this->readiness($user),
             'generatedAt' => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * What is left before the legacy LMS and ldms can be retired, for those
+     * who may open the Cutover Readiness page; null once nothing blocks, or
+     * if the checks cannot run (e.g. no legacy connection).
+     *
+     * @return array{remaining: int, total: int}|null
+     */
+    private function readiness(User $user): ?array
+    {
+        if (! $user->can('manage', LeaveType::class)) {
+            return null;
+        }
+
+        try {
+            $checks = collect(app(CutoverReadiness::class)->checks());
+        } catch (Throwable) {
+            return null;
+        }
+
+        $remaining = $checks->where('status', 'todo')->count();
+
+        return $remaining > 0 ? ['remaining' => $remaining, 'total' => $checks->count()] : null;
     }
 
     /**

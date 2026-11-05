@@ -7,6 +7,7 @@ use App\Enums\PermissionName;
 use App\Models\Changelog;
 use App\Models\Feedback;
 use App\Support\Branding\Branding;
+use App\Support\HR\HrQueues;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\Security\SessionLimits;
@@ -88,6 +89,7 @@ class HandleInertiaRequests extends Middleware
                 'feedback' => $user->hasPermission(PermissionName::FeedbackView->value)
                     ? Feedback::query()->where('status', FeedbackStatus::New)->whereNull('seen_at')->count()
                     : 0,
+                ...HrQueues::countsFor($user),
             ] : [],
             // The top-bar bell.
             'notifications' => fn () => $user ? ['unread' => $user->unreadNotifications()->count()] : null,

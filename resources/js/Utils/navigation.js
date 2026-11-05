@@ -212,7 +212,7 @@ export const hrNavItems = [
         items: [
             { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
             { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
-            { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify' },
+            { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify', badge: 'pdsVerifications' },
         ],
     },
     {
@@ -230,7 +230,7 @@ export const hrNavItems = [
         group: 'Leave',
         icon: 'calendar',
         items: [
-            { label: 'Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'], badge: 'leaveApplications' },
             { label: 'Calendar', href: '/admin/hr/leave/calendar', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
             { label: 'Credits', href: '/admin/hr/leave', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
             { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
@@ -248,7 +248,7 @@ export const hrNavItems = [
             { label: 'Payrolls', href: '/admin/hr/payroll', icon: 'database', permission: ['payroll.view', 'payroll.manage'] },
             { label: 'Pay Profiles', href: '/admin/hr/payroll/profiles', icon: 'users', permission: ['payroll.view', 'payroll.manage'] },
             { label: 'Loans', href: '/admin/hr/payroll/loans', icon: 'key', permission: ['payroll.view', 'payroll.manage'] },
-            { label: 'Payslip Requests', href: '/admin/hr/payroll/requests', icon: 'clipboard', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Payslip Requests', href: '/admin/hr/payroll/requests', icon: 'clipboard', permission: ['payroll.view', 'payroll.manage'], badge: 'payslipRequests' },
             { label: 'Pay Components', href: '/admin/hr/payroll/components', icon: 'cog', permission: ['payroll.view', 'payroll.manage'] },
         ],
     },
@@ -258,7 +258,7 @@ export const hrNavItems = [
         items: [
             { label: 'L&D Dashboard', href: '/admin/hr/learning-development/dashboard', icon: 'activity', permission: ['ld.view', 'ld.manage'] },
             { label: 'Records', href: '/admin/hr/learning-development', icon: 'chartBar', permission: ['ld.view', 'ld.manage'] },
-            { label: 'Review Queue', href: '/admin/hr/learning-development/reviews', icon: 'checkCircle', permission: 'ld.approve' },
+            { label: 'Review Queue', href: '/admin/hr/learning-development/reviews', icon: 'checkCircle', permission: 'ld.approve', badge: 'ldReviews' },
             { label: 'Training Report', href: '/admin/hr/learning-development/report', icon: 'printer', permission: ['ld.view', 'ld.manage'] },
         ],
     },
