@@ -67,9 +67,9 @@ const variantClasses = {
 
 const sizeClasses = computed(() => {
     if (props.variant === 'link') return props.size === 'sm' ? 'gap-1.5 text-xs' : 'gap-2 text-sm';
-    if (props.iconOnly) return props.size === 'sm' ? 'p-1.5 text-xs' : 'p-2 text-sm';
+    if (props.iconOnly) return props.size === 'sm' ? 'p-1.5 text-xs max-sm:min-h-10 max-sm:min-w-10' : 'p-2 text-sm max-sm:min-h-10 max-sm:min-w-10';
 
-    return props.size === 'sm' ? 'gap-1.5 px-3 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm';
+    return props.size === 'sm' ? 'gap-1.5 px-3 py-1.5 text-xs max-sm:min-h-10' : 'gap-2 px-4 py-2 text-sm max-sm:min-h-10';
 });
 
 const classes = computed(() => [

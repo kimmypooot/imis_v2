@@ -116,6 +116,14 @@
  * `focus:outline-none`, and utilities win over this base layer.
  */
 @layer base {
+    /* A grid with no `grid-cols-*` below its breakpoint gets one column
+       sized to its widest child, which pushes the page sideways on a
+       phone. Default to a single shrinkable column; `grid-cols-*` and
+       `sm:grid-cols-*` utilities still win (they sit in a later layer). */
+    .grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     :where(a, button, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
@@ -202,5 +210,15 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Phones: form fields at 16px so iOS Safari doesn't zoom the page on
+   focus. Unlayered on purpose, so it beats the `text-sm` utilities. */
+@media (max-width: 639px) {
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='hidden']),
+    select,
+    textarea {
+        font-size: 16px;
     }
 }

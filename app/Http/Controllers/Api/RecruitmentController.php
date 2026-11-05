@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Enums\UserStatus;
+use App\Models\Application;
+use App\Models\ApplicationAccess;
 use App\Models\PlantillaItem;
 use App\Models\PlantillaSelection;
 use App\Support\HR\Plantilla\SalarySchedules;
@@ -38,6 +41,45 @@ class RecruitmentController extends Controller
             'office_code' => $item->organizationalUnit?->code,
             'office_name' => $item->organizationalUnit?->name,
         ])->values()]);
+    }
+
+    /**
+     * The active staff who hold a role in the Recruitment Portal (its Admin and
+     * HRMPSB roles), for the portal's Users page. This is who IMIS lets in with
+     * that role; every other employee signs in as an applicant and is not listed.
+     * Matches what the sign-in hand-off sends (LegacySso::redeemHub), so the list
+     * never disagrees with who can sign in.
+     */
+    public function users(): JsonResponse
+    {
+        $application = Application::query()->where('short_name', config('recruitment.application'))->first();
+
+        if (! $application) {
+            return response()->json(['data' => []]);
+        }
+
+        $users = ApplicationAccess::query()
+            ->where('application_id', $application->id)
+            ->with(['role:id,name,code', 'user.organizationalUnit:id,code,name'])
+            ->get()
+            ->filter(fn (ApplicationAccess $access) => $access->user?->status === UserStatus::Active && $access->role?->code)
+            ->map(fn (ApplicationAccess $access) => [
+                'id' => $access->user->id,
+                'fname' => (string) ($access->user->legacyFirstName() ?? $access->user->name),
+                'mname' => (string) $access->user->middle_name,
+                'lname' => (string) $access->user->last_name,
+                'email' => (string) $access->user->email,
+                'position' => (string) $access->user->position,
+                'role' => $access->role->name,
+                'role_code' => $access->role->code,
+                'office_name' => $access->user->organizationalUnit?->name,
+                'office_code' => $access->user->organizationalUnit?->code,
+                'photo_url' => $access->user->profile_photo_url,
+            ])
+            ->sortBy(fn (array $row) => mb_strtolower($row['lname'].' '.$row['fname']))
+            ->values();
+
+        return response()->json(['data' => $users]);
     }
 
     /**

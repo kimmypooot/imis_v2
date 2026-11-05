@@ -2611,6 +2611,13 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   committee whose short name is `ICTSRTS_ITG_COMMITTEE` (default `ITG`),
   which the super-admin manages as an ordinary committee. Committee members'
   `effective_from` is optional.
+- **ETTS** (Examination and Transaction Tracking System): reads the people
+  directory server to server at `GET /api/v1/etts/employees`, guarded by a
+  bearer token (`ETTS_API_TOKEN`, compared in constant time; the endpoint is
+  off while it is unset; throttled to 60 a minute). Active accounts only:
+  `name`, `position`, `office_name` and `office_code` (as in the SSO payload),
+  nothing else (no e-mail or username). ETTS uses it to suggest an addressee
+  or signatory on a routing slip; typing a name by hand always still works.
 - **Launch screen:** `ApplicationLaunchController` renders
   `Portal/Applications/Launching` ("Opening <system>" over the IMIS logo)
   before sending the browser on; `app.blade.php` draws the same screen
