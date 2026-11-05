@@ -229,13 +229,13 @@ onBeforeUnmount(() => {
             id="app-sidebar"
             ref="sidebarRef"
             class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col print:hidden transition-transform duration-200 motion-reduce:transition-none"
-            :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', variant === 'admin' ? 'border-r border-border bg-surface text-text shadow-sm' : 'bg-csc-blue text-white']"
+            :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', 'bg-csc-blue text-white']"
             :role="isDesktop ? undefined : 'dialog'"
             :aria-modal="isDesktop ? undefined : sidebarOpen"
             aria-label="Navigation menu"
             :inert="!sidebarOpen"
         >
-            <div class="min-h-0 flex-1 overflow-y-auto py-4" :class="{ 'scrollbar-on-dark': variant !== 'admin' }">
+            <div class="scrollbar-on-dark min-h-0 flex-1 overflow-y-auto py-4">
                 <!-- Above the links, e.g. AdminLayout's area switcher. -->
                 <slot name="sidebar-header" />
                 <SidebarNav :items="navItems" :variant="variant" />

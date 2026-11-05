@@ -101,7 +101,7 @@ const entries = computed(() =>
 const badgeCount = (entry) =>
     entry.items ? entry.items.reduce((sum, item) => sum + badgeCount(item), 0) : Number(page.props.badges?.[entry.badge] ?? 0);
 const badgeText = (count) => (count > 99 ? '99+' : String(count));
-const badgeClass = 'ml-auto min-w-[1.25rem] shrink-0 rounded-full bg-danger px-1.5 text-center text-[0.7rem] font-bold leading-5 text-white';
+const badgeClass = 'ml-auto min-w-[1.25rem] shrink-0 rounded-full bg-danger px-1.5 ring-2 ring-white/40 text-center text-[0.7rem] font-bold leading-5 text-white';
 
 // Stable id for a portal group heading, so the group is labelled by it.
 const groupId = (group) => `nav-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -124,21 +124,34 @@ const isActive = (href) => href === activeHref.value;
 // A group or section opens by itself when it holds the current page; a
 // click overrides that until the next full page load.
 const holdsActive = (entry) => entry.items.some((item) => (item.type === 'section' ? holdsActive(item) : isActive(item.href)));
-const expanded = reactive({});
+// Groups the person left open are remembered per browser (only "open" is
+// stored, so the group holding the current page still opens by itself).
+const OPEN_KEY = 'imis.nav-open';
+const readOpen = () => {
+    try {
+        const saved = JSON.parse(window.localStorage.getItem(OPEN_KEY) ?? '[]');
+
+        return Array.isArray(saved) ? Object.fromEntries(saved.map((key) => [key, true])) : {};
+    } catch {
+        return {};
+    }
+};
+const expanded = reactive(readOpen());
 const keyOf = (entry) => entry.key ?? entry.label;
 const isExpanded = (entry) => expanded[keyOf(entry)] ?? holdsActive(entry);
-const toggle = (entry) => (expanded[keyOf(entry)] = !isExpanded(entry));
+const toggle = (entry) => {
+    expanded[keyOf(entry)] = !isExpanded(entry);
+
+    try {
+        window.localStorage.setItem(OPEN_KEY, JSON.stringify(Object.keys(expanded).filter((key) => expanded[key])));
+    } catch {
+        // Storage unavailable — the toggle still works for this page.
+    }
+};
 const sectionId = (section) => `nav-section-${section.key.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
 // A navy focus ring would vanish on the navy portal sidebar, so it gets a white one.
 const linkClass = (href) => {
-    if (props.variant === 'admin') {
-        return [
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            isActive(href) ? 'bg-info-bg text-primary' : 'text-text hover:bg-info-bg/60 hover:text-primary',
-        ];
-    }
-
     return [
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-white',
         isActive(href) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
@@ -166,7 +179,7 @@ const linkClass = (href) => {
             <div v-else-if="variant === 'admin'">
                 <button
                     type="button"
-                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-text transition-colors hover:bg-info-bg/60 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                     :aria-expanded="isExpanded(entry)"
                     @click="toggle(entry)"
                 >
@@ -187,7 +200,7 @@ const linkClass = (href) => {
                         >
                             <span
                                 class="h-1.5 w-1.5 shrink-0 rounded-full border"
-                                :class="isActive(item.href) ? 'border-primary bg-primary' : 'border-current'"
+                                :class="isActive(item.href) ? 'border-white bg-white' : 'border-current'"
                                 aria-hidden="true"
                             />
                             {{ item.label }}
@@ -198,8 +211,8 @@ const linkClass = (href) => {
                         <template v-else>
                             <button
                                 type="button"
-                                class="flex w-full items-center gap-2 rounded-md py-1.5 pr-3 pl-9 text-left text-xs font-semibold tracking-wide uppercase transition-colors hover:bg-info-bg/60 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                                :class="holdsActive(item) ? 'text-primary' : 'text-text-muted'"
+                                class="flex w-full items-center gap-2 rounded-md py-1.5 pr-3 pl-9 text-left text-xs font-semibold tracking-wide uppercase transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                :class="holdsActive(item) ? 'text-white' : 'text-white/70'"
                                 :aria-expanded="isExpanded(item)"
                                 :aria-controls="sectionId(item)"
                                 @click="toggle(item)"
@@ -219,7 +232,7 @@ const linkClass = (href) => {
                                     >
                                         <span
                                             class="h-1.5 w-1.5 shrink-0 rounded-full border"
-                                            :class="isActive(link.href) ? 'border-primary bg-primary' : 'border-current'"
+                                            :class="isActive(link.href) ? 'border-white bg-white' : 'border-current'"
                                             aria-hidden="true"
                                         />
                                         {{ link.label }}
