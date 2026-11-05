@@ -25,7 +25,10 @@ const props = defineProps({
 
 const { can } = useAuthorization();
 
-const statusTones = { new: 'info', in_review: 'warning', resolved: 'success', closed: 'neutral' };
+const statusTones = { new: 'info', in_review: 'warning', applied: 'success', resolved: 'success', closed: 'neutral' };
+
+// Only same-site paths become links.
+const isInternalPath = (path) => path.startsWith('/') && !path.startsWith('//');
 
 const form = useForm({ body: '', is_internal: false });
 
@@ -91,6 +94,10 @@ const changeStatus = (status) =>
         <div class="space-y-6">
             <Card title="Status" icon="activity">
                 <Badge :tone="statusTones[feedback.status]">{{ feedback.status_label }}</Badge>
+                <div v-if="can('feedback.manage') && feedback.status !== 'applied'" class="mt-3">
+                    <Button variant="secondary" class="w-full" @click="changeStatus('applied')">Mark as applied</Button>
+                    <p class="mt-1 text-xs text-text-muted">Use this when the idea is now in the system. The sender is notified.</p>
+                </div>
                 <div v-if="can('feedback.manage')" class="mt-3">
                     <label for="feedback-status" class="mb-1 block text-xs font-medium text-text-muted">Change status</label>
                     <Select id="feedback-status" :model-value="feedback.status" :options="statusOptions" @update:model-value="changeStatus" />
@@ -113,7 +120,10 @@ const changeStatus = (status) =>
                     </div>
                     <div v-if="feedback.page_path">
                         <dt class="text-xs text-text-muted">Page they were on</dt>
-                        <dd class="break-all text-text">{{ feedback.page_path }}</dd>
+                        <dd class="break-all text-text">
+                            <a v-if="isInternalPath(feedback.page_path)" :href="feedback.page_path" class="text-primary hover:underline">{{ feedback.page_path }}</a>
+                            <template v-else>{{ feedback.page_path }}</template>
+                        </dd>
                     </div>
                 </dl>
             </Card>

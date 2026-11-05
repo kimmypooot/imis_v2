@@ -86,7 +86,7 @@ class HandleInertiaRequests extends Middleware
             // those who may open the page behind them.
             'badges' => fn () => $user ? [
                 'feedback' => $user->hasPermission(PermissionName::FeedbackView->value)
-                    ? Feedback::query()->where('status', FeedbackStatus::New)->count()
+                    ? Feedback::query()->where('status', FeedbackStatus::New)->whereNull('seen_at')->count()
                     : 0,
             ] : [],
             // The top-bar bell.

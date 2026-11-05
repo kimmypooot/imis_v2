@@ -52,6 +52,7 @@ class FeedbackController extends Controller
                 'sender' => $feedback->user?->name ?? 'Former user',
                 'status' => $feedback->status->value,
                 'status_label' => $feedback->status->label(),
+                'is_unseen' => $feedback->seen_at === null && $feedback->status === FeedbackStatus::New,
                 'replies_count' => $feedback->replies_count,
                 'created_at' => $feedback->created_at->toIso8601String(),
             ]),
@@ -65,6 +66,11 @@ class FeedbackController extends Controller
     public function show(Feedback $feedback): Response
     {
         $this->authorize('view', $feedback);
+
+        // The first look clears the sidebar badge; the sender's status stays as it is.
+        if ($feedback->seen_at === null) {
+            $feedback->forceFill(['seen_at' => now()])->save();
+        }
 
         $feedback->load(['user:id,name,username,email', 'handler:id,name', 'replies.author:id,name']);
 
@@ -95,6 +101,7 @@ class FeedbackController extends Controller
     public function reply(StoreFeedbackReplyRequest $request, Feedback $feedback, FeedbackNotifier $notifier): RedirectResponse
     {
         $internal = $request->boolean('is_internal');
+        $movedToReview = $feedback->status === FeedbackStatus::New && ! $internal;
 
         $reply = $feedback->replies()->make(['body' => $request->validated('body'), 'is_internal' => $internal]);
         $reply->forceFill(['user_id' => $request->user()->id])->save();
@@ -102,7 +109,8 @@ class FeedbackController extends Controller
         // Answering something nobody has looked at yet puts it under review.
         $feedback->forceFill([
             'handled_by' => $request->user()->id,
-            ...($feedback->status === FeedbackStatus::New && ! $internal
+            'seen_at' => $feedback->seen_at ?? now(),
+            ...($movedToReview
                 ? ['status' => FeedbackStatus::InReview, 'status_changed_at' => now()]
                 : []),
         ])->save();
@@ -117,10 +125,10 @@ class FeedbackController extends Controller
             $notifier->replied($feedback);
         }
 
-        return back()->with('status', $internal ? 'Note saved. Only administrators can see it.' : 'Reply sent.');
+        return back()->with('status', $internal ? 'Note saved. Only administrators can see it.' : 'Reply sent.'.($movedToReview ? ' Marked as Under review.' : ''));
     }
 
-    public function updateStatus(UpdateFeedbackStatusRequest $request, Feedback $feedback): RedirectResponse
+    public function updateStatus(UpdateFeedbackStatusRequest $request, Feedback $feedback, FeedbackNotifier $notifier): RedirectResponse
     {
         $status = FeedbackStatus::from($request->validated('status'));
 
@@ -141,6 +149,10 @@ class FeedbackController extends Controller
             $feedback,
             ['from' => $previous->value, 'to' => $status->value],
         );
+
+        if ($status === FeedbackStatus::Applied) {
+            $notifier->applied($feedback);
+        }
 
         return back()->with('status', "Marked as {$status->label()}.");
     }

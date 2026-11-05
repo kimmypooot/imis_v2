@@ -1,11 +1,10 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
 import Card from '../../../Components/UI/Card.vue';
 import Badge from '../../../Components/UI/Badge.vue';
-import Button from '../../../Components/UI/Button.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import Select from '../../../Components/Forms/Select.vue';
@@ -25,7 +24,7 @@ const props = defineProps({
     counts: { type: Object, required: true },
 });
 
-const statusTones = { new: 'info', in_review: 'warning', resolved: 'success', closed: 'neutral' };
+const statusTones = { new: 'info', in_review: 'warning', applied: 'success', resolved: 'success', closed: 'neutral' };
 
 const status = ref(props.filters.status ?? '');
 const type = ref(props.filters.type ?? '');
@@ -40,6 +39,11 @@ const applyFilters = () =>
         status: status.value || undefined,
         type: type.value || undefined,
     });
+
+const filterByStatus = (value) => {
+    status.value = status.value === value ? '' : value;
+    applyFilters();
+};
 
 const reset = () => {
     status.value = type.value = '';
@@ -68,22 +72,29 @@ const columns = [
 
     <Card title="All Feedback" icon="chat">
         <p class="mb-3 text-sm text-text-muted" aria-live="polite">
-            <span v-for="option in statusOptions" :key="option.value" class="mr-4 inline-block">
+            <button
+                v-for="option in statusOptions"
+                :key="option.value"
+                type="button"
+                class="mr-4 inline-block rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                :class="status === option.value ? 'font-semibold text-primary underline' : 'hover:text-primary'"
+                :aria-pressed="status === option.value"
+                @click="filterByStatus(option.value)"
+            >
                 {{ option.label }}: <strong class="text-text">{{ counts[option.value] ?? 0 }}</strong>
-            </span>
+            </button>
         </p>
 
         <form class="mb-4 grid gap-3 rounded-md bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-6" @submit.prevent="applyFilters">
             <div class="lg:col-span-2">
                 <label for="filter-status" class="mb-1 block text-xs font-medium text-text-muted">Status</label>
-                <Select id="filter-status" v-model="status" :options="[{ value: '', label: 'Any status' }, ...statusOptions]" />
+                <Select id="filter-status" v-model="status" :options="[{ value: '', label: 'Any status' }, ...statusOptions]" @update:model-value="applyFilters" />
             </div>
             <div class="lg:col-span-2">
                 <label for="filter-type" class="mb-1 block text-xs font-medium text-text-muted">Kind</label>
-                <Select id="filter-type" v-model="type" :options="[{ value: '', label: 'Any kind' }, ...typeOptions.map(({ value, label }) => ({ value, label }))]" />
+                <Select id="filter-type" v-model="type" :options="[{ value: '', label: 'Any kind' }, ...typeOptions.map(({ value, label }) => ({ value, label }))]" @update:model-value="applyFilters" />
             </div>
             <div class="flex items-end gap-2 lg:col-span-2">
-                <Button type="submit">Apply filters</Button>
                 <button type="button" class="rounded-md px-3 py-2 text-sm text-primary hover:underline" @click="reset">Reset</button>
             </div>
         </form>
@@ -99,7 +110,7 @@ const columns = [
             :numbered="false"
         >
             <template #cell-subject="{ row }">
-                <a :href="`/admin/feedback/${row.id}`" class="font-medium text-primary hover:underline">{{ row.subject }}</a>
+                <Link :href="`/admin/feedback/${row.id}`" class="font-medium text-primary hover:underline" :class="{ 'font-bold': row.is_unseen }">{{ row.subject }}</Link>
             </template>
             <template #cell-status="{ row }">
                 <Badge :tone="statusTones[row.status]">{{ row.status_label }}</Badge>

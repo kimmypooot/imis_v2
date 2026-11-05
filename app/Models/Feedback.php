@@ -33,6 +33,7 @@ class Feedback extends Model
             'type' => FeedbackType::class,
             'status' => FeedbackStatus::class,
             'status_changed_at' => 'datetime',
+            'seen_at' => 'datetime',
         ];
     }
 

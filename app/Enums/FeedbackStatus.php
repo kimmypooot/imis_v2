@@ -4,12 +4,14 @@ namespace App\Enums;
 
 /**
  * Where a submission stands. Administrators move it along by hand; it is
- * never closed on the sender's behalf.
+ * never closed on the sender's behalf. `Applied` means the idea made it
+ * into the system, and the sender is told.
  */
 enum FeedbackStatus: string
 {
     case New = 'new';
     case InReview = 'in_review';
+    case Applied = 'applied';
     case Resolved = 'resolved';
     case Closed = 'closed';
 
@@ -18,6 +20,7 @@ enum FeedbackStatus: string
         return match ($this) {
             self::New => 'New',
             self::InReview => 'Under review',
+            self::Applied => 'Applied',
             self::Resolved => 'Resolved',
             self::Closed => 'Closed',
         };

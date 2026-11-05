@@ -20,9 +20,7 @@ const props = defineProps({
     feedback: { type: Array, required: true },
 });
 
-const statusTones = { new: 'info', in_review: 'warning', resolved: 'success', closed: 'neutral' };
-// The left edge of each card repeats its status, so the list scans at a glance.
-const statusEdges = { new: 'border-l-info', in_review: 'border-l-warning', resolved: 'border-l-success', closed: 'border-l-border-strong' };
+const statusTones = { new: 'info', in_review: 'warning', applied: 'success', resolved: 'success', closed: 'neutral' };
 
 const filter = ref('all');
 
@@ -31,14 +29,14 @@ const stats = computed(() => [
     { key: 'all', label: 'Sent', value: props.feedback.length, icon: 'chat', tile: 'bg-info-bg text-primary' },
     { key: 'open', label: 'Open', value: count((item) => ['new', 'in_review'].includes(item.status)), icon: 'clock', tile: 'bg-warning-bg text-warning' },
     { key: 'replied', label: 'Replied', value: count((item) => item.replies.length > 0), icon: 'envelope', tile: 'bg-info-bg text-primary' },
-    { key: 'done', label: 'Resolved', value: count((item) => ['resolved', 'closed'].includes(item.status)), icon: 'check', tile: 'bg-success-bg text-success' },
+    { key: 'done', label: 'Resolved', value: count((item) => ['applied', 'resolved', 'closed'].includes(item.status)), icon: 'check', tile: 'bg-success-bg text-success' },
 ]);
 
 const matches = {
     all: () => true,
     open: (item) => ['new', 'in_review'].includes(item.status),
     replied: (item) => item.replies.length > 0,
-    done: (item) => ['resolved', 'closed'].includes(item.status),
+    done: (item) => ['applied', 'resolved', 'closed'].includes(item.status),
 };
 const visible = computed(() => props.feedback.filter(matches[filter.value]));
 
@@ -81,8 +79,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
                 v-for="item in visible"
                 :id="`feedback-${item.id}`"
                 :key="item.id"
-                class="scroll-mt-20 border-l-4"
-                :class="statusEdges[item.status]"
+                class="scroll-mt-20"
             >
                 <template #header>
                     <div class="min-w-0">

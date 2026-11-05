@@ -105,9 +105,9 @@ class FeedbackTest extends TestCase
 
         $this->actingAs($this->userWith('feedback.view'))->get('/admin/feedback?type=suggestion')
             ->assertOk()->assertInertia(fn (Assert $page) => $page
-                ->component('Admin/Feedback/Index')
-                ->has('feedback.data', 1)
-                ->where('feedback.data.0.subject', 'Add a calendar'));
+            ->component('Admin/Feedback/Index')
+            ->has('feedback.data', 1)
+            ->where('feedback.data.0.subject', 'Add a calendar'));
 
         $this->actingAs($this->userWith('feedback.view'))->get('/admin/feedback?search=Printing')
             ->assertInertia(fn (Assert $page) => $page->has('feedback.data', 1));
@@ -165,6 +165,33 @@ class FeedbackTest extends TestCase
         $this->actingAs($viewer)->post("/admin/feedback/{$feedback->id}/replies", ['body' => 'Hi'])->assertForbidden();
         $this->actingAs($viewer)->patch("/admin/feedback/{$feedback->id}/status", ['status' => 'closed'])->assertForbidden();
         $this->actingAs($viewer)->get("/admin/feedback/{$feedback->id}")->assertOk();
+    }
+
+    public function test_opening_feedback_clears_the_badge_but_keeps_the_status(): void
+    {
+        $feedback = Feedback::factory()->create();
+        $viewer = $this->userWith('feedback.view');
+
+        $this->actingAs($viewer)->get('/admin/feedback')
+            ->assertInertia(fn (Assert $page) => $page->where('badges.feedback', 1));
+
+        $this->actingAs($viewer)->get("/admin/feedback/{$feedback->id}")
+            ->assertInertia(fn (Assert $page) => $page->where('badges.feedback', 0));
+
+        $this->assertNotNull($feedback->fresh()->seen_at);
+        $this->assertSame(FeedbackStatus::New, $feedback->fresh()->status);
+    }
+
+    public function test_marking_feedback_applied_notifies_the_sender(): void
+    {
+        $feedback = Feedback::factory()->create();
+
+        $this->actingAs($this->userWith('feedback.manage'))
+            ->patch("/admin/feedback/{$feedback->id}/status", ['status' => 'applied'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(FeedbackStatus::Applied, $feedback->fresh()->status);
+        $this->assertSame(1, DatabaseNotification::query()->where('notifiable_id', $feedback->user_id)->count());
     }
 
     public function test_status_changes_are_audited(): void

@@ -31,6 +31,15 @@ class FeedbackNotifier
         ));
     }
 
+    public function applied(Feedback $feedback): void
+    {
+        $feedback->user?->notify(new FeedbackUpdate(
+            'Your '.$feedback->type->value.' was applied',
+            "\"{$feedback->subject}\" has been applied in IMIS. Thank you!",
+            "/my/feedback#feedback-{$feedback->id}",
+        ));
+    }
+
     public function replied(Feedback $feedback): void
     {
         $feedback->user?->notify(new FeedbackUpdate(
