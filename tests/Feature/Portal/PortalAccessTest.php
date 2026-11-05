@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Portal;
 
+use App\Models\Application;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,6 +11,14 @@ use Tests\TestCase;
 class PortalAccessTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems; these tests count their own.
+        Application::query()->delete();
+    }
 
     public function test_guest_cannot_access_the_portal(): void
     {

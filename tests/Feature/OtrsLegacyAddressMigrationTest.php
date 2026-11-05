@@ -14,6 +14,14 @@ class OtrsLegacyAddressMigrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems; these tests count their own.
+        Application::query()->delete();
+    }
+
     private function migrate(): void
     {
         (require database_path('migrations/2027_01_25_090000_point_otrs_at_the_legacy_system.php'))->up();

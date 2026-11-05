@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Adds the Examination Transaction Tracking System (ETTS) to the portal as a
+ * Adds the ESD Transactions Tracking System (ETTS) to the portal as a
  * hub system owned by the Examination Services Division, with the two roles
  * its sign-in accepts. Before this it existed only in the local database, so
  * it never appeared in the hub on other servers.
@@ -33,7 +33,7 @@ return new class extends Migration
 
         DB::transaction(function () {
             $id = DB::table('applications')->insertGetId([
-                'name' => 'Examination Transaction Tracking System',
+                'name' => 'ESD Transactions Tracking System',
                 'short_name' => 'ETTS',
                 'description' => 'Track certifications, authentications and special eligibility applications',
                 'icon' => 'clipboard',

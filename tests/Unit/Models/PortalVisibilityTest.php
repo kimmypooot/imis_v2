@@ -14,6 +14,14 @@ class PortalVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems; these tests count their own.
+        Application::query()->delete();
+    }
+
     public function test_public_entry_is_visible_to_a_guest(): void
     {
         $application = Application::factory()->create(['visibility' => Visibility::PublicVisibility]);

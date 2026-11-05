@@ -12,6 +12,14 @@ class ApplicationsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems; these tests count their own.
+        Application::query()->delete();
+    }
+
     public function test_guest_cannot_access_the_applications_directory(): void
     {
         $this->get('/applications')->assertRedirect('/login');

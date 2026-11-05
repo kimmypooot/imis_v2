@@ -22,6 +22,14 @@ class SystemDirectoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Migrations register real hub systems; these tests count their own.
+        Application::query()->delete();
+    }
+
     public function test_systems_are_grouped_by_unit_type_then_committees_then_other(): void
     {
         $rsu = OrganizationalUnit::factory()->create(['name' => 'ESD', 'unit_type' => UnitType::RegionalSupportUnit]);
