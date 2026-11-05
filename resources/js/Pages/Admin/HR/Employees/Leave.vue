@@ -28,6 +28,7 @@ const props = defineProps({
     years: { type: Array, required: true },
     balances: { type: Array, required: true },
     card: { type: Object, required: true },
+    monthly: { type: Object, default: null },
     settings: { type: Object, required: true },
     canManage: { type: Boolean, required: true },
     manageOptions: { type: Object, default: null },
@@ -130,7 +131,7 @@ const field = 'mt-1 block w-full';
             </dl>
         </Card>
 
-        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :can-reverse="canManage" @year="changeYear" @reverse="openReverse" />
+        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :monthly="monthly" :can-reverse="canManage" @year="changeYear" @reverse="openReverse" />
     </div>
 
     <Modal :open="entryOpen" title="Opening balance or adjustment" icon="plus" tone="success" size="lg" @close="entryOpen = false">

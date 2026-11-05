@@ -100,6 +100,14 @@ class Employee extends Model
     }
 
     /**
+     * HR-6: imported months of the paper/Excel leave card (history only).
+     */
+    public function leaveCardMonths(): HasMany
+    {
+        return $this->hasMany(LeaveCardMonth::class);
+    }
+
+    /**
      * The same ledger, named for the `{entry}` route parameter so admin
      * routes can scope an entry to its employee.
      */

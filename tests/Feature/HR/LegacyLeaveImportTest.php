@@ -44,6 +44,8 @@ class LegacyLeaveImportTest extends TestCase
     {
         parent::setUp();
 
+        Application::query()->delete();
+
         $this->seed(LeaveTypeSeeder::class);
         config(['database.connections.legacy_test' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
         config(['legacy.connection' => 'legacy_test']);

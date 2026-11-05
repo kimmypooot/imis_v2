@@ -123,6 +123,7 @@ class LeaveCredits
     public function cardPage(Employee $employee, int $year): array
     {
         $years = $employee->leaveLedger()->pluck('entry_date')->map(fn ($date) => (int) substr((string) $date, 0, 4))
+            ->merge($employee->leaveCardMonths()->pluck('year'))
             ->push((int) today()->year)->push($year)->unique()->sortDesc()->values();
 
         return [
@@ -130,7 +131,81 @@ class LeaveCredits
             'years' => $years,
             'balances' => $this->balances($employee),
             'card' => $this->card($employee, $year),
+            'monthly' => $this->monthlyCard($employee, $year),
         ];
+    }
+
+    /**
+     * The year laid out like the paper leave card: one row per month with
+     * Vacation and Sick Leave side by side — earned, used, month-end
+     * balance — and the card's notes. Months the imported card history
+     * covers show exactly what the card said; later months are built from
+     * the ledger (accruals as earned; leave taken, monetization and lapses
+     * as used; opening balances and adjustments apart). Balances always
+     * come from the ledger sum, never from the history.
+     *
+     * @return array{year: int, forward: ?array{vl: ?float, sl: ?float, source: string}, months: array<int, array<string, mixed>>}
+     */
+    public function monthlyCard(Employee $employee, int $year): array
+    {
+        $ids = LeaveType::query()->whereIn('code', ['VL', 'SL'])->pluck('id', 'code');
+        $history = $employee->leaveCardMonths()->where('year', $year)->get()->keyBy('month');
+        $entries = $employee->leaveLedger()->with('leaveType')->whereIn('leave_type_id', $ids->values())->orderBy('entry_date')->orderBy('id')->get();
+
+        $inYear = $entries->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->year === $year);
+        $shown = $history->keys()->reject(fn (int $month) => $month === 0)
+            ->merge($inYear->map(fn (LeaveLedgerEntry $entry) => $entry->entry_date->month))->unique()->sort()->values();
+        if ($shown->isEmpty()) {
+            return ['year' => $year, 'forward' => null, 'months' => []];
+        }
+
+        $balanceAt = function (string $code, Carbon $date) use ($entries, $ids): float {
+            return round((float) $entries->where('leave_type_id', $ids[$code])->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->lte($date))->sum('amount'), 3);
+        };
+
+        $forward = $history->get(0);
+        $before = Carbon::create($year, 1, 1)->subDay();
+        $forwardRow = $forward
+            ? ['vl' => $forward->vl_balance, 'sl' => $forward->sl_balance, 'source' => 'card']
+            : ($entries->contains(fn (LeaveLedgerEntry $entry) => $entry->entry_date->lte($before))
+                ? ['vl' => $balanceAt('VL', $before), 'sl' => $balanceAt('SL', $before), 'source' => 'ledger']
+                : null);
+
+        $months = [];
+        foreach (range($shown->first(), $shown->last()) as $month) {
+            $end = Carbon::create($year, $month, 1)->endOfMonth()->startOfDay();
+            $card = $history->get($month);
+            $row = ['month' => $month, 'label' => $end->format('F'), 'source' => $card ? 'card' : 'ledger'];
+
+            if ($card) {
+                foreach (['vl', 'sl'] as $key) {
+                    $row[$key] = ['earned' => $card["{$key}_earned"], 'used' => $card["{$key}_used"], 'balance' => $card["{$key}_balance"]];
+                }
+                $row['particulars'] = $card->particulars;
+                $row['applications'] = $card->applications;
+                $months[] = $row;
+
+                continue;
+            }
+
+            $monthEntries = $inYear->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->month === $month);
+            foreach (['VL', 'SL'] as $code) {
+                $mine = $monthEntries->where('leave_type_id', $ids[$code]);
+                $row[strtolower($code)] = [
+                    'earned' => round((float) $mine->whereIn('kind', [LedgerEntryKind::Accrual, LedgerEntryKind::Grant])->sum('amount'), 3),
+                    'used' => round(-(float) $mine->whereIn('kind', [LedgerEntryKind::Deduction, LedgerEntryKind::Monetization, LedgerEntryKind::Lapse])->sum('amount'), 3) + 0.0,
+                    'adjusted' => round((float) $mine->whereIn('kind', [LedgerEntryKind::Opening, LedgerEntryKind::Adjustment])->sum('amount'), 3),
+                    'balance' => $balanceAt($code, $end),
+                ];
+            }
+            $notes = $monthEntries->reject(fn (LeaveLedgerEntry $entry) => in_array($entry->kind, [LedgerEntryKind::Accrual, LedgerEntryKind::Grant], true))
+                ->map(fn (LeaveLedgerEntry $entry) => $entry->leaveType->code.': '.$entry->particulars)->unique()->implode('; ');
+            $row['particulars'] = null;
+            $row['applications'] = $notes !== '' ? $notes : null;
+            $months[] = $row;
+        }
+
+        return ['year' => $year, 'forward' => $forwardRow, 'months' => $months];
     }
 
     // ── Manual entries ───────────────────────────────────────────────
@@ -213,9 +288,10 @@ class LeaveCredits
     /**
      * Posts a month's accrual for everyone in service and eligible.
      *
+     * @param  array<int, int>  $employeeIds  limit to these employees (none: everyone)
      * @return array{posted: int, already: int, not_eligible: int}
      */
-    public function accrueMonth(int $year, int $month, ?User $actor = null): array
+    public function accrueMonth(int $year, int $month, ?User $actor = null, array $employeeIds = []): array
     {
         $start = Carbon::create($year, $month, 1);
         $end = $start->copy()->endOfMonth()->startOfDay();
@@ -223,8 +299,8 @@ class LeaveCredits
 
         $types = LeaveType::query()->active()->whereNotNull('monthly_accrual')->where('monthly_accrual', '>', 0)->get();
 
-        DB::transaction(function () use ($types, $start, $end, $year, $month, $actor, &$counts) {
-            foreach ($this->inServiceDuring($start, $end) as $employee) {
+        DB::transaction(function () use ($types, $start, $end, $year, $month, $actor, $employeeIds, &$counts) {
+            foreach ($this->inServiceDuring($start, $end, $employeeIds) as $employee) {
                 foreach ($types as $type) {
                     if (! $this->eligible($employee, $type)) {
                         $counts['not_eligible']++;
@@ -496,12 +572,14 @@ class LeaveCredits
      * period: appointed by its end (or not recorded), not separated before
      * its start.
      *
+     * @param  array<int, int>  $employeeIds  limit to these employees (none: everyone)
      * @return Collection<int, Employee>
      */
-    private function inServiceDuring(Carbon $start, Carbon $end): Collection
+    private function inServiceDuring(Carbon $start, Carbon $end, array $employeeIds = []): Collection
     {
         return Employee::query()
             ->with('user')
+            ->when($employeeIds !== [], fn ($query) => $query->whereIn('id', $employeeIds))
             ->where(fn ($query) => $query->whereNull('original_appointment_date')->orWhereDate('original_appointment_date', '<=', $end))
             ->where(fn ($query) => $query->whereNull('separation_date')->orWhereDate('separation_date', '>=', $start))
             ->get();

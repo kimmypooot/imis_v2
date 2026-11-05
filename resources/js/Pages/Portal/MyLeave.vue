@@ -23,6 +23,7 @@ defineProps({
     years: { type: Array, default: () => [] },
     balances: { type: Array, default: () => [] },
     card: { type: Object, default: null },
+    monthly: { type: Object, default: null },
 });
 
 const { busy, handlers } = useBusy();
@@ -69,7 +70,7 @@ const shortcuts = [
         </nav>
 
         <BusyRegion :busy="busy">
-        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" @year="changeYear" />
+        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :monthly="monthly" @year="changeYear" />
     </BusyRegion>
     </div>
     <Card v-else>
