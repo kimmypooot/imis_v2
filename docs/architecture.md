@@ -1970,6 +1970,10 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   What's New timeline, the dashboard "At a glance" row, division-only leave
   calendars) is inserted the same way, already **published**, by migration
   `2027_01_30_090000_add_v3_4_release_note`.
+- **v3.5.0** (security hardening from the audit, focus-trapped dialogs and
+  reduced motion, the Recruitment users feed and the ETTS employees feed) is
+  inserted the same way, already **published**, by migration
+  `2027_01_31_090000_add_v3_5_release_note`.
 
 ### User Guide (`/guide`)
 - Any signed-in user. The articles are plain data in `config/user-guide.php`
