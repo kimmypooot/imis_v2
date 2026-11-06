@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../Layouts/AdminLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
-import Badge from '../../Components/UI/Badge.vue';
+import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 
 defineOptions({ layout: AdminLayout });
@@ -38,14 +38,14 @@ const { can, hasRole } = useAuthorization();
                         {{ role.display_name }}
                         <span class="text-text-muted">({{ role.name }})</span>
                     </span>
-                    <Badge :tone="role.status === 'active' ? 'success' : 'neutral'">{{ role.status }}</Badge>
+                    <StatusBadge :status="role.status === 'active' ? 'active' : 'draft'" :label="role.status" />
                 </li>
                 <li v-if="roles.length === 0" class="text-sm text-text-muted">No roles assigned.</li>
             </ul>
         </Card>
 
-        <Card title="Your permissions">
-            <ul class="space-y-2">
+        <Card title="Your permissions" :description="`${permissions.length} granted`">
+            <ul class="max-h-80 space-y-2 overflow-y-auto pr-1">
                 <li v-for="permission in permissions" :key="permission.id" class="text-sm text-text">
                     <span class="font-medium">{{ permission.display_name }}</span>
                     <span class="text-text-muted"> ({{ permission.name }})</span>
@@ -60,20 +60,20 @@ const { can, hasRole } = useAuthorization();
             <ul class="space-y-2 text-sm">
                 <li v-for="(allowed, role) in exampleRoleChecks" :key="role" class="flex items-center justify-between">
                     <code class="text-text">hasRole('{{ role }}')</code>
-                    <Badge :tone="allowed ? 'success' : 'danger'">{{ allowed ? 'true' : 'false' }}</Badge>
+                    <StatusBadge :status="allowed ? 'active' : 'inactive'" :label="allowed ? 'true' : 'false'" />
                 </li>
             </ul>
         </Card>
 
-        <Card title="Example permission checks (server-side)">
-            <ul class="space-y-2 text-sm">
+        <Card title="Example permission checks (server-side)" :description="`${Object.values(examplePermissionChecks).filter(Boolean).length} of ${Object.keys(examplePermissionChecks).length} allowed`">
+            <ul class="max-h-80 space-y-2 overflow-y-auto pr-1 text-sm">
                 <li
                     v-for="(allowed, permission) in examplePermissionChecks"
                     :key="permission"
                     class="flex items-center justify-between"
                 >
                     <code class="text-text">can('{{ permission }}')</code>
-                    <Badge :tone="allowed ? 'success' : 'danger'">{{ allowed ? 'true' : 'false' }}</Badge>
+                    <StatusBadge :status="allowed ? 'active' : 'inactive'" :label="allowed ? 'true' : 'false'" />
                 </li>
             </ul>
         </Card>

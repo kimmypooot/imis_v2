@@ -1,12 +1,19 @@
 <script setup>
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import { timeAgo } from '../../Utils/datetime';
 import AdminLayout from '../../Layouts/AdminLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import Button from '../../Components/UI/Button.vue';
 import Table from '../../Components/UI/Table.vue';
+import DataTable from '../../Components/UI/DataTable.vue';
+import Tabs from '../../Components/UI/Tabs.vue';
+import UserAvatar from '../../Components/UI/UserAvatar.vue';
+import StatusBadge from '../../Components/UI/StatusBadge.vue';
+import Skeleton from '../../Components/UI/Skeleton.vue';
+import Spinner from '../../Components/UI/Spinner.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Icon from '../../Components/UI/Icon.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
@@ -46,6 +53,24 @@ const runConfirm = () => {
         confirmOpen.value = false;
     }, 800);
 };
+
+const demoTab = ref('one');
+const demoTabs = [
+    { key: 'one', label: 'Profile', icon: 'user' },
+    { key: 'two', label: 'Activity', icon: 'clock', badge: 3 },
+];
+
+// A recent time, so the two-line cell shows a real "x ago".
+const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+const people = [
+    { id: 1, name: 'Maria Santos', username: 'msantos', role: 'Administrator', active: true, at: minutesAgo(3) },
+    { id: 2, name: 'Juan Dela Cruz', username: 'jdelacruz', role: 'HR Officer', active: false, at: minutesAgo(190) },
+];
+const personColumns = [
+    { key: 'user', label: 'User', value: (row) => `${row.name} ${row.username}` },
+    { key: 'role', label: 'Role' },
+    { key: 'at', label: 'Last activity', value: (row) => row.at },
+];
 
 const demoRows = [
     { id: 1, name: 'Example record A', status: 'active' },
@@ -191,6 +216,76 @@ const demoRows = [
                     </tr>
                 </tbody>
             </Table>
+        </Card>
+
+        <Card title="People &amp; status" description="Avatars fall back to initials and show a spinner while a photo loads.">
+            <div class="flex flex-wrap items-center gap-4">
+                <UserAvatar name="Maria Santos" size="sm" />
+                <UserAvatar name="Maria Santos" size="md" />
+                <UserAvatar name="Maria Santos" size="lg" />
+                <UserAvatar name="Maria Santos" size="xl" />
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <StatusBadge status="active" />
+                <StatusBadge status="expired" />
+                <StatusBadge status="inactive" label="Ended by Admin" />
+                <StatusBadge status="draft" />
+                <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success">Active</span>
+                <span class="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-text-muted">Idle</span>
+                <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">New</span>
+            </div>
+        </Card>
+
+        <Card title="Data table" description="Search, sort, export and paging; people get an avatar cell and times read as &quot;x ago&quot;.">
+            <DataTable :columns="personColumns" :rows="people" row-key="id" caption="Example people" export-name="design-system-example">
+                <template #cell-user="{ row }">
+                    <div class="flex items-center gap-3">
+                        <UserAvatar :name="row.name" size="sm" />
+                        <div class="min-w-0">
+                            <div class="truncate font-medium text-text">{{ row.name }}</div>
+                            <div class="truncate text-xs text-text-muted">@{{ row.username }}</div>
+                        </div>
+                    </div>
+                </template>
+                <template #cell-at="{ row }">
+                    <div>{{ timeAgo(row.at) }}</div>
+                    <span
+                        class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                        :class="row.active ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted'"
+                    >{{ row.active ? 'Active' : 'Idle' }}</span>
+                </template>
+            </DataTable>
+        </Card>
+
+        <Card title="Tabs">
+            <Tabs v-model="demoTab" :tabs="demoTabs">
+                <template #one><p class="text-sm text-text-muted">Arrow keys, Home and End move between tabs.</p></template>
+                <template #two><p class="text-sm text-text-muted">A tab can carry a count badge.</p></template>
+            </Tabs>
+        </Card>
+
+        <Card title="Loading placeholders">
+            <div class="flex items-center gap-4">
+                <Spinner size="sm" />
+                <Spinner size="md" />
+                <Spinner size="lg" />
+            </div>
+            <div class="mt-4 space-y-2" role="status" aria-label="Loading example">
+                <Skeleton class="h-4 w-48" />
+                <Skeleton class="h-4 w-72" />
+                <Skeleton class="h-4 w-40" />
+            </div>
+        </Card>
+
+        <Card title="Sidebar palette" description="Navigation sits on the CSC blue; the same tokens apply in every area.">
+            <div class="w-60 space-y-1 rounded-lg bg-csc-blue p-3 text-sm text-white">
+                <div class="rounded-md bg-white/15 px-3 py-2 font-medium">Active page</div>
+                <div class="rounded-md px-3 py-2 text-white/80">Other page</div>
+                <div class="flex items-center justify-between rounded-md px-3 py-2 text-white/80">
+                    Page with a count
+                    <span class="rounded-full bg-accent px-1.5 text-xs font-semibold text-white ring-2 ring-white/40">4</span>
+                </div>
+            </div>
         </Card>
 
         <Card title="Empty state">
