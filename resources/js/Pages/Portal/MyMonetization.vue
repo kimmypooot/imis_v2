@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -91,7 +92,7 @@ const columns = [
 
             <form v-else class="space-y-3" @submit.prevent="submit">
                 <div>
-                    <label for="mon-days" class="block text-sm font-medium text-text">Days to monetize</label>
+                    <InputLabel for="mon-days">Days to monetize</InputLabel>
                     <input
                         id="mon-days"
                         v-model="form.days"
@@ -106,7 +107,7 @@ const columns = [
                     <InputError :message="form.errors.days" />
                 </div>
                 <div>
-                    <label for="mon-remarks" class="block text-sm font-medium text-text">Remarks (optional)</label>
+                    <InputLabel for="mon-remarks">Remarks (optional)</InputLabel>
                     <Textarea id="mon-remarks" v-model="form.remarks" class="mt-1" />
                 </div>
                 <Button type="submit" variant="success" :loading="form.processing">File request</Button>

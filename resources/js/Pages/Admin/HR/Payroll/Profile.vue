@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -255,12 +256,12 @@ const recentColumns = [
                 No more {{ stopping.type }} deductions after this date. The balance ({{ formatPeso(stopping.balance) }}) stays on record, and the loan can be resumed.
             </p>
             <div>
-                <label for="loan-stopped-on" class="block text-sm font-medium text-text">Last day deducted</label>
+                <InputLabel for="loan-stopped-on">Last day deducted</InputLabel>
                 <input id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" required class="block w-full form-control mt-1 px-3 py-2" />
                 <InputError :message="stopForm.errors.stopped_on" />
             </div>
             <div>
-                <label for="loan-stop-reason" class="block text-sm font-medium text-text">Reason (optional)</label>
+                <InputLabel for="loan-stop-reason">Reason (optional)</InputLabel>
                 <input id="loan-stop-reason" v-model="stopForm.reason" type="text" maxlength="500" class="block w-full form-control mt-1 px-3 py-2" />
             </div>
         </form>
@@ -276,7 +277,7 @@ const recentColumns = [
                 The {{ cancelling.type }} is ended for good: nothing more is deducted and it cannot be resumed. What was already deducted stays on record.
             </p>
             <div>
-                <label for="loan-cancel-reason" class="block text-sm font-medium text-text">Reason</label>
+                <InputLabel for="loan-cancel-reason">Reason</InputLabel>
                 <textarea id="loan-cancel-reason" v-model="cancelForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
                 <InputError :message="cancelForm.errors.reason" />
             </div>

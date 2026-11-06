@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -137,12 +138,12 @@ const field = 'mt-1 block w-full';
     <Modal :open="entryOpen" title="Opening balance or adjustment" icon="plus" tone="success" size="lg" @close="entryOpen = false">
         <form id="leave-entry-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitEntry">
             <div>
-                <label for="entry-type" class="block text-sm font-medium text-text">Leave type <span class="text-danger" aria-hidden="true">*</span></label>
+                <InputLabel for="entry-type" required>Leave type</InputLabel>
                 <Select id="entry-type" v-model="entry.leave_type_id" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!entry.errors.leave_type_id" />
                 <InputError :message="entry.errors.leave_type_id" />
             </div>
             <div>
-                <label for="entry-kind" class="block text-sm font-medium text-text">Kind <span class="text-danger" aria-hidden="true">*</span></label>
+                <InputLabel for="entry-kind" required>Kind</InputLabel>
                 <Select id="entry-kind" v-model="entry.kind" :class="field" :options="manageOptions?.kindOptions ?? []" required :invalid="!!entry.errors.kind" />
                 <InputError :message="entry.errors.kind" />
             </div>
@@ -151,7 +152,7 @@ const field = 'mt-1 block w-full';
                 <InputError :message="entry.errors.entry_date" />
             </div>
             <div>
-                <label for="entry-amount" class="block text-sm font-medium text-text">Days <span class="text-danger" aria-hidden="true">*</span></label>
+                <InputLabel for="entry-amount" required>Days</InputLabel>
                 <input
                     id="entry-amount"
                     v-model="entry.amount"
@@ -193,7 +194,7 @@ const field = 'mt-1 block w-full';
     <Modal :open="settingsOpen" title="Leave settings" icon="cog" tone="primary" size="lg" @close="settingsOpen = false">
         <form id="leave-settings-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitSettings">
             <div class="sm:col-span-2">
-                <label for="settings-supervisor" class="block text-sm font-medium text-text">Immediate supervisor</label>
+                <InputLabel for="settings-supervisor">Immediate supervisor</InputLabel>
                 <Select id="settings-supervisor" v-model="settingsForm.immediate_supervisor_id" :class="field" :options="manageOptions?.supervisorOptions ?? []" :placeholder="settings.supervisor_by_rule ? `— By position: ${settings.supervisor_by_rule} —` : '— Not set —'" :invalid="!!settingsForm.errors.immediate_supervisor_id" />
                 <p class="mt-1 text-xs text-text-muted">
                     Recommends their leave applications (CS Form No. 6, Part B). Leave it empty to follow position and office: the Chief Human Resource Specialist for Regional Support Unit staff, the Director II for Field Office staff, the Director IV for ORD staff, the Director III, the Chief Human Resource Specialists and the Attorney VI, and the CSC Chairperson for the Director IV.

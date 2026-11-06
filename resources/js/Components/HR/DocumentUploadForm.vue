@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Button from '../UI/Button.vue';
@@ -36,7 +37,7 @@ const submit = () =>
 <template>
     <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
         <div>
-            <label for="doc-type" class="block text-sm font-medium text-text">Document <span class="text-danger" aria-hidden="true">*</span></label>
+            <InputLabel for="doc-type" required>Document</InputLabel>
             <Select id="doc-type" v-model="form.document_type" class="mt-1" :options="typeOptions" placeholder="— Select —" required :invalid="!!form.errors.document_type" />
             <InputError :message="form.errors.document_type" />
         </div>
@@ -49,12 +50,12 @@ const submit = () =>
             <InputError :message="form.errors.title" />
         </div>
         <div class="sm:col-span-2">
-            <label for="doc-remarks" class="block text-sm font-medium text-text">Remarks</label>
+            <InputLabel for="doc-remarks">Remarks</InputLabel>
             <Textarea id="doc-remarks" v-model="form.remarks" class="mt-1" :rows="2" :invalid="!!form.errors.remarks" />
             <InputError :message="form.errors.remarks" />
         </div>
         <div class="sm:col-span-2">
-            <label for="doc-file" class="block text-sm font-medium text-text">File <span class="text-danger" aria-hidden="true">*</span></label>
+            <InputLabel for="doc-file" required>File</InputLabel>
             <input
                 id="doc-file"
                 ref="fileInput"

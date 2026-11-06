@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -82,12 +83,12 @@ const columns = [
             <p v-else-if="!requestable.length" class="text-sm text-text-muted">You have a request for every month available.</p>
             <form v-else class="space-y-3" @submit.prevent="submit">
                 <div>
-                    <label for="payslip-month" class="block text-sm font-medium text-text">Month</label>
+                    <InputLabel for="payslip-month">Month</InputLabel>
                     <Select id="payslip-month" v-model="form.payroll_entry_id" class="mt-1" :options="requestable" placeholder="— Select —" required />
                     <InputError :message="form.errors.payroll_entry_id" />
                 </div>
                 <div>
-                    <label for="payslip-purpose" class="block text-sm font-medium text-text">Purpose (optional)</label>
+                    <InputLabel for="payslip-purpose">Purpose (optional)</InputLabel>
                     <input
                         id="payslip-purpose"
                         v-model="form.purpose"

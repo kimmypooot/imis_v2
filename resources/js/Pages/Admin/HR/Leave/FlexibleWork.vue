@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -110,7 +111,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                 <InputError :message="form.errors.effective_to" />
             </div>
             <div>
-                <label for="fwa-admin-remarks" class="block text-sm font-medium text-text">Remarks{{ mode === 'decide' && form.decision === 'rejected' ? '' : ' (optional)' }}</label>
+                <InputLabel for="fwa-admin-remarks">Remarks{{ mode === 'decide' && form.decision === 'rejected' ? '' : ' (optional)' }}</InputLabel>
                 <Textarea id="fwa-admin-remarks" v-model="form.remarks" class="mt-1" :required="mode === 'decide' && form.decision === 'rejected'" />
                 <InputError :message="form.errors.remarks || form.errors.status" />
             </div>

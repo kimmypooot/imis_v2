@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -113,7 +114,7 @@ const field = 'mt-1 block w-full';
 
             <form id="leave-apply-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
                 <div class="sm:col-span-2">
-                    <label for="apply-type" class="block text-sm font-medium text-text">6.A Type of leave <span class="text-danger" aria-hidden="true">*</span></label>
+                    <InputLabel for="apply-type" required>6.A Type of leave</InputLabel>
                     <Select id="apply-type" v-model="form.leave_type_id" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!(form.errors.leave_type_id || issues.leave_type_id)" />
                     <p v-if="type?.ineligible.length" class="mt-1 text-sm text-danger">{{ type.ineligible.join(' ') }}</p>
                     <InputError :message="form.errors.leave_type_id || issues.leave_type_id" />
@@ -171,7 +172,7 @@ const field = 'mt-1 block w-full';
                 </fieldset>
 
                 <div class="sm:col-span-2">
-                    <label for="apply-remarks" class="block text-sm font-medium text-text">Remarks (optional)</label>
+                    <InputLabel for="apply-remarks">Remarks (optional)</InputLabel>
                     <Textarea id="apply-remarks" v-model="form.remarks" class="mt-1" :invalid="!!form.errors.remarks" />
                     <InputError :message="form.errors.remarks" />
                 </div>

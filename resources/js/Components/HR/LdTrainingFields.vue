@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../Forms/InputLabel.vue';
 import Select from '../Forms/Select.vue';
 import TextInput from '../Forms/TextInput.vue';
 import InputError from '../Forms/InputError.vue';
@@ -32,7 +33,7 @@ const field = 'mt-1 block w-full';
         <InputError :message="form.errors.date_to" />
     </div>
     <div>
-        <label :for="`${idPrefix}-hours`" class="block text-sm font-medium text-text">Number of hours <span class="text-danger" aria-hidden="true">*</span></label>
+        <InputLabel :for="`${idPrefix}-hours`" required>Number of hours</InputLabel>
         <!-- A plain input: hours can be fractional (e.g. 1.5), which needs a step. -->
         <input
             :id="`${idPrefix}-hours`"
@@ -48,12 +49,12 @@ const field = 'mt-1 block w-full';
         <InputError :message="form.errors.hours" />
     </div>
     <div>
-        <label :for="`${idPrefix}-modality`" class="block text-sm font-medium text-text">Modality <span class="text-danger" aria-hidden="true">*</span></label>
+        <InputLabel :for="`${idPrefix}-modality`" required>Modality</InputLabel>
         <Select :id="`${idPrefix}-modality`" v-model="form.modality" :class="field" :options="modalityOptions" placeholder="— Select —" required :invalid="!!form.errors.modality" />
         <InputError :message="form.errors.modality" />
     </div>
     <div>
-        <label :for="`${idPrefix}-type`" class="block text-sm font-medium text-text">Type of L&amp;D <span class="text-danger" aria-hidden="true">*</span></label>
+        <InputLabel :for="`${idPrefix}-type`" required>Type of L&amp;D</InputLabel>
         <Select :id="`${idPrefix}-type`" v-model="form.ld_type" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!form.errors.ld_type" />
         <InputError :message="form.errors.ld_type" />
     </div>

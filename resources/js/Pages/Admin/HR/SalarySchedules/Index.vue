@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -262,7 +263,7 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
                 <InputError :message="create.errors.effective_date" />
             </div>
             <div>
-                <label for="new-copy" class="block text-sm font-medium text-text">Amounts</label>
+                <InputLabel for="new-copy">Amounts</InputLabel>
                 <Select id="new-copy" v-model="create.copy_from" class="mt-1 block w-full" :options="copyOptions" />
                 <InputError :message="create.errors.copy_from" />
             </div>

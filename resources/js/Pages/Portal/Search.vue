@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -109,7 +110,7 @@ const onKeydown = (event) => {
     />
 
     <form role="search" class="mb-6 max-w-2xl" @submit.prevent="submit">
-        <label for="search-page-input" class="block text-sm font-medium text-text">Search the portal</label>
+        <InputLabel for="search-page-input">Search the portal</InputLabel>
         <div class="mt-1 flex flex-col gap-2 sm:flex-row">
             <div class="relative flex-1">
                 <Icon

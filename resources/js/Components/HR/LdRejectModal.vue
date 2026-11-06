@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../Forms/InputLabel.vue';
 import { watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
@@ -42,7 +43,7 @@ const submit = () =>
             leaves their PDS. They'll see your reason and can fix and resubmit it.
         </p>
         <div class="mt-4">
-            <label for="ld-reject-reason" class="block text-sm font-medium text-text">Reason <span class="text-danger" aria-hidden="true">*</span></label>
+            <InputLabel for="ld-reject-reason" required>Reason</InputLabel>
             <Textarea id="ld-reject-reason" v-model="form.reason" class="mt-1" :rows="3" required :invalid="!!form.errors.reason" />
             <InputError :message="form.errors.reason" />
         </div>

@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
@@ -112,7 +113,7 @@ const field = 'mt-1 block w-full';
     >
         <form id="assignment-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
             <div class="sm:col-span-2">
-                <label for="assignment-kind" class="block text-sm font-medium text-text">Kind <span class="text-danger" aria-hidden="true">*</span></label>
+                <InputLabel for="assignment-kind" required>Kind</InputLabel>
                 <Select id="assignment-kind" v-model="form.kind" :class="field" :options="kindOptions" required :invalid="!!form.errors.kind" aria-describedby="assignment-kind-hint" />
                 <p id="assignment-kind-hint" class="mt-1 text-xs text-text-muted">{{ hint }}</p>
                 <InputError :message="form.errors.kind" />
@@ -156,15 +157,13 @@ const field = 'mt-1 block w-full';
             </fieldset>
 
             <div v-if="form.kind !== 'designation'">
-                <label for="assignment-from" class="block text-sm font-medium text-text">From office</label>
+                <InputLabel for="assignment-from">From office</InputLabel>
                 <Select id="assignment-from" v-model="form.from_unit_id" :class="field" :options="officeOptions" placeholder="— Current office —" :invalid="!!form.errors.from_unit_id" />
                 <InputError :message="form.errors.from_unit_id" />
             </div>
             <div :class="form.kind === 'designation' ? 'sm:col-span-2' : ''">
-                <label for="assignment-to" class="block text-sm font-medium text-text">
-                    {{ form.kind === 'designation' ? 'Designated to' : form.kind === 'return' ? 'Mother unit' : 'To office' }}
-                    <span class="text-danger" aria-hidden="true">*</span>
-                </label>
+                <InputLabel for="assignment-to" required>
+                    {{ form.kind === 'designation' ? 'Designated to' : form.kind === 'return' ? 'Mother unit' : 'To office' }}</InputLabel>
                 <Select id="assignment-to" v-model="form.to_unit_id" :class="field" :options="officeOptions" placeholder="— Select —" required :invalid="!!form.errors.to_unit_id" />
                 <InputError :message="form.errors.to_unit_id" />
             </div>
@@ -194,13 +193,13 @@ const field = 'mt-1 block w-full';
             </div>
 
             <div class="sm:col-span-2">
-                <label for="assignment-remarks" class="block text-sm font-medium text-text">Remarks</label>
+                <InputLabel for="assignment-remarks">Remarks</InputLabel>
                 <Textarea id="assignment-remarks" v-model="form.remarks" class="mt-1" :invalid="!!form.errors.remarks" />
                 <InputError :message="form.errors.remarks" />
             </div>
 
             <div class="sm:col-span-2">
-                <label for="assignment-scan" class="block text-sm font-medium text-text">Scanned order (optional)</label>
+                <InputLabel for="assignment-scan">Scanned order (optional)</InputLabel>
                 <p v-if="entry?.has_scan" class="mt-1 text-sm text-text">A scan is already filed. Choosing a file adds the new one to the 201 file and links it here.</p>
                 <input
                     id="assignment-scan"

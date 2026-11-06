@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -147,7 +148,7 @@ const columns = [
                 (PERA, GSIS, PhilHealth, Pag-IBIG), their pay profile, and loan amortizations. You can review and adjust it before finalizing.
             </p>
             <div>
-                <label for="payroll-month" class="block text-sm font-medium text-text">Month</label>
+                <InputLabel for="payroll-month">Month</InputLabel>
                 <input
                     id="payroll-month"
                     v-model="form.month"
@@ -158,7 +159,7 @@ const columns = [
                 <InputError :message="form.errors.month" />
             </div>
             <div>
-                <label for="payroll-remarks" class="block text-sm font-medium text-text">Remarks (optional)</label>
+                <InputLabel for="payroll-remarks">Remarks (optional)</InputLabel>
                 <Textarea id="payroll-remarks" v-model="form.remarks" class="mt-1" />
             </div>
         </form>

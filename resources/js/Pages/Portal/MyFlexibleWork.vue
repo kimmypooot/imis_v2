@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -93,12 +94,12 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                     <InputError :message="report.errors.week_start" />
                 </div>
                 <div class="sm:col-span-2">
-                    <label for="far-targets" class="block text-sm font-medium text-text">Targets</label>
+                    <InputLabel for="far-targets">Targets</InputLabel>
                     <Textarea id="far-targets" v-model="report.targets" :rows="3" class="mt-1" required :invalid="!!report.errors.targets" />
                     <InputError :message="report.errors.targets" />
                 </div>
                 <div class="sm:col-span-2">
-                    <label for="far-accomplishments" class="block text-sm font-medium text-text">Accomplishments</label>
+                    <InputLabel for="far-accomplishments">Accomplishments</InputLabel>
                     <Textarea id="far-accomplishments" v-model="report.accomplishments" :rows="3" class="mt-1" required :invalid="!!report.errors.accomplishments" />
                     <InputError :message="report.errors.accomplishments" />
                 </div>
@@ -145,7 +146,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
     <Modal :open="applyOpen" title="Request a flexible work arrangement" icon="plus" tone="success" size="lg" @close="applyOpen = false">
         <form id="fwa-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitArrangement">
             <div class="sm:col-span-2">
-                <label for="fwa-type" class="block text-sm font-medium text-text">Arrangement</label>
+                <InputLabel for="fwa-type">Arrangement</InputLabel>
                 <Select id="fwa-type" v-model="arrangement.type" class="mt-1 block w-full" :options="types" required />
                 <InputError :message="arrangement.errors.type" />
             </div>
@@ -176,7 +177,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                 <TextInput id="fwa-hours" v-model="arrangement.daily_hours" label="Daily hours (e.g. 7:00 AM – 6:00 PM)" />
             </div>
             <div class="sm:col-span-2">
-                <label for="fwa-remarks" class="block text-sm font-medium text-text">Reason / remarks</label>
+                <InputLabel for="fwa-remarks">Reason / remarks</InputLabel>
                 <Textarea id="fwa-remarks" v-model="arrangement.remarks" class="mt-1" />
             </div>
         </form>

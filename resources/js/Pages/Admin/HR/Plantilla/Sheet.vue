@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -65,7 +66,7 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
 
             <form class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="send">
                 <div class="min-w-64 flex-1">
-                    <label for="sheet-file" class="block text-sm font-medium text-text">Filled-in spreadsheet (CSV)</label>
+                    <InputLabel for="sheet-file">Filled-in spreadsheet (CSV)</InputLabel>
                     <FileInput id="sheet-file" class="mt-1" accept=".csv,text/csv" required :invalid="!!form.errors.file" @update:model-value="(file) => (form.file = file)" />
                     <InputError :message="form.errors.file" />
                 </div>

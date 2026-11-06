@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -88,7 +89,7 @@ const columns = [
                 <template v-if="form.decision === 'approved'">They can then view and print it.</template>
             </p>
             <div>
-                <label for="payslip-decision-remarks" class="block text-sm font-medium text-text">Remarks{{ form.decision === 'rejected' ? '' : ' (optional)' }}</label>
+                <InputLabel for="payslip-decision-remarks">Remarks{{ form.decision === 'rejected' ? '' : ' (optional)' }}</InputLabel>
                 <Textarea id="payslip-decision-remarks" v-model="form.remarks" class="mt-1" :required="form.decision === 'rejected'" />
                 <InputError :message="form.errors.remarks || form.errors.request" />
             </div>

@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
@@ -100,7 +101,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <InputError :message="form.errors.action" />
                     </fieldset>
                     <div v-if="form.action === 'approved'">
-                        <label for="act-with-pay" class="block text-sm font-medium text-text">Days with pay (optional)</label>
+                        <InputLabel for="act-with-pay">Days with pay (optional)</InputLabel>
                         <input
                             id="act-with-pay"
                             v-model="form.days_with_pay"
@@ -114,7 +115,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <InputError :message="form.errors.days_with_pay" />
                     </div>
                     <div>
-                        <label for="act-remarks" class="block text-sm font-medium text-text">Remarks{{ chosen?.needs_remarks ? '' : ' (optional)' }}</label>
+                        <InputLabel for="act-remarks">Remarks{{ chosen?.needs_remarks ? '' : ' (optional)' }}</InputLabel>
                         <Textarea id="act-remarks" v-model="form.remarks" class="mt-1" :required="chosen?.needs_remarks" :invalid="!!form.errors.remarks" />
                         <InputError :message="form.errors.remarks" />
                     </div>

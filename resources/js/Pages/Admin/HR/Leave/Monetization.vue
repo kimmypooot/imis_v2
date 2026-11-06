@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -117,7 +118,7 @@ const columns = [
                 <template v-if="decision.decision === 'approved'">The days come off their credits.</template>
             </p>
             <div>
-                <label for="mon-decision-remarks" class="block text-sm font-medium text-text">Remarks{{ decision.decision === 'rejected' ? '' : ' (optional)' }}</label>
+                <InputLabel for="mon-decision-remarks">Remarks{{ decision.decision === 'rejected' ? '' : ' (optional)' }}</InputLabel>
                 <Textarea id="mon-decision-remarks" v-model="decision.remarks" class="mt-1" :required="decision.decision === 'rejected'" />
                 <InputError :message="decision.errors.remarks || decision.errors.status" />
             </div>
@@ -132,12 +133,12 @@ const columns = [
         <form id="terminal-form" class="space-y-3" @submit.prevent="submitTerminal">
             <p class="text-sm text-text">All of their remaining Vacation and Sick Leave is commuted, at their current monthly salary ÷ 22 a day.</p>
             <div>
-                <label for="terminal-employee" class="block text-sm font-medium text-text">Separated employee</label>
+                <InputLabel for="terminal-employee">Separated employee</InputLabel>
                 <Select id="terminal-employee" v-model="terminal.employee_id" class="mt-1 block w-full" :options="separated" placeholder="— Select —" required />
                 <InputError :message="terminal.errors.employee_id" />
             </div>
             <div>
-                <label for="terminal-remarks" class="block text-sm font-medium text-text">Remarks (optional)</label>
+                <InputLabel for="terminal-remarks">Remarks (optional)</InputLabel>
                 <Textarea id="terminal-remarks" v-model="terminal.remarks" class="mt-1" />
             </div>
         </form>

@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
@@ -66,7 +67,7 @@ const submit = () => {
             <LdTrainingFields :form="form" :type-options="typeOptions" :modality-options="modalityOptions" />
 
             <div class="sm:col-span-2">
-                <label for="ld-certificate" class="block text-sm font-medium text-text">Certificate (optional)</label>
+                <InputLabel for="ld-certificate">Certificate (optional)</InputLabel>
                 <p v-if="record?.certificate && !form.remove_certificate" class="mt-1 text-sm text-text">
                     Current: {{ record.certificate.name }}
                     <label class="ml-3 inline-flex items-center gap-1.5 text-danger">

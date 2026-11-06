@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -92,7 +93,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
             </p>
             <form class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="send">
                 <div class="min-w-64 flex-1">
-                    <label for="sync-file" class="block text-sm font-medium text-text">Leave card workbook (.xlsx)</label>
+                    <InputLabel for="sync-file">Leave card workbook (.xlsx)</InputLabel>
                     <FileInput id="sync-file" class="mt-1" accept=".xlsx" required :invalid="!!form.errors.file" @update:model-value="(file) => (form.file = file)" />
                     <InputError :message="form.errors.file" />
                 </div>

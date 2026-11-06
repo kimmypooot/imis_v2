@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -222,7 +223,7 @@ const field = 'mt-1 block w-full';
         <form id="plantilla-action-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
             <template v-if="mode === 'appoint'">
                 <div class="sm:col-span-2">
-                    <label for="appoint-employee" class="block text-sm font-medium text-text">Employee <span class="text-danger" aria-hidden="true">*</span></label>
+                    <InputLabel for="appoint-employee" required>Employee</InputLabel>
                     <Select id="appoint-employee" v-model="form.employee_id" :class="field" :options="appointForm.employees" placeholder="— Select —" required :invalid="!!form.errors.employee_id" />
                     <p class="mt-1 text-xs text-text-muted">
                         <template v-if="appointForm.matches">
@@ -240,12 +241,12 @@ const field = 'mt-1 block w-full';
             </p>
             <template v-if="mode === 'appoint' || mode === 'correct'">
                 <div>
-                    <label for="action-status" class="block text-sm font-medium text-text">Status <span class="text-danger" aria-hidden="true">*</span></label>
+                    <InputLabel for="action-status" required>Status</InputLabel>
                     <Select id="action-status" v-model="form.status" :class="field" :options="appointmentOptions.statusOptions" required :invalid="!!form.errors.status" />
                     <InputError :message="form.errors.status" />
                 </div>
                 <div>
-                    <label for="action-nature" class="block text-sm font-medium text-text">Nature <span class="text-danger" aria-hidden="true">*</span></label>
+                    <InputLabel for="action-nature" required>Nature</InputLabel>
                     <Select
                         id="action-nature"
                         v-model="form.nature"
@@ -260,7 +261,7 @@ const field = 'mt-1 block w-full';
 
             <template v-if="mode === 'appoint' || mode === 'step' || mode === 'correct'">
                 <div>
-                    <label for="action-step" class="block text-sm font-medium text-text">{{ mode === 'step' ? 'New step' : 'Step' }} <span class="text-danger" aria-hidden="true">*</span></label>
+                    <InputLabel for="action-step" required>{{ mode === 'step' ? 'New step' : 'Step' }}</InputLabel>
                     <Select id="action-step" v-model="form.step" :class="field" :options="steps" required :invalid="!!form.errors.step" />
                     <InputError :message="form.errors.step" />
                 </div>
@@ -298,7 +299,7 @@ const field = 'mt-1 block w-full';
             </template>
 
             <div v-if="mode && mode !== 'vacate' && mode !== 'abolish'" class="sm:col-span-2">
-                <label for="action-remarks" class="block text-sm font-medium text-text">Remarks</label>
+                <InputLabel for="action-remarks">Remarks</InputLabel>
                 <Textarea id="action-remarks" v-model="form.remarks" class="mt-1" :invalid="!!form.errors.remarks" />
                 <InputError :message="form.errors.remarks" />
             </div>

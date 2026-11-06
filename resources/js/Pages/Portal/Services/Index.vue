@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../Components/Forms/InputLabel.vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
@@ -64,14 +65,14 @@ const clear = () => {
 
     <form class="mb-4 flex flex-wrap items-end gap-3" @submit.prevent="applyFilters">
         <div class="w-full max-w-xs">
-            <label for="search" class="block text-sm font-medium text-text">Search</label>
+            <InputLabel for="search">Search</InputLabel>
             <div class="relative mt-1">
                 <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted" />
                 <input id="search" v-model="search" type="search" autocomplete="off" placeholder="Service name or description" class="block w-full form-control py-2 pr-3 pl-9" />
             </div>
         </div>
         <div class="w-56">
-            <label for="category-filter" class="block text-sm font-medium text-text">Category</label>
+            <InputLabel for="category-filter">Category</InputLabel>
             <div class="mt-1">
                 <Select
                     id="category-filter"
@@ -82,7 +83,7 @@ const clear = () => {
             </div>
         </div>
         <div class="w-56">
-            <label for="unit-filter" class="block text-sm font-medium text-text">Organizational unit</label>
+            <InputLabel for="unit-filter">Organizational unit</InputLabel>
             <div class="mt-1">
                 <Select
                     id="unit-filter"

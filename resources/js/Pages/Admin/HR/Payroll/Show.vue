@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -321,7 +322,7 @@ const columns = [
                 <template v-if="reasonDialog === 'reopen'">The payroll becomes a draft again and its loan payments stop counting until it is finalized. The reason is kept in the audit trail.</template>
                 <template v-else>The payslip stays on the payroll for the record but counts toward no total or loan balance, and any payslip request for it is closed.</template>
             </p>
-            <label for="reason" class="block text-sm font-medium text-text">Reason</label>
+            <InputLabel for="reason">Reason</InputLabel>
             <textarea id="reason" v-model="reasonForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
             <InputError :message="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry" />
         </form>

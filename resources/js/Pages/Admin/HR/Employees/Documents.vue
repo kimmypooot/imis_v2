@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -116,7 +117,7 @@ const breadcrumbs = computed(() => [
             restore it later.
         </p>
         <div class="mt-4">
-            <label for="archive-reason" class="block text-sm font-medium text-text">Reason <span class="text-danger" aria-hidden="true">*</span></label>
+            <InputLabel for="archive-reason" required>Reason</InputLabel>
             <Textarea id="archive-reason" v-model="archiveForm.reason" class="mt-1" :rows="2" required :invalid="!!archiveForm.errors.reason" />
             <InputError :message="archiveForm.errors.reason" />
         </div>

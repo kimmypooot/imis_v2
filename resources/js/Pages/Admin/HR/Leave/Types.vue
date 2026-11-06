@@ -1,4 +1,5 @@
 <script setup>
+import InputLabel from '../../../../Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -134,28 +135,28 @@ const checks = [
                 <InputError :message="form.errors.name" />
             </div>
             <div class="sm:col-span-2">
-                <label for="type-workflow" class="block text-sm font-medium text-text">Approval route</label>
+                <InputLabel for="type-workflow">Approval route</InputLabel>
                 <Select id="type-workflow" v-model="form.workflow" :class="field" :options="[{ value: 'standard', label: 'Supervisor → HR → Head of Agency' }, { value: 'special', label: 'HR → Head of Agency' }]" />
             </div>
             <div class="sm:col-span-2">
-                <label for="type-charged" class="block text-sm font-medium text-text">Uses the credits of</label>
+                <InputLabel for="type-charged">Uses the credits of</InputLabel>
                 <Select id="type-charged" v-model="form.charged_to_id" :class="field" :options="chargeOptions" placeholder="— Its own —" :invalid="!!form.errors.charged_to_id" />
                 <InputError :message="form.errors.charged_to_id" />
             </div>
 
             <div v-for="[key, label] in [['monthly_accrual', 'Earned per month'], ['annual_grant', 'Granted each year'], ['max_days_per_year', 'Max days a year'], ['max_days_per_filing', 'Max days per filing']]" :key="key">
-                <label :for="`type-${key}`" class="block text-sm font-medium text-text">{{ label }}</label>
+                <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
                 <input :id="`type-${key}`" v-model="form[key]" type="number" step="0.001" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
                 <InputError :message="form.errors[key]" />
             </div>
             <div v-for="[key, label] in [['advance_filing_days', 'File days in advance'], ['max_consecutive_days', 'Max days in a row'], ['medical_certificate_after_days', 'Medical cert. after (days)'], ['min_service_months', 'Min. service (months)'], ['sort_order', 'Order']]" :key="key">
-                <label :for="`type-${key}`" class="block text-sm font-medium text-text">{{ label }}</label>
+                <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
                 <input :id="`type-${key}`" v-model="form[key]" type="number" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
                 <InputError :message="form.errors[key]" />
             </div>
 
             <div>
-                <label for="type-sex" class="block text-sm font-medium text-text">For</label>
+                <InputLabel for="type-sex">For</InputLabel>
                 <Select id="type-sex" v-model="form.sex" :class="field" :options="[{ value: '', label: 'Everyone' }, { value: 'female', label: 'Women' }, { value: 'male', label: 'Men' }]" />
             </div>
             <fieldset class="sm:col-span-3">
