@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
@@ -9,6 +9,7 @@ import PdsEditor from '../../../../Components/HR/Pds/PdsEditor.vue';
 import PdsStatusCard from '../../../../Components/HR/Pds/PdsStatusCard.vue';
 import PdsPhotoCard from '../../../../Components/HR/Pds/PdsPhotoCard.vue';
 import PdsHistory from '../../../../Components/HR/Pds/PdsHistory.vue';
+import PdsImportDialog from '../../../../Components/HR/Pds/PdsImportDialog.vue';
 
 defineOptions({ layout: AdminLayout });
 
@@ -27,6 +28,7 @@ const props = defineProps({
     photoUrl: { type: String, default: null },
 });
 
+const importOpen = ref(false);
 const base = computed(() => `/admin/hr/employees/${props.employee.id}/pds`);
 
 const breadcrumbs = computed(() => [
@@ -58,9 +60,19 @@ const breadcrumbs = computed(() => [
                 >
                     <Icon name="printer" size="sm" />Print current<span class="sr-only"> (opens in a new tab)</span>
                 </a>
+                <button
+                    v-if="canEdit"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    @click="importOpen = true"
+                >
+                    <Icon name="documentText" size="sm" />Import from Excel
+                </button>
             </PdsStatusCard>
             <PdsPhotoCard :photo-url="photoUrl" :url="`${base}/photo`" :readonly="!canEdit" />
         </div>
+
+        <PdsImportDialog v-if="canEdit" :open="importOpen" :url="base" @close="importOpen = false" />
 
         <PdsEditor :schema="schema" :pds="pds" :url="base" :readonly="!canEdit" />
 

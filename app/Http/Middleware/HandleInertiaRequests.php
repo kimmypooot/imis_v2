@@ -101,6 +101,8 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 // Set right after signing in — drives the splash.
                 'signedIn' => fn () => $request->session()->get('signed_in'),
+                // HR's Excel import of a PDS, awaiting confirmation (see PdsImport).
+                'pdsImport' => fn () => $request->session()->get('pds_import'),
             ],
             // Admin-3, Admin → Branding: logos, sign-in background, header name (cached).
             'branding' => fn () => Branding::shared(),

@@ -21,6 +21,19 @@ const emit = defineEmits(['dirty']);
 const id = useId();
 const form = useForm({ ...props.values });
 
+// New saved values (an Excel import, or HR's save elsewhere) replace the form,
+// unless there are unsaved edits in it, which are kept.
+watch(
+    () => props.values,
+    (values) => {
+        const keepEdits = form.isDirty;
+        const edits = form.data();
+
+        form.defaults({ ...values });
+        keepEdits ? form.setData(edits) : form.reset();
+    },
+);
+
 watch(
     () => form.isDirty,
     (dirty) => emit('dirty', props.section.key, dirty),

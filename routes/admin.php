@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\EmployeeDocumentController;
 use App\Http\Controllers\Admin\EmployeeLearningDevelopmentController;
 use App\Http\Controllers\Admin\EmployeeLeaveController;
 use App\Http\Controllers\Admin\EmployeePdsController;
+use App\Http\Controllers\Admin\EmployeePdsImportController;
 use App\Http\Controllers\Admin\EmployeeServiceRecordController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\FlexibleWorkController;
@@ -463,6 +464,8 @@ Route::middleware('auth')->group(function () {
         Route::put('admin/hr/employees/{employee}/pds/{section}', [EmployeePdsController::class, 'update'])
             ->whereIn('section', PdsSchema::editableSectionKeys())
             ->name('admin.hr.employees.pds.update');
+        Route::post('admin/hr/employees/{employee}/pds/import', [EmployeePdsImportController::class, 'preview'])->name('admin.hr.employees.pds.import');
+        Route::post('admin/hr/employees/{employee}/pds/import/apply', [EmployeePdsImportController::class, 'apply'])->name('admin.hr.employees.pds.import.apply');
         Route::post('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'storeFor'])->name('admin.hr.employees.pds.photo.store');
         Route::delete('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'destroyFor'])->name('admin.hr.employees.pds.photo.destroy');
     });
