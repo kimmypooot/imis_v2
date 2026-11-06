@@ -93,20 +93,35 @@ const systems = computed(() => sections.value.filter((section) => section.kind =
                 <p class="text-xs text-text-muted">{{ summary.systems }} systems, IMIS included</p>
             </div>
             <template v-if="summary.withTargets">
-                <div class="rounded-lg border border-l-4 border-border border-l-success bg-surface p-4">
-                    <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">On track</p>
-                    <p class="mt-1 text-2xl font-bold text-text">{{ summary.onTrack }}</p>
-                    <p class="text-xs text-text-muted">of {{ summary.withTargets }} figures with targets</p>
+                <div class="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4">
+                    <div>
+                        <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">On track</p>
+                        <p class="mt-1 text-2xl font-bold text-text">{{ summary.onTrack }}</p>
+                        <p class="text-xs text-text-muted">of {{ summary.withTargets }} figures with targets</p>
+                    </div>
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg text-success" aria-hidden="true">
+                        <Icon name="checkCircle" size="sm" />
+                    </span>
                 </div>
-                <div class="rounded-lg border border-l-4 border-border border-l-warning bg-surface p-4">
-                    <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">At risk</p>
-                    <p class="mt-1 text-2xl font-bold text-text">{{ summary.atRisk }}</p>
-                    <p class="text-xs text-text-muted">short of target, within tolerance</p>
+                <div class="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4">
+                    <div>
+                        <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">At risk</p>
+                        <p class="mt-1 text-2xl font-bold text-text">{{ summary.atRisk }}</p>
+                        <p class="text-xs text-text-muted">short of target, within tolerance</p>
+                    </div>
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-bg text-warning" aria-hidden="true">
+                        <Icon name="exclamation" size="sm" />
+                    </span>
                 </div>
-                <div class="rounded-lg border border-l-4 border-border border-l-danger bg-surface p-4">
-                    <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">Behind</p>
-                    <p class="mt-1 text-2xl font-bold text-text">{{ summary.behind }}</p>
-                    <p class="text-xs text-text-muted">needs action</p>
+                <div class="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4">
+                    <div>
+                        <p class="text-xs font-semibold tracking-wide text-text-muted uppercase">Behind</p>
+                        <p class="mt-1 text-2xl font-bold text-text">{{ summary.behind }}</p>
+                        <p class="text-xs text-text-muted">needs action</p>
+                    </div>
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger" aria-hidden="true">
+                        <Icon name="xCircle" size="sm" />
+                    </span>
                 </div>
             </template>
             <div v-else class="rounded-lg border border-dashed border-border bg-surface p-4 sm:col-span-1 lg:col-span-3">

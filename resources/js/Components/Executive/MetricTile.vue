@@ -21,7 +21,6 @@ const change = computed(() => formatChange(props.metric.change?.value, props.met
 const since = computed(() =>
     props.metric.change ? new Date(`${props.metric.change.since}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null,
 );
-const edge = { success: 'border-l-success', warning: 'border-l-warning', danger: 'border-l-danger' };
 
 // The trend line: a 100 × 28 box, points spread evenly, nulls skipped.
 const points = computed(() => props.metric.trend.filter((point) => point.value !== null));
@@ -46,7 +45,7 @@ const largest = computed(() => Math.max(...props.metric.breakdown.map((row) => r
 </script>
 
 <template>
-    <article class="flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-4 transition duration-200 hover:border-primary/40 hover:shadow-sm" :class="status ? ['border-l-4', edge[status.tone]] : null">
+    <article class="flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-4 transition duration-200 hover:border-primary/40 hover:shadow-sm">
         <div class="flex items-start justify-between gap-2">
             <h3 class="text-sm font-medium text-text-muted">{{ metric.label }}</h3>
             <Badge v-if="status" :tone="status.tone" class="shrink-0">{{ status.label }}</Badge>
