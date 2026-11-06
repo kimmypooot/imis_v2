@@ -3,12 +3,13 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
 import Skeleton from '../UI/Skeleton.vue';
-import { formatDateTime } from '../../Utils/datetime';
+import { dayGroup, formatDateTime, timeAgo } from '../../Utils/datetime';
 
 /**
  * The top-bar bell: a small dropdown with the latest notifications, a
  * "Mark all as read" shortcut, and "Show all notifications" at the bottom.
- * The list is fetched each time it opens. On phones the panel spans the
+ * Each item shows an icon for its kind, how long ago it came in, and is
+ * grouped by day; unread ones are tinted. The list is fetched each time it opens. On phones the panel spans the
  * screen under the top bar instead of hanging off the bell.
  */
 const props = defineProps({
@@ -27,6 +28,26 @@ const count = ref(props.unread);
 watch(() => props.unread, (value) => {
     count.value = value;
 });
+
+// Same icons as the full Notifications page, so a list scans by shape.
+const kindIcons = { leave: 'calendar', executive: 'chartBar', hr: 'users', feedback: 'chat', payslip: 'database', pds: 'clipboard' };
+const iconFor = (item) => kindIcons[item.kind?.split('_')[0]] ?? 'bell';
+
+// Newest first, filed under Today / Yesterday / This week / Earlier.
+const groups = computed(() =>
+    items.value.reduce((list, item) => {
+        const label = dayGroup(item.created_at);
+        const last = list.at(-1);
+
+        if (last?.label === label) {
+            last.items.push(item);
+        } else {
+            list.push({ label, items: [item] });
+        }
+
+        return list;
+    }, []),
+);
 
 const badge = computed(() => (count.value > 99 ? '99+' : count.value));
 
@@ -148,10 +169,13 @@ onBeforeUnmount(() => {
         <div
             v-if="open"
             id="notification-menu-panel"
-            class="fixed inset-x-2 top-[4.25rem] z-50 flex max-h-[calc(100dvh-5rem)] flex-col rounded-md border border-border bg-surface shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96"
+            class="fixed inset-x-2 top-[4.25rem] z-50 flex max-h-[calc(100dvh-5rem)] flex-col rounded-md border border-border bg-surface shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem]"
         >
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-border px-3 py-2">
-                <h2 class="text-sm font-semibold text-text">Notifications</h2>
+                <h2 class="flex items-center gap-2 text-[0.8125rem] font-semibold text-text">
+                    Notifications
+                    <span v-if="count" class="rounded-full bg-info-bg px-2 py-0.5 text-[0.7rem] font-medium text-primary">{{ badge }} new</span>
+                </h2>
                 <button
                     v-if="count"
                     type="button"
@@ -173,26 +197,44 @@ onBeforeUnmount(() => {
                     <span class="sr-only">Loading…</span>
                 </div>
                 <p v-else-if="failed" class="px-3 py-6 text-center text-sm text-danger">Couldn't load notifications. Try again.</p>
-                <p v-else-if="!items.length" class="px-3 py-6 text-center text-sm text-text-muted">You're all caught up.</p>
-                <ul v-else class="divide-y divide-border">
-                    <li v-for="item in items" :key="item.id">
-                        <a :href="`/notifications/${item.id}`" class="flex gap-3 px-3 py-2.5 hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring">
-                            <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" :class="item.read ? 'bg-transparent' : 'bg-primary'" aria-hidden="true" />
-                            <span class="min-w-0">
-                                <span class="block text-sm text-text" :class="item.read ? '' : 'font-semibold'">
-                                    {{ item.title }}<span v-if="!item.read" class="sr-only"> (unread)</span>
-                                </span>
-                                <span class="line-clamp-2 block text-sm text-text-muted">{{ item.message }}</span>
-                                <span class="block text-xs text-text-muted">{{ formatDateTime(item.created_at) }}</span>
-                            </span>
-                        </a>
-                    </li>
-                </ul>
+                <p v-else-if="!items.length" class="px-3 py-6 text-center text-xs text-text-muted">You're all caught up.</p>
+                <div v-else>
+                    <section v-for="group in groups" :key="group.label" :aria-label="group.label">
+                        <h3 class="sticky top-0 border-b border-border bg-surface-muted px-3 py-1 text-[0.7rem] font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h3>
+                        <ul class="divide-y divide-border">
+                            <li v-for="item in group.items" :key="item.id">
+                                <a
+                                    :href="`/notifications/${item.id}`"
+                                    class="flex gap-3 px-3 py-3 hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+                                    :class="item.read ? '' : 'bg-info-bg/40'"
+                                >
+                                    <span
+                                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                                        :class="item.read ? 'bg-surface-muted text-text-muted' : 'bg-info-bg text-primary'"
+                                        aria-hidden="true"
+                                    >
+                                        <Icon :name="iconFor(item)" size="sm" />
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="flex items-start justify-between gap-2">
+                                            <span class="block text-[0.8125rem] leading-snug text-text" :class="item.read ? '' : 'font-semibold'">
+                                                {{ item.title }}<span v-if="!item.read" class="sr-only"> (unread)</span>
+                                            </span>
+                                            <span v-if="!item.read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                                        </span>
+                                        <span class="line-clamp-2 block text-xs leading-snug text-text-muted">{{ item.message }}</span>
+                                        <time :datetime="item.created_at" :title="formatDateTime(item.created_at)" class="mt-0.5 block text-[0.7rem] text-text-muted">{{ timeAgo(item.created_at) }}</time>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                </div>
             </div>
 
             <Link
                 href="/notifications"
-                class="shrink-0 rounded-b-md border-t border-border px-3 py-2.5 text-center text-sm font-medium text-primary hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+                class="shrink-0 rounded-b-md border-t border-border px-3 py-2 text-center text-xs font-medium text-primary hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
                 @click="close"
             >Show all notifications</Link>
         </div>

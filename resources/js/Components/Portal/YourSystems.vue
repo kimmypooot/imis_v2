@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Icon from '../UI/Icon.vue';
 import ExternalLinkIndicator from './ExternalLinkIndicator.vue';
 
@@ -8,7 +8,8 @@ import ExternalLinkIndicator from './ExternalLinkIndicator.vue';
  * Systems Directory: the four you opened most recently (from the launch
  * records IMIS already keeps), filled up from your other systems when you
  * have opened fewer. Nothing extra is tracked. A system under maintenance that you may still open
- * is marked in amber. The directory below stays the full list.
+ * is marked in amber. The directory below stays the full list. The row can
+ * be hidden; the choice is remembered on this browser.
  */
 const props = defineProps({
     directory: { type: Object, required: true /** { categories, systems } */ },
@@ -18,6 +19,27 @@ const props = defineProps({
 
 const SHOWN = 4;
 const expanded = ref(false);
+
+const HIDDEN_KEY = 'imis.hide-your-systems';
+const hidden = ref(false);
+
+onMounted(() => {
+    try {
+        hidden.value = window.localStorage.getItem(HIDDEN_KEY) === '1';
+    } catch {
+        // Storage unavailable — the row simply stays visible.
+    }
+});
+
+const toggleHidden = () => {
+    hidden.value = !hidden.value;
+
+    try {
+        window.localStorage.setItem(HIDDEN_KEY, hidden.value ? '1' : '0');
+    } catch {
+        // Storage unavailable — the choice lasts until the page reloads.
+    }
+};
 
 // Systems you can open: the ones you opened lately first, then the rest A to Z.
 const mine = computed(() => {
@@ -40,20 +62,31 @@ const shown = computed(() => (expanded.value ? mine.value : mine.value.slice(0, 
         <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
                 <h2 id="your-systems-heading" class="text-lg font-semibold text-text">Your systems</h2>
-                <p class="text-sm text-text-muted">{{ hasRecent ? 'The ones you opened most recently, one click away.' : 'The systems you have a role in, one click away.' }}</p>
+                <p v-if="!hidden" class="text-sm text-text-muted">{{ hasRecent ? 'The ones you opened most recently, one click away.' : 'The systems you have a role in, one click away.' }}</p>
             </div>
-            <button
-                v-if="mine.length > SHOWN"
-                type="button"
-                class="rounded-sm text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :aria-expanded="expanded"
-                @click="expanded = !expanded"
-            >
-                {{ expanded ? 'Show fewer' : `Show all ${mine.length}` }}
-            </button>
+            <div class="flex items-center gap-4">
+                <button
+                    v-if="!hidden && mine.length > SHOWN"
+                    type="button"
+                    class="rounded-sm text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    :aria-expanded="expanded"
+                    @click="expanded = !expanded"
+                >
+                    {{ expanded ? 'Show fewer' : `Show all ${mine.length}` }}
+                </button>
+                <button
+                    type="button"
+                    class="rounded-sm text-sm font-medium text-text-muted hover:text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    :aria-expanded="!hidden"
+                    aria-controls="your-systems-list"
+                    @click="toggleHidden"
+                >
+                    {{ hidden ? 'Show' : 'Hide' }}
+                </button>
+            </div>
         </div>
 
-        <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ul v-show="!hidden" id="your-systems-list" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <li v-for="system in shown" :key="system.id">
                 <a
                     :href="`/applications/${system.id}/launch`"

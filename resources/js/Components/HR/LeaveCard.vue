@@ -47,7 +47,8 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
 
 <template>
     <div class="space-y-6">
-        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <!-- On wide screens the cards share one row edge to edge (up to six), whatever their number. -->
+        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]" :style="{ '--cols': Math.min(Math.max(balances.length, 1), 6) }">
             <div v-for="balance in balances" :key="balance.type_id" class="relative overflow-hidden rounded-lg border border-border bg-surface p-4 transition-colors hover:border-primary/40">
                 <span class="absolute inset-x-0 top-0 h-0.5" :class="balance.balance > 0 ? 'bg-primary' : 'bg-border-strong'" aria-hidden="true" />
                 <dt class="text-xs font-medium text-text-muted" :title="balance.name">{{ balance.code }} · {{ balance.name }}</dt>
