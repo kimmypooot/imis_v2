@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../../../Components/UI/Badge.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
@@ -117,9 +118,9 @@ const save = (changes) => {
                 <span :title="row.office_name">{{ row.office || '—' }}</span>
             </template>
             <template #cell-systems_count="{ row }">
-                <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="row.systems_count ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted'">
+                <Badge pill :tone="row.systems_count ? 'success' : 'neutral'">
                     {{ row.systems_count }}
-                </span>
+                </Badge>
             </template>
             <template #cell-status="{ row }">
                 <StatusBadge :status="row.status" />

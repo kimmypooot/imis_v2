@@ -159,7 +159,7 @@ const field = 'mt-1 block w-full';
                     step="0.001"
                     required
                     :aria-invalid="!!entry.errors.amount"
-                    class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
                 <p class="mt-1 text-xs text-text-muted">An adjustment can be negative (a deduction).</p>
                 <InputError :message="entry.errors.amount" />
@@ -202,7 +202,7 @@ const field = 'mt-1 block w-full';
             </div>
             <div class="sm:col-span-2">
                 <label class="inline-flex items-center gap-2 text-sm text-text">
-                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Solo parent (for Solo Parent Leave)
                 </label>
             </div>

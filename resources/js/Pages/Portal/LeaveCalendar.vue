@@ -117,19 +117,19 @@ const pending = (item) => item.status !== 'approved';
                             <template v-if="date">
                                 <button
                                     type="button"
-                                    class="w-full rounded px-0.5 text-left text-xs font-semibold text-text hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                    class="w-full rounded-sm px-0.5 text-left text-xs font-semibold text-text hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                                     :aria-label="`${formatCalendarDate(iso(date))}: show who is on leave`"
                                     :aria-pressed="iso(date) === selected"
                                     @click="selected = iso(date)"
                                 >
                                     {{ date.getDate() }}
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded bg-info-bg px-1 text-[0.7rem] text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
+                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
                                 <Link
                                     v-for="item in leaveOn(date)"
                                     :key="item.id"
                                     :href="`/leave/applications/${item.id}`"
-                                    class="mt-0.5 block truncate rounded px-1 text-[0.7rem]"
+                                    class="mt-0.5 block truncate rounded-sm px-1 text-2xs"
                                     :class="pending(item) ? 'border border-warning text-warning' : 'bg-success text-white'"
                                     :title="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`"
                                 >
@@ -138,7 +138,7 @@ const pending = (item) => item.status !== 'approved';
                                 <div
                                     v-for="item in colleaguesOn(date).slice(0, MAX_COLLEAGUES_PER_DAY)"
                                     :key="`c${item.id}`"
-                                    class="mt-0.5 truncate rounded px-1 text-[0.7rem]"
+                                    class="mt-0.5 truncate rounded-sm px-1 text-2xs"
                                     :class="pending(item) ? 'border border-primary text-primary' : 'bg-primary text-white'"
                                     :title="`${item.name} (${pending(item) ? 'filed, not yet approved' : 'approved'})`"
                                 >
@@ -147,7 +147,7 @@ const pending = (item) => item.status !== 'approved';
                                 <button
                                     v-if="colleaguesOn(date).length > MAX_COLLEAGUES_PER_DAY"
                                     type="button"
-                                    class="mt-0.5 text-[0.7rem] font-medium text-primary hover:underline"
+                                    class="mt-0.5 text-2xs font-medium text-primary hover:underline"
                                     @click="selected = iso(date)"
                                 >
                                     +{{ colleaguesOn(date).length - MAX_COLLEAGUES_PER_DAY }} more

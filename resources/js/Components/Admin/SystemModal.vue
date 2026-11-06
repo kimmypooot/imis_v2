@@ -267,7 +267,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                     </p>
 
                     <div class="overflow-x-auto rounded-md border border-border">
-                        <table class="min-w-full text-[0.8125rem]">
+                        <table class="min-w-full text-compact">
                             <thead class="table-head">
                                 <tr>
                                     <th scope="col" class="px-3 py-2">Role name</th>

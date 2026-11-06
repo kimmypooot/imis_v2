@@ -122,7 +122,7 @@ const destroy = async () => {
     }
 };
 
-const cellClass = 'w-28 rounded border border-border bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
+const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>

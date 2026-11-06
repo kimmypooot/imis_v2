@@ -49,7 +49,7 @@ const sections = computed(() =>
     <div :class="signedIn ? '' : 'min-h-dvh bg-surface-muted px-4 py-8 sm:px-6'">
         <div class="mx-auto max-w-5xl">
             <!-- Hero -->
-            <header class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            <header class="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
                 <div class="h-1.5 bg-csc-red" />
                 <div class="bg-csc-blue px-6 py-8 text-white sm:px-10">
                     <div v-if="!signedIn" class="mb-5 flex items-center gap-3">
@@ -64,7 +64,7 @@ const sections = computed(() =>
                         </span>
                         <div>
                             <span
-                                class="inline-block rounded-full bg-white/15 px-3 py-0.5 text-[0.68rem] font-semibold tracking-widest uppercase"
+                                class="inline-block rounded-full bg-white/15 px-3 py-0.5 text-2xs font-semibold tracking-widest uppercase"
                             >
                                 Data Privacy Act of 2012 · RA 10173
                             </span>
@@ -95,7 +95,7 @@ const sections = computed(() =>
                                 class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface-muted hover:text-primary"
                             >
                                 <span
-                                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-info-bg text-[0.68rem] font-semibold text-primary"
+                                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-info-bg text-2xs font-semibold text-primary"
                                 >
                                     {{ section.number }}
                                 </span>
@@ -116,7 +116,7 @@ const sections = computed(() =>
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info-bg text-primary">
                                 <Icon :name="section.icon" size="sm" />
                             </span>
-                            <h2 class="text-base font-semibold text-text sm:text-lg">{{ section.title }}</h2>
+                            <h2 class="text-base font-semibold text-text">{{ section.title }}</h2>
                         </div>
                         <ul class="mt-4 space-y-2.5 text-sm leading-relaxed text-text">
                             <li v-for="item in section.items" :key="item" class="flex items-start gap-2.5">
@@ -143,7 +143,7 @@ const sections = computed(() =>
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70 text-warning">
                                 <Icon name="info" size="sm" />
                             </span>
-                            <h2 class="text-base font-semibold text-text sm:text-lg">From the office</h2>
+                            <h2 class="text-base font-semibold text-text">From the office</h2>
                         </div>
                         <p class="mt-3 text-sm leading-relaxed whitespace-pre-line text-text">{{ notice.extra }}</p>
                     </section>
@@ -154,7 +154,7 @@ const sections = computed(() =>
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-danger-bg text-csc-red">
                                 <Icon name="envelope" size="sm" />
                             </span>
-                            <h2 class="text-base font-semibold text-text sm:text-lg">Questions and requests</h2>
+                            <h2 class="text-base font-semibold text-text">Questions and requests</h2>
                         </div>
                         <p class="mt-3 text-sm leading-relaxed text-text">
                             <template v-if="notice.contact.name">Contact {{ notice.contact.name }}, the Data Protection Officer</template>

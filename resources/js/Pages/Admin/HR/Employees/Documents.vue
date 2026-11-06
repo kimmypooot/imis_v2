@@ -77,7 +77,7 @@ const breadcrumbs = computed(() => [
         <Card title="Documents" icon="clipboard" :description="`${active.length} current`">
             <template v-if="archived.length" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Show archived ({{ archived.length }})
                 </label>
             </template>

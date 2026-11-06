@@ -81,7 +81,7 @@ const toastStyles = {
     <Teleport to="body">
         <!-- Alert / confirm -->
         <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0 scale-95" leave-active-class="transition duration-100" leave-to-class="opacity-0">
-            <div v-if="state.dialog" class="fixed inset-0 z-[90] flex items-center justify-center p-4">
+            <div v-if="state.dialog" class="fixed inset-0 z-dialog flex items-center justify-center p-4">
                 <div class="fixed inset-0 bg-text/50" aria-hidden="true" @click="settle(false)" />
                 <div
                     ref="alertRef"
@@ -127,7 +127,7 @@ const toastStyles = {
         </Transition>
 
         <!-- Toasts -->
-        <div class="pointer-events-none fixed top-20 right-4 z-[95] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
+        <div class="pointer-events-none fixed top-20 right-4 z-toast flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
             <TransitionGroup
                 enter-active-class="transition duration-200 ease-out motion-reduce:transition-none"
                 enter-from-class="translate-y-2 opacity-0"

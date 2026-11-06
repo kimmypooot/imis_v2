@@ -40,7 +40,7 @@ const sign = () =>
 <template>
     <Modal :open="open" title="Sign and submit your PDS" icon="pencil" tone="primary" size="lg" @close="emit('close')">
         <form id="pds-sign-form" class="space-y-4" @submit.prevent="sign">
-            <blockquote class="rounded-md border-l-4 border-primary bg-info-bg px-4 py-3 text-sm text-text">
+            <blockquote class="rounded-md border border-info-border bg-info-bg px-4 py-3 text-sm text-text">
                 I declare under oath that I have personally accomplished this Personal Data Sheet which is a true, correct, and complete
                 statement pursuant to the provisions of pertinent laws, rules, and regulations of the Republic of the Philippines. I authorize
                 the agency head/authorized representative to verify/validate the contents stated herein. I agree that any misrepresentation
@@ -49,7 +49,7 @@ const sign = () =>
 
             <div>
                 <label class="flex items-start gap-2 text-sm font-medium text-text">
-                    <input v-model="form.declaration" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="form.declaration" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     I have read and accept this declaration.
                 </label>
                 <InputError :message="form.errors.declaration" />

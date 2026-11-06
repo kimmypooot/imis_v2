@@ -22,14 +22,14 @@ const brand = useBranding();
 </script>
 
 <template>
-    <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark px-5 py-5 text-center text-white shadow-md md:px-9 md:py-7">
+    <section class="relative overflow-hidden rounded-lg bg-primary px-5 py-5 text-center text-white shadow-md md:px-9 md:py-7">
         <!-- Decorative photo under a navy tint, so the text keeps its contrast. -->
         <div
             class="absolute inset-0 bg-cover bg-center"
             :style="{ backgroundImage: `url('${brand.login_background}')` }"
             aria-hidden="true"
         />
-        <div class="absolute inset-0 bg-linear-to-br from-csc-blue/92 via-csc-blue/90 to-csc-blue-dark/95" aria-hidden="true" />
+        <div class="absolute inset-0 bg-csc-blue/90" aria-hidden="true" />
 
         <OrbitCircles />
 

@@ -11,7 +11,7 @@ import Icon from '../../../../Components/UI/Icon.vue';
 import Modal from '../../../../Components/Feedback/Modal.vue';
 import InputError from '../../../../Components/Forms/InputError.vue';
 import Textarea from '../../../../Components/Forms/Textarea.vue';
-import MetricCard from '../../../../Components/Admin/MetricCard.vue';
+import StatTile from '../../../../Components/UI/StatTile.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { formatPeso } from '../../../../Utils/money';
 
@@ -72,21 +72,21 @@ const columns = [
     </PageHeader>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Latest payroll" :value="latest ? latest.period : '—'" icon="calendar" tone="primary">
+        <StatTile label="Latest payroll" :value="latest ? latest.period : '—'" icon="calendar" tone="primary">
             <template v-if="latest">{{ latest.status_label }} · {{ latest.totals.people }} people</template>
             <template v-else>none yet</template>
-        </MetricCard>
-        <MetricCard label="Net pay, latest" :value="latest ? formatPeso(latest.totals.net) : '—'" icon="database" tone="primary">
+        </StatTile>
+        <StatTile label="Net pay, latest" :value="latest ? formatPeso(latest.totals.net) : '—'" icon="database" tone="primary">
             <template v-if="latest">gross {{ formatPeso(latest.totals.gross) }}</template>
-        </MetricCard>
-        <MetricCard label="Payslip requests" :value="requests.pending ?? 0" icon="clipboard" :tone="requests.pending ? 'warning' : 'primary'">
+        </StatTile>
+        <StatTile label="Payslip requests" :value="requests.pending ?? 0" icon="clipboard" :tone="requests.pending ? 'warning' : 'primary'">
             waiting for the head of HRD ·
             <Link href="/admin/hr/payroll/requests" class="font-semibold text-primary hover:underline">see all</Link>
-        </MetricCard>
-        <MetricCard label="Active loans" :value="loans.active" icon="key" tone="primary">
+        </StatTile>
+        <StatTile label="Active loans" :value="loans.active" icon="key" tone="primary">
             {{ formatPeso(loans.balance) }} outstanding ·
             <Link href="/admin/hr/payroll/loans" class="font-semibold text-primary hover:underline">see all</Link>
-        </MetricCard>
+        </StatTile>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
@@ -153,7 +153,7 @@ const columns = [
                     v-model="form.month"
                     type="month"
                     required
-                    class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
                 <InputError :message="form.errors.month" />
             </div>

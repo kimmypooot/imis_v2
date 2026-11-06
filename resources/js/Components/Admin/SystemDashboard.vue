@@ -4,7 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import Card from '../UI/Card.vue';
 import Badge from '../UI/Badge.vue';
 import StatusBadge from '../UI/StatusBadge.vue';
-import MetricCard from './MetricCard.vue';
+import StatTile from '../UI/StatTile.vue';
 import SimpleChart from '../Charts/SimpleChart.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { formatDateTime } from '../../Utils/datetime';
@@ -29,11 +29,11 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
     <div class="space-y-4">
         <!-- Row 1: metric cards -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard v-if="metrics.users" label="Total Users" :value="metrics.users.total" icon="users" tone="primary">
+            <StatTile v-if="metrics.users" label="Total Users" :value="metrics.users.total" icon="users" tone="primary">
                 <span class="font-semibold text-success">{{ metrics.users.active }}</span> active ·
                 {{ metrics.users.inactive }} inactive
-            </MetricCard>
-            <MetricCard
+            </StatTile>
+            <StatTile
                 v-if="metrics.systems"
                 label="Registered Systems"
                 :value="metrics.systems.total"
@@ -43,8 +43,8 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
             >
                 <span class="font-semibold text-success">{{ metrics.systems.active }}</span> active
                 <template v-if="metrics.systems.underMaintenance"> · <span class="text-warning">{{ metrics.systems.underMaintenance }}</span> in maintenance</template>
-            </MetricCard>
-            <MetricCard
+            </StatTile>
+            <StatTile
                 v-if="metrics.access"
                 label="Access Grants"
                 :value="metrics.access.grants"
@@ -54,13 +54,13 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
             >
                 <span class="font-semibold text-success">{{ metrics.access.usersWithAccess }}</span> people with access ·
                 {{ metrics.access.usersWithoutAccess }} without
-            </MetricCard>
-            <MetricCard v-if="metrics.logins" label="Login Activity" :value="metrics.logins.today ?? '—'" icon="activity" tone="info">
+            </StatTile>
+            <StatTile v-if="metrics.logins" label="Login Activity" :value="metrics.logins.today ?? '—'" icon="activity" tone="info">
                 logins today
                 <template v-if="metrics.logins.activeSessions !== null">
                     · <Link href="/admin/sessions" class="font-semibold text-primary hover:underline">{{ metrics.logins.activeSessions }} active now</Link>
                 </template>
-            </MetricCard>
+            </StatTile>
         </div>
 
         <!-- Row 2: login trend + IMIS roles -->
@@ -114,7 +114,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
         <div class="grid gap-4 xl:grid-cols-12">
             <Card v-if="dashboard.accessBySystem" title="Top Systems" icon="grid" class="xl:col-span-5">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-[0.8125rem]">
+                    <table class="w-full text-compact">
                         <caption class="sr-only">Systems with the most people assigned</caption>
                         <thead class="table-head">
                             <tr>
@@ -151,7 +151,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                     <Link href="/admin/user-access" class="text-sm font-medium text-primary hover:text-primary-hover">Assign access</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-[0.8125rem]">
+                    <table class="w-full text-compact">
                         <caption class="sr-only">Active accounts with no system access</caption>
                         <thead class="sticky top-0 table-head">
                             <tr>

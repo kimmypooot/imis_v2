@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../../../Components/UI/Badge.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
@@ -116,9 +117,9 @@ const columns = [
     <div class="grid items-start gap-6 xl:grid-cols-12">
         <Card v-if="can('changelogs.manage')" :title="isEditing ? `Edit Release ${current.version}` : 'New Release'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
             <template #actions>
-                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="isEditing ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'">
+                <Badge pill :tone="isEditing ? 'warning' : 'success'">
                     {{ isEditing ? 'Editing' : 'New draft' }}
-                </span>
+                </Badge>
             </template>
 
             <form class="space-y-4" @submit.prevent="submit">
@@ -153,7 +154,7 @@ const columns = [
                                         v-model="item.description"
                                         rows="2"
                                         maxlength="500"
-                                        class="block w-full rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                        class="form-control block w-full px-2 py-1.5"
                                     />
                                 </div>
                             </div>
@@ -185,7 +186,7 @@ const columns = [
         <Card title="Releases" icon="megaphone" :class="can('changelogs.manage') ? 'xl:col-span-7' : 'xl:col-span-12'">
             <DataTable :columns="columns" :rows="changelogs" caption="Releases" export-name="imis-changelog" :numbered="false">
                 <template #cell-version="{ row }">
-                    <span class="rounded bg-info-bg px-2 py-0.5 font-mono text-xs text-primary">v{{ row.version }}</span>
+                    <span class="rounded-sm bg-info-bg px-2 py-0.5 font-mono text-xs text-primary">v{{ row.version }}</span>
                 </template>
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">{{ row.title }}</div>

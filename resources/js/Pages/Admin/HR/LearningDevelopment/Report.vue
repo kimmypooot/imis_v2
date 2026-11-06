@@ -57,8 +57,6 @@ const columns = [
     { key: 'date_to', label: 'End' },
 ];
 
-const selectClass =
-    'rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -74,20 +72,20 @@ const selectClass =
             <div class="flex flex-wrap items-end gap-4">
                 <div>
                     <label for="report-year" class="mb-1 block text-xs font-medium text-text-muted">Year</label>
-                    <select id="report-year" :value="filters.year" :class="selectClass" @change="apply({ year: $event.target.value })">
+                    <select id="report-year" :value="filters.year" class="filter-control" @change="apply({ year: $event.target.value })">
                         <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
                     </select>
                 </div>
                 <div>
                     <label for="report-month" class="mb-1 block text-xs font-medium text-text-muted">Month</label>
-                    <select id="report-month" :value="filters.month ?? ''" :class="selectClass" @change="apply({ month: $event.target.value || null })">
+                    <select id="report-month" :value="filters.month ?? ''" class="filter-control" @change="apply({ month: $event.target.value || null })">
                         <option value="">All months</option>
                         <option v-for="(name, index) in MONTHS" :key="name" :value="index + 1">{{ name }}</option>
                     </select>
                 </div>
                 <div>
                     <label for="report-office" class="mb-1 block text-xs font-medium text-text-muted">Office</label>
-                    <select id="report-office" :value="filters.office ?? ''" :class="selectClass" @change="apply({ office: $event.target.value || null })">
+                    <select id="report-office" :value="filters.office ?? ''" class="filter-control" @change="apply({ office: $event.target.value || null })">
                         <option value="">All offices</option>
                         <option v-for="office in officeOptions" :key="office.value" :value="office.value">{{ office.label }}</option>
                     </select>

@@ -104,7 +104,7 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
                             type="checkbox"
                             :value="section.key"
                             :disabled="!importable(section)"
-                            class="mt-1 h-4 w-4 rounded border-border-strong text-primary focus:ring-focus-ring"
+                            class="mt-1 h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-focus-ring"
                         />
                         <span class="min-w-0 flex-1">
                             <span class="block text-sm font-medium text-text">{{ section.label }}</span>

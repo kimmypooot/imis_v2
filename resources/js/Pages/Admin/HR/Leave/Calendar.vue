@@ -89,7 +89,6 @@ const selectedHoliday = computed(() => props.holidays.find((holiday) => holiday.
 
 const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white' : 'border border-warning text-warning');
 
-const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -99,12 +98,12 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
         <template #actions>
             <span v-if="!seesEveryone && division" class="inline-flex items-center rounded-md bg-info-bg px-3 py-2 text-sm font-medium text-primary">{{ division }}</span>
             <label v-if="seesEveryone" class="sr-only" for="cal-office">Office</label>
-            <select v-if="seesEveryone" id="cal-office" :value="filters.office ?? ''" :class="selectClass" @change="visit({ office: $event.target.value || null })">
+            <select v-if="seesEveryone" id="cal-office" :value="filters.office ?? ''" class="filter-control" @change="visit({ office: $event.target.value || null })">
                 <option value="">All offices</option>
                 <option v-for="option in officeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
             <label class="sr-only" for="cal-type">Type of leave</label>
-            <select id="cal-type" :value="filters.type ?? ''" :class="selectClass" @change="visit({ type: $event.target.value || null })">
+            <select id="cal-type" :value="filters.type ?? ''" class="filter-control" @change="visit({ type: $event.target.value || null })">
                 <option value="">All types of leave</option>
                 <option v-for="option in typeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
@@ -147,20 +146,20 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                             <template v-if="date">
                                 <button
                                     type="button"
-                                    class="flex w-full items-center justify-between rounded px-0.5 text-xs font-semibold text-text hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                    class="flex w-full items-center justify-between rounded-sm px-0.5 text-xs font-semibold text-text hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                                     :aria-label="`${formatCalendarDate(iso(date))}: ${leaveOn(date).length} on leave`"
                                     :aria-pressed="iso(date) === selected"
                                     @click="selected = iso(date)"
                                 >
                                     <span>{{ date.getDate() }}</span>
-                                    <span v-if="leaveOn(date).length" class="rounded-full bg-primary px-1.5 text-[0.65rem] font-medium text-white">{{ leaveOn(date).length }}</span>
+                                    <span v-if="leaveOn(date).length" class="rounded-full bg-primary px-1.5 text-2xs font-medium text-white">{{ leaveOn(date).length }}</span>
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded bg-info-bg px-1 text-[0.7rem] text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
+                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
                                 <Link
                                     v-for="item in leaveOn(date).slice(0, MAX_PER_DAY)"
                                     :key="item.id"
                                     :href="`/leave/applications/${item.id}`"
-                                    class="mt-0.5 block truncate rounded px-1 text-[0.7rem]"
+                                    class="mt-0.5 block truncate rounded-sm px-1 text-2xs"
                                     :class="chipClass(item)"
                                     :title="`${item.name} — ${item.type_name} (${item.status_label})`"
                                 >
@@ -169,7 +168,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                                 <button
                                     v-if="leaveOn(date).length > MAX_PER_DAY"
                                     type="button"
-                                    class="mt-0.5 text-[0.7rem] font-medium text-primary hover:underline"
+                                    class="mt-0.5 text-2xs font-medium text-primary hover:underline"
                                     @click="selected = iso(date)"
                                 >
                                     +{{ leaveOn(date).length - MAX_PER_DAY }} more

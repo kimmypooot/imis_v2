@@ -55,7 +55,7 @@ onBeforeUnmount(() => window.clearInterval(clock));
                     Data as of {{ formatDateTime(generatedAt) }}
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1 rounded-md border border-white/30 px-2 py-0.5 font-medium text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-60"
+                        class="inline-flex items-center gap-1 rounded-md border border-white/30 px-2 py-0.5 font-medium text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark disabled:cursor-not-allowed disabled:opacity-60"
                         :disabled="refreshing"
                         @click="$emit('refresh')"
                     >
@@ -69,7 +69,7 @@ onBeforeUnmount(() => window.clearInterval(clock));
                     v-for="action in actions"
                     :key="action.href"
                     :href="action.href"
-                    class="inline-flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    class="inline-flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-2 text-sm font-medium transition-colors hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
                 >
                     <Icon :name="action.icon" size="sm" />
                     {{ action.label }}

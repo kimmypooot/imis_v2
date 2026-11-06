@@ -1,8 +1,9 @@
 <script setup>
+import Badge from '../UI/Badge.vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import Card from '../UI/Card.vue';
-import MetricCard from './MetricCard.vue';
+import StatTile from '../UI/StatTile.vue';
 import SimpleChart from '../Charts/SimpleChart.vue';
 import SplitBar from '../Charts/SplitBar.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
@@ -45,10 +46,10 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
     <div class="space-y-4">
         <!-- Headline numbers -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Personnel in service" :value="hr.headcount" icon="users" tone="primary">
+            <StatTile label="Personnel in service" :value="hr.headcount" icon="users" tone="primary">
                 {{ hr.sex.female }} female · {{ hr.sex.male }} male<template v-if="hr.age.average !== null"> · average age {{ hr.age.average }}</template>
-            </MetricCard>
-            <MetricCard
+            </StatTile>
+            <StatTile
                 v-if="hr.plantilla"
                 label="Plantilla filled"
                 :value="`${percent(hr.plantilla.filled, hr.plantilla.items)}%`"
@@ -58,13 +59,13 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
             >
                 {{ hr.plantilla.filled }} of {{ hr.plantilla.items }} items ·
                 <Link href="/admin/hr/staffing" class="font-semibold text-primary hover:underline">{{ hr.plantilla.vacant }} vacant</Link>
-            </MetricCard>
-            <MetricCard v-if="hr.leave" label="On leave today" :value="onLeaveToday" icon="calendar" tone="info">
+            </StatTile>
+            <StatTile v-if="hr.leave" label="On leave today" :value="onLeaveToday" icon="calendar" tone="info">
                 {{ hr.leave.upcoming.length }} more in the next 14 days · {{ hr.leave.inReview }} in review
-            </MetricCard>
-            <MetricCard label="Retirement, next 12 months" :value="hr.retirement.compulsory + hr.retirement.optional" icon="clock" tone="warning">
+            </StatTile>
+            <StatTile label="Retirement, next 12 months" :value="hr.retirement.compulsory + hr.retirement.optional" icon="clock" tone="warning">
                 {{ hr.retirement.compulsory }} compulsory · {{ hr.retirement.optional }} optional · {{ hr.retirement.eligibleNow }} eligible now
-            </MetricCard>
+            </StatTile>
         </div>
 
         <!-- What's waiting, and gaps in the records -->
@@ -73,9 +74,9 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                 <ul class="divide-y divide-border">
                     <li v-for="item in hr.pending" :key="item.href" class="flex items-center justify-between py-2 text-sm">
                         <Link :href="item.href" class="font-medium text-primary hover:text-primary-hover">{{ item.label }}</Link>
-                        <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="item.count ? 'bg-warning-bg text-warning' : 'bg-surface-muted text-text-muted'">
+                        <Badge pill :tone="item.count ? 'warning' : 'neutral'">
                             {{ item.count }}
-                        </span>
+                        </Badge>
                     </li>
                 </ul>
             </Card>
@@ -127,7 +128,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <li v-if="!hr.birthdays.length" class="py-6 text-center text-sm text-text-muted">No birthdays in the next 30 days.</li>
                     <li v-for="person in hr.birthdays" :key="person.employee_id" class="flex items-center gap-3 py-2 text-sm">
                         <span
-                            class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg text-[0.65rem] leading-tight font-semibold"
+                            class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg text-2xs leading-tight font-semibold"
                             :class="person.in_days === 0 ? 'bg-primary text-white' : 'bg-info-bg text-primary'"
                         >
                             {{ shortDate(person.date).split(' ')[0] }}
@@ -144,7 +145,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
 
             <Card title="Upcoming retirees" description="Optional at 60, compulsory at 65 (RA 8291): who reaches either in the next 12 months, and who is already eligible" icon="clock" class="xl:col-span-7">
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-[0.8125rem]">
+                    <table class="w-full text-compact">
                         <caption class="sr-only">Personnel reaching retirement age within 12 months, or already eligible</caption>
                         <thead class="sticky top-0 table-head">
                             <tr>
@@ -197,7 +198,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <Link href="/admin/hr/leave/applications" class="text-sm font-medium text-primary hover:text-primary-hover">All applications</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-[0.8125rem]">
+                    <table class="w-full text-compact">
                         <caption class="sr-only">The latest leave applications</caption>
                         <thead class="sticky top-0 table-head">
                             <tr>
@@ -245,7 +246,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                             <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
                             <div class="text-xs text-text-muted">{{ person.office || '—' }} · {{ formatCalendarDate(person.date) }}</div>
                         </div>
-                        <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">{{ ordinal(person.years) }} year</span>
+                        <Badge pill tone="success">{{ ordinal(person.years) }} year</Badge>
                     </li>
                 </ul>
             </Card>

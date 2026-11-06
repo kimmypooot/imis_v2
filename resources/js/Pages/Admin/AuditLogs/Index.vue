@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../../../Components/UI/Badge.vue';
 import Button from '../../../Components/UI/Button.vue';
 import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
@@ -99,11 +100,11 @@ const columns = [
             </div>
             <div class="lg:col-span-2">
                 <label for="filter-from" class="mb-1 block text-xs font-medium text-text-muted">From</label>
-                <input id="filter-from" v-model="fromDate" type="date" class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm" />
+                <input id="filter-from" v-model="fromDate" type="date" class="block w-full form-control px-3 py-2" />
             </div>
             <div class="lg:col-span-2">
                 <label for="filter-to" class="mb-1 block text-xs font-medium text-text-muted">To</label>
-                <input id="filter-to" v-model="toDate" type="date" class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm" />
+                <input id="filter-to" v-model="toDate" type="date" class="block w-full form-control px-3 py-2" />
             </div>
             <div class="flex items-end gap-2 lg:col-span-2">
                 <Button type="submit">Apply filters</Button>
@@ -122,7 +123,7 @@ const columns = [
             :numbered="false"
         >
             <template #cell-event="{ row }">
-                <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-primary">{{ row.event_label }}</span>
+                <Badge pill tone="info" class="whitespace-nowrap">{{ row.event_label }}</Badge>
             </template>
             <template #cell-description="{ row }">
                 <span class="line-clamp-2 max-w-sm text-text-muted">{{ row.description }}</span>

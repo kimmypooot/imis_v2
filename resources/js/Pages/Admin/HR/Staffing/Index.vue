@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
 import Card from '../../../../Components/UI/Card.vue';
-import MetricCard from '../../../../Components/Admin/MetricCard.vue';
+import StatTile from '../../../../Components/UI/StatTile.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { formatPeso } from '../../../../Utils/money';
@@ -72,10 +72,10 @@ const vacancyColumns = [
 
     <div class="space-y-6">
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Plantilla items" :value="totals.items" icon="grid" tone="primary">{{ totals.filled }} filled</MetricCard>
-            <MetricCard label="Vacant" :value="totals.vacant" icon="clipboard" tone="warning">for the recruitment plan</MetricCard>
-            <MetricCard label="Serving elsewhere" :value="totals.elsewhere" icon="refresh" tone="info">away from their place of assignment</MetricCard>
-            <MetricCard label="Staff without an item" :value="totals.without_item" icon="users" tone="info">not yet on the plantilla</MetricCard>
+            <StatTile label="Plantilla items" :value="totals.items" icon="grid" tone="primary">{{ totals.filled }} filled</StatTile>
+            <StatTile label="Vacant" :value="totals.vacant" icon="clipboard" tone="warning">for the recruitment plan</StatTile>
+            <StatTile label="Serving elsewhere" :value="totals.elsewhere" icon="refresh" tone="info">away from their place of assignment</StatTile>
+            <StatTile label="Staff without an item" :value="totals.without_item" icon="users" tone="info">not yet on the plantilla</StatTile>
         </div>
 
         <p v-if="totals.no_place" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">

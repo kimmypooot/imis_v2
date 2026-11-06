@@ -82,7 +82,7 @@ const breadcrumbs = computed(() => [
             <select
                 id="ld-year"
                 :value="year"
-                class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="form-control px-3 py-2"
                 @change="changeYear($event.target.value)"
             >
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>

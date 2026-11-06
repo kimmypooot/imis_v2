@@ -128,13 +128,13 @@ const onKeydown = (event) => {
                     :maxlength="maxLength"
                     aria-describedby="search-page-hint"
                     :autofocus="query === ''"
-                    class="block w-full rounded-md border border-border-strong bg-surface py-2.5 pl-9 pr-10 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring [&::-webkit-search-cancel-button]:hidden"
+                    class="form-control block w-full py-2.5 pl-9 pr-10 [&::-webkit-search-cancel-button]:hidden"
                     @keydown="onKeydown"
                 />
                 <button
                     v-if="term"
                     type="button"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     aria-label="Clear search"
                     @click="clear"
                 >
@@ -144,7 +144,7 @@ const onKeydown = (event) => {
             <Button type="submit" :loading="loading">Search</Button>
         </div>
         <p id="search-page-hint" class="mt-1 text-xs text-text-muted">
-            Press <kbd class="rounded border border-border bg-surface px-1 font-sans">/</kbd> anywhere to jump here.
+            Press <kbd class="rounded-sm border border-border bg-surface px-1 font-sans">/</kbd> anywhere to jump here.
             Esc clears the box.
         </p>
     </form>

@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../../../Components/UI/Badge.vue';
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
@@ -37,7 +38,7 @@ const columns = [
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Top failing IPs" description="Failed sign-ins in the last 7 days" icon="shield" class="xl:col-span-1">
-            <table class="w-full text-[0.8125rem]">
+            <table class="w-full text-compact">
                 <caption class="sr-only">IP addresses with the most failed sign-ins in the last 7 days</caption>
                 <thead class="table-head">
                     <tr>
@@ -52,9 +53,9 @@ const columns = [
                     <tr v-for="row in topIps" :key="row.ip_address">
                         <td class="px-3 py-2 font-mono text-xs">{{ row.ip_address }}</td>
                         <td class="px-3 py-2 text-right">
-                            <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="row.attempts >= 5 ? 'bg-danger-bg text-danger' : 'bg-warning-bg text-warning'">
+                            <Badge pill :tone="row.attempts >= 5 ? 'danger' : 'warning'">
                                 {{ row.attempts }}
-                            </span>
+                            </Badge>
                         </td>
                     </tr>
                 </tbody>

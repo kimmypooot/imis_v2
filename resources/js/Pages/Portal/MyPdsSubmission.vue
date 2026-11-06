@@ -33,7 +33,7 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
         <Card>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex items-start gap-4">
-                    <img v-if="submission.photo_url" :src="submission.photo_url" alt="PDS photo as signed" class="h-28 w-22 rounded border border-border object-cover" />
+                    <img v-if="submission.photo_url" :src="submission.photo_url" alt="PDS photo as signed" class="h-28 w-22 rounded-sm border border-border object-cover" />
                     <div class="space-y-1">
                         <StatusBadge :status="badge[submission.status]" :label="submission.status_label" />
                         <p v-if="submission.reviewed_at" class="text-sm text-text-muted">

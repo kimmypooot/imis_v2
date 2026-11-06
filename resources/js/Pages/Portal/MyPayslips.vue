@@ -94,7 +94,7 @@ const columns = [
                         type="text"
                         maxlength="255"
                         placeholder="e.g. Bank loan application"
-                        class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     />
                     <InputError :message="form.errors.purpose" />
                 </div>

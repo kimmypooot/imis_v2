@@ -108,7 +108,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                             step="0.5"
                             min="0"
                             :max="application.days"
-                            class="mt-1 block w-40 rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                            class="form-control mt-1 block w-40 px-3 py-2"
                         />
                         <p class="mt-1 text-xs text-text-muted">Leave empty to approve as many days with pay as the credits allow; the rest is without pay.</p>
                         <InputError :message="form.errors.days_with_pay" />

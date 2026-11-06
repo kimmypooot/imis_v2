@@ -67,7 +67,7 @@ const clear = () => {
             <label for="search" class="block text-sm font-medium text-text">Search</label>
             <div class="relative mt-1">
                 <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted" />
-                <input id="search" v-model="search" type="search" autocomplete="off" placeholder="Service name or description" class="block w-full rounded-md border border-border-strong bg-surface py-2 pr-3 pl-9 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                <input id="search" v-model="search" type="search" autocomplete="off" placeholder="Service name or description" class="block w-full form-control py-2 pr-3 pl-9" />
             </div>
         </div>
         <div class="w-56">

@@ -19,7 +19,7 @@ Chart.register(BarController, BarElement, CategoryScale, LinearScale, LineContro
  * One single-series chart for the admin dashboard — a line (change over
  * time) or a horizontal bar (comparing categories). Follows the dataviz
  * method: one validated hue (--color-csc-blue-light, checked for band,
- * chroma, and contrast), thin marks with 4px rounded ends, hairline grid,
+ * chroma, and contrast), thin marks with 4px rounded-sm ends, hairline grid,
  * no legend for a single series (the card title names it), hover
  * tooltips, and a "View as table" so no value is tooltip-only.
  */

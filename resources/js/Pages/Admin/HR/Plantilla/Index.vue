@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
 import Card from '../../../../Components/UI/Card.vue';
-import MetricCard from '../../../../Components/Admin/MetricCard.vue';
+import StatTile from '../../../../Components/UI/StatTile.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -77,12 +77,12 @@ const columns = [
 
     <div class="space-y-6">
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Items" :value="counts.total" icon="grid" tone="primary">not abolished</MetricCard>
-            <MetricCard label="Filled" :value="counts.filled" icon="users" tone="success" :progress="counts.total ? Math.round((counts.filled / counts.total) * 100) : 0">
+            <StatTile label="Items" :value="counts.total" icon="grid" tone="primary">not abolished</StatTile>
+            <StatTile label="Filled" :value="counts.filled" icon="users" tone="success" :progress="counts.total ? Math.round((counts.filled / counts.total) * 100) : 0">
                 {{ counts.total ? Math.round((counts.filled / counts.total) * 100) : 0 }}% of items
-            </MetricCard>
-            <MetricCard label="Vacant" :value="counts.vacant" icon="clipboard" tone="warning">open for appointment</MetricCard>
-            <MetricCard label="Abolished" :value="counts.abolished" icon="lock" tone="info">kept for the record</MetricCard>
+            </StatTile>
+            <StatTile label="Vacant" :value="counts.vacant" icon="clipboard" tone="warning">open for appointment</StatTile>
+            <StatTile label="Abolished" :value="counts.abolished" icon="lock" tone="info">kept for the record</StatTile>
         </div>
 
         <p v-if="schedule" class="text-sm text-text-muted">

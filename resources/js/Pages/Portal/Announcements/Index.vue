@@ -52,7 +52,7 @@ const applyFilters = () => {
                 type="search"
                 autocomplete="off"
                 placeholder="Search by title or summary…"
-                class="block w-full rounded-md border border-border-strong bg-surface py-2.5 pr-3 pl-9 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="block w-full form-control py-2.5 pr-3 pl-9"
             />
         </div>
         <p class="text-sm text-text-muted" role="status">

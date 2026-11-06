@@ -68,7 +68,7 @@ const groups = computed(() =>
         </div>
 
         <section v-for="group in groups" :key="group.label" :aria-label="group.label">
-            <h2 class="mb-2 px-1 text-[11px] font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h2>
+            <h2 class="mb-2 px-1 text-2xs font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h2>
             <ul class="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
                 <li v-for="notification in group.items" :key="notification.id">
                     <a

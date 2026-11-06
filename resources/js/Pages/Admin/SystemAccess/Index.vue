@@ -120,7 +120,7 @@ const save = (changes) => {
                 <p class="line-clamp-2 max-w-sm text-text-muted">{{ row.description || '—' }}</p>
             </template>
             <template #cell-short_name="{ row }">
-                <span v-if="row.short_name" class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.short_name }}</span>
+                <span v-if="row.short_name" class="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.short_name }}</span>
                 <span v-else class="text-text-muted">—</span>
             </template>
             <template #cell-status="{ row }">

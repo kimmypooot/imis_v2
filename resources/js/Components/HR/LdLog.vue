@@ -103,14 +103,14 @@ const columns = [
             <div class="mb-4 flex flex-wrap gap-3">
                 <div>
                     <label for="ld-filter-type" class="sr-only">Type</label>
-                    <select id="ld-filter-type" v-model="type" class="rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                    <select id="ld-filter-type" v-model="type" class="form-control px-3 py-1.5">
                         <option value="">All types</option>
                         <option v-for="option in typeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label for="ld-filter-modality" class="sr-only">Modality</label>
-                    <select id="ld-filter-modality" v-model="modality" class="rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                    <select id="ld-filter-modality" v-model="modality" class="form-control px-3 py-1.5">
                         <option value="">All modalities</option>
                         <option v-for="option in modalityOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>

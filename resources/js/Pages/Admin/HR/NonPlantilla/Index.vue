@@ -4,7 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
 import Card from '../../../../Components/UI/Card.vue';
-import MetricCard from '../../../../Components/Admin/MetricCard.vue';
+import StatTile from '../../../../Components/UI/StatTile.vue';
 import DataTable from '../../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
 import Button from '../../../../Components/UI/Button.vue';
@@ -128,10 +128,10 @@ const remove = async (contract) => {
         </p>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Personnel" :value="rows.length" icon="users" tone="primary">in service</MetricCard>
-            <MetricCard label="Running contracts" :value="counts.running" icon="clipboard" tone="success">as of today</MetricCard>
-            <MetricCard label="Ending soon" :value="counts.expiring" icon="clock" tone="warning">within {{ expiringDays }} days</MetricCard>
-            <MetricCard label="Ended or none" :value="counts.attention" icon="exclamation" tone="info">needs a contract</MetricCard>
+            <StatTile label="Personnel" :value="rows.length" icon="users" tone="primary">in service</StatTile>
+            <StatTile label="Running contracts" :value="counts.running" icon="clipboard" tone="success">as of today</StatTile>
+            <StatTile label="Ending soon" :value="counts.expiring" icon="clock" tone="warning">within {{ expiringDays }} days</StatTile>
+            <StatTile label="Ended or none" :value="counts.attention" icon="exclamation" tone="info">needs a contract</StatTile>
         </div>
 
         <Card title="Personnel" icon="users">

@@ -36,7 +36,6 @@ const columns = [
     { key: 'status_label', label: 'Status' },
 ];
 
-const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -45,11 +44,11 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
     <PageHeader title="Leave Applications" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Applications' }]">
         <template #actions>
             <label class="sr-only" for="apps-year">Year</label>
-            <select id="apps-year" :value="filters.year" :class="selectClass" @change="apply({ year: $event.target.value })">
+            <select id="apps-year" :value="filters.year" class="filter-control" @change="apply({ year: $event.target.value })">
                 <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
             </select>
             <label class="sr-only" for="apps-status">Status</label>
-            <select id="apps-status" :value="filters.status ?? ''" :class="selectClass" @change="apply({ status: $event.target.value || null })">
+            <select id="apps-status" :value="filters.status ?? ''" class="filter-control" @change="apply({ status: $event.target.value || null })">
                 <option value="">All statuses</option>
                 <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>

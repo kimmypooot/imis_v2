@@ -67,7 +67,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                         v-for="option in views"
                         :key="option.value"
                         type="button"
-                        class="rounded px-3 py-1.5 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        class="rounded-sm px-3 py-1.5 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                         :class="showing === option.value ? 'bg-primary text-white' : 'text-text-muted hover:text-text'"
                         :aria-pressed="showing === option.value"
                         @click="view = option.value"
@@ -76,7 +76,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                     </button>
                 </div>
                 <label v-if="showing === 'ledger'" class="sr-only" for="leave-card-type">Leave type</label>
-                <select v-if="showing === 'ledger'" id="leave-card-type" v-model="filter" class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
+                <select v-if="showing === 'ledger'" id="leave-card-type" v-model="filter" class="form-control px-3 py-2">
                     <option value="">All leave types</option>
                     <option v-for="balance in balances" :key="balance.type_id" :value="balance.type_id">{{ balance.code }} · {{ balance.name }}</option>
                 </select>
@@ -84,7 +84,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                 <select
                     id="leave-card-year"
                     :value="year"
-                    class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="form-control px-3 py-2"
                     @change="emit('year', $event.target.value)"
                 >
                     <option v-for="option in years" :key="option" :value="option">{{ option }}</option>

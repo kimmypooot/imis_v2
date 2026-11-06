@@ -126,7 +126,7 @@ const insert = (placeholder) => {
                             v-for="placeholder in selected.placeholders"
                             :key="placeholder"
                             type="button"
-                            class="mr-1 mb-1 rounded bg-surface-muted px-1.5 py-0.5 font-mono text-text hover:bg-border disabled:cursor-default"
+                            class="mr-1 mb-1 rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-text hover:bg-border disabled:cursor-default"
                             :disabled="!canUpdate"
                             :title="canUpdate ? 'Insert where you last clicked' : undefined"
                             @click="insert(placeholder)"

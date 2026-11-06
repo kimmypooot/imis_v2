@@ -43,7 +43,7 @@ const remove = async () => {
 <template>
     <Card title="Photo" icon="camera" description="Passport size (3.5 × 4.5 cm), taken within the last 6 months.">
         <div class="flex items-end gap-4">
-            <div class="flex h-36 w-28 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-surface-muted">
+            <div class="flex h-36 w-28 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-surface-muted">
                 <img v-if="photoUrl" :src="photoUrl" alt="PDS photo" class="h-full w-full object-cover" />
                 <span v-else class="px-2 text-center text-xs text-text-muted">No photo</span>
             </div>

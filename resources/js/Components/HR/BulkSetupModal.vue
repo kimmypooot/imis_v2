@@ -61,7 +61,7 @@ const firstError = computed(() => form.errors.user_ids ?? Object.entries(form.er
                 <input
                     type="checkbox"
                     :checked="allVisibleSelected"
-                    class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                    class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                     @change="selectAll($event.target.checked)"
                 />
                 Select all{{ search ? ' shown' : '' }}
@@ -72,7 +72,7 @@ const firstError = computed(() => form.errors.user_ids ?? Object.entries(form.er
                 v-model="search"
                 type="search"
                 placeholder="Search name, office, position…"
-                class="w-full rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring sm:w-64"
+                class="form-control w-full px-3 py-1.5 sm:w-64"
             />
         </div>
 
@@ -83,7 +83,7 @@ const firstError = computed(() => form.errors.user_ids ?? Object.entries(form.er
                         v-model="form.user_ids"
                         type="checkbox"
                         :value="candidate.id"
-                        class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                        class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                     />
                     <span class="min-w-0 flex-1">
                         <span class="block truncate text-sm font-medium text-text">{{ candidate.name }} <span class="font-normal text-text-muted">({{ candidate.username }})</span></span>

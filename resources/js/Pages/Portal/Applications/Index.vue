@@ -37,7 +37,7 @@ const shown = computed(() => {
         <div class="relative w-full max-w-md">
             <label for="systems-search" class="sr-only">Search systems</label>
             <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted" />
-            <input id="systems-search" v-model="search" type="search" autocomplete="off" placeholder="Search your systems…" class="block w-full rounded-md border border-border-strong bg-surface py-2.5 pr-3 pl-9 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+            <input id="systems-search" v-model="search" type="search" autocomplete="off" placeholder="Search your systems…" class="block w-full form-control py-2.5 pr-3 pl-9" />
         </div>
         <p class="text-sm text-text-muted" role="status">{{ shown.length }} of {{ applications.length }} systems</p>
     </div>

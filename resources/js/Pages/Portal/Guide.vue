@@ -125,7 +125,7 @@ const goTo = (id) => {
 
     <div class="space-y-8">
         <!-- Search banner -->
-        <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-white md:p-8 print:hidden">
+        <section class="relative overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8 print:hidden">
             <span class="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full border border-white/10" aria-hidden="true" />
             <span class="pointer-events-none absolute -right-4 -bottom-20 h-48 w-48 rounded-full border border-white/10" aria-hidden="true" />
             <div class="relative max-w-2xl">
@@ -140,7 +140,7 @@ const goTo = (id) => {
                         type="search"
                         autocomplete="off"
                         placeholder="Search the guide…"
-                        class="block w-full rounded-md border-0 bg-surface py-3 pr-4 pl-10 text-sm text-text shadow-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-white"
+                        class="block w-full rounded-md border-0 bg-surface py-3 pr-4 pl-10 text-sm text-text shadow-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring-on-dark"
                     />
                 </div>
             </div>
@@ -149,13 +149,13 @@ const goTo = (id) => {
         <div class="lg:flex lg:items-start lg:gap-10">
             <!-- Contents -->
             <nav v-if="visible.length" aria-label="Guide contents" class="mb-8 shrink-0 lg:sticky lg:top-20 lg:mb-0 lg:w-64 print:hidden">
-                <p class="mb-2 px-3 text-[11px] font-semibold tracking-wide text-text-muted uppercase">Contents</p>
+                <p class="mb-2 px-3 text-2xs font-semibold tracking-wide text-text-muted uppercase">Contents</p>
                 <ul ref="tocRef" class="flex gap-2 overflow-x-auto pb-2 lg:max-h-[calc(100dvh-9rem)] lg:flex-col lg:gap-1 lg:overflow-y-auto lg:overflow-x-visible lg:pb-0">
                     <li v-for="category in visible" :key="category.title" class="shrink-0">
                         <a
                             :href="`#${categoryId(category.title)}`"
                             :data-toc="categoryId(category.title)"
-                            class="relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-lg:border"
+                            class="relative flex items-center gap-3 rounded-md px-3 py-2 text-compact whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-lg:border"
                             :class="
                                 activeCategory === categoryId(category.title)
                                     ? 'bg-info-bg font-semibold text-primary max-lg:border-info-border'

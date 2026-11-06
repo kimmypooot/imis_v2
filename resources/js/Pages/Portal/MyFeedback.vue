@@ -102,7 +102,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
                 <div class="mt-6 border-t border-border pt-5">
                     <ul v-if="item.replies.length" class="space-y-4" :aria-label="`Replies to ${item.subject}`">
                         <li v-for="reply in item.replies" :key="reply.id" class="flex gap-3.5">
-                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-csc-blue-light to-csc-blue-dark text-xs font-semibold text-white" aria-hidden="true">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white" aria-hidden="true">
                                 {{ initial(reply.author) }}
                             </span>
                             <div class="min-w-0 flex-1 rounded-lg rounded-tl-none border border-info-border bg-info-bg p-4">

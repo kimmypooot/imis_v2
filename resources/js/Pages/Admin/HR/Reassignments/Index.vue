@@ -53,8 +53,6 @@ const movementColumns = [
     { key: 'order_date', label: 'Order date', value: (row) => row.order_date ?? '' },
 ];
 
-const selectClass =
-    'mt-1 block rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -71,26 +69,26 @@ const selectClass =
             <form class="flex flex-wrap items-end gap-4" @submit.prevent="apply">
                 <div>
                     <label for="filter-as-of" class="block text-xs font-medium text-text-muted">Stations as of</label>
-                    <input id="filter-as-of" v-model="draft.as_of" type="date" :class="selectClass" />
+                    <input id="filter-as-of" v-model="draft.as_of" type="date" class="filter-control" />
                 </div>
                 <div>
                     <label for="filter-from" class="block text-xs font-medium text-text-muted">Movements from</label>
-                    <input id="filter-from" v-model="draft.from" type="date" :class="selectClass" />
+                    <input id="filter-from" v-model="draft.from" type="date" class="filter-control" />
                 </div>
                 <div>
                     <label for="filter-to" class="block text-xs font-medium text-text-muted">to</label>
-                    <input id="filter-to" v-model="draft.to" type="date" :class="selectClass" />
+                    <input id="filter-to" v-model="draft.to" type="date" class="filter-control" />
                 </div>
                 <div>
                     <label for="filter-kind" class="block text-xs font-medium text-text-muted">Kind</label>
-                    <select id="filter-kind" v-model="draft.kind" :class="selectClass">
+                    <select id="filter-kind" v-model="draft.kind" class="filter-control">
                         <option value="">All kinds</option>
                         <option v-for="option in kindOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                 </div>
                 <div>
                     <label for="filter-office" class="block text-xs font-medium text-text-muted">Office</label>
-                    <select id="filter-office" v-model="draft.office" :class="selectClass">
+                    <select id="filter-office" v-model="draft.office" class="filter-control">
                         <option value="">All offices</option>
                         <option v-for="office in officeOptions" :key="office.value" :value="office.value">{{ office.label }}</option>
                     </select>

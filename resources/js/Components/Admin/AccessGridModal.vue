@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../UI/Badge.vue';
 import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import Modal from '../Feedback/Modal.vue';
@@ -146,11 +147,11 @@ const rowErrors = computed(() => {
                         v-model="search"
                         type="search"
                         :placeholder="`Search ${rowLabel.toLowerCase()}…`"
-                        class="block w-full rounded-md border border-border-strong bg-surface py-1.5 pr-3 pl-8 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="form-control block w-full py-1.5 pr-3 pl-8"
                     />
                 </div>
                 <label for="grid-show" class="sr-only">Show</label>
-                <select id="grid-show" v-model="show" class="rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm">
+                <select id="grid-show" v-model="show" class="form-control px-2 py-1.5">
                     <option value="all">All</option>
                     <option value="granted">With access</option>
                     <option value="none">No access</option>
@@ -158,7 +159,7 @@ const rowErrors = computed(() => {
                 </select>
                 <div v-if="bulkOptions.length" class="flex items-center gap-1">
                     <label for="grid-bulk" class="sr-only">Set every visible row to</label>
-                    <select id="grid-bulk" v-model="bulkRole" class="rounded-md border border-border-strong bg-surface px-2 py-1.5 text-sm">
+                    <select id="grid-bulk" v-model="bulkRole" class="form-control px-2 py-1.5">
                         <option value="">No access</option>
                         <option v-for="role in bulkOptions" :key="role.id" :value="role.id">{{ role.name }}</option>
                     </select>
@@ -177,7 +178,7 @@ const rowErrors = computed(() => {
         </div>
 
         <div v-else class="overflow-x-auto rounded-md border border-border">
-            <table class="min-w-full text-[0.8125rem]">
+            <table class="min-w-full text-compact">
                 <caption class="sr-only">{{ title }}</caption>
                 <thead class="sticky top-0 table-head">
                     <tr>
@@ -213,7 +214,7 @@ const rowErrors = computed(() => {
                                 :id="`grid-role-${row.key}`"
                                 v-model="draft[row.key]"
                                 :disabled="isLocked(row)"
-                                class="w-full rounded-md border border-border-strong bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted"
+                                class="form-control w-full px-2 py-1"
                                 :aria-invalid="!!rowErrors[row.key]"
                             >
                                 <option v-for="role in optionsFor(row)" :key="role.id" :value="role.id">{{ role.name }}</option>
@@ -236,9 +237,9 @@ const rowErrors = computed(() => {
         </div>
 
         <template #footer>
-            <span v-if="pending.length" class="mr-auto self-center rounded-full bg-warning-bg px-3 py-1 text-xs font-semibold text-warning">
+            <Badge v-if="pending.length" pill tone="warning" class="mr-auto self-center">
                 {{ pending.length }} unsaved {{ pending.length === 1 ? 'change' : 'changes' }}
-            </span>
+            </Badge>
             <Button v-if="pending.length" variant="ghost" @click="undo">Undo</Button>
             <Button variant="secondary" @click="close">Close</Button>
             <Button variant="success" :loading="saving" :disabled="!pending.length" @click="save">Save changes</Button>

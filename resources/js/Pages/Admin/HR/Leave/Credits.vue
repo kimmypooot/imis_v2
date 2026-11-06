@@ -58,7 +58,6 @@ const runYearStart = async () => {
     }
 };
 
-const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -76,13 +75,13 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="runAccrual">
                     <div>
                         <label for="accrual-month" class="block text-xs font-medium text-text-muted">Month</label>
-                        <select id="accrual-month" v-model.number="accrual.month" :class="selectClass">
+                        <select id="accrual-month" v-model.number="accrual.month" class="filter-control">
                             <option v-for="(name, index) in MONTHS" :key="name" :value="index + 1">{{ name }}</option>
                         </select>
                     </div>
                     <div>
                         <label for="accrual-year" class="block text-xs font-medium text-text-muted">Year</label>
-                        <input id="accrual-year" v-model.number="accrual.year" type="number" min="2000" max="2100" :class="[selectClass, 'w-28']" />
+                        <input id="accrual-year" v-model.number="accrual.year" type="number" min="2000" max="2100" class="filter-control w-28" />
                     </div>
                     <Button type="submit" :loading="accrual.processing">Post accrual</Button>
                 </form>
@@ -93,7 +92,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="runYearStart">
                     <div>
                         <label for="year-start" class="block text-xs font-medium text-text-muted">Year</label>
-                        <input id="year-start" v-model.number="yearStart.year" type="number" min="2000" :max="defaults.start_year" :class="[selectClass, 'w-28']" />
+                        <input id="year-start" v-model.number="yearStart.year" type="number" min="2000" :max="defaults.start_year" class="filter-control w-28" />
                     </div>
                     <Button type="submit" :loading="yearStart.processing">Start year</Button>
                 </form>
@@ -108,7 +107,7 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
         <Card title="Balances today" icon="users" description="Accrual and grants need an employment status that the leave type allows (set on the employee record).">
             <template v-if="separatedCount" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Show separated ({{ separatedCount }})
                 </label>
             </template>

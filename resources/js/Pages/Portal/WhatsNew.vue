@@ -83,7 +83,7 @@ const shown = computed(() => (showAll.value ? timeline.value : timeline.value.sl
 
     <div v-else class="max-w-4xl space-y-8">
         <!-- The latest release, at a glance. -->
-        <section class="relative overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-white md:p-8">
+        <section class="relative overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8">
             <OrbitCircles />
             <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">

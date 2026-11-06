@@ -144,14 +144,14 @@ const field = 'mt-1 block w-full';
 
                 <div v-if="type?.allows_emergency_filing" class="sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form.is_emergency" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.is_emergency" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                         Emergency: I'm filing on my return instead of {{ type.advance_filing_days }} days ahead
                     </label>
                 </div>
 
                 <div v-if="type?.allows_half_day" class="flex flex-wrap items-center gap-4 sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                         Half day
                     </label>
                     <template v-if="form.is_half_day">

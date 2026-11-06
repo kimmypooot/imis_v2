@@ -90,7 +90,7 @@ const inputClass =
                             type="checkbox"
                             :disabled="!canUpdate"
                             :aria-describedby="describedBy(setting)"
-                            class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                            class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
                         />
                         {{ setting.label }}
                     </label>

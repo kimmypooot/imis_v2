@@ -91,7 +91,7 @@ const historyColumns = [
 
     <template v-else>
         <!-- The latest finalized payroll at a glance. -->
-        <section class="relative mb-6 overflow-hidden rounded-lg bg-linear-to-br from-csc-blue via-csc-blue to-csc-blue-dark p-6 text-white md:p-8" aria-label="Latest payroll summary">
+        <section class="relative mb-6 overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8" aria-label="Latest payroll summary">
             <OrbitCircles />
             <div class="relative z-10">
                 <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/75 uppercase">

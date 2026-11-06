@@ -256,12 +256,12 @@ const recentColumns = [
             </p>
             <div>
                 <label for="loan-stopped-on" class="block text-sm font-medium text-text">Last day deducted</label>
-                <input id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                <input id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" required class="block w-full form-control mt-1 px-3 py-2" />
                 <InputError :message="stopForm.errors.stopped_on" />
             </div>
             <div>
                 <label for="loan-stop-reason" class="block text-sm font-medium text-text">Reason (optional)</label>
-                <input id="loan-stop-reason" v-model="stopForm.reason" type="text" maxlength="500" class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                <input id="loan-stop-reason" v-model="stopForm.reason" type="text" maxlength="500" class="block w-full form-control mt-1 px-3 py-2" />
             </div>
         </form>
         <template #footer>
@@ -277,7 +277,7 @@ const recentColumns = [
             </p>
             <div>
                 <label for="loan-cancel-reason" class="block text-sm font-medium text-text">Reason</label>
-                <textarea id="loan-cancel-reason" v-model="cancelForm.reason" rows="3" maxlength="500" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                <textarea id="loan-cancel-reason" v-model="cancelForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
                 <InputError :message="cancelForm.errors.reason" />
             </div>
         </form>

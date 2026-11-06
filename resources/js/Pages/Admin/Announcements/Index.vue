@@ -1,4 +1,5 @@
 <script setup>
+import Badge from '../../../Components/UI/Badge.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
@@ -89,9 +90,9 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
     <div class="grid items-start gap-6 xl:grid-cols-12">
         <Card v-if="canWrite" :title="isEditing ? 'Edit Announcement' : 'Create Announcement'" :icon="isEditing ? 'pencil' : 'plus'" class="xl:sticky xl:top-20 xl:col-span-5">
             <template #actions>
-                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="isEditing ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success'">
+                <Badge pill :tone="isEditing ? 'warning' : 'success'">
                     {{ isEditing ? 'Editing' : 'New draft' }}
-                </span>
+                </Badge>
             </template>
             <p v-if="isEditing" class="mb-3 text-sm text-text-muted">
                 Editing <strong class="text-text">{{ current.title }}</strong>.
@@ -120,7 +121,7 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">
                         {{ row.title }}
-                        <span v-if="row.featured" class="ml-1 rounded bg-info-bg px-1.5 text-xs text-primary">Featured</span>
+                        <span v-if="row.featured" class="ml-1 rounded-sm bg-info-bg px-1.5 text-xs text-primary">Featured</span>
                     </div>
                     <div v-if="row.summary" class="line-clamp-2 max-w-md text-xs text-text-muted">{{ row.summary }}</div>
                     <div class="text-xs text-text-muted">{{ row.author }} · updated {{ formatDateTime(row.updated_at) }}</div>

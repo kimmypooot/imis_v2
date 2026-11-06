@@ -45,12 +45,12 @@ const clear = () => {
 <template>
     <form class="flex flex-wrap items-center gap-2 text-sm" @submit.prevent="apply">
         <label :for="`${id}-from`" class="text-text-muted">From</label>
-        <input :id="`${id}-from`" v-model="from" type="date" class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm" />
+        <input :id="`${id}-from`" v-model="from" type="date" class="form-control px-2 py-1" />
         <label :for="`${id}-to`" class="text-text-muted">to</label>
-        <input :id="`${id}-to`" v-model="to" type="date" class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm" />
+        <input :id="`${id}-to`" v-model="to" type="date" class="form-control px-2 py-1" />
         <template v-if="select">
             <label :for="`${id}-extra`" class="sr-only">{{ select.label }}</label>
-            <select :id="`${id}-extra`" v-model="extra" class="max-w-48 rounded-md border border-border-strong bg-surface px-2 py-1 text-sm">
+            <select :id="`${id}-extra`" v-model="extra" class="form-control max-w-48 px-2 py-1">
                 <option value="">{{ select.label }}</option>
                 <option v-for="option in select.options" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>

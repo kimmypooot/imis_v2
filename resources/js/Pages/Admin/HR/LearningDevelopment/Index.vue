@@ -72,7 +72,7 @@ const columns = [
             <select
                 id="ld-admin-year"
                 :value="year"
-                class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="form-control px-3 py-2"
                 @change="changeYear($event.target.value)"
             >
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
@@ -99,7 +99,7 @@ const columns = [
         <Card :title="`Employees — ${year}`" icon="users" description="Approved trainings only; pending ones are counted separately.">
             <template v-if="separatedCount" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
                     Show separated ({{ separatedCount }})
                 </label>
             </template>

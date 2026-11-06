@@ -103,7 +103,7 @@ const save = () => {
                         <span
                             v-for="id in [...row.owned_ids, ...row.listed_ids]"
                             :key="id"
-                            class="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-text-muted"
+                            class="rounded-sm bg-surface-muted px-1.5 py-0.5 text-xs text-text-muted"
                         >
                             {{ systemsById[id]?.short_name || systemsById[id]?.name }}
                         </span>
@@ -129,7 +129,7 @@ const save = () => {
                 v-model="search"
                 type="search"
                 placeholder="Search systems…"
-                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="form-control block w-full px-3 py-1.5"
             />
         </template>
 
@@ -138,7 +138,7 @@ const save = () => {
                 <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-surface-muted" :class="{ 'cursor-not-allowed opacity-80': isOwned(system) }">
                     <input
                         type="checkbox"
-                        class="h-4 w-4 rounded border-border-strong text-primary focus:ring-focus-ring"
+                        class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-focus-ring"
                         :checked="isOn(system)"
                         :disabled="isOwned(system)"
                         @change="toggle(system)"
@@ -147,7 +147,7 @@ const save = () => {
                         <span class="block truncate text-sm font-medium text-text">{{ system.name }}</span>
                         <span v-if="isOwned(system)" class="block text-xs text-text-muted">Managed by this office — always shown (change it in Manage Systems)</span>
                     </span>
-                    <span v-if="system.short_name" class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs text-text-muted">{{ system.short_name }}</span>
+                    <span v-if="system.short_name" class="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs text-text-muted">{{ system.short_name }}</span>
                     <StatusBadge v-if="system.status !== 'active'" :status="system.status" />
                 </label>
             </li>

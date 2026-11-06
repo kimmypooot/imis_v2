@@ -159,7 +159,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
                                     <p v-if="person.position" class="truncate text-xs text-text-muted">{{ person.position }}</p>
                                     <span
                                         v-if="person.role"
-                                        class="mt-1 inline-block rounded-full bg-primary px-2 py-px text-[0.65rem] font-semibold uppercase tracking-wide text-white"
+                                        class="mt-1 inline-block rounded-full bg-primary px-2 py-px text-2xs font-semibold uppercase tracking-wide text-white"
                                     >
                                         {{ person.role }}
                                     </span>

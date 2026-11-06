@@ -158,7 +158,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
                                         v-model="urls[feed.id]"
                                         type="url"
                                         placeholder="https://system.example/api/imis/summary"
-                                        class="block w-full rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:ring-2 focus:ring-focus-ring focus:outline-none"
+                                        class="form-control block w-full px-3 py-1.5"
                                         :aria-invalid="!!feedErrors[feed.id]"
                                     />
                                     <InputError :message="feedErrors[feed.id]" />

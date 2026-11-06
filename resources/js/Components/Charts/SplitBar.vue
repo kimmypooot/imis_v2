@@ -4,7 +4,7 @@ import { computed, useId } from 'vue';
 /**
  * One part-to-whole bar (e.g. staff by sex): segments in the fixed chart
  * colors (--color-chart-1, -2, then neutral for "not recorded"), a 2px
- * surface gap between them, 4px rounded ends, a legend with counts and
+ * surface gap between them, 4px rounded-sm ends, a legend with counts and
  * shares (identity is never color alone), a hover title per segment, and
  * a "View as table". Plain HTML; no chart library needed.
  */

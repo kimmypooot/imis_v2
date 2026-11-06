@@ -68,7 +68,6 @@ const columns = computed(() => ({
 
 const title = computed(() => props.reports.find((report) => report.value === props.filters.report)?.label);
 const subtitle = computed(() => (props.filters.report === 'on_leave' ? formatCalendarDate(props.filters.day) : String(props.filters.year)));
-const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 </script>
 
 <template>
@@ -77,16 +76,16 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
     <PageHeader title="Leave Reports" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Reports' }]">
         <template #actions>
             <label class="sr-only" for="report-kind">Report</label>
-            <select id="report-kind" :value="filters.report" :class="selectClass" @change="apply({ report: $event.target.value })">
+            <select id="report-kind" :value="filters.report" class="filter-control" @change="apply({ report: $event.target.value })">
                 <option v-for="report in reports" :key="report.value" :value="report.value">{{ report.label }}</option>
             </select>
             <template v-if="filters.report === 'on_leave'">
                 <label class="sr-only" for="report-day">Day</label>
-                <input id="report-day" type="date" :value="filters.day" :class="selectClass" @change="apply({ day: $event.target.value })" />
+                <input id="report-day" type="date" :value="filters.day" class="filter-control" @change="apply({ day: $event.target.value })" />
             </template>
             <template v-else>
                 <label class="sr-only" for="report-year">Year</label>
-                <select id="report-year" :value="filters.year" :class="selectClass" @change="apply({ year: $event.target.value })">
+                <select id="report-year" :value="filters.year" class="filter-control" @change="apply({ year: $event.target.value })">
                     <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
                 </select>
             </template>

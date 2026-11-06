@@ -162,7 +162,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                 <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <label v-for="day in days" :key="day" class="text-sm text-text">
                         {{ day }}
-                        <select v-model="arrangement.schedule[day]" class="mt-0.5 block w-full rounded-md border border-border-strong bg-surface px-2 py-1 text-sm">
+                        <select v-model="arrangement.schedule[day]" class="form-control mt-0.5 block w-full px-2 py-1">
                             <option value="office">Office</option>
                             <option value="wfh">Work from home</option>
                             <option value="off">Off</option>

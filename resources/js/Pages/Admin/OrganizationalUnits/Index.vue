@@ -117,7 +117,7 @@ const toggleStatus = async (unit) => {
                 <div v-if="row.short_name && row.short_name !== row.code" class="text-xs text-text-muted">{{ row.short_name }}</div>
             </template>
             <template #cell-code="{ row }">
-                <span class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.code }}</span>
+                <span class="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.code }}</span>
             </template>
             <template #cell-head="{ row }">
                 <template v-if="row.head">

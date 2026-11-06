@@ -248,10 +248,10 @@ const columns = [
                                         step="0.01"
                                         min="0.01"
                                         required
-                                        class="w-32 rounded-md border border-border-strong bg-surface px-2 py-1 text-right text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                                        class="form-control w-32 px-2 py-1 text-right"
                                     />
                                     <label :for="`reason-${line.id}`" class="sr-only">Reason for changing {{ line.label }}</label>
-                                    <input :id="`reason-${line.id}`" v-model="lineForm.reason" type="text" maxlength="500" placeholder="Reason (optional)" class="w-44 rounded-md border border-border-strong bg-surface px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                                    <input :id="`reason-${line.id}`" v-model="lineForm.reason" type="text" maxlength="500" placeholder="Reason (optional)" class="w-44 filter-control py-1 px-2" />
                                     <Button type="submit" size="sm" :loading="lineForm.processing">Save</Button>
                                 </form>
                                 <template v-else>{{ formatPeso(line.amount) }}</template>
@@ -288,17 +288,17 @@ const columns = [
                 </div>
                 <div v-if="!addForm.pay_component_id" class="sm:col-span-4">
                     <label for="add-label" class="block text-xs font-medium text-text-muted">Label</label>
-                    <input id="add-label" v-model="addForm.label" type="text" maxlength="120" placeholder="e.g. Absences (2 days)" class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                    <input id="add-label" v-model="addForm.label" type="text" maxlength="120" placeholder="e.g. Absences (2 days)" class="block w-full form-control mt-1 px-3 py-2" />
                     <InputError :message="addForm.errors.label" />
                 </div>
                 <div class="sm:col-span-2">
                     <label for="add-amount" class="block text-xs font-medium text-text-muted">Amount</label>
-                    <input id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-right text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                    <input id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" required class="block w-full form-control mt-1 px-3 py-2 text-right" />
                     <InputError :message="addForm.errors.amount || addForm.errors.run" />
                 </div>
                 <div class="sm:col-span-6">
                     <label for="add-reason" class="block text-xs font-medium text-text-muted">Reason (optional)</label>
-                    <input id="add-reason" v-model="addForm.reason" type="text" maxlength="500" class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+                    <input id="add-reason" v-model="addForm.reason" type="text" maxlength="500" class="block w-full form-control mt-1 px-3 py-2" />
                 </div>
                 <div class="flex items-end sm:col-span-6">
                     <Button type="submit" size="sm" variant="success" :loading="addForm.processing"><Icon name="plus" size="sm" />Add line</Button>
@@ -322,7 +322,7 @@ const columns = [
                 <template v-else>The payslip stays on the payroll for the record but counts toward no total or loan balance, and any payslip request for it is closed.</template>
             </p>
             <label for="reason" class="block text-sm font-medium text-text">Reason</label>
-            <textarea id="reason" v-model="reasonForm.reason" rows="3" maxlength="500" required class="mt-1 block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring" />
+            <textarea id="reason" v-model="reasonForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
             <InputError :message="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry" />
         </form>
         <template #footer>

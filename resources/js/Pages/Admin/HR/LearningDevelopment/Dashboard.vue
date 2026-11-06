@@ -4,7 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../../Components/UI/PageHeader.vue';
 import Card from '../../../../Components/UI/Card.vue';
-import MetricCard from '../../../../Components/Admin/MetricCard.vue';
+import StatTile from '../../../../Components/UI/StatTile.vue';
 import SimpleChart from '../../../../Components/Charts/SimpleChart.vue';
 import Icon from '../../../../Components/UI/Icon.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -57,7 +57,7 @@ const dateRange = (row) =>
             <select
                 id="ld-dashboard-year"
                 :value="year"
-                class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="form-control px-3 py-2"
                 @change="changeYear($event.target.value)"
             >
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
@@ -75,20 +75,20 @@ const dateRange = (row) =>
         <p class="text-sm text-text-muted">Approved trainings that started in {{ year }}. Pending and rejected entries aren't counted.</p>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Employees" :value="stats.employees" icon="users" tone="primary" :progress="reached">
+            <StatTile label="Employees" :value="stats.employees" icon="users" tone="primary" :progress="reached">
                 <span class="font-semibold text-success">{{ stats.trained }}</span> with training this year ({{ reached }}%)
-            </MetricCard>
-            <MetricCard label="Trainings" :value="stats.trainings" icon="clipboard" tone="success">
+            </StatTile>
+            <StatTile label="Trainings" :value="stats.trainings" icon="clipboard" tone="success">
                 <template v-if="change !== null">
                     <span class="font-semibold" :class="change >= 0 ? 'text-success' : 'text-danger'">{{ change >= 0 ? '+' : '' }}{{ change }}%</span>
                     vs {{ year - 1 }} ({{ stats.trainings_previous }})
                 </template>
                 <template v-else>None recorded in {{ year - 1 }}</template>
-            </MetricCard>
-            <MetricCard label="Training hours" :value="hours(stats.hours)" icon="clock" tone="primary">
+            </StatTile>
+            <StatTile label="Training hours" :value="hours(stats.hours)" icon="clock" tone="primary">
                 {{ stats.trainings ? `${hours(stats.hours / stats.trainings)} hours per training` : 'No trainings yet' }}
-            </MetricCard>
-            <MetricCard label="Offices" :value="stats.offices" icon="building" tone="info">offices with employees</MetricCard>
+            </StatTile>
+            <StatTile label="Offices" :value="stats.offices" icon="building" tone="info">offices with employees</StatTile>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-12">

@@ -78,7 +78,7 @@ const onKeydown = (event) => {
         <button
             v-if="query"
             type="button"
-            class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             aria-label="Clear search"
             @click="clear"
         >
@@ -86,7 +86,7 @@ const onKeydown = (event) => {
         </button>
         <kbd
             v-else
-            class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface px-1.5 font-sans text-xs text-text-muted md:block"
+            class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-sm border border-border bg-surface px-1.5 font-sans text-xs text-text-muted md:block"
             aria-hidden="true"
             title="Press / to search"
         >/</kbd>
