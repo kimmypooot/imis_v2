@@ -133,9 +133,10 @@ export const portalNavItems = [
  */
 /**
  * Admin sidebar, following the legacy IMIS admin panel: Dashboard, then the
- * collapsible "User Management" and "System Administration" groups (same
- * order and names as the legacy menu), with this platform's portal-content
- * modules in their own group. Each group's icon shows on its toggle.
+ * collapsible groups. The legacy "System Administration" list had grown to
+ * sixteen links, so it is split by purpose: Communication, Monitoring & Logs
+ * and System Settings; roles and permissions sit with User Management, and
+ * the portal-content modules have their own group. Each group's icon shows on its toggle.
  */
 export const adminModuleGroups = [
     {
@@ -147,6 +148,8 @@ export const adminModuleGroups = [
             { label: 'Manage Systems', href: '/admin/applications', icon: 'grid', permission: 'applications.view' },
             { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: 'applications.manage_access' },
             { label: 'User Access', href: '/admin/user-access', icon: 'key', permission: 'applications.manage_access' },
+            { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
+            { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },
         ],
     },
     {
@@ -160,27 +163,36 @@ export const adminModuleGroups = [
         ],
     },
     {
-        // Legacy order (old-imis admin/inc/sidebar.php), then the
-        // new-only modules: settings before backup, IMIS roles last.
-        group: 'System Administration',
-        icon: 'shield',
+        group: 'Communication',
+        icon: 'megaphone',
         items: [
             { label: 'Announcements', href: '/admin/announcements', icon: 'megaphone', permission: 'announcements.view' },
             { label: 'Changelog', href: '/admin/changelogs', icon: 'activity', permission: 'changelogs.view' },
             { label: 'User Feedback', href: '/admin/feedback', icon: 'chat', permission: 'feedback.view', badge: 'feedback' },
+        ],
+    },
+    {
+        group: 'Monitoring & Logs',
+        icon: 'activity',
+        items: [
             { label: 'Active Sessions', href: '/admin/sessions', icon: 'desktop', permission: 'sessions.view' },
             { label: 'Login History', href: '/admin/login-history', icon: 'clock', permission: 'audit_logs.view' },
             { label: 'System Access Logs', href: '/admin/access-logs', icon: 'globe', permission: 'audit_logs.view' },
             { label: 'Security Logs', href: '/admin/security-logs', icon: 'shield', permission: 'audit_logs.view' },
             { label: 'Admin Audit Log', href: '/admin/audit-logs', icon: 'clipboard', permission: 'audit_logs.view' },
+        ],
+    },
+    {
+        // Platform configuration and upkeep.
+        group: 'System',
+        icon: 'cog',
+        items: [
             { label: 'System Settings', href: '/admin/settings', icon: 'cog', permission: 'settings.view' },
             { label: 'System Health', href: '/admin/system-health', icon: 'activity', permission: 'settings.view' },
             { label: 'Scheduled Tasks', href: '/admin/scheduled-tasks', icon: 'clock', permission: 'settings.view' },
             { label: 'Email Templates', href: '/admin/email-templates', icon: 'envelope', permission: 'settings.view' },
             { label: 'Branding', href: '/admin/branding', icon: 'palette', permission: 'settings.view' },
             { label: 'Backup Database', href: '/admin/backup', icon: 'database', permission: 'backups.create' },
-            { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
-            { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },
         ],
     },
     {
