@@ -44,7 +44,7 @@ class EmployeeLearningDevelopmentController extends Controller
             'year' => $log['year'],
             'years' => $log['years'],
             'records' => $log['rows']->map(fn (PdsLearningDevelopment $record) => [
-                ...$records->present($record),
+                ...$records->present($record, $log['duplicates'][$record->id] ?? null),
                 'can' => [
                     'update' => $viewer->can('manage', $record),
                     'delete' => $viewer->can('manage', $record),

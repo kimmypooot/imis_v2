@@ -119,7 +119,7 @@ class PdsImport
         $errors = [];
 
         foreach ($rows as $row) {
-            $key = $this->normalized((string) ($row['title'] ?? '')).'|'.($row['date_from'] ?? '');
+            $key = $this->trainings->normalized((string) ($row['title'] ?? '')).'|'.($row['date_from'] ?? '');
 
             if (isset($seen[$key])) {
                 $skipped[] = ['title' => (string) $row['title'], 'matches' => 'listed twice in the file'];
@@ -127,7 +127,7 @@ class PdsImport
                 continue;
             }
 
-            if ($match = $this->alreadyLogged($existing, $row)) {
+            if ($match = $this->trainings->similarTo($existing, $row)) {
                 $skipped[] = ['title' => (string) $row['title'], 'matches' => $match->title];
 
                 continue;

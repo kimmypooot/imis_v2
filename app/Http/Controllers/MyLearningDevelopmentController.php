@@ -45,7 +45,7 @@ class MyLearningDevelopmentController extends Controller
             'year' => $log['year'],
             'years' => $log['years'],
             'records' => $log['rows']->map(fn (PdsLearningDevelopment $record) => [
-                ...$records->present($record),
+                ...$records->present($record, $log['duplicates'][$record->id] ?? null),
                 'can' => [
                     'update' => $request->user()->can('update', $record),
                     'delete' => $request->user()->can('delete', $record),

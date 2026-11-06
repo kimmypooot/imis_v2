@@ -132,6 +132,87 @@ class LdRecords
     }
 
     /**
+     * The logged training that `$row` repeats, if any. Same start date and
+     * the same title once case and punctuation are ignored; or the same
+     * start and end dates and hours with a mostly shared title (the same
+     * seminar typed a little differently).
+     *
+     * @param  Collection<int, PdsLearningDevelopment>  $logged
+     * @param  array<string, mixed>  $row  title, date_from, date_to, hours
+     */
+    public function similarTo(Collection $logged, array $row): ?PdsLearningDevelopment
+    {
+        if (! ($row['title'] ?? null) || ! ($row['date_from'] ?? null)) {
+            return null;
+        }
+
+        $title = $this->normalized($row['title']);
+
+        return $logged->first(function (PdsLearningDevelopment $other) use ($row, $title) {
+            if ($other->date_from?->toDateString() !== $row['date_from']) {
+                return false;
+            }
+
+            if ($this->normalized($other->title) === $title) {
+                return true;
+            }
+
+            return $other->date_to?->toDateString() === ($row['date_to'] ?? null)
+                && abs((float) $other->hours - (float) ($row['hours'] ?? -1)) < 0.01
+                && $this->sharedWords($other->title, $row['title']) >= 0.5;
+        });
+    }
+
+    /**
+     * Records that look like another, earlier entry of the same person:
+     * record id => the entry it resembles. Rejected entries are ignored.
+     *
+     * @param  Collection<int, PdsLearningDevelopment>  $records
+     * @return array<int, array{id: int, title: string}>
+     */
+    public function possibleDuplicates(Collection $records): array
+    {
+        $live = $records->where('approval_status', '!==', LdApprovalStatus::Rejected)->sortBy('id')->values();
+        $found = [];
+
+        foreach ($live as $index => $record) {
+            $match = $this->similarTo($live->take($index), [
+                'title' => $record->title,
+                'date_from' => $record->date_from?->toDateString(),
+                'date_to' => $record->date_to?->toDateString(),
+                'hours' => (float) $record->hours,
+            ]);
+
+            if ($match) {
+                $found[$record->id] = ['id' => $match->id, 'title' => $match->title];
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Lower case, punctuation gone, single spaces: "Well-Being" = "WELL BEING".
+     */
+    public function normalized(string $title): string
+    {
+        return trim(preg_replace('/[^\p{L}\p{N}]+/u', ' ', mb_strtolower($title)));
+    }
+
+    /**
+     * Share of the shorter title's meaningful words that the other one has.
+     */
+    private function sharedWords(string $a, string $b): float
+    {
+        $filler = ['a', 'an', 'and', 'for', 'in', 'of', 'on', 'the', 'to', 'with'];
+        $words = fn (string $title) => array_values(array_diff(array_unique(explode(' ', $this->normalized($title))), $filler, ['']));
+        [$first, $second] = [$words($a), $words($b)];
+        $smaller = min(count($first), count($second));
+
+        return $smaller === 0 ? 0.0 : count(array_intersect($first, $second)) / $smaller;
+    }
+
+    /**
      * Whether this person already has the training (ldms's duplicate rule).
      */
     public function hasDuplicate(Employee $employee, string $title, string $start): bool
@@ -232,6 +313,7 @@ class LdRecords
             'year' => $year,
             'years' => $years,
             'rows' => $rows,
+            'duplicates' => $this->possibleDuplicates($rows),
             'stats' => [
                 'total' => $counted->count(),
                 'hours' => (float) $counted->sum('hours'),
@@ -246,7 +328,7 @@ class LdRecords
     /**
      * @return array<string, mixed>
      */
-    public function present(PdsLearningDevelopment $record): array
+    public function present(PdsLearningDevelopment $record, ?array $duplicateOf = null): array
     {
         return [
             'id' => $record->id,
@@ -262,6 +344,7 @@ class LdRecords
             'sponsor' => $record->sponsor,
             'venue' => $record->venue,
             'resource_speaker' => $record->resource_speaker,
+            'possible_duplicate_of' => $duplicateOf,
             'approval_status' => $record->approval_status->value,
             'status_label' => $record->approval_status->label(),
             'rejection_reason' => $record->rejection_reason,

@@ -54,6 +54,26 @@ class LearningDevelopmentTest extends TestCase
             ->where('schema.sections.learning_development.managed_by.url', '/my/learning-development'));
     }
 
+    public function test_entries_that_repeat_another_are_marked_as_possible_duplicates(): void
+    {
+        $employee = Employee::factory()->create();
+        $original = $this->recordFor($employee, LdApprovalStatus::Approved, ['title' => 'Mind Matters: A Mental Health Awareness and Employee Well-Being Development']);
+        $copy = $this->recordFor($employee, LdApprovalStatus::Pending, ['title' => 'MIND MATTERS: A MENTAL HEALTH AWARENESS AND EMPLOYEE WELL BEING']);
+        // Same day and hours but a different training, and one on another day.
+        $other = $this->recordFor($employee, LdApprovalStatus::Pending, ['title' => 'Records Management', 'hours' => 8]);
+        $later = $this->recordFor($employee, LdApprovalStatus::Pending, ['title' => 'Mind Matters: A Mental Health Awareness and Employee Well-Being Development', 'date_from' => '2025-06-06', 'date_to' => '2025-06-06']);
+
+        $this->actingAs($employee->user)->get('/my/learning-development?year=2025')
+            ->assertInertia(function (Assert $page) use ($original, $copy, $other, $later) {
+                $rows = collect($page->toArray()['props']['records'])->keyBy('id');
+
+                $this->assertNull($rows[$original->id]['possible_duplicate_of']);
+                $this->assertSame($original->id, $rows[$copy->id]['possible_duplicate_of']['id']);
+                $this->assertNull($rows[$other->id]['possible_duplicate_of']);
+                $this->assertNull($rows[$later->id]['possible_duplicate_of']);
+            });
+    }
+
     public function test_the_pds_no_longer_edits_section_vi(): void
     {
         $employee = Employee::factory()->create();

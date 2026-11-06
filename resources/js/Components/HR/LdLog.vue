@@ -29,6 +29,8 @@ const month = ref(null); // null = all months
 const type = ref('');
 const modality = ref('');
 
+const duplicateCount = computed(() => props.records.filter((record) => record.possible_duplicate_of).length);
+
 const monthOf = (record) => Number(record.date_from.slice(5, 7)) - 1;
 const monthCounts = computed(() => MONTHS.map((_, index) => props.records.filter((record) => monthOf(record) === index).length));
 
@@ -115,10 +117,19 @@ const columns = [
                 </div>
             </div>
 
+            <p v-if="duplicateCount" class="mb-3 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text" role="status">
+                <Icon name="exclamation" size="sm" class="shrink-0 text-warning" />
+                {{ duplicateCount }} {{ duplicateCount === 1 ? 'entry looks' : 'entries look' }} like a repeat of another one this year. Check whether it is the same training, and remove the extra one if so.
+            </p>
+
             <DataTable :columns="columns" :rows="shown" :caption="caption" :export-name="exportName">
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">{{ row.title }}</div>
                     <div class="text-xs text-text-muted">{{ row.sponsor }}</div>
+                    <div v-if="row.possible_duplicate_of" class="mt-1 flex items-start gap-1.5 text-xs text-warning">
+                        <Icon name="exclamation" size="xs" class="mt-0.5 shrink-0" />
+                        <span>Possible duplicate of “{{ row.possible_duplicate_of.title }}”</span>
+                    </div>
                     <a
                         v-if="row.certificate"
                         :href="`/hr/trainings/${row.id}/certificate`"
