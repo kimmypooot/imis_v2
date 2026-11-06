@@ -46,23 +46,47 @@ const settle = (result) => {
     dialog?.resolve(result);
 };
 
+// Toasts auto-dismiss, but hovering one holds it open so it can be read
+// (and its timer restarts when the pointer leaves).
+const timers = new Map();
+const MAX_TOASTS = 4;
+
+const startTimer = (id) => {
+    const item = state.toasts.find((candidate) => candidate.id === id);
+    if (!item?.timeout) return;
+    window.clearTimeout(timers.get(id));
+    timers.set(id, window.setTimeout(() => dismissToast(id), item.timeout));
+};
+
 const push = (type, message, timeout) => {
     const id = nextToastId++;
-    state.toasts.push({ id, type, message });
-    if (timeout) window.setTimeout(() => dismissToast(id), timeout);
+    // A burst of toasts never stacks past the screen: the oldest makes room.
+    while (state.toasts.length >= MAX_TOASTS) dismissToast(state.toasts[0].id);
+    state.toasts.push({ id, type, message, timeout });
+    startTimer(id);
 };
 
 export const dismissToast = (id) => {
+    window.clearTimeout(timers.get(id));
+    timers.delete(id);
     state.toasts = state.toasts.filter((item) => item.id !== id);
 };
+
+export const holdToast = (id) => {
+    window.clearTimeout(timers.get(id));
+    timers.delete(id);
+};
+
+export const releaseToast = (id) => startTimer(id);
 
 export const toast = {
     success: (message) => push('success', message, 3000),
     info: (message) => push('info', message, 4000),
+    warning: (message) => push('warning', message, 6000),
     // Errors stay until dismissed, so they can't be missed.
     error: (message) => push('error', message, null),
 };
 
 export function useDialog() {
-    return { state: readonly(state), confirm, alert, toast, settle, dismissToast };
+    return { state: readonly(state), confirm, alert, toast, settle, dismissToast, holdToast, releaseToast };
 }

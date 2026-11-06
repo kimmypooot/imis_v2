@@ -11,7 +11,7 @@ import { toast, useDialog } from '../../Composables/useDialog';
  * cancel). Also turns the server's one-off flash messages into toasts, so
  * every "Saved." from a controller surfaces the same way.
  */
-const { state, settle, dismissToast } = useDialog();
+const { state, settle, dismissToast, holdToast, releaseToast } = useDialog();
 
 const confirmRef = ref(null);
 const alertRef = ref(null);
@@ -68,10 +68,12 @@ onBeforeUnmount(() => {
     removeListener?.();
 });
 
+// Each kind: a tinted icon badge and a short heading, so a toast reads at a glance.
 const toastStyles = {
-    success: { icon: 'checkCircle', classes: 'border-success-border text-success' },
-    info: { icon: 'info', classes: 'border-info-border text-info' },
-    error: { icon: 'xCircle', classes: 'border-danger-border text-danger' },
+    success: { icon: 'checkCircle', title: 'Done', chip: 'bg-success-bg text-success' },
+    info: { icon: 'info', title: 'Notice', chip: 'bg-info-bg text-info' },
+    warning: { icon: 'exclamation', title: 'Heads up', chip: 'bg-warning-bg text-warning' },
+    error: { icon: 'xCircle', title: 'Something went wrong', chip: 'bg-danger-bg text-danger' },
 };
 </script>
 
@@ -125,19 +127,33 @@ const toastStyles = {
         </Transition>
 
         <!-- Toasts -->
-        <div class="pointer-events-none fixed top-20 right-4 z-[95] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
-            <TransitionGroup enter-active-class="transition duration-200" enter-from-class="translate-x-4 opacity-0" leave-active-class="transition duration-150" leave-to-class="opacity-0">
+        <div class="pointer-events-none fixed top-20 right-4 z-[95] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
+            <TransitionGroup
+                enter-active-class="transition duration-200 ease-out motion-reduce:transition-none"
+                enter-from-class="translate-y-2 opacity-0"
+                leave-active-class="transition duration-150 motion-reduce:transition-none"
+                leave-to-class="opacity-0"
+                move-class="transition duration-200 motion-reduce:transition-none"
+            >
                 <div
                     v-for="item in state.toasts"
                     :key="item.id"
-                    class="pointer-events-auto flex items-start gap-3 rounded-lg border-l-4 bg-surface px-4 py-3 text-sm text-text shadow-lg"
-                    :class="toastStyles[item.type].classes"
+                    class="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-surface p-3.5 pr-3 text-sm shadow-lg"
+                    @mouseenter="holdToast(item.id)"
+                    @mouseleave="releaseToast(item.id)"
+                    @focusin="holdToast(item.id)"
+                    @focusout="releaseToast(item.id)"
                 >
-                    <Icon :name="toastStyles[item.type].icon" class="mt-0.5 shrink-0" />
-                    <p class="flex-1 text-text">{{ item.message }}</p>
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" :class="toastStyles[item.type].chip" aria-hidden="true">
+                        <Icon :name="toastStyles[item.type].icon" size="sm" />
+                    </span>
+                    <div class="min-w-0 flex-1 pt-0.5">
+                        <p class="font-semibold text-text">{{ toastStyles[item.type].title }}</p>
+                        <p class="mt-0.5 text-text-muted">{{ item.message }}</p>
+                    </div>
                     <button
                         type="button"
-                        class="shrink-0 rounded p-0.5 text-text-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        class="shrink-0 rounded-md p-1 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                         aria-label="Dismiss notification"
                         @click="dismissToast(item.id)"
                     >

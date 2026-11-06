@@ -23,10 +23,10 @@ const isNew = computed(() => props.announcement.publish_at && Date.now() - new D
 <template>
     <Link
         :href="`/announcements/${announcement.slug}`"
-        class="group flex gap-3.5 rounded-lg border border-border bg-surface p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        :class="announcement.featured ? 'border-l-4 border-l-accent' : ''"
+        class="group flex gap-3.5 rounded-lg border p-4 transition-colors duration-200 hover:border-primary/50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        :class="announcement.featured ? 'border-info-border bg-info-bg/40' : 'border-border bg-surface'"
     >
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :class="announcement.featured ? 'bg-primary text-white' : 'bg-info-bg text-primary'" aria-hidden="true">
             <Icon name="megaphone" />
         </span>
         <span class="min-w-0 flex-1">
