@@ -17,7 +17,7 @@ defineProps({
 </script>
 
 <template>
-    <section class="rounded-lg border border-border bg-surface p-5 transition-colors duration-200 hover:border-primary/25">
+    <section class="rounded-lg border border-border bg-surface p-5">
         <header v-if="title || description || $slots.header || $slots.actions" class="mb-4 flex flex-wrap items-start justify-between gap-3">
             <slot name="header">
                 <div class="min-w-0">

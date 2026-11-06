@@ -73,7 +73,7 @@ defineEmits(['update:modelValue']);
                 :aria-invalid="invalid"
                 :disabled="disabled"
                 :list="suggestions.length ? `${id}-suggestions` : undefined"
-                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-text shadow-xs transition-colors hover:border-primary/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted"
+                class="block w-full form-control px-3 py-2"
                 :class="{ 'pl-9': icon }"
                 @input="$emit('update:modelValue', $event.target.value)"
             />

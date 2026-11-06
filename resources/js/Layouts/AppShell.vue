@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
                 <img :src="brand.logo" alt="CSC" class="h-9 w-auto" />
                 <span class="hidden flex-col sm:flex">
                     <span class="text-lg leading-tight font-semibold text-primary">{{ brand.header_name }}</span>
-                    <span class="text-[11px] leading-tight text-text-muted">Integrated Management Information System</span>
+                    <span class="text-2xs leading-tight text-text-muted">Integrated Management Information System</span>
                 </span>
             </Link>
 
@@ -228,7 +228,7 @@ onBeforeUnmount(() => {
         <aside
             id="app-sidebar"
             ref="sidebarRef"
-            class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col print:hidden transition-transform duration-200 motion-reduce:transition-none"
+            class="fixed bottom-0 left-0 top-16 z-30 flex w-64 flex-col print:hidden transition-transform duration-200 ease-standard motion-reduce:transition-none"
             :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full', 'bg-csc-blue text-white']"
             :role="isDesktop ? undefined : 'dialog'"
             :aria-modal="isDesktop ? undefined : sidebarOpen"
@@ -243,7 +243,7 @@ onBeforeUnmount(() => {
         </aside>
 
         <div
-            class="flex min-h-screen flex-col pt-16 print:pt-0! print:pl-0! transition-[padding] duration-200 motion-reduce:transition-none"
+            class="flex min-h-screen flex-col pt-16 print:pt-0! print:pl-0! transition-[padding] duration-200 ease-standard motion-reduce:transition-none"
             :class="{ 'lg:pl-64': sidebarOpen }"
         >
             <div class="border-b border-border bg-surface px-4 py-2 md:hidden print:hidden">

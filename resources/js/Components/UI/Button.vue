@@ -20,7 +20,7 @@ const props = defineProps({
     size: {
         type: String,
         default: 'md',
-        validator: (value) => ['sm', 'md'].includes(value),
+        validator: (value) => ['sm', 'md', 'lg'].includes(value),
     },
     type: {
         type: String,
@@ -66,14 +66,16 @@ const variantClasses = {
 };
 
 const sizeClasses = computed(() => {
-    if (props.variant === 'link') return props.size === 'sm' ? 'gap-1.5 text-xs' : 'gap-2 text-sm';
-    if (props.iconOnly) return props.size === 'sm' ? 'p-1.5 text-xs max-sm:min-h-10 max-sm:min-w-10' : 'p-2 text-sm max-sm:min-h-10 max-sm:min-w-10';
+    const touch = 'max-sm:min-h-11';
 
-    return props.size === 'sm' ? 'gap-1.5 px-3 py-1.5 text-xs max-sm:min-h-10' : 'gap-2 px-4 py-2 text-sm max-sm:min-h-10';
+    if (props.variant === 'link') return { sm: 'gap-1.5 text-xs', md: 'gap-2 text-sm', lg: 'gap-2 text-base' }[props.size];
+    if (props.iconOnly) return { sm: `p-1.5 text-xs ${touch} max-sm:min-w-11`, md: `p-2 text-sm ${touch} max-sm:min-w-11`, lg: `p-2.5 text-base ${touch} max-sm:min-w-11` }[props.size];
+
+    return { sm: `gap-1.5 px-3 py-1.5 text-xs ${touch}`, md: `gap-2 px-4 py-2 text-sm ${touch}`, lg: `gap-2 px-5 py-2.5 text-base ${touch}` }[props.size];
 });
 
 const classes = computed(() => [
-    'inline-flex items-center justify-center rounded-md font-medium transition duration-150 ease-out active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:active:scale-100',
+    'inline-flex items-center justify-center rounded-md font-medium transition duration-150 ease-standard active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:active:scale-100',
     variantClasses[props.variant],
     sizeClasses.value,
 ]);

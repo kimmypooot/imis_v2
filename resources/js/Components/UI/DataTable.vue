@@ -231,7 +231,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     <select
                         :id="`${id}-length`"
                         v-model.number="perPage"
-                        class="rounded-md border border-border-strong bg-surface px-2 py-1 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        class="form-control px-2 py-1"
                     >
                         <option v-for="size in pageSizes" :key="size" :value="size">{{ size }}</option>
                     </select>
@@ -255,14 +255,14 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     v-model="search"
                     type="search"
                     placeholder="Search…"
-                    class="block w-full rounded-md border border-border-strong bg-surface py-1.5 pr-3 pl-8 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    class="form-control block w-full py-1.5 pr-3 pl-8"
                 />
             </div>
         </div>
 
         <!-- Table -->
         <div class="overflow-x-auto rounded-md border border-border">
-            <table class="min-w-full text-[0.8125rem]">
+            <table class="min-w-full text-compact">
                 <caption class="sr-only">{{ caption }}</caption>
                 <thead class="table-head">
                     <tr>

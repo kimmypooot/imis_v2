@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
             <Icon name="bell" size="md" />
             <span
                 v-if="count"
-                class="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-danger px-1 text-center text-[0.65rem] font-bold leading-[1.1rem] text-white"
+                class="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-danger px-1 text-center text-2xs font-bold leading-[1.1rem] text-white"
                 aria-hidden="true"
             >{{ badge }}</span>
         </button>
@@ -172,14 +172,14 @@ onBeforeUnmount(() => {
             class="fixed inset-x-2 top-[4.25rem] z-50 flex max-h-[calc(100dvh-5rem)] flex-col rounded-md border border-border bg-surface shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem]"
         >
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-border px-3 py-2">
-                <h2 class="flex items-center gap-2 text-[0.8125rem] font-semibold text-text">
+                <h2 class="flex items-center gap-2 text-compact font-semibold text-text">
                     Notifications
-                    <span v-if="count" class="rounded-full bg-info-bg px-2 py-0.5 text-[0.7rem] font-medium text-primary">{{ badge }} new</span>
+                    <span v-if="count" class="rounded-full bg-info-bg px-2 py-0.5 text-2xs font-medium text-primary">{{ badge }} new</span>
                 </h2>
                 <button
                     v-if="count"
                     type="button"
-                    class="rounded text-xs text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    class="rounded-sm text-xs text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     @click="markAllRead"
                 >Mark all as read</button>
             </div>
@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
                 <p v-else-if="!items.length" class="px-3 py-6 text-center text-xs text-text-muted">You're all caught up.</p>
                 <div v-else>
                     <section v-for="group in groups" :key="group.label" :aria-label="group.label">
-                        <h3 class="sticky top-0 border-b border-border bg-surface-muted px-3 py-1 text-[0.7rem] font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h3>
+                        <h3 class="sticky top-0 border-b border-border bg-surface-muted px-3 py-1 text-2xs font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h3>
                         <ul class="divide-y divide-border">
                             <li v-for="item in group.items" :key="item.id">
                                 <a
@@ -217,13 +217,13 @@ onBeforeUnmount(() => {
                                     </span>
                                     <span class="min-w-0 flex-1">
                                         <span class="flex items-start justify-between gap-2">
-                                            <span class="block text-[0.8125rem] leading-snug text-text" :class="item.read ? '' : 'font-semibold'">
+                                            <span class="block text-compact leading-snug text-text" :class="item.read ? '' : 'font-semibold'">
                                                 {{ item.title }}<span v-if="!item.read" class="sr-only"> (unread)</span>
                                             </span>
                                             <span v-if="!item.read" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
                                         </span>
                                         <span class="line-clamp-2 block text-xs leading-snug text-text-muted">{{ item.message }}</span>
-                                        <time :datetime="item.created_at" :title="formatDateTime(item.created_at)" class="mt-0.5 block text-[0.7rem] text-text-muted">{{ timeAgo(item.created_at) }}</time>
+                                        <time :datetime="item.created_at" :title="formatDateTime(item.created_at)" class="mt-0.5 block text-2xs text-text-muted">{{ timeAgo(item.created_at) }}</time>
                                     </span>
                                 </a>
                             </li>

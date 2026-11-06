@@ -1,9 +1,11 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import Dropdown from '../UI/Dropdown.vue';
 import Icon from '../UI/Icon.vue';
 import UserAvatar from '../UI/UserAvatar.vue';
-import ConfirmDialog from '../Feedback/ConfirmDialog.vue';
+import Modal from '../Feedback/Modal.vue';
+import Button from '../UI/Button.vue';
 import { firstName, useSplash } from '../../Composables/useSplash';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -25,52 +27,14 @@ const emit = defineEmits(['feedback']);
 
 const { show: showSplash, hide: hideSplash } = useSplash();
 
-const open = ref(false);
-const rootRef = ref(null);
-const buttonRef = ref(null);
-
-const toggle = () => {
-    open.value = !open.value;
-};
-
-const close = () => {
-    open.value = false;
-};
-
-const onDocumentClick = (event) => {
-    if (open.value && rootRef.value && !rootRef.value.contains(event.target)) {
-        close();
-    }
-};
-
-// Escape closes the menu and, if focus was inside it, hands focus back
-// to the button so keyboard users aren't dropped at the top of the page.
-const onKeydown = (event) => {
-    if (event.key !== 'Escape' || !open.value) return;
-
-    const hadFocus = rootRef.value?.contains(document.activeElement);
-    close();
-    if (hadFocus) buttonRef.value?.focus();
-};
-
-onMounted(() => {
-    document.addEventListener('click', onDocumentClick);
-    document.addEventListener('keydown', onKeydown);
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener('click', onDocumentClick);
-    document.removeEventListener('keydown', onKeydown);
-});
-
-const openFeedback = () => {
+const openFeedback = (close) => {
     close();
     emit('feedback');
 };
 
 const confirmingLogout = ref(false);
 
-const requestLogout = () => {
+const requestLogout = (close) => {
     close();
     confirmingLogout.value = true;
 };
@@ -92,36 +56,35 @@ const logout = () => {
 };
 
 const itemClass =
-    'flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
+    'flex w-full items-center gap-2 px-3 py-2 text-left text-compact text-text hover:bg-surface-muted focus:outline-none focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
 
 const groupClass = 'border-b border-border py-1';
 </script>
 
 <template>
-    <div ref="rootRef" class="relative">
-        <button
-            ref="buttonRef"
-            type="button"
-            class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            :aria-label="`Account menu for ${user.name}`"
-            :aria-expanded="open"
-            aria-controls="user-menu-panel"
-            @click="toggle"
-        >
-            <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" highlight />
-            <!-- Name over position, shown in full. -->
-            <span class="hidden flex-col whitespace-nowrap text-left leading-tight sm:flex">
-                <span class="font-semibold text-text">{{ user.name }}</span>
-                <span v-if="user.position" class="text-xs text-text-muted">{{ user.position }}</span>
-            </span>
-            <Icon name="chevronDown" size="sm" class="shrink-0 text-text-muted" />
-        </button>
+    <div>
+        <Dropdown panel-class="w-64 py-1">
+            <template #trigger="{ open, toggle, setTrigger, panelId }">
+                <button
+                    :ref="setTrigger"
+                    type="button"
+                    class="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    :aria-label="`Account menu for ${user.name}`"
+                    :aria-expanded="open"
+                    :aria-controls="panelId"
+                    @click="toggle"
+                >
+                    <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" highlight />
+                    <!-- Name over position, shown in full. -->
+                    <span class="hidden flex-col whitespace-nowrap text-left leading-tight sm:flex">
+                        <span class="font-semibold text-text">{{ user.name }}</span>
+                        <span v-if="user.position" class="text-xs text-text-muted">{{ user.position }}</span>
+                    </span>
+                    <Icon name="chevronDown" size="sm" class="shrink-0 text-text-muted" />
+                </button>
+            </template>
 
-        <div
-            v-if="open"
-            id="user-menu-panel"
-            class="absolute right-0 z-50 mt-2 max-h-[calc(100vh-5rem)] w-64 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-lg"
-        >
+            <template #default="{ close }">
             <div class="border-b border-border px-3 py-2">
                 <!-- The trigger already shows name and position from sm up. -->
                 <div class="sm:hidden">
@@ -139,29 +102,51 @@ const groupClass = 'border-b border-border py-1';
                     <Icon name="cog" size="sm" />
                     Account settings
                 </Link>
-                <button type="button" :class="itemClass" @click="openFeedback">
+                <button type="button" :class="itemClass" @click="openFeedback(close)">
                     <Icon name="chat" size="sm" />
                     Send feedback
                 </button>
             </div>
 
             <div class="pt-1">
-                <button type="button" :class="itemClass" @click="requestLogout">
+                <button type="button" :class="itemClass" @click="requestLogout(close)">
                     <Icon name="logout" size="sm" />
                     Sign out
                 </button>
             </div>
-        </div>
+            </template>
+        </Dropdown>
 
-        <ConfirmDialog
-            :open="confirmingLogout"
-            title="Sign out of IMIS?"
-            :danger="false"
-            confirm-label="Sign out"
-            @confirm="logout"
-            @cancel="confirmingLogout = false"
-        >
-            You will be returned to the login page.
-        </ConfirmDialog>
+        <Modal :open="confirmingLogout" title="Sign out of IMIS?" icon="logout" size="sm" @close="confirmingLogout = false">
+            <div class="flex flex-col items-center text-center">
+                <div class="relative rounded-full">
+                    <span class="absolute -inset-2 rounded-full bg-primary/30 blur-md motion-safe:animate-breathe" aria-hidden="true" />
+                    <span class="relative flex rounded-full">
+                        <UserAvatar :name="user.name" :photo-url="user.profile_photo_url" size="xl" />
+                        <span class="pointer-events-none absolute inset-0 rounded-full border border-primary" aria-hidden="true" />
+                    </span>
+                    <span class="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white ring-4 ring-surface">
+                        <Icon name="logout" size="sm" />
+                    </span>
+                </div>
+                <p class="mt-4 text-base font-semibold break-words text-text">{{ user.name }}</p>
+                <p v-if="user.position" class="text-xs break-words text-text-muted">{{ user.position }}</p>
+                <p class="mt-4 text-sm text-text-muted">
+                    Leaving already, {{ firstName(user.name) }}? Your work is saved and your session will end on this device.
+                </p>
+            </div>
+
+            <template #footer>
+                <div class="flex w-full flex-col gap-3">
+                    <Button variant="danger" class="w-full justify-center" @click="logout">
+                        <Icon name="logout" size="sm" />
+                        Sign out
+                    </Button>
+                    <Button variant="primary" class="w-full justify-center" data-autofocus @click="confirmingLogout = false">
+                        Stay signed in
+                    </Button>
+                </div>
+            </template>
+        </Modal>
     </div>
 </template>

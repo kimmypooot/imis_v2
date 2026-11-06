@@ -1,5 +1,5 @@
 <script setup>
-import Icon from '../UI/Icon.vue';
+import Icon from './Icon.vue';
 
 /**
  * The legacy admin "metric-card": a label, one big number, a sub-line,

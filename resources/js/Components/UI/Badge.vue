@@ -13,13 +13,18 @@ const props = defineProps({
         default: 'neutral',
         validator: (value) => tones.includes(value),
     },
+    /** A fully rounded pill (counts, tags in a heading) instead of a rounded-md tag. */
+    pill: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const classes = computed(() => toneClasses[props.tone]);
 </script>
 
 <template>
-    <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium" :class="classes">
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs" :class="[pill ? 'rounded-full font-semibold' : 'rounded-md font-medium', classes]">
         <slot />
     </span>
 </template>

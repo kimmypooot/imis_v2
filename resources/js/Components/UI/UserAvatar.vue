@@ -33,7 +33,7 @@ onMounted(() => {
 
 const ring = computed(() => (props.highlight ? 'border-2 border-border transition-colors group-hover:border-primary' : ''));
 
-const sizes = { sm: 'h-7 w-7 text-[0.65rem]', md: 'h-9 w-9 text-xs', lg: 'h-14 w-14 text-base', xl: 'h-24 w-24 text-2xl' };
+const sizes = { sm: 'h-7 w-7 text-2xs', md: 'h-9 w-9 text-xs', lg: 'h-14 w-14 text-base', xl: 'h-24 w-24 text-2xl' };
 
 const spinnerSizes = { sm: 'sm', md: 'sm', lg: 'md', xl: 'lg' };
 
@@ -63,7 +63,7 @@ const initials = computed(() =>
             <Spinner :size="spinnerSizes[size]" label="Loading photo…" />
         </span>
     </span>
-    <span v-else class="flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-csc-blue-light to-csc-blue-dark font-semibold text-white" :class="[sizes[size], ring]" aria-hidden="true">
+    <span v-else class="flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-white" :class="[sizes[size], ring]" aria-hidden="true">
         {{ initials || '?' }}
     </span>
 </template>

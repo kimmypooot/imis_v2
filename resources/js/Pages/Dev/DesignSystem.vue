@@ -16,9 +16,14 @@ import Skeleton from '../../Components/UI/Skeleton.vue';
 import Spinner from '../../Components/UI/Spinner.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Icon from '../../Components/UI/Icon.vue';
+import Dropdown from '../../Components/UI/Dropdown.vue';
+import Tooltip from '../../Components/UI/Tooltip.vue';
+import StatTile from '../../Components/UI/StatTile.vue';
+import ActionButton from '../../Components/UI/ActionButton.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import PasswordInput from '../../Components/Forms/PasswordInput.vue';
 import Checkbox from '../../Components/Forms/Checkbox.vue';
+import Switch from '../../Components/Forms/Switch.vue';
 import Radio from '../../Components/Forms/Radio.vue';
 import FormGroup from '../../Components/Forms/FormGroup.vue';
 import Select from '../../Components/Forms/Select.vue';
@@ -33,6 +38,7 @@ defineOptions({ layout: AdminLayout });
 const demoText = ref('');
 const demoPassword = ref('');
 const demoChecked = ref(true);
+const demoSwitch = ref(true);
 const demoRadio = ref('a');
 const demoSelect = ref('');
 const demoFile = ref(null);
@@ -178,6 +184,62 @@ const demoRows = [
                 <FormGroup id="demo-file" label="File input" helper-text="PDF up to 5MB">
                     <FileInput id="demo-file" accept=".pdf" @update:model-value="(file) => (demoFile = file)" />
                 </FormGroup>
+            </div>
+        </Card>
+
+        <Card title="Shape &amp; elevation" description="Radius and shadow come from tokens. Cards are flat and bordered; only floating layers are elevated.">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div v-for="r in ['sm', 'md', 'lg', 'xl']" :key="r" class="border border-border-strong bg-surface-muted p-4 text-center text-xs text-text-muted" :class="`rounded-${r}`">rounded-{{ r }}</div>
+            </div>
+            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="rounded-lg border border-border bg-surface p-4 text-xs text-text-muted">Card: border only</div>
+                <div class="rounded-lg border border-border bg-surface p-4 text-xs text-text-muted shadow-menu">Menu: shadow-menu</div>
+                <div class="rounded-lg border border-border bg-surface p-4 text-xs text-text-muted shadow-modal">Dialog: shadow-modal</div>
+            </div>
+        </Card>
+
+        <Card title="Type scale" description="Use these instead of arbitrary text-[…] values.">
+            <p class="text-stat font-bold text-text">text-stat · big figures</p>
+            <p class="text-base text-text">text-base · body in forms and modals</p>
+            <p class="text-sm text-text">text-sm · default body</p>
+            <p class="text-compact text-text">text-compact · dense tables and menus</p>
+            <p class="text-xs text-text-muted">text-xs · captions and helper text</p>
+            <p class="text-2xs text-text-muted">text-2xs · smallest labels and badges</p>
+        </Card>
+
+        <Card title="Menus, tooltips &amp; toggles">
+            <div class="flex flex-wrap items-start gap-6">
+                <Dropdown align="left" panel-class="w-56 py-1">
+                    <template #trigger="{ open, toggle, setTrigger, panelId }">
+                        <Button :ref="(c) => setTrigger(c?.$el ?? null)" variant="secondary" :aria-expanded="open" :aria-controls="panelId" @click="toggle">
+                            Dropdown
+                            <Icon name="chevronDown" size="sm" />
+                        </Button>
+                    </template>
+                    <template #default="{ close }">
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-compact text-text hover:bg-surface-muted" @click="close">First action</button>
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-compact text-text hover:bg-surface-muted" @click="close">Second action</button>
+                    </template>
+                </Dropdown>
+
+                <Tooltip label="Hover or focus me">
+                    <Button variant="outline" size="sm">Tooltip</Button>
+                </Tooltip>
+
+                <div class="flex gap-2">
+                    <ActionButton icon="pencil" label="Edit example" />
+                    <ActionButton icon="trash" label="Delete example" tone="danger" />
+                </div>
+
+                <Switch id="demo-switch" v-model="demoSwitch" label="Email me about approvals" description="Takes effect immediately." />
+            </div>
+        </Card>
+
+        <Card title="Stat tiles">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <StatTile label="Employees" :value="412" icon="users" :progress="82">of 500 plantilla items</StatTile>
+                <StatTile label="Vacancies" :value="18" icon="clipboard" tone="warning" />
+                <StatTile label="On leave today" :value="9" icon="calendar" tone="success" />
             </div>
         </Card>
 

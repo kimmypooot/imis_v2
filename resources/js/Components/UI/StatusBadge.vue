@@ -4,7 +4,7 @@ import { titleCase } from '../../Utils/text';
 import { toneClasses } from './tones';
 
 /**
- * The legacy `status-badge`: a rounded pill with a leading dot. Pass the
+ * The legacy `status-badge`: a rounded-sm pill with a leading dot. Pass the
  * raw status value; known values get their tone (shared with Badge, see
  * tones.js), anything else is neutral grey.
  * The word is always shown, so color is never the only signal.

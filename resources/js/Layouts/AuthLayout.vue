@@ -56,7 +56,7 @@ const agencyLogos = computed(() => [
             class="relative hidden overflow-hidden bg-csc-blue bg-cover bg-center px-8 py-10 text-center text-white lg:flex lg:flex-col lg:items-center lg:justify-center"
             :style="{ backgroundImage: `url('${brand.login_background}')` }"
         >
-            <div class="absolute inset-0 bg-linear-to-br from-csc-blue-dark/95 via-csc-blue/90 to-csc-blue-light/85" />
+            <div class="absolute inset-0 bg-csc-blue/90" />
 
             <div class="relative flex w-full max-w-md flex-col items-center motion-safe:animate-fade-in">
                 <div class="flex items-center justify-center gap-6">
@@ -69,8 +69,8 @@ const agencyLogos = computed(() => [
                         draggable="false"
                     />
                 </div>
-                <div class="my-6 h-0.5 w-10 rounded bg-white/20" />
-                <p class="text-[1.65rem] leading-snug font-bold tracking-tight">
+                <div class="my-6 h-0.5 w-10 rounded-sm bg-white/20" />
+                <p class="text-stat leading-snug font-bold tracking-tight">
                     CSC RO VIII<br />Integrated Management<br />Information System
                 </p>
                 <p class="mt-5 text-sm leading-relaxed text-white/70">
@@ -110,7 +110,7 @@ const agencyLogos = computed(() => [
                 </ul>
             </div>
 
-            <p class="absolute inset-x-0 bottom-8 text-[0.66rem] tracking-widest text-white/45 uppercase">
+            <p class="absolute inset-x-0 bottom-8 text-2xs tracking-widest text-white/45 uppercase">
                 {{ organization }}
             </p>
         </div>
@@ -121,7 +121,7 @@ const agencyLogos = computed(() => [
             <div class="pointer-events-none absolute -bottom-28 -left-20 h-64 w-64 rounded-full bg-csc-red/5" aria-hidden="true" />
 
             <div class="auth-card relative w-full max-w-md">
-                <div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
+                <div class="overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
                     <div class="px-6 py-8 sm:px-10">
                     <!-- Agency logos live in the brand panel on desktop -->
                     <div class="mb-5 flex items-center justify-center gap-5 border-b border-border pb-5 lg:hidden">

@@ -101,7 +101,7 @@ const entries = computed(() =>
 const badgeCount = (entry) =>
     entry.items ? entry.items.reduce((sum, item) => sum + badgeCount(item), 0) : Number(page.props.badges?.[entry.badge] ?? 0);
 const badgeText = (count) => (count > 99 ? '99+' : String(count));
-const badgeClass = 'ml-auto min-w-[1.25rem] shrink-0 rounded-full bg-danger px-1.5 ring-2 ring-white/40 text-center text-[0.7rem] font-bold leading-5 text-white';
+const badgeClass = 'ml-auto min-w-[1.25rem] shrink-0 rounded-full bg-danger px-1.5 ring-2 ring-white/40 text-center text-2xs font-bold leading-5 text-white';
 
 // Stable id for a portal group heading, so the group is labelled by it.
 const groupId = (group) => `nav-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -153,7 +153,7 @@ const sectionId = (section) => `nav-section-${section.key.toLowerCase().replace(
 // A navy focus ring would vanish on the navy portal sidebar, so it gets a white one.
 const linkClass = (href) => {
     return [
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark',
         isActive(href) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
     ];
 };
@@ -165,7 +165,7 @@ const linkClass = (href) => {
             <Link
                 v-if="entry.type === 'link'"
                 :href="entry.href"
-                class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-standard motion-reduce:transition-none"
                 :class="linkClass(entry.href)"
                 :aria-current="isActive(entry.href) ? 'page' : undefined"
                 @click="$emit('navigate')"
@@ -179,14 +179,14 @@ const linkClass = (href) => {
             <div v-else-if="variant === 'admin'">
                 <button
                     type="button"
-                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
                     :aria-expanded="isExpanded(entry)"
                     @click="toggle(entry)"
                 >
                     <Icon :name="entry.icon || 'grid'" size="sm" />
                     <span class="flex-1">{{ entry.label }}</span>
                     <span v-if="!isExpanded(entry) && badgeCount(entry)" :class="badgeClass">{{ badgeText(badgeCount(entry)) }}<span class="sr-only"> new inside</span></span>
-                    <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(entry) }" />
+                    <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(entry) }" />
                 </button>
                 <ul v-show="isExpanded(entry)" class="mt-0.5 space-y-0.5">
                     <li v-for="item in entry.items" :key="item.type === 'section' ? item.key : item.href">
@@ -211,7 +211,7 @@ const linkClass = (href) => {
                         <template v-else>
                             <button
                                 type="button"
-                                class="flex w-full items-center gap-2 rounded-md py-1.5 pr-3 pl-9 text-left text-xs font-semibold tracking-wide uppercase transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                class="flex w-full items-center gap-2 rounded-md py-1.5 pr-3 pl-9 text-left text-xs font-semibold tracking-wide uppercase transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
                                 :class="holdsActive(item) ? 'text-white' : 'text-white/70'"
                                 :aria-expanded="isExpanded(item)"
                                 :aria-controls="sectionId(item)"
@@ -219,7 +219,7 @@ const linkClass = (href) => {
                             >
                                 <Icon :name="item.icon || 'grid'" size="sm" />
                                 <span class="flex-1">{{ item.label }}</span>
-                                <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(item) }" />
+                                <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(item) }" />
                             </button>
                             <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
                                 <li v-for="link in item.items" :key="link.href">
@@ -253,7 +253,7 @@ const linkClass = (href) => {
                     <Link
                         v-if="item.type === 'link'"
                         :href="item.href"
-                        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-standard motion-reduce:transition-none"
                         :class="linkClass(item.href)"
                         :aria-current="isActive(item.href) ? 'page' : undefined"
                         @click="$emit('navigate')"
@@ -266,7 +266,7 @@ const linkClass = (href) => {
                     <div v-else>
                         <button
                             type="button"
-                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
                             :class="holdsActive(item) ? 'text-white' : 'text-white/80'"
                             :aria-expanded="isExpanded(item)"
                             :aria-controls="sectionId(item)"
@@ -275,7 +275,7 @@ const linkClass = (href) => {
                             <Icon :name="item.icon || 'grid'" size="sm" />
                             <span class="flex-1">{{ item.label }}</span>
                             <span v-if="!isExpanded(item) && badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new inside</span></span>
-                            <Icon name="chevronDown" size="sm" class="transition-transform" :class="{ 'rotate-180': isExpanded(item) }" />
+                            <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(item) }" />
                         </button>
                         <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
                             <li v-for="link in item.items" :key="link.href">

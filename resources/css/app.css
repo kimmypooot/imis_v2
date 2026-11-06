@@ -14,6 +14,20 @@
     --animate-fade-in: fade-in 0.35s ease-out both;
     --animate-rise: rise 0.3s ease-out both;
     --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+    --animate-breathe: breathe 3.2s ease-in-out infinite;
+
+    /* A slow, soft glow that swells and settles. */
+    @keyframes breathe {
+        0%,
+        100% {
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.22);
+        }
+    }
 
     /* Starts half visible, so swapping content never flashes blank. */
     @keyframes rise {
@@ -130,7 +144,42 @@
     --radius-xl: 0.75rem;
 
     /* Elevation is kept flat: containers (cards, banners) take a border, not
-       a shadow; only floating layers (menus, modals) use shadow-lg/xl. */
+       a shadow. Only floating layers are elevated: menus and popovers use
+       `shadow-menu`, dialogs use `shadow-modal`. */
+    --shadow-menu: 0 10px 15px -3px rgb(28 30 42 / 0.12), 0 4px 6px -4px rgb(28 30 42 / 0.1);
+    --shadow-modal: 0 20px 25px -5px rgb(28 30 42 / 0.18), 0 8px 10px -6px rgb(28 30 42 / 0.12);
+
+    /* Type scale. Tailwind's own sizes cover xs (12px) to 4xl; these fill the
+       two gaps that pages kept patching with arbitrary `text-[…]` values:
+       `2xs` for dense captions/badges, `compact` for dense table and
+       menu text between xs and sm, `stat` for big figures. */
+    --text-2xs: 0.6875rem;
+    --text-2xs--line-height: 1rem;
+    --text-compact: 0.8125rem;
+    --text-compact--line-height: 1.25rem;
+    --text-stat: 1.65rem;
+    --text-stat--line-height: 1.2;
+
+    /* Focus ring on dark (navy) surfaces such as the sidebar. */
+    --color-focus-ring-on-dark: #ffffff;
+
+    /* Motion: one easing curve for UI transitions. */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Stacking order for layers that float above the page. Numeric `z-10` to
+   `z-50` cover in-page stacking (header, sidebar, menus, modals); these
+   named layers sit above all of them and replace arbitrary `z-[…]`. */
+@utility z-tooltip {
+    z-index: 70;
+}
+
+@utility z-dialog {
+    z-index: 90;
+}
+
+@utility z-toast {
+    z-index: 95;
 }
 
 /**
@@ -189,6 +238,71 @@
     font-weight: var(--font-weight-semibold);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
+}
+
+/*
+ * A compact form control for filter bars and toolbars (the `Select` and
+ * `TextInput` components are for full-width form fields). Apply it to a
+ * raw <select> or <input>. The edge is `border-strong` so it meets 3:1.
+ */
+@utility filter-control {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-strong);
+    background-color: var(--color-surface);
+    padding: 0.5rem 0.75rem;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--color-text);
+    transition: border-color 150ms var(--ease-standard);
+
+    &:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+    }
+
+    &:focus {
+        border-color: var(--color-primary);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 0;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: var(--color-surface-muted);
+        color: var(--color-text-muted);
+    }
+}
+
+/*
+ * The field look shared by Select, TextInput, Textarea and any raw
+ * <input>/<select>/<textarea> a page still needs: edge, surface, text size,
+ * hover and focus. Width and padding are left to the caller (`block w-full
+ * px-3 py-2`, or `pl-9` for an icon) so it never fights those utilities.
+ */
+@utility form-control {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-strong);
+    background-color: var(--color-surface);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--color-text);
+    box-shadow: var(--shadow-xs);
+    transition: border-color 150ms var(--ease-standard);
+
+    &:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+    }
+
+    &:focus {
+        border-color: var(--color-primary);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 0;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: var(--color-surface-muted);
+        color: var(--color-text-muted);
+    }
 }
 
 /*

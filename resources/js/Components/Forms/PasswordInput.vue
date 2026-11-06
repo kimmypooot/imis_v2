@@ -57,7 +57,7 @@ const inputType = computed(() => (visible.value ? 'text' : 'password'));
                 :autocomplete="autocomplete"
                 :required="required"
                 :aria-invalid="invalid"
-                class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 pr-10 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                class="block w-full form-control px-3 py-2 pr-10"
                 :class="{ 'pl-9': icon }"
                 @input="$emit('update:modelValue', $event.target.value)"
             />
