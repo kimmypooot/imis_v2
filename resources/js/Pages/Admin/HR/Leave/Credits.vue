@@ -64,7 +64,11 @@ const selectClass = 'rounded-md border border-border bg-surface px-3 py-2 text-s
 <template>
     <Head title="Leave Credits" />
 
-    <PageHeader title="Leave Credits" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Credits' }]" />
+    <PageHeader title="Leave Credits" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Credits' }]">
+        <template v-if="canManage" #actions>
+            <Button variant="secondary" href="/admin/hr/leave/sync">Sync with the leave card file</Button>
+        </template>
+    </PageHeader>
 
     <div class="space-y-6">
         <div v-if="canManage" class="grid gap-4 lg:grid-cols-2">

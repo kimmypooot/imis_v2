@@ -146,6 +146,8 @@ enum AuditEvent: string
     case LeaveImportedFromLegacy = 'leave_credit.imported_from_legacy';
     // `imis:import-leave-cards`: opening VL/SL balances from HR's leave card workbook (counts in metadata).
     case LeaveCardsImported = 'leave_credit.imported_from_workbook';
+    // The leave card sync: balances and card history brought in line with the workbook (counts in metadata).
+    case LeaveCardsSynced = 'leave_credit.synced_from_workbook';
     // HR-8 payroll. Metadata names fields or counts — never amounts.
     case PayComponentCreated = 'pay_component.created';
     case PayComponentUpdated = 'pay_component.updated';

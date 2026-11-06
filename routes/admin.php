@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\LdReviewController;
 use App\Http\Controllers\Admin\LearningDevelopmentController;
 use App\Http\Controllers\Admin\LeaveApplicationController as AdminLeaveApplicationController;
 use App\Http\Controllers\Admin\LeaveCalendarController;
+use App\Http\Controllers\Admin\LeaveCardSyncController;
 use App\Http\Controllers\Admin\LeaveCreditController;
 use App\Http\Controllers\Admin\LeaveDesignationController;
 use App\Http\Controllers\Admin\LeaveMonetizationController;
@@ -340,6 +341,11 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/hr/readiness', [HrReadinessController::class, 'index'])->name('admin.hr.readiness');
         Route::post('admin/hr/leave/accrual', [LeaveCreditController::class, 'accrue'])->name('admin.hr.leave.accrue');
         Route::post('admin/hr/leave/year-start', [LeaveCreditController::class, 'startYear'])->name('admin.hr.leave.year-start');
+        // Syncing with HR's leave card workbook (the master file): upload, review, apply.
+        Route::get('admin/hr/leave/sync', [LeaveCardSyncController::class, 'show'])->name('admin.hr.leave.sync');
+        Route::post('admin/hr/leave/sync', [LeaveCardSyncController::class, 'upload'])->name('admin.hr.leave.sync.upload');
+        Route::post('admin/hr/leave/sync/apply', [LeaveCardSyncController::class, 'apply'])->name('admin.hr.leave.sync.apply');
+        Route::delete('admin/hr/leave/sync', [LeaveCardSyncController::class, 'discard'])->name('admin.hr.leave.sync.discard');
         Route::post('admin/hr/leave/types', [LeaveTypeController::class, 'store'])->name('admin.hr.leave.types.store');
         Route::put('admin/hr/leave/types/{type}', [LeaveTypeController::class, 'update'])->name('admin.hr.leave.types.update');
         Route::post('admin/hr/leave/holidays', [HolidayController::class, 'store'])->name('admin.hr.leave.holidays.store');
