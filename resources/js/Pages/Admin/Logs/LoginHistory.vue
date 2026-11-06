@@ -6,7 +6,8 @@ import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import LogFilters from '../../../Components/Admin/LogFilters.vue';
-import { formatDateTime } from '../../../Utils/datetime';
+import UserAvatar from '../../../Components/UI/UserAvatar.vue';
+import { formatDateTime, timeAgo } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
 
@@ -22,10 +23,21 @@ defineProps({
 const statusLabels = { active: 'Active', logged_out: 'Logged Out', expired: 'Expired', ended: 'Ended by Admin' };
 const statusTones = { active: 'active', logged_out: 'logged_out', expired: 'expired', ended: 'inactive' };
 
+// How long a finished sign-in lasted, e.g. "2h 5m".
+const duration = (row) => {
+    if (!row.logged_out_at) return '';
+    const minutes = Math.max(0, Math.round((new Date(row.logged_out_at) - new Date(row.logged_in_at)) / 60000));
+
+    if (minutes < 1) return '< 1m';
+
+    return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}m` : ''}`;
+};
+
 const columns = [
-    { key: 'username', label: 'Username' },
+    { key: 'username', label: 'User', value: (row) => `${row.name ?? ''} ${row.username ?? ''}` },
     { key: 'ip_address', label: 'IP address' },
     { key: 'logged_in_at', label: 'Login time', value: (row) => formatDateTime(row.logged_in_at) },
+    { key: 'duration', label: 'Duration', sortable: false, value: duration },
     { key: 'logged_out_at', label: 'Logout time', value: (row) => (row.logged_out_at ? formatDateTime(row.logged_out_at) : '') },
     { key: 'status', label: 'Status', sortable: false, align: 'center', value: (row) => statusLabels[row.status] },
     { key: 'browser', label: 'User agent', sortable: false, value: (row) => row.user_agent ?? '' },
@@ -51,6 +63,19 @@ const columns = [
         >
             <template #toolbar>
                 <LogFilters url="/admin/login-history" :only="['logins']" :query="query" />
+            </template>
+            <template #cell-username="{ row }">
+                <div class="flex items-center gap-3">
+                    <UserAvatar :name="row.name ?? row.username ?? '?'" :photo-url="row.profile_photo_url" size="sm" />
+                    <div class="min-w-0">
+                        <div class="truncate font-medium text-text">{{ row.name ?? row.username }}</div>
+                        <div v-if="row.name" class="truncate text-xs text-text-muted">@{{ row.username }}</div>
+                    </div>
+                </div>
+            </template>
+            <template #cell-logged_in_at="{ row }">
+                <div>{{ formatDateTime(row.logged_in_at) }}</div>
+                <div class="text-xs text-text-muted">{{ timeAgo(row.logged_in_at) }}</div>
             </template>
             <template #cell-status="{ row }">
                 <StatusBadge :status="statusTones[row.status]" :label="statusLabels[row.status]" />

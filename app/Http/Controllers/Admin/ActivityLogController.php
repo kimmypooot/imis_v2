@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\AuditLog;
 use App\Models\LoginHistory;
 use App\Models\SystemAccessLog;
+use App\Models\User;
 use App\Support\Security\UserAgents;
 use App\Support\Tables\CsvExport;
 use App\Support\Tables\ServerTable;
@@ -35,6 +36,18 @@ class ActivityLogController extends Controller
         'auth.session_ended' => 'info',
     ];
 
+    /**
+     * The accounts behind a page of log rows, so the table can show a name
+     * and photo instead of a bare username.
+     *
+     * @param  IlluminateSupportCollection<int, string|null>  $usernames
+     * @return IlluminateSupportCollection<string, User>
+     */
+    private function peopleByUsername($usernames)
+    {
+        return User::query()->whereIn('username', $usernames->filter()->unique()->all())->get()->keyBy('username');
+    }
+
     // ── Login History ────────────────────────────────────────────────
 
     public function logins(Request $request): Response
@@ -43,11 +56,14 @@ class ActivityLogController extends Controller
 
         $page = ServerTable::paginate($this->loginQuery($request), $request);
         $alive = LoginHistory::liveSessionIds(collect($page->items())->pluck('session_id')->filter()->all());
+        $people = $this->peopleByUsername(collect($page->items())->pluck('username'));
 
         return Inertia::render('Admin/Logs/LoginHistory', [
             'logins' => $page->through(fn (LoginHistory $login) => [
                 'id' => $login->id,
                 'username' => $login->username,
+                'name' => $people->get($login->username)?->name,
+                'profile_photo_url' => $people->get($login->username)?->profile_photo_url,
                 'user_id' => $login->user_id,
                 'ip_address' => $login->ip_address,
                 'logged_in_at' => $login->logged_in_at->toIso8601String(),
@@ -91,10 +107,15 @@ class ActivityLogController extends Controller
     {
         $this->authorize('viewAny', AuditLog::class);
 
+        $page = ServerTable::paginate($this->accessQuery($request), $request);
+        $people = $this->peopleByUsername(collect($page->items())->pluck('username'));
+
         return Inertia::render('Admin/Logs/AccessLogs', [
-            'logs' => ServerTable::paginate($this->accessQuery($request), $request)->through(fn (SystemAccessLog $log) => [
+            'logs' => $page->through(fn (SystemAccessLog $log) => [
                 'id' => $log->id,
                 'username' => $log->username,
+                'name' => $people->get($log->username)?->name,
+                'profile_photo_url' => $people->get($log->username)?->profile_photo_url,
                 'application_name' => $log->application_name,
                 'role_name' => $log->role_name,
                 'ip_address' => $log->ip_address,

@@ -5,7 +5,8 @@ import PageHeader from '../../../Components/UI/PageHeader.vue';
 import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import LogFilters from '../../../Components/Admin/LogFilters.vue';
-import { formatDateTime } from '../../../Utils/datetime';
+import UserAvatar from '../../../Components/UI/UserAvatar.vue';
+import { formatDateTime, timeAgo } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
 
@@ -20,7 +21,7 @@ const props = defineProps({
 });
 
 const columns = [
-    { key: 'username', label: 'Username' },
+    { key: 'username', label: 'User', value: (row) => `${row.name ?? ''} ${row.username ?? ''}` },
     { key: 'ip_address', label: 'IP address' },
     { key: 'application_name', label: 'System' },
     { key: 'role_name', label: 'Role', value: (row) => row.role_name ?? 'Guest' },
@@ -57,6 +58,19 @@ const columns = [
                     :query="query"
                     :select="{ key: 'application_id', label: 'All systems', options: props.applicationOptions }"
                 />
+            </template>
+            <template #cell-username="{ row }">
+                <div class="flex items-center gap-3">
+                    <UserAvatar :name="row.name ?? row.username ?? '?'" :photo-url="row.profile_photo_url" size="sm" />
+                    <div class="min-w-0">
+                        <div class="truncate font-medium text-text">{{ row.name ?? row.username }}</div>
+                        <div v-if="row.name" class="truncate text-xs text-text-muted">@{{ row.username }}</div>
+                    </div>
+                </div>
+            </template>
+            <template #cell-accessed_at="{ row }">
+                <div>{{ formatDateTime(row.accessed_at) }}</div>
+                <div class="text-xs text-text-muted">{{ timeAgo(row.accessed_at) }}</div>
             </template>
             <template #cell-role_name="{ row }">
                 <span v-if="row.role_name" class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">{{ row.role_name }}</span>
