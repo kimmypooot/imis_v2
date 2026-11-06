@@ -261,7 +261,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
         </div>
 
         <!-- Table -->
-        <div class="overflow-x-auto rounded-md border border-border">
+        <div class="relative overflow-x-auto rounded-md border border-border">
             <table class="min-w-full text-compact">
                 <caption class="sr-only">{{ caption }}</caption>
                 <thead class="table-head">

@@ -30,7 +30,7 @@ defineProps({
         <div v-else-if="empty">
             <slot name="empty" />
         </div>
-        <div v-else class="overflow-x-auto">
+        <div v-else class="relative overflow-x-auto">
             <table class="w-full text-left text-sm table-styled">
                 <slot />
             </table>
