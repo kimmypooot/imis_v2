@@ -5,9 +5,11 @@ import Icon from '../../UI/Icon.vue';
 
 /**
  * How far along the PDS is: each part of the form (a tab of the editor) is
- * Done when every section in it has entries, Started when some do, and
- * Not started otherwise. It only counts what is filled in — a section that
- * does not apply can stay empty — so it guides, it does not gate signing.
+ * Done when its required sections have entries, Started when some do, and
+ * Not started otherwise. Sections that can be legitimately empty (children,
+ * voluntary work, eligibility, trainings, other information) are optional:
+ * a part with only those is "Optional" until something is added, and does
+ * not count against the total. It guides, it does not gate signing.
  * Picking a part opens that tab in the editor.
  */
 const props = defineProps({
@@ -31,26 +33,38 @@ const filled = (key) => {
 
 const parts = computed(() =>
     props.schema.tabs.map((tab) => {
-        const done = tab.sections.filter(filled).length;
-        const state = done === 0 ? 'empty' : done === tab.sections.length ? 'done' : 'started';
+        const required = tab.sections.filter((key) => !props.schema.sections[key]?.optional);
+        const anyFilled = tab.sections.some(filled);
+
+        let state;
+        if (required.length === 0) {
+            state = anyFilled ? 'done' : 'optional';
+        } else if (required.every(filled)) {
+            state = 'done';
+        } else {
+            state = anyFilled ? 'started' : 'empty';
+        }
 
         return { key: tab.key, label: tab.label, state };
     }),
 );
 
-const doneCount = computed(() => parts.value.filter((part) => part.state === 'done').length);
-const percent = computed(() => Math.round((doneCount.value / parts.value.length) * 100));
-const next = computed(() => parts.value.find((part) => part.state !== 'done'));
+// Optional parts left empty are not counted either way.
+const counted = computed(() => parts.value.filter((part) => part.state !== 'optional'));
+const doneCount = computed(() => counted.value.filter((part) => part.state === 'done').length);
+const percent = computed(() => Math.round((doneCount.value / counted.value.length) * 100));
+const next = computed(() => counted.value.find((part) => part.state !== 'done'));
 
 const looks = {
     done: { icon: 'check', chip: 'bg-success-bg text-success', label: 'Done' },
     started: { icon: 'pencil', chip: 'bg-warning-bg text-warning', label: 'Started' },
     empty: { icon: 'plus', chip: 'bg-surface-muted text-text-muted', label: 'Not started' },
+    optional: { icon: 'plus', chip: 'bg-surface-muted text-text-muted', label: 'Optional' },
 };
 </script>
 
 <template>
-    <Card title="How complete is your PDS?" icon="clipboard" :description="`${doneCount} of ${parts.length} parts filled in`">
+    <Card title="How complete is your PDS?" icon="clipboard" :description="`${doneCount} of ${counted.length} parts filled in`">
         <template #actions>
             <button
                 v-if="next"
@@ -82,6 +96,6 @@ const looks = {
             </li>
         </ul>
 
-        <p class="mt-3 text-xs text-text-muted">Parts that do not apply to you can stay empty; write N/A where the form asks for it.</p>
+        <p class="mt-3 text-xs text-text-muted">Parts marked Optional (such as children or voluntary work) can stay empty if they do not apply to you.</p>
     </Card>
 </template>

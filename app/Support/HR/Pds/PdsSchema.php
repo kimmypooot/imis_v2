@@ -25,6 +25,10 @@ use InvalidArgumentException;
  * - `questions`: items 34–40, kept as one encrypted JSON document.
  * - `list`: a repeating section, one model row per entry.
  *
+ * A section may be `optional`: it can legitimately stay empty (no children,
+ * no voluntary work…), so the completeness card does not count it against
+ * the person.
+ *
  * Field: { key, label, type, required?, options?, when?, span?, max?,
  *          min?, help?, suggestions?, target? }
  * `when` is ['field' => ..., 'is' => value] — the field only applies (is
@@ -130,6 +134,7 @@ final class PdsSchema
 
             'children' => [
                 'kind' => 'list',
+                'optional' => true,
                 'label' => '23. Children',
                 'model' => PdsChild::class,
                 'noun' => 'child',
@@ -161,6 +166,7 @@ final class PdsSchema
 
             'eligibility' => [
                 'kind' => 'list',
+                'optional' => true,
                 'label' => '27. Civil service eligibility',
                 'model' => PdsEligibility::class,
                 'noun' => 'eligibility',
@@ -199,6 +205,7 @@ final class PdsSchema
             // (PdsLearningDevelopment::scopeOnPds), read-only.
             'learning_development' => [
                 'kind' => 'list',
+                'optional' => true,
                 'label' => '29. Learning and development interventions/training programs attended',
                 'model' => PdsLearningDevelopment::class,
                 'noun' => 'training',
@@ -215,6 +222,7 @@ final class PdsSchema
 
             'voluntary_work' => [
                 'kind' => 'list',
+                'optional' => true,
                 'label' => '30. Voluntary work or involvement in civic/non-government/people/voluntary organizations',
                 'model' => PdsVoluntaryWork::class,
                 'noun' => 'organization',
@@ -332,6 +340,7 @@ final class PdsSchema
             'kind' => $section['kind'],
             'label' => $section['label'],
             'help' => $section['help'] ?? null,
+            'optional' => $section['optional'] ?? false,
             'noun' => $section['noun'] ?? null,
             'max_rows' => $section['max_rows'] ?? null,
             'managed_by' => $section['managed_by'] ?? null,
@@ -539,6 +548,7 @@ final class PdsSchema
     {
         return [
             'kind' => 'list',
+            'optional' => true,
             'label' => $label,
             'model' => PdsOtherInformation::class,
             'scope' => ['type' => $type],
