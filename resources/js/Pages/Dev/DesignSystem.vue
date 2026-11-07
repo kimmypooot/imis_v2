@@ -181,8 +181,8 @@ const demoRows = [
                     <Radio id="demo-radio-b" v-model="demoRadio" name="demo-radio" value="b" label="Radio B" />
                 </div>
 
-                <FormGroup id="demo-file" label="File input" helper-text="PDF up to 5MB">
-                    <FileInput id="demo-file" accept=".pdf" @update:model-value="(file) => (demoFile = file)" />
+                <FormGroup id="demo-file" label="File input">
+                    <FileInput id="demo-file" accept=".pdf" :max-size-mb="5" @update:model-value="(file) => (demoFile = file)" />
                 </FormGroup>
             </div>
         </Card>

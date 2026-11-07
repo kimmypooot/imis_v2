@@ -1,4 +1,5 @@
 <script setup>
+import FileInput from '../../Components/Forms/FileInput.vue';
 import InputLabel from '../../Components/Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -185,14 +186,15 @@ const field = 'mt-1 block w-full';
                         </template>
                     </label>
                     <p v-if="resubmitting?.has_attachment" class="mt-1 text-sm text-text">Already attached: {{ resubmitting.attachment_name }}. Choose a file only to replace it.</p>
-                    <input
+                    <FileInput
                         id="apply-attachment"
-                        type="file"
+                        v-model="form.attachment"
+                        class="mt-1"
                         accept="application/pdf,image/jpeg,image/png"
-                        class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
-                        @change="form.attachment = $event.target.files[0] ?? null"
+                        :max-size-mb="Math.round(attachmentKilobytes / 1024)"
+                        :invalid="!!(form.errors.attachment || issues.attachment)"
+                        :hint="`PDF, JPG or PNG, up to ${Math.round(attachmentKilobytes / 1024)} MB. Only you, your approvers and HR can open it.`"
                     />
-                    <p class="mt-1 text-xs text-text-muted">PDF, JPG or PNG, up to {{ Math.round(attachmentKilobytes / 1024) }} MB. Only you, your approvers and HR can open it.</p>
                     <InputError :message="form.errors.attachment || issues.attachment" />
                 </div>
             </form>

@@ -1,4 +1,5 @@
 <script setup>
+import FileInput from '../Forms/FileInput.vue';
 import InputLabel from '../Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
@@ -18,7 +19,6 @@ const props = defineProps({
     maxKilobytes: { type: Number, required: true },
 });
 
-const fileInput = ref(null);
 const form = useForm({ document_type: '', title: '', document_date: '', remarks: '', file: null });
 
 const submit = () =>
@@ -29,7 +29,6 @@ const submit = () =>
             forceFormData: true,
             onSuccess: () => {
                 form.reset();
-                if (fileInput.value) fileInput.value.value = '';
             },
         });
 </script>
@@ -56,17 +55,16 @@ const submit = () =>
         </div>
         <div class="sm:col-span-2">
             <InputLabel for="doc-file" required>File</InputLabel>
-            <input
+            <FileInput
                 id="doc-file"
-                ref="fileInput"
-                type="file"
+                v-model="form.file"
+                class="mt-1"
                 accept="application/pdf,image/jpeg,image/png"
                 required
-                aria-describedby="doc-file-help"
-                class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
-                @change="form.file = $event.target.files[0] ?? null"
+                :max-size-mb="Math.round(maxKilobytes / 1024)"
+                :invalid="!!form.errors.file"
+                :hint="`PDF, JPG or PNG, up to ${Math.round(maxKilobytes / 1024)} MB. Stored privately.`"
             />
-            <p id="doc-file-help" class="mt-1 text-xs text-text-muted">PDF, JPG or PNG, up to {{ Math.round(maxKilobytes / 1024) }} MB. Stored privately.</p>
             <InputError :message="form.errors.file" />
         </div>
         <div class="flex justify-end sm:col-span-2">

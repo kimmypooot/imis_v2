@@ -1,4 +1,5 @@
 <script setup>
+import FileInput from '../Forms/FileInput.vue';
 import InputLabel from '../Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
@@ -31,7 +32,6 @@ const blank = {
 };
 
 const form = useForm({ ...blank });
-const fileInput = ref(null);
 const editing = computed(() => props.record !== null);
 
 watch(
@@ -42,7 +42,6 @@ watch(
         form.defaults(Object.fromEntries(Object.keys(blank).map((key) => [key, key === 'certificate' ? null : key === 'remove_certificate' ? false : (source[key] ?? '')])));
         form.reset();
         form.clearErrors();
-        if (fileInput.value) fileInput.value.value = '';
     },
 );
 
@@ -75,18 +74,15 @@ const submit = () => {
                         Remove
                     </label>
                 </p>
-                <input
+                <FileInput
                     id="ld-certificate"
-                    ref="fileInput"
-                    type="file"
+                    v-model="form.certificate"
+                    class="mt-1"
                     accept="application/pdf,image/jpeg,image/png"
-                    aria-describedby="ld-certificate-help"
-                    class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
-                    @change="form.certificate = $event.target.files[0] ?? null"
+                    :max-size-mb="Math.round(certificateKilobytes / 1024)"
+                    :invalid="!!form.errors.certificate"
+                    :hint="`PDF, JPG or PNG, up to ${Math.round(certificateKilobytes / 1024)} MB. ${record?.certificate ? 'Choosing a file replaces the current one.' : ''}`"
                 />
-                <p id="ld-certificate-help" class="mt-1 text-xs text-text-muted">
-                    PDF, JPG or PNG, up to {{ Math.round(certificateKilobytes / 1024) }} MB. {{ record?.certificate ? 'Choosing a file replaces the current one.' : '' }}
-                </p>
                 <InputError :message="form.errors.certificate" />
             </div>
         </form>

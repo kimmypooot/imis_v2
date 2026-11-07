@@ -1,4 +1,5 @@
 <script setup>
+import FileInput from '../Forms/FileInput.vue';
 import InputLabel from '../Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
@@ -42,7 +43,6 @@ const blank = {
 };
 
 const form = useForm({ ...blank });
-const fileInput = ref(null);
 const editing = computed(() => props.entry !== null);
 const hasEndDate = computed(() => ['detail', 'designation'].includes(form.kind));
 // Heading the office = a capacity is chosen (Officer-in-Charge or Caretaker).
@@ -62,7 +62,6 @@ watch(
         form.defaults(Object.fromEntries(Object.keys(blank).map((key) => [key, key === 'scan' ? null : (source[key] ?? blank[key])])));
         form.reset();
         form.clearErrors();
-        if (fileInput.value) fileInput.value.value = '';
     },
 );
 
@@ -201,18 +200,15 @@ const field = 'mt-1 block w-full';
             <div class="sm:col-span-2">
                 <InputLabel for="assignment-scan">Scanned order (optional)</InputLabel>
                 <p v-if="entry?.has_scan" class="mt-1 text-sm text-text">A scan is already filed. Choosing a file adds the new one to the 201 file and links it here.</p>
-                <input
+                <FileInput
                     id="assignment-scan"
-                    ref="fileInput"
-                    type="file"
+                    v-model="form.scan"
+                    class="mt-1"
                     accept="application/pdf,image/jpeg,image/png"
-                    aria-describedby="assignment-scan-help"
-                    class="mt-1 block w-full text-sm text-text file:mr-3 file:rounded-md file:border file:border-border-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-muted"
-                    @change="form.scan = $event.target.files[0] ?? null"
+                    :max-size-mb="Math.round(scanKilobytes / 1024)"
+                    :invalid="!!form.errors.scan"
+                    :hint="`PDF, JPG or PNG, up to ${Math.round(scanKilobytes / 1024)} MB. Filed in the 201 file as an Office Order.`"
                 />
-                <p id="assignment-scan-help" class="mt-1 text-xs text-text-muted">
-                    PDF, JPG or PNG, up to {{ Math.round(scanKilobytes / 1024) }} MB. Filed in the 201 file as an Office Order.
-                </p>
                 <InputError :message="form.errors.scan" />
             </div>
         </form>

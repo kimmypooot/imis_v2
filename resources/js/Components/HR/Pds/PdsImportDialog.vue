@@ -1,4 +1,5 @@
 <script setup>
+import FileInput from '../../Forms/FileInput.vue';
 import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import Modal from '../../Feedback/Modal.vue';
@@ -21,7 +22,6 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const page = usePage();
-const input = ref(null);
 const form = useForm({ file: null });
 const applying = ref(false);
 const chosen = ref([]);
@@ -41,11 +41,6 @@ const upload = () => {
     form.post(`${props.url}/import`, { preserveScroll: true, forceFormData: true });
 };
 
-const onFile = (event) => {
-    form.file = event.target.files[0] ?? null;
-    form.clearErrors();
-};
-
 const apply = () => {
     applying.value = true;
 
@@ -58,7 +53,6 @@ const apply = () => {
 
 const close = () => {
     form.reset();
-    if (input.value) input.value.value = '';
     emit('close');
 };
 
@@ -75,13 +69,12 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
             </p>
             <div>
                 <label for="pds-import-file" class="mb-1 block text-sm font-medium text-text">Excel file</label>
-                <input
+                <FileInput
                     id="pds-import-file"
-                    ref="input"
-                    type="file"
-                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    class="block w-full text-sm text-text file:mr-3 file:rounded-md file:border-0 file:bg-info-bg file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary"
-                    @change="onFile"
+                    v-model="form.file"
+                    accept=".xlsx"
+                    :invalid="!!form.errors.file"
+                    @update:model-value="form.clearErrors()"
                 />
                 <InputError :message="form.errors.file" />
             </div>

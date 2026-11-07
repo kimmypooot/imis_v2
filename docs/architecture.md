@@ -2606,6 +2606,31 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   `/api/imis/summary` is its Executive Dashboard feed (set up like
   JPortal's). Content comes over with `php artisan gad:import-legacy`.
   Locally it runs on port 8050 (8040 is ERIS).
+- **PSED** (`../new-psed`, the "Primary System of Electronic Based Documents"
+  entry): the Policies and Systems Evaluation Division's archives, replacing
+  the legacy `imis/psed` subsystem (`../psed`, reference only). Staff only,
+  and only through IMIS: its `Auth\ImisSsoController` (`/sso`) takes
+  `role_code` `admin` or `user` (the PSED application roles' `code`; their
+  legacy launch URLs must be cleared), links by `users.imis_user_id`. It
+  started from the ERIS shell; Phase 1 (sign-in, sidebar and dashboard laid out
+  like the legacy sidebar, placeholders for every page) is done and no module
+  is ported yet — see its `docs/migration-plan.md`. Locally it runs on port
+  8090 (8080 is ETTS).
+- **ROOMS** (`../new-rooms`, the "Regional Office Orders and Memoranda Management System"
+  entry): the regional office's archive of issuances (Regional Office Orders
+  and Memoranda, and policies on recruitment and promotion, AWA, attendance
+  and leave, training, and welfare fund and employees' benefits), replacing
+  the legacy `imis/rooms` subsystem (`../rooms`, reference only). Staff only,
+  and only through IMIS: its `Auth\ImisSsoController` (`/sso`) takes
+  `role_code` `admin` or `user` (the ROOMS application roles' `code`, from
+  the legacy `system_access.rooms` column; their legacy launch URLs must be
+  cleared), links by `users.imis_user_id`. Everyone reads and searches;
+  only `admin` adds, edits and deletes (PDFs on a private disk, served
+  through the app; deletes are soft and purged after 30 days by
+  `rooms:purge-deleted`). Started from the PSED shell. Data comes over with
+  `php artisan rooms:import-legacy` (reads `rood_orders`; the legacy
+  `uploads/` folder is read through `ROOMS_LEGACY_ROOT` until copied).
+  Locally it runs on port 8100 (8090 is PSED).
 - **ICT SRTS** (ICT Service Request Ticketing System): reads the current
   employees server to server at `GET /api/v1/ictsrts/employees`, guarded by
   a bearer token (`ICTSRTS_API_TOKEN`, compared in constant time; the
