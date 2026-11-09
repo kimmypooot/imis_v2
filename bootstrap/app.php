@@ -29,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
+        // Refuse a forged Host header (see config/app.php, trusted_hosts).
+        $middleware->trustHosts(at: fn () => config('app.trusted_hosts'));
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'permission' => EnsureUserHasPermission::class,

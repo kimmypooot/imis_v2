@@ -42,7 +42,8 @@ class RecordAccessLog
             ->through(fn (AuditLog $entry) => [
                 'id' => $entry->id,
                 'at' => $entry->created_at->toIso8601String(),
-                'who' => $entry->actor?->name ?? $entry->actor_label ?? 'Unknown account',
+                'who' => $entry->actor?->name ?? $entry->actor_label
+                    ?? (in_array($entry->event, [AuditEvent::RecruitmentPdsRead, AuditEvent::RecruitmentDocumentRead], true) ? 'Recruitment Portal' : 'Unknown account'),
                 'position' => $entry->actor?->position,
                 'what' => $this->what($entry),
                 'detail' => $entry->description,
@@ -120,6 +121,8 @@ class RecordAccessLog
             AuditEvent::EmployeeDocumentViewed => '201 file document',
             AuditEvent::LdCertificateViewed => 'Training certificate',
             AuditEvent::LdLogViewed => 'Learning & Development log',
+            AuditEvent::RecruitmentPdsRead => 'Personal Data Sheet (read by the Recruitment Portal)',
+            AuditEvent::RecruitmentDocumentRead => '201 file document (read by the Recruitment Portal)',
             default => $entry->event->label(),
         };
     }

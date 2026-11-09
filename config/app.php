@@ -69,6 +69,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Hosts
+    |--------------------------------------------------------------------------
+    |
+    | Outside local and testing, a request whose Host header is not the
+    | APP_URL host (or a subdomain of it) is refused, so a forged Host can't
+    | steer the links in password-reset and verification emails. List any
+    | other names the app is reached by, comma-separated (TRUSTED_HOSTS).
+    |
+    */
+
+    'trusted_hosts' => array_values(array_filter(array_map(
+        fn (string $host) => '^'.preg_quote(trim($host), '/').'$',
+        array_filter(explode(',', (string) env('TRUSTED_HOSTS', ''))),
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

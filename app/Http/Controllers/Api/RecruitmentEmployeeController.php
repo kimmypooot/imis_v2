@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditEvent;
 use App\Enums\EmployeeDocumentType;
 use App\Enums\LdApprovalStatus;
 use App\Enums\PdsSubmissionStatus;
@@ -11,6 +12,7 @@ use App\Models\EmployeeDocument;
 use App\Models\Pds\PdsLearningDevelopment;
 use App\Models\User;
 use App\Support\HR\EmployeeDocuments;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,6 +40,8 @@ class RecruitmentEmployeeController extends Controller
     public function pds(User $user): JsonResponse
     {
         $employee = $this->employee($user);
+
+        $this->audit()->recordFor(null, AuditEvent::RecruitmentPdsRead, 'The Recruitment Portal read the verified PDS', $employee, ['ip' => request()->ip()]);
 
         $submission = $employee->submissions()
             ->where('status', PdsSubmissionStatus::Verified)
@@ -121,6 +125,11 @@ class RecruitmentEmployeeController extends Controller
 
         abort_unless(Storage::disk(EmployeeDocuments::DISK)->exists($record->file_path), 404);
 
+        $this->audit()->recordFor(null, AuditEvent::RecruitmentDocumentRead, 'The Recruitment Portal downloaded a 201 file document', $record, [
+            'document_type' => $record->document_type->value,
+            'ip' => request()->ip(),
+        ]);
+
         return Storage::disk(EmployeeDocuments::DISK)->download(
             $record->file_path,
             app(EmployeeDocuments::class)->downloadName($record),
@@ -139,7 +148,7 @@ class RecruitmentEmployeeController extends Controller
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<EmployeeDocument>
+     * @return Builder<EmployeeDocument>
      */
     private function shared(Employee $employee)
     {

@@ -242,6 +242,13 @@ enum AuditEvent: string
     case ExecutiveTargetRemoved = 'executive.target_removed';
     case ExecutiveCollected = 'executive.collected';
 
+    // The Recruitment Portal reading an applicant's verified PDS or a 201
+    // document over the server-to-server API. The portal has no IMIS
+    // account, so these have no actor; the employee sees them under
+    // "Who accessed my record".
+    case RecruitmentPdsRead = 'recruitment.pds_read';
+    case RecruitmentDocumentRead = 'recruitment.document_read';
+
     /**
      * Someone looking at or printing an employee's HR records — the
      * personal-data access trail kept for RA 10173, which has its own
@@ -256,6 +263,7 @@ enum AuditEvent: string
             self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed,
             self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed,
             self::LdCertificateViewed, self::LdLogViewed, self::LdReportViewed,
+            self::RecruitmentPdsRead, self::RecruitmentDocumentRead,
         ];
     }
 
