@@ -18,6 +18,9 @@ class XlsxReader
 {
     private const RELATIONSHIPS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
+    /** Largest decompressed XML part read, so a crafted "zip bomb" workbook can't exhaust memory (real ones are a few MB). */
+    private const MAX_PART_BYTES = 33554432;
+
     /**
      * @return array<string, array<int, array<string, string>>> sheet name => row number => column letter => value
      */
@@ -131,8 +134,14 @@ class XlsxReader
 
     private function xml(ZipArchive $zip, string $part): SimpleXMLElement
     {
+        $size = $zip->statName($part)['size'] ?? null;
+
+        if ($size !== null && $size > self::MAX_PART_BYTES) {
+            throw new RuntimeException('The workbook is too large to read.');
+        }
+
         $contents = $zip->getFromName($part);
-        $xml = $contents === false ? false : simplexml_load_string($contents);
+        $xml = $contents === false ? false : simplexml_load_string($contents, options: LIBXML_NONET);
 
         if ($xml === false) {
             throw new RuntimeException("The workbook is missing or has a damaged part ({$part}).");
