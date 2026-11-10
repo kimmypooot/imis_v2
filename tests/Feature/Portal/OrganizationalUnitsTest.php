@@ -10,6 +10,7 @@ use App\Models\Application;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
+use App\Models\PlantillaItem;
 use App\Models\Position;
 use App\Models\Service;
 use App\Models\User;
@@ -68,6 +69,27 @@ class OrganizationalUnitsTest extends TestCase
             ->where('groups.0.units.0.employees.0.position', 'Administrative Aide')
             ->missing('groups.0.units.0.employees.0.email')
             ->missing('groups.0.units.0.employees.0.birthday'));
+    }
+
+    public function test_vacant_plantilla_items_are_listed_as_vacant_by_salary_grade_among_the_people(): void
+    {
+        $viewer = User::factory()->create();
+        $unit = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);
+        Position::query()->create(['title' => 'Administrative Officer IV', 'salary_grade' => 15]);
+        Position::query()->create(['title' => 'Administrative Aide I', 'salary_grade' => 1]);
+        $serving = User::factory()->create(['organizational_unit_id' => $unit->id, 'position' => 'Administrative Officer IV']);
+        $lower = User::factory()->create(['organizational_unit_id' => $unit->id, 'position' => 'Administrative Aide I']);
+        PlantillaItem::query()->create(['position_title' => 'Administrative Aide VI', 'salary_grade' => 6, 'organizational_unit_id' => $unit->id]);
+        PlantillaItem::query()->create(['position_title' => 'Abolished Item', 'salary_grade' => 6, 'organizational_unit_id' => $unit->id])->forceFill(['abolished_at' => now()])->save();
+
+        $this->actingAs($viewer)->get('/organizational-units')->assertInertia(fn ($page) => $page
+            ->where('groups.0.units.0.employee_count', 2)
+            ->has('groups.0.units.0.employees', 3)
+            ->where('groups.0.units.0.employees.0.name', $serving->name)
+            ->where('groups.0.units.0.employees.1.name', 'Vacant')
+            ->where('groups.0.units.0.employees.1.position', 'Administrative Aide VI')
+            ->where('groups.0.units.0.employees.1.vacant', true)
+            ->where('groups.0.units.0.employees.2.name', $lower->name));
     }
 
     public function test_inactive_unit_is_not_exposed(): void
@@ -144,7 +166,7 @@ class OrganizationalUnitsTest extends TestCase
             ->where('groups.0.units.0.employees.0.name', $director->name)
             ->where('groups.0.units.0.employees.0.role', 'Head')
             ->where('groups.0.units.1.employees.0.name', $director->name)
-            ->where('groups.0.units.1.employees.0.role', 'OIC')
+            ->where('groups.0.units.1.employees.0.role', 'Concurrent')
             ->where('groups.0.units.1.employee_count', 1));
     }
 

@@ -8,6 +8,7 @@ use App\Enums\UnitType;
 use App\Enums\UserStatus;
 use App\Models\Employee;
 use App\Models\OrganizationalUnit;
+use App\Models\PlantillaItem;
 use App\Models\Position;
 use App\Models\User;
 use App\Support\HR\OfficeHeads;
@@ -28,6 +29,9 @@ use Illuminate\Support\Collection;
  * salary grade, highest first, then by surname. Contract of Service and
  * Job Order workers come last. The grade is that of the position matching
  * the person's title.
+ *
+ * Each office's vacant plantilla items are listed among its people by salary grade, as
+ * "Vacant" with the position title, highest grade first.
  *
  * Only what an internal directory needs is exposed (name, position,
  * photo, and whether they head the office), for active accounts.
@@ -73,6 +77,8 @@ class OfficeDirectory
         $leaders = $this->leadership->all();
         $headOf = $this->heads->all();
 
+        $vacancies = $this->vacancies();
+
         $groups = [
             'regional_support_units' => ['label' => UnitType::RegionalSupportUnit->pluralLabel(), 'units' => []],
             'field_offices' => ['label' => UnitType::FieldOffice->pluralLabel(), 'units' => []],
@@ -93,6 +99,7 @@ class OfficeDirectory
                 $headOf[$unit->id]['user']->id ?? null,
                 $grades,
                 $trailing,
+                $vacancies[$unit->id] ?? [],
             );
         }
 
@@ -108,9 +115,10 @@ class OfficeDirectory
      * @param  list<array{user: User, capacity: ?HeadCapacity}>  $leaders
      * @param  Collection<string, int>  $grades  salary grade by normalized position title
      * @param  Collection<int, int>  $trailing  user ids listed last (keys)
+     * @param  list<array<string, mixed>>  $vacant  vacant plantilla items of the office
      * @return array<string, mixed>
      */
-    private function present(OrganizationalUnit $unit, Collection $people, array $leaders, ?int $headId, Collection $grades, Collection $trailing): array
+    private function present(OrganizationalUnit $unit, Collection $people, array $leaders, ?int $headId, Collection $grades, Collection $trailing, array $vacant = []): array
     {
         // Leaders keep the order UnitLeadership gives (the head, then the rest).
         $rank = [];
@@ -119,7 +127,9 @@ class OfficeDirectory
             $rank[$leader['user']->id] = $index;
 
             if ($leader['user']->id === $headId) {
-                $roles[$leader['user']->id] = $leader['capacity']?->shortLabel() ?? 'Head';
+                $roles[$leader['user']->id] = $leader['user']->organizational_unit_id !== $unit->id
+                    ? 'Concurrent'
+                    : ($leader['capacity']?->shortLabel() ?? 'Head');
             }
         }
 
@@ -129,22 +139,29 @@ class OfficeDirectory
             collect($leaders)->pluck('user')->reject(fn (User $leader) => $people->contains('id', $leader->id)),
         );
 
-        $employees = $people
-            ->sortBy(fn (User $user) => [
-                $trailing->has($user->id) ? 1 : 0,
-                $rank[$user->id] ?? PHP_INT_MAX,
-                -($grades[$this->normalize($user->position)] ?? 0),
-                mb_strtolower((string) ($user->last_name ?: $user->name)),
-            ])
+        $entries = $people
             ->map(fn (User $user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'position' => $user->position,
-                'profile_photo_url' => $user->profile_photo_url,
-                'role' => $roles[$user->id] ?? null,
+                'sort' => [
+                    $trailing->has($user->id) ? 1 : 0,
+                    $rank[$user->id] ?? PHP_INT_MAX,
+                    -($grades[$this->normalize($user->position)] ?? 0),
+                    mb_strtolower((string) ($user->last_name ?: $user->name)),
+                ],
+                'row' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'position' => $user->position,
+                    'profile_photo_url' => $user->profile_photo_url,
+                    'role' => $roles[$user->id] ?? null,
+                ],
             ])
-            ->values()
-            ->all();
+            ->concat(collect($vacant)->map(fn (array $row) => [
+                'sort' => [0, PHP_INT_MAX, -$row['salary_grade'], '~'.mb_strtolower((string) $row['position'])],
+                'row' => $row,
+            ]));
+
+        $employees = $entries->sortBy('sort')->pluck('row')->values()->all();
+        $employeeCount = $people->count();
 
         return [
             'id' => $unit->id,
@@ -152,9 +169,48 @@ class OfficeDirectory
             'short_name' => $unit->short_name,
             'description' => $unit->description,
             'children_count' => $unit->children_count,
-            'employee_count' => count($employees),
+            'employee_count' => $employeeCount,
             'employees' => $employees,
         ];
+    }
+
+    /**
+     * Vacant (unabolished, unheld) plantilla items by top-level office id;
+     * an item in a sub-unit counts toward its top-level office.
+     *
+     * @return array<int, list<array<string, mixed>>>
+     */
+    private function vacancies(): array
+    {
+        $parents = OrganizationalUnit::query()->pluck('parent_id', 'id');
+        $root = function (?int $id) use ($parents): ?int {
+            for ($i = 0; $id !== null && $i < 20; $i++) {
+                $parent = $parents[$id] ?? null;
+                if ($parent === null) {
+                    return $id;
+                }
+                $id = $parent;
+            }
+
+            return null;
+        };
+
+        return PlantillaItem::query()
+            ->active()
+            ->whereDoesntHave('incumbency')
+            ->whereNotNull('organizational_unit_id')
+            ->get(['id', 'position_title', 'salary_grade', 'organizational_unit_id'])
+            ->groupBy(fn (PlantillaItem $item) => $root($item->organizational_unit_id))
+            ->map(fn (Collection $items) => $items->map(fn (PlantillaItem $item) => [
+                'id' => "vacant-{$item->id}",
+                'name' => 'Vacant',
+                'position' => $item->position_title,
+                'profile_photo_url' => null,
+                'role' => null,
+                'vacant' => true,
+                'salary_grade' => (int) $item->salary_grade,
+            ])->values()->all())
+            ->all();
     }
 
     private function normalize(?string $title): string

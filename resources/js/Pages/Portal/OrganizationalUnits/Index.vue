@@ -153,9 +153,15 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
                                 :key="person.id"
                                 class="group flex items-center gap-3 rounded-lg border border-border bg-surface p-3"
                             >
-                                <UserAvatar :name="person.name" :photo-url="person.profile_photo_url" size="lg" highlight />
+                                <div
+                                    v-if="person.vacant"
+                                    class="flex size-12 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-text-muted"
+                                >
+                                    <Icon name="user" />
+                                </div>
+                                <UserAvatar v-else :name="person.name" :photo-url="person.profile_photo_url" size="lg" highlight />
                                 <div class="min-w-0">
-                                    <p class="truncate text-sm font-medium text-text">{{ person.name }}</p>
+                                    <p class="truncate text-sm font-medium" :class="person.vacant ? 'italic text-text-muted' : 'text-text'">{{ person.name }}</p>
                                     <p v-if="person.position" class="truncate text-xs text-text-muted">{{ person.position }}</p>
                                     <span
                                         v-if="person.role"

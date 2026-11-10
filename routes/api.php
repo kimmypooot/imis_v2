@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CaresController;
 use App\Http\Controllers\Api\EttsController;
 use App\Http\Controllers\Api\IctSrtsController;
 use App\Http\Controllers\Api\IpcrsController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Api\ProctadController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\RecruitmentEmployeeController;
 use App\Http\Controllers\Api\SsoValidateController;
+use App\Http\Middleware\AuthenticateCares;
 use App\Http\Middleware\AuthenticateEtts;
 use App\Http\Middleware\AuthenticateIctSrts;
 use App\Http\Middleware\AuthenticateIpcrs;
@@ -62,4 +64,9 @@ Route::middleware([AuthenticateIpcrs::class, 'throttle:60,1'])->prefix('api/v1/i
 // PROCTAD: the staff who hold a PROCTAD role, for its Users page.
 Route::middleware([AuthenticateProctad::class, 'throttle:60,1'])->prefix('api/v1/proctad')->group(function () {
     Route::get('users', [ProctadController::class, 'users'])->name('proctad.users');
+});
+
+// CARES: the people directory, to pick an action officer and to name who prepares and approves its reports.
+Route::middleware([AuthenticateCares::class, 'throttle:60,1'])->prefix('api/v1/cares')->group(function () {
+    Route::get('employees', [CaresController::class, 'employees'])->name('cares.employees');
 });

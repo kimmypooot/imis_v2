@@ -1974,6 +1974,9 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
   reduced motion, the Recruitment users feed and the ETTS employees feed) is
   inserted the same way, already **published**, by migration
   `2027_01_31_090000_add_v3_5_release_note`.
+- **v3.5.1** (Enter now signs you out in the sign-out dialog, a tidier
+  Organizational Units page) is inserted the same way, already **published**,
+  by migration `2027_02_01_090000_add_v3_5_1_release_note`.
 
 ### User Guide (`/guide`)
 - Any signed-in user. The articles are plain data in `config/user-guide.php`
@@ -2647,6 +2650,18 @@ mechanism signs people in to them (the earlier "no SSO" notes in Phases
   `name`, `position`, `office_name` and `office_code` (as in the SSO payload),
   nothing else (no e-mail or username). ETTS uses it to suggest an addressee
   or signatory on a routing slip; typing a name by hand always still works.
+- **CARES** (Centralized Appointment Attestation and Reporting via Electronic
+  System, `../psed-app`): reads the people directory server to server at
+  `GET /api/v1/cares/employees`, guarded by a bearer token (`CARES_API_TOKEN`,
+  compared in constant time; off while unset; throttled to 60 a minute).
+  `data`: active accounts with `name`, the name in parts, `position` and the
+  office (`office_code`, `office_name`, `office_type`), no e-mail or username.
+  `heads`: who heads each office today from `OfficeHeads` (the Director II, or
+  while designated the OIC or Caretaker; `capacity` is null for the regular
+  head). CARES uses it to pick an appointment's action officer from CSC RO VIII
+  employees, the staff of a Field Office who prepare its reports, and the head
+  who approves them. Access to CARES itself follows the person's unit (PSED:
+  administrator; a Field or Satellite Office: that office), not a role grant.
 - **Launch screen:** `ApplicationLaunchController` renders
   `Portal/Applications/Launching` ("Opening <system>" over the IMIS logo)
   before sending the browser on; `app.blade.php` draws the same screen

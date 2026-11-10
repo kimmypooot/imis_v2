@@ -138,11 +138,11 @@ const groupClass = 'border-b border-border py-1';
 
             <template #footer>
                 <div class="flex w-full flex-col gap-3">
-                    <Button variant="danger" class="w-full justify-center" @click="logout">
+                    <Button variant="danger" class="w-full justify-center" data-autofocus @click="logout">
                         <Icon name="logout" size="sm" />
                         Sign out
                     </Button>
-                    <Button variant="primary" class="w-full justify-center" data-autofocus @click="confirmingLogout = false">
+                    <Button variant="primary" class="w-full justify-center" @click="confirmingLogout = false">
                         Stay signed in
                     </Button>
                 </div>
