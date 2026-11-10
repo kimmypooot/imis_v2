@@ -9,7 +9,6 @@ use App\Models\Application;
 use App\Models\Changelog;
 use App\Models\Service;
 use App\Support\Portal\AtAGlance;
-use App\Support\Portal\RecentSystems;
 use App\Support\Portal\SystemDirectory;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
@@ -25,7 +24,7 @@ use Inertia\Response;
  */
 class PortalController extends Controller
 {
-    public function index(Request $request, AtAGlance $glance, RecentSystems $recent): Response
+    public function index(Request $request, AtAGlance $glance): Response
     {
         $user = $request->user();
 
@@ -57,8 +56,6 @@ class PortalController extends Controller
             // Which division is open (?division=unit-3). Bookmarkable, and
             // the browser's Back button returns to the directory.
             'division' => $request->string('division')->limit(40, '')->value() ?: null,
-            // The systems this person opened most recently, newest first ("Your systems").
-            'recentSystems' => $recent->idsFor($user),
             // The personal "At a glance" row, loaded after the page appears.
             'glance' => Inertia::defer(fn () => $glance->for($user)),
             'whatsNew' => $whatsNew,

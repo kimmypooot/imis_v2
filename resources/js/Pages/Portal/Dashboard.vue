@@ -13,7 +13,6 @@ import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
-import YourSystems from '../../Components/Portal/YourSystems.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
 import AnnouncementCard from '../../Components/Announcements/AnnouncementCard.vue';
 
@@ -21,8 +20,6 @@ defineOptions({ layout: PortalLayout });
 
 const props = defineProps({
     whatsNew: { type: Object, default: null },
-    // Ids of the systems opened most recently, newest first.
-    recentSystems: { type: Array, default: () => [] },
     // The personal "At a glance" tiles (a deferred prop).
     glance: { type: Array, default: null },
     directory: { type: Object, required: true },
@@ -132,8 +129,6 @@ const greeting = computed(() => {
                 />
             </div>
         </PortalSection>
-
-        <YourSystems :directory="directory" :recent="recentSystems" />
 
         <SystemDirectory :directory="directory" :division="division" />
 
