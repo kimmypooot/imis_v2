@@ -62,6 +62,18 @@ const trend = computed(() => {
     return recent.map((row) => ({ period: row.period, net_pay: row.net_pay, share: top ? Math.max(4, Math.round((row.net_pay / top) * 100)) : 0 }));
 });
 
+// Net pay against the month before the latest (history is newest first).
+const change = computed(() => {
+    const [current, previous] = props.history;
+    if (!current || !previous || !previous.net_pay) return null;
+    const amount = current.net_pay - previous.net_pay;
+
+    return { amount, percent: Math.abs(Math.round((amount / previous.net_pay) * 1000) / 10), previous: previous.period };
+});
+
+// Where the month's earnings went: deductions versus what you took home.
+const keptShare = computed(() => (props.latest?.total_earnings > 0 ? Math.max(0, Math.min(100, Math.round((props.latest.net_pay / props.latest.total_earnings) * 100))) : 0));
+
 const historyColumns = [
     { key: 'period', label: 'Compensation period' },
     { key: 'gross_pay', label: 'Total earnings', align: 'right' },
@@ -109,8 +121,18 @@ const historyColumns = [
                     <div class="rounded-lg bg-white p-4 text-text">
                         <p class="text-xs text-text-muted">Net pay</p>
                         <p class="mt-1 text-2xl font-bold text-primary tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
+                        <p v-if="change" class="mt-1 flex items-center gap-1 text-xs font-medium" :class="change.amount === 0 ? 'text-text-muted' : change.amount > 0 ? 'text-success' : 'text-danger'">
+                            <Icon v-if="change.amount !== 0" :name="change.amount > 0 ? 'chevronUp' : 'chevronDown'" size="sm" />
+                            {{ change.amount === 0 ? 'Same as' : `${change.percent}% ${change.amount > 0 ? 'more' : 'less'} than` }} {{ change.previous }}
+                        </p>
                         <p class="mt-1 text-xs text-text-muted tabular-nums">1st quincena {{ formatPeso(latest.first_half) }} · 2nd quincena {{ formatPeso(latest.second_half) }}</p>
                     </div>
+                </div>
+                <div v-if="latest.total_earnings > 0" class="mt-4">
+                    <div class="flex h-2 overflow-hidden rounded-full bg-white/25" role="img" :aria-label="`${keptShare}% of earnings kept as net pay, ${100 - keptShare}% deducted`">
+                        <span class="block h-full bg-white" :style="{ width: `${keptShare}%` }" />
+                    </div>
+                    <p class="mt-1.5 flex justify-between text-xs text-white/75"><span>{{ keptShare }}% kept as net pay</span><span>{{ 100 - keptShare }}% deducted</span></p>
                 </div>
             </div>
         </section>
@@ -190,7 +212,7 @@ const historyColumns = [
                             <tr v-for="row in loan.schedule.rows" :key="row.month" class="border-t border-border">
                                 <td class="py-1 text-text">{{ row.month }}</td>
                                 <td class="py-1 text-right tabular-nums">{{ formatPeso(row.amount) }}</td>
-                                <td class="py-1 pl-4"><StatusBadge :status="scheduleTones[row.status]" :label="row.status_label" /></td>
+                                <td class="py-1 pl-4 text-right"><StatusBadge v-if="row.status !== 'scheduled'" :status="scheduleTones[row.status]" :label="row.status_label" /></td>
                             </tr>
                         </tbody>
                     </table>

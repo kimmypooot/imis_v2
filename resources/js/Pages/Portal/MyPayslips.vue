@@ -38,6 +38,25 @@ const stats = computed(() => [
 // Months without an open (pending or approved) request.
 const requestable = computed(() => props.months.filter((month) => !month.request_status).map((month) => ({ value: month.entry_id, label: month.period })));
 
+// The newest approved request: the one most likely wanted right now.
+const latestReady = computed(() => props.requests.find((row) => row.status === 'approved') ?? null);
+
+// Per-month tiles: what each month's payslip needs next.
+const monthTiles = computed(() =>
+    props.months.map((month) => {
+        const request = props.requests.find((row) => row.entry_id === month.entry_id && ['pending', 'approved'].includes(row.status));
+        return { ...month, request };
+    }),
+);
+const monthState = {
+    approved: { label: 'Ready to view', classes: 'border-success-border bg-success-bg text-success', icon: 'check' },
+    pending: { label: 'Awaiting approval', classes: 'border-warning-border bg-warning-bg text-warning', icon: 'clock' },
+};
+const pickMonth = (month) => {
+    form.payroll_entry_id = month.entry_id;
+    document.getElementById('payslip-month')?.focus();
+};
+
 const form = useForm({ payroll_entry_id: '', purpose: '' });
 const submit = () => form.post('/my/payslips', { preserveScroll: true, onSuccess: () => form.reset() });
 
@@ -76,6 +95,43 @@ const columns = [
             </div>
         </div>
     </div>
+
+    <div v-if="latestReady" class="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-success-border bg-success-bg p-5">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-success" aria-hidden="true"><Icon name="check" size="lg" /></span>
+        <div class="min-w-0 flex-1">
+            <p class="font-semibold text-text">Your {{ latestReady.period }} payslip is ready</p>
+            <p class="text-sm text-text-muted">Approved<template v-if="latestReady.decided_by"> by {{ latestReady.decided_by }}</template>. Open it to view, print or save as PDF.</p>
+        </div>
+        <Button variant="success" :href="`/payslips/${latestReady.entry_id}`" external>View payslip</Button>
+    </div>
+
+    <Card v-if="monthTiles.length" title="Your months" icon="calendar" class="mb-6">
+        <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <li v-for="month in monthTiles" :key="month.entry_id">
+                <div v-if="monthState[month.request_status]" class="flex h-full items-center gap-3 rounded-lg border p-3" :class="monthState[month.request_status].classes">
+                    <Icon :name="monthState[month.request_status].icon" aria-hidden="true" />
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-text">{{ month.period }}</p>
+                        <p class="text-xs">{{ monthState[month.request_status].label }}</p>
+                    </div>
+                    <Button v-if="month.request_status === 'approved'" size="sm" variant="success" :href="`/payslips/${month.entry_id}`" external>View</Button>
+                </div>
+                <button
+                    v-else
+                    type="button"
+                    class="flex h-full w-full items-center gap-3 rounded-lg border border-dashed border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    @click="pickMonth(month)"
+                >
+                    <Icon name="calendar" class="text-text-muted" aria-hidden="true" />
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm font-medium text-text">{{ month.period }}</span>
+                        <span class="block text-xs text-text-muted">Not requested yet</span>
+                    </span>
+                    <span class="text-xs font-medium text-primary">Request</span>
+                </button>
+            </li>
+        </ul>
+    </Card>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Request a payslip" icon="clipboard" class="xl:col-span-1">

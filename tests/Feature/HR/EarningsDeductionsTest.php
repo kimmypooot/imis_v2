@@ -16,8 +16,10 @@ use App\Models\Role;
 use App\Models\SalarySchedule;
 use App\Models\User;
 use App\Notifications\HrUpdate;
+use App\Support\HR\Payroll\DeductionNotices;
 use App\Support\HR\Payroll\Loans;
 use App\Support\HR\Payroll\Payrolls;
+use App\Support\HR\Plantilla\Plantilla;
 use Database\Seeders\PayComponentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -154,7 +156,7 @@ class EarningsDeductionsTest extends TestCase
         $this->actingAs($hr)->post("{$base}/{$loan->id}/resume");
         $run = $this->payroll('2026-10', $hr);
         app(Payrolls::class)->finalize($run, $hr);
-        app(\App\Support\HR\Payroll\DeductionNotices::class)->afterFinalize($run);
+        app(DeductionNotices::class)->afterFinalize($run);
         Notification::assertSentTo($employee->user, HrUpdate::class, fn ($n) => $n->toArray($employee->user)['title'] === 'Deduction reflected in your payslip');
     }
 
@@ -278,7 +280,7 @@ class EarningsDeductionsTest extends TestCase
             'step' => 3, 'status' => 'permanent', 'nature' => 'original', 'date_from' => '2020-01-01', 'salary_override' => 28500.5,
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame(28500.5, app(\App\Support\HR\Plantilla\Plantilla::class)->presentAppointment($period->fresh()->load(['item', 'employee.user']))['monthly_salary']);
+        $this->assertSame(28500.5, app(Plantilla::class)->presentAppointment($period->fresh()->load(['item', 'employee.user']))['monthly_salary']);
         $entry = $this->payroll('2026-10', $hr)->entries()->sole();
         $this->assertSame(28500.5, (float) $entry->basic_salary);
     }

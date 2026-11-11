@@ -1,11 +1,13 @@
 <script setup>
 import InputLabel from '../../Components/Forms/InputLabel.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
-import DataTable from '../../Components/UI/DataTable.vue';
+import EmptyState from '../../Components/UI/EmptyState.vue';
+import UserAvatar from '../../Components/UI/UserAvatar.vue';
+import Icon from '../../Components/UI/Icon.vue';
 import QueueSummary from '../../Components/Portal/QueueSummary.vue';
 import Button from '../../Components/UI/Button.vue';
 import Modal from '../../Components/Feedback/Modal.vue';
@@ -28,8 +30,27 @@ const props = defineProps({
 const waitingSince = () => props.requests.map((row) => row.requested_at);
 
 // How long something has waited: calm at first, then amber, then red.
-const ageClass = (iso) => (daysSince(iso) >= 7 ? "bg-danger-bg text-danger" : daysSince(iso) >= 3 ? "bg-warning-bg text-warning" : "bg-surface-muted text-text-muted");
-const ageLabel = (iso) => (daysSince(iso) === 0 ? "today" : `${daysSince(iso)} d`);
+const ageClass = (iso) => (daysSince(iso) >= 7 ? 'bg-danger-bg text-danger' : daysSince(iso) >= 3 ? 'bg-warning-bg text-warning' : 'bg-surface-muted text-text-muted');
+const ageLabel = (iso) => (daysSince(iso) === 0 ? 'today' : `${daysSince(iso)} d`);
+
+// Oldest first, with a filter to focus on the ones that have waited.
+const filters = [
+    { value: 'all', label: 'All' },
+    { value: 'late', label: 'Waiting 3+ days' },
+    { value: 'new', label: 'New' },
+];
+const filter = ref('all');
+const search = ref('');
+const sorted = computed(() => [...props.requests].sort((a, b) => new Date(a.requested_at) - new Date(b.requested_at)));
+const visible = computed(() => {
+    const term = search.value.trim().toLowerCase();
+    return sorted.value.filter((row) => {
+        if (filter.value === 'late' && daysSince(row.requested_at) < 3) return false;
+        if (filter.value === 'new' && daysSince(row.requested_at) >= 3) return false;
+        return !term || [row.employee, row.reference_number, row.period, row.purpose, row.office].some((value) => (value ?? '').toLowerCase().includes(term));
+    });
+});
+const filterCount = (value) => (value === 'all' ? props.requests.length : props.requests.filter((row) => (value === 'late') === (daysSince(row.requested_at) >= 3)).length);
 
 const deciding = ref(null);
 const form = useForm({ decision: 'approved', remarks: '' });
@@ -40,15 +61,6 @@ const open = (row, decision) => {
     form.decision = decision;
 };
 const submit = () => form.post(`/payslips/approvals/${deciding.value.id}`, { preserveScroll: true, onSuccess: () => (deciding.value = null) });
-
-const columns = [
-    { key: 'reference_number', label: 'Reference' },
-    { key: 'employee', label: 'Employee' },
-    { key: 'period', label: 'Month' },
-    { key: 'purpose', label: 'Purpose', value: (row) => row.purpose ?? '' },
-    { key: 'requested_at', label: 'Requested' },
-    { key: 'actions', label: '', sortable: false, export: false },
-];
 </script>
 
 <template>
@@ -63,23 +75,59 @@ const columns = [
     <QueueSummary :since="waitingSince()" noun="payslip request" :late-after="2" class="mb-6" />
 
     <Card :title="`Waiting for you (${requests.length})`" icon="checkCircle">
-        <DataTable :columns="columns" :rows="requests" caption="Payslip requests waiting for approval" export-name="imis-payslip-approvals" empty-text="Nothing waiting.">
-            <template #cell-employee="{ row }">
-                <span class="font-medium text-text">{{ row.employee }}</span>
-                <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></div>
-            </template>
-            <template #cell-purpose="{ row }">{{ row.purpose || '—' }}</template>
-            <template #cell-requested_at="{ row }">
-                    <span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span>
-                    <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.requested_at)">{{ ageLabel(row.requested_at) }}</span>
-                </template>
-            <template #cell-actions="{ row }">
-                <div class="flex justify-end gap-3 text-sm whitespace-nowrap">
-                    <button type="button" class="text-success hover:underline" @click="open(row, 'approved')">Approve<span class="sr-only"> {{ row.reference_number }}</span></button>
-                    <button type="button" class="text-danger hover:underline" @click="open(row, 'rejected')">Reject<span class="sr-only"> {{ row.reference_number }}</span></button>
+        <EmptyState v-if="!requests.length" icon="check" title="Nothing waiting" description="New payslip requests from staff will appear here, oldest first." />
+        <template v-else>
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap gap-2" role="group" aria-label="Filter requests">
+                    <button
+                        v-for="item in filters"
+                        :key="item.value"
+                        type="button"
+                        class="rounded-full border px-3 py-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        :class="filter === item.value ? 'border-primary bg-primary text-white' : 'border-border bg-surface text-text-muted hover:bg-surface-muted'"
+                        :aria-pressed="filter === item.value"
+                        @click="filter = item.value"
+                    >
+                        {{ item.label }} <span class="tabular-nums opacity-80">{{ filterCount(item.value) }}</span>
+                    </button>
                 </div>
-            </template>
-        </DataTable>
+                <input
+                    v-model="search"
+                    type="search"
+                    placeholder="Search name, month or reference"
+                    aria-label="Search requests"
+                    class="form-control ml-auto w-full px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring sm:w-72"
+                />
+            </div>
+
+            <p v-if="!visible.length" class="py-8 text-center text-sm text-text-muted">No requests match.</p>
+            <ul v-else class="divide-y divide-border">
+                <li v-for="row in visible" :key="row.id" class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4 first:pt-0 last:pb-0">
+                    <UserAvatar :name="row.employee" size="lg" />
+                    <div class="min-w-0 flex-1 basis-64">
+                        <p class="flex flex-wrap items-center gap-2">
+                            <span class="font-medium text-text">{{ row.employee }}</span>
+                            <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">{{ row.period }}</span>
+                        </p>
+                        <p class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></p>
+                        <p v-if="row.purpose" class="mt-1.5 flex items-start gap-1.5 text-sm text-text">
+                            <Icon name="clipboard" size="sm" class="mt-0.5 shrink-0 text-text-muted" />
+                            <span>{{ row.purpose }}</span>
+                        </p>
+                        <p class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-text-muted">
+                            <span>{{ row.reference_number }}</span>
+                            <span aria-hidden="true">·</span>
+                            <span class="whitespace-nowrap">Requested {{ formatDateTime(row.requested_at) }}</span>
+                            <span class="rounded-full px-2 py-0.5 font-medium" :class="ageClass(row.requested_at)">{{ ageLabel(row.requested_at) }}</span>
+                        </p>
+                    </div>
+                    <div class="flex shrink-0 gap-2">
+                        <Button size="sm" variant="outline" @click="open(row, 'rejected')">Reject<span class="sr-only"> {{ row.reference_number }}</span></Button>
+                        <Button size="sm" variant="success" @click="open(row, 'approved')">Approve<span class="sr-only"> {{ row.reference_number }}</span></Button>
+                    </div>
+                </li>
+            </ul>
+        </template>
     </Card>
 
     <Modal :open="deciding !== null" :title="form.decision === 'approved' ? 'Approve request' : 'Reject request'" :tone="form.decision === 'approved' ? 'success' : 'danger'" @close="deciding = null">

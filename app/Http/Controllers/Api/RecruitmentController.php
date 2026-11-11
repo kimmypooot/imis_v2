@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Enums\UserStatus;
+use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\ApplicationAccess;
 use App\Models\PlantillaItem;
