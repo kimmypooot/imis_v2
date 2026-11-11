@@ -138,6 +138,10 @@ class AppServiceProvider extends ServiceProvider
                 'expires_minutes' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire'),
             ],
             url(route('password.reset', ['token' => $token, 'email' => $user->getEmailForPasswordReset()], false)),
+            details: [
+                'Username' => $user->username,
+                'Link valid for' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire').' minutes',
+            ],
         ));
 
         // Mirror account and access changes to the legacy subsystems' database.

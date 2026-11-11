@@ -606,6 +606,8 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/system-health', [SystemHealthController::class, 'index'])->name('admin.system-health');
         Route::get('admin/scheduled-tasks', [ScheduledTaskController::class, 'index'])->name('admin.scheduled-tasks.index');
         Route::get('admin/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
+        Route::post('admin/email-templates/{key}/preview', [EmailTemplateController::class, 'preview'])
+            ->whereIn('key', array_keys(EmailTemplates::DEFINITIONS))->name('admin.email-templates.preview');
         Route::get('admin/branding', [BrandingController::class, 'index'])->name('admin.branding.index');
     });
 

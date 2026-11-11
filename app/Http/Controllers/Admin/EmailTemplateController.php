@@ -9,8 +9,10 @@ use App\Models\EmailTemplate;
 use App\Models\Setting;
 use App\Notifications\TestEmail;
 use App\Support\Mail\EmailTemplates;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -87,16 +89,59 @@ class EmailTemplateController extends Controller
             return back()->with('error', 'Your account has no email address.');
         }
 
-        $mail = EmailTemplates::mail(
-            $key,
-            self::SAMPLE,
-            url('/'),
-            before: $key === 'notification' ? ['(The notification\'s own text appears here.)'] : [],
-            after: $key === 'weekly_summary' ? ['(The list of systems and figures appears here.)'] : [],
-        );
+        $mail = $this->sampleMail($key);
 
         Notification::route('mail', $request->user()->email)->notify(new TestEmail($mail));
 
         return back()->with('status', "Test sent to {$request->user()->email}.");
+    }
+
+    /**
+     * The email exactly as it will look, in IMIS's mail layout and with
+     * sample values: the saved wording, or the draft being typed.
+     */
+    public function preview(Request $request, string $key): JsonResponse
+    {
+        $this->authorize('viewAny', Setting::class);
+
+        $draft = $request->validate([
+            'subject' => ['nullable', 'string', 'max:200'],
+            'intro' => ['nullable', 'string', 'max:3000'],
+            'button' => ['nullable', 'string', 'max:60'],
+            'outro' => ['nullable', 'string', 'max:3000'],
+        ]);
+        $mail = $this->sampleMail($key, $draft);
+
+        return response()->json([
+            'subject' => $mail->subject,
+            'from' => ['name' => config('mail.from.name'), 'address' => config('mail.from.address')],
+            'to' => $request->user()->email,
+            'html' => (string) $mail->render(),
+        ]);
+    }
+
+    /**
+     * @param  array<string, ?string>  $draft
+     */
+    private function sampleMail(string $key, array $draft = []): MailMessage
+    {
+        return EmailTemplates::mail(
+            $key,
+            self::SAMPLE,
+            url('/'),
+            before: $key === 'notification' ? ['Your leave application for December 15–17, 2026 was approved by the Head of Office. Your leave credits have been updated.'] : [],
+            after: $key === 'weekly_summary' ? ['1 of 8 systems needs attention. Against targets: 5 on track, 1 at risk, 0 behind.'] : [],
+            details: match ($key) {
+                'account_setup', 'password_reset' => ['Username' => self::SAMPLE['username'], 'Link valid for' => self::SAMPLE['expires_minutes'].' minutes'],
+                'notification' => ['Received' => now()->format('F j, Y, g:i A')],
+                default => [
+                    'Systems needing attention' => '1 of 8',
+                    'Targets on track' => '5 of 6',
+                    'Recruitment System' => 'No data received in the last 24 hours',
+                    'Human Resources — Leave applications pending' => '12 (At risk; target 8)',
+                ],
+            },
+            override: $draft,
+        );
     }
 }

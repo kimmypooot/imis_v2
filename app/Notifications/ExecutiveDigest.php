@@ -28,16 +28,16 @@ class ExecutiveDigest extends Notification
     /** In the office's "weekly summary" wording (Admin → Email Templates). */
     public function toMail(object $notifiable): MailMessage
     {
-        $lines = [
-            $this->headline(),
-            ...array_map(fn (array $system) => "• {$system['fullName']}: {$system['detail']}", $this->systemsNeedingAttention()),
-            ...array_map(fn (string $line) => "• {$line}", $this->offTarget()),
+        $details = [
+            ...$this->figures(),
+            ...collect($this->systemsNeedingAttention())->mapWithKeys(fn (array $system) => [$system['fullName'] => $system['detail']])->all(),
+            ...$this->offTarget(),
         ];
 
         return EmailTemplates::mail('weekly_summary', [
             'first_name' => $notifiable->first_name ?: $notifiable->name,
             'name' => $notifiable->name,
-        ], url('/executive'), after: $lines);
+        ], url('/executive'), after: [$this->headline()], details: $details);
     }
 
     /**
@@ -65,6 +65,22 @@ class ExecutiveDigest extends Notification
     }
 
     /**
+     * @return array<string, string>
+     */
+    private function figures(): array
+    {
+        $summary = $this->dashboard['summary'];
+        $figures = ['Systems needing attention' => "{$summary['systemsNeedingAttention']} of {$summary['systems']}"];
+
+        if ($summary['withTargets'] > 0) {
+            $figures['Targets on track'] = "{$summary['onTrack']} of {$summary['withTargets']}";
+            $figures['At risk / behind'] = "{$summary['atRisk']} / {$summary['behind']}";
+        }
+
+        return $figures;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     private function systemsNeedingAttention(): array
@@ -73,21 +89,19 @@ class ExecutiveDigest extends Notification
     }
 
     /**
-     * @return array<int, string>
+     * @return array<string, string> "Section — metric" → "value (status; target …)"
      */
     private function offTarget(): array
     {
         return collect($this->dashboard['sections'])
             ->flatMap(fn (array $section) => collect($section['metrics'])
                 ->whereIn('status', [TargetStatus::BEHIND, TargetStatus::AT_RISK])
-                ->map(fn (array $metric) => sprintf(
-                    '%s — %s: %s (%s; target %s)',
-                    $section['label'],
-                    $metric['label'],
+                ->mapWithKeys(fn (array $metric) => [$section['label'].' — '.$metric['label'] => sprintf(
+                    '%s (%s; target %s)',
                     MetricFormat::value($metric['value'], $metric['unit']),
                     TargetStatus::LABELS[$metric['status']],
                     MetricFormat::value($metric['target']['value'], $metric['unit']),
-                )))
-            ->values()->all();
+                )]))
+            ->all();
     }
 }

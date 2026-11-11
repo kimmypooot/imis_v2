@@ -31,6 +31,8 @@ trait EmailsWhenWanted
             'first_name' => $notifiable->first_name ?: $notifiable->name,
             'name' => $notifiable->name,
             'title' => $entry['title'],
-        ], url($entry['url']), before: [$entry['message']]);
+        ], url($entry['url']), before: [$entry['message']], details: [
+            'Received' => now()->timezone(config('app.timezone'))->format('F j, Y, g:i A'),
+        ]);
     }
 }

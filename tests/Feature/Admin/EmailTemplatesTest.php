@@ -31,7 +31,7 @@ class EmailTemplatesTest extends TestCase
         $setup = (new ResetPassword('token'))->toMail($new);
         $reset = (new ResetPassword('token'))->toMail($returning);
 
-        $this->assertStringContainsString('account is ready', $setup->subject);
+        $this->assertStringContainsString('your account is ready', $setup->subject);
         $this->assertTrue(collect($setup->introLines)->contains(fn ($line) => str_contains($line, 'areyes')));
         $this->assertSame('Set your password', $setup->actionText);
         $this->assertStringContainsString('Reset your', $reset->subject);
@@ -87,6 +87,21 @@ class EmailTemplatesTest extends TestCase
 
         Notification::assertSentTo(new AnonymousNotifiable, TestEmail::class, fn ($notification, $channels, $notifiable) => $notifiable->routes['mail'] === $admin->email
             && str_starts_with($notification->toMail($notifiable)->subject, '[Test]'));
+    }
+
+    public function test_the_preview_renders_the_real_email_from_the_draft_wording(): void
+    {
+        $viewer = $this->userWith(['settings.view']);
+
+        $response = $this->actingAs($viewer)->postJson('/admin/email-templates/password_reset/preview', ['subject' => 'Hello {first_name}', 'intro' => 'Draft wording for {username}.', 'button' => 'Go'])
+            ->assertOk()
+            ->assertJsonPath('subject', 'Hello Juan')
+            ->assertJsonPath('to', $viewer->email);
+        $this->assertStringContainsString('Draft wording for jsdelacruz.', $response->json('html'));
+        $this->assertStringContainsString('class="details', $response->json('html'));
+
+        $this->actingAs($viewer)->postJson('/admin/email-templates/nonexistent/preview')->assertNotFound();
+        $this->actingAs(User::factory()->create())->postJson('/admin/email-templates/password_reset/preview')->assertForbidden();
     }
 
     /**
