@@ -1977,6 +1977,9 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
 - **v3.5.1** (Enter now signs you out in the sign-out dialog, a tidier
   Organizational Units page) is inserted the same way, already **published**,
   by migration `2027_02_01_090000_add_v3_5_1_release_note`.
+- **v3.5.2** (redesigned emails, richer wording, live preview in Email
+  Templates) is inserted the same way, already **published**, by migration
+  `2027_02_02_090000_add_v3_5_2_release_note`.
 
 ### User Guide (`/guide`)
 - Any signed-in user. The articles are plain data in `config/user-guide.php`
@@ -4842,7 +4845,14 @@ Seven independent features; none has a legacy counterpart.
 - Password emails go through `ResetPassword::toMailUsing` (in
   `AppServiceProvider`): someone who has never signed in gets the
   new-account email.
-- Live preview with sample values; *Send me a test* mails the signed-in
+- Every email uses the published mail layout in `resources/views/vendor/mail`
+  and `vendor/notifications/email.blade.php` (logo header with the full
+  system name, card, button, footer). `EmailTemplates::mail()` also takes a
+  greeting (per template), a `details:` label/value panel and an `override:`
+  draft.
+- Live preview: `POST admin/email-templates/{key}/preview` returns the real
+  rendered email (sample values, the draft being typed) shown in a sandboxed
+  iframe, Desktop or Phone width; *Send me a test* mails the signed-in
   administrator. `settings.view` to see, `settings.update` to change.
 
 ### Branding (`/admin/branding`, `Support/Branding/Branding`)
