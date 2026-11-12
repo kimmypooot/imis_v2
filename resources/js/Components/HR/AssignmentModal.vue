@@ -168,8 +168,7 @@ const field = 'mt-1 block w-full';
             </div>
 
             <div>
-                <TextInput id="assignment-effective" v-model="form.effective_date" type="date" label="Effective date" required :invalid="!!form.errors.effective_date" />
-                <InputError :message="form.errors.effective_date" />
+                <TextInput id="assignment-effective" v-model="form.effective_date" type="date" label="Effective date" required :error="form.errors.effective_date" />
             </div>
             <div v-if="hasEndDate">
                 <TextInput
@@ -177,18 +176,15 @@ const field = 'mt-1 block w-full';
                     v-model="form.end_date"
                     type="date"
                     :label="asHead ? 'End date (blank = until further notice)' : 'End date (if known)'"
-                    :invalid="!!form.errors.end_date"
+                    :error="form.errors.end_date"
                 />
-                <InputError :message="form.errors.end_date" />
             </div>
 
             <div>
-                <TextInput id="assignment-order-number" v-model="form.order_number" label="Office/Special Order No." :invalid="!!form.errors.order_number" />
-                <InputError :message="form.errors.order_number" />
+                <TextInput id="assignment-order-number" v-model="form.order_number" label="Office/Special Order No." :error="form.errors.order_number" />
             </div>
             <div>
-                <TextInput id="assignment-order-date" v-model="form.order_date" type="date" label="Order date" :invalid="!!form.errors.order_date" />
-                <InputError :message="form.errors.order_date" />
+                <TextInput id="assignment-order-date" v-model="form.order_date" type="date" label="Order date" :error="form.errors.order_date" />
             </div>
 
             <div class="sm:col-span-2">

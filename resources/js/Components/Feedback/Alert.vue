@@ -32,11 +32,12 @@ const dismiss = () => {
     emit('dismiss');
 };
 
+// `chip` tints the icon badge, `panel` the surface. Matches the toasts in DialogHost.
 const toneMeta = {
-    success: { icon: 'check', classes: 'bg-success-bg text-success ring-success-border' },
-    warning: { icon: 'exclamation', classes: 'bg-warning-bg text-warning ring-warning-border' },
-    danger: { icon: 'exclamation', classes: 'bg-danger-bg text-danger ring-danger-border' },
-    info: { icon: 'info', classes: 'bg-info-bg text-info ring-info-border' },
+    success: { icon: 'checkCircle', chip: 'bg-success/15 text-success', panel: 'bg-success-bg border-success-border' },
+    warning: { icon: 'exclamation', chip: 'bg-warning/15 text-warning', panel: 'bg-warning-bg border-warning-border' },
+    danger: { icon: 'xCircle', chip: 'bg-danger/15 text-danger', panel: 'bg-danger-bg border-danger-border' },
+    info: { icon: 'info', chip: 'bg-info/15 text-info', panel: 'bg-info-bg border-info-border' },
 };
 
 const meta = computed(() => toneMeta[props.tone]);
@@ -46,20 +47,22 @@ const meta = computed(() => toneMeta[props.tone]);
     <div
         v-if="visible"
         role="alert"
-        class="flex items-start gap-3 rounded-md p-4 text-sm ring-1 ring-inset"
-        :class="meta.classes"
+        class="flex items-start gap-3 rounded-xl border p-3.5 text-sm"
+        :class="meta.panel"
     >
-        <Icon :name="icon ?? meta.icon" size="sm" class="mt-0.5 shrink-0" />
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" :class="meta.chip" aria-hidden="true">
+            <Icon :name="icon ?? meta.icon" size="sm" />
+        </span>
 
-        <div class="flex-1">
-            <p v-if="title" class="font-medium">{{ title }}</p>
-            <div class="text-text"><slot /></div>
+        <div class="min-w-0 flex-1 self-center text-text">
+            <p v-if="title" class="font-semibold">{{ title }}</p>
+            <div :class="title ? 'mt-0.5 text-text-muted' : ''"><slot /></div>
         </div>
 
         <button
             v-if="dismissible"
             type="button"
-            class="shrink-0 rounded-md p-1 hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            class="shrink-0 rounded-md p-1 text-text-muted hover:bg-black/5 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             aria-label="Dismiss"
             @click="dismiss"
         >

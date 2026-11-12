@@ -164,8 +164,7 @@ const columns = [
                 </p>
                 <form class="space-y-3" @submit.prevent="download">
                     <div>
-                        <PasswordInput id="backup-password" v-model="password" label="Confirm your password" autocomplete="current-password" required :invalid="!!error" />
-                        <InputError :message="error" />
+                        <PasswordInput id="backup-password" v-model="password" label="Confirm your password" autocomplete="current-password" required :error="error" />
                     </div>
                     <Button type="submit" variant="success" :loading="downloading" :disabled="!password">
                         <Icon name="download" size="sm" />
@@ -240,8 +239,7 @@ const columns = [
                 the audit log.
             </p>
             <div>
-                <PasswordInput id="stored-backup-password" v-model="storedPassword" label="Confirm your password" autocomplete="current-password" required :invalid="!!storedError" />
-                <InputError :message="storedError" />
+                <PasswordInput id="stored-backup-password" v-model="storedPassword" label="Confirm your password" autocomplete="current-password" required :error="storedError" />
             </div>
         </form>
         <template #footer>

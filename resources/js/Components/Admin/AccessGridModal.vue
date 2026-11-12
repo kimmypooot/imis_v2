@@ -178,16 +178,16 @@ const rowErrors = computed(() => {
         </div>
 
         <div v-else class="overflow-x-auto rounded-md border border-border">
-            <table class="min-w-full text-compact">
+            <table class="data-table" data-sticky>
                 <caption class="sr-only">{{ title }}</caption>
-                <thead class="sticky top-0 table-head">
+                <thead>
                     <tr>
-                        <th scope="col" class="px-3 py-2">{{ rowLabel }}</th>
-                        <th scope="col" class="w-56 px-3 py-2 text-center">Assigned role</th>
-                        <th scope="col" class="w-44 px-3 py-2 text-center">Status</th>
+                        <th scope="col">{{ rowLabel }}</th>
+                        <th scope="col" class="w-56 text-center">Assigned role</th>
+                        <th scope="col" class="w-44 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody>
                     <tr v-if="!visibleRows.length">
                         <td colspan="3" class="px-3 py-8 text-center text-text-muted">Nothing matches.</td>
                     </tr>
@@ -196,7 +196,7 @@ const rowErrors = computed(() => {
                         <th colspan="3" scope="colgroup" class="bg-surface-muted px-3 py-2 text-left text-xs font-semibold tracking-wide text-text uppercase">{{ heading }}</th>
                     </tr>
                     <tr :class="changed(row) ? 'bg-warning-bg/50' : ''">
-                        <td class="px-3 py-2">
+                        <td>
                             <div class="flex items-center gap-3">
                                 <UserAvatar v-if="row.avatar" :name="row.title" :photo-url="row.photoUrl" size="sm" />
                                 <span v-else class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
@@ -208,7 +208,7 @@ const rowErrors = computed(() => {
                                 </div>
                             </div>
                         </td>
-                        <td class="px-3 py-2 text-center">
+                        <td class="text-center">
                             <label :for="`grid-role-${row.key}`" class="sr-only">Role for {{ row.title }}</label>
                             <select
                                 :id="`grid-role-${row.key}`"
@@ -221,7 +221,7 @@ const rowErrors = computed(() => {
                             </select>
                             <p v-if="rowErrors[row.key]" class="mt-1 text-left text-xs text-danger">{{ rowErrors[row.key] }}</p>
                         </td>
-                        <td class="px-3 py-2 text-center text-xs">
+                        <td class="text-center text-xs">
                             <span v-if="row.locked && row.locked !== 'inactive'" class="inline-flex items-center gap-1 text-text-muted">
                                 <Icon name="lock" size="sm" /> {{ lockText[row.locked] }}
                             </span>

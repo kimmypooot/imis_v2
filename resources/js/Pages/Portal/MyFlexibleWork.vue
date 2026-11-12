@@ -90,8 +90,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
         <Card v-if="current" title="Weekly report" icon="clipboard" description="Targets and accomplishments for a week (Monday to Friday). You can edit it until HR acknowledges it.">
             <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitReport">
                 <div>
-                    <TextInput id="far-week" v-model="report.week_start" type="date" label="Week of (any day; it uses that week's Monday)" required :invalid="!!report.errors.week_start" />
-                    <InputError :message="report.errors.week_start" />
+                    <TextInput id="far-week" v-model="report.week_start" type="date" label="Week of (any day; it uses that week's Monday)" required :error="report.errors.week_start" />
                 </div>
                 <div class="sm:col-span-2">
                     <InputLabel for="far-targets">Targets</InputLabel>
@@ -151,12 +150,10 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                 <InputError :message="arrangement.errors.type" />
             </div>
             <div>
-                <TextInput id="fwa-from" v-model="arrangement.effective_from" type="date" label="Starting" required :invalid="!!arrangement.errors.effective_from" />
-                <InputError :message="arrangement.errors.effective_from" />
+                <TextInput id="fwa-from" v-model="arrangement.effective_from" type="date" label="Starting" required :error="arrangement.errors.effective_from" />
             </div>
             <div>
-                <TextInput id="fwa-to" v-model="arrangement.effective_to" type="date" label="Until (blank: open-ended)" :invalid="!!arrangement.errors.effective_to" />
-                <InputError :message="arrangement.errors.effective_to" />
+                <TextInput id="fwa-to" v-model="arrangement.effective_to" type="date" label="Until (blank: open-ended)" :error="arrangement.errors.effective_to" />
             </div>
             <fieldset class="sm:col-span-2">
                 <legend class="block text-sm font-medium text-text">Weekly schedule</legend>

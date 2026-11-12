@@ -241,6 +241,131 @@
 }
 
 /*
+ * The one list-table look (Table, DataTable and every hand-written list
+ * table): muted uppercase header, hairline rows, a soft hover. Put
+ * `table-card` on the wrapper (border, radius, scrolling) and `data-table`
+ * on the <table>; `data-density="compact" | "comfortable"` sets the cell
+ * padding and `data-sticky` pins the header while the wrapper scrolls.
+ * Document tables that mirror a CSC form keep their own styling.
+ */
+@utility table-card {
+    position: relative;
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+@utility data-table {
+    --table-px: 0.75rem;
+    --table-py: 0.5rem;
+    width: 100%;
+    text-align: left;
+    font-size: var(--text-compact);
+    line-height: var(--text-compact--line-height);
+
+    &[data-density='compact'] {
+        --table-py: 0.3125rem;
+    }
+
+    &[data-density='comfortable'] {
+        --table-px: 1rem;
+        --table-py: 0.75rem;
+    }
+
+    & thead {
+        background-color: var(--color-surface-muted);
+        color: var(--color-text-muted);
+        font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
+        font-weight: var(--font-weight-semibold);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    &[data-sticky] thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: var(--color-surface-muted);
+    }
+
+    & th,
+    & td {
+        padding: var(--table-py) var(--table-px);
+        vertical-align: middle;
+    }
+
+    & td {
+        color: var(--color-text);
+    }
+
+    & tbody tr {
+        border-bottom: 1px solid var(--color-border);
+        transition: background-color 150ms var(--ease-standard);
+    }
+
+    & tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    & tbody tr:hover {
+        background-color: color-mix(in srgb, var(--color-info-bg) 55%, transparent);
+    }
+
+    /* `data-stack`: on phones each row becomes a card of "LABEL  value" lines. */
+    @media (width < 40rem) {
+        &[data-stack] {
+            display: block;
+        }
+
+        &[data-stack] thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            border: 0;
+        }
+
+        &[data-stack] tbody,
+        &[data-stack] tr,
+        &[data-stack] td {
+            display: block;
+        }
+
+        &[data-stack] tr {
+            padding: 0.5rem var(--table-px);
+        }
+
+        &[data-stack] td {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.25rem 0;
+            text-align: right;
+        }
+
+        &[data-stack] td:not([data-label]) {
+            justify-content: flex-end;
+        }
+
+        &[data-stack] td[data-label]::before {
+            content: attr(data-label);
+            flex-shrink: 0;
+            text-align: left;
+            font-size: var(--text-xs);
+            font-weight: var(--font-weight-semibold);
+            letter-spacing: var(--tracking-wide);
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+        }
+    }
+}
+
+/*
  * A compact form control for filter bars and toolbars (the `Select` and
  * `TextInput` components are for full-width form fields). Apply it to a
  * raw <select> or <input>. The edge is `border-strong` so it meets 3:1.
@@ -296,6 +421,16 @@
         border-color: var(--color-primary);
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 0;
+    }
+
+    /* A field the server rejected (`aria-invalid="true"`) keeps a red edge, even on hover. */
+    &[aria-invalid='true'],
+    &[aria-invalid='true']:hover:not(:disabled) {
+        border-color: var(--color-danger);
+    }
+
+    &[aria-invalid='true']:focus {
+        outline-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
     }
 
     &:disabled {

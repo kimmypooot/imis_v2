@@ -106,9 +106,8 @@ const tips = [
                             icon="key"
                             autocomplete="current-password"
                             required
-                            :invalid="!!form.errors.current_password"
+                            :error="form.errors.current_password"
                         />
-                        <InputError :message="form.errors.current_password" />
                     </div>
 
                     <hr class="border-border" />

@@ -183,12 +183,10 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                 <form id="system-form" @submit.prevent="save">
                     <fieldset :disabled="!canSaveDetails" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div class="sm:col-span-2">
-                            <TextInput id="system-name" v-model="form.name" label="System name" required :invalid="!!form.errors.name" />
-                            <InputError :message="form.errors.name" />
+                            <TextInput id="system-name" v-model="form.name" label="System name" required :error="form.errors.name" />
                         </div>
                         <div>
-                            <TextInput id="system-short" v-model="form.short_name" label="Code / short name" :invalid="!!form.errors.short_name" />
-                            <InputError :message="form.errors.short_name" />
+                            <TextInput id="system-short" v-model="form.short_name" label="Code / short name" :error="form.errors.short_name" />
                         </div>
                         <div class="sm:col-span-2 lg:col-span-3">
                             <FormGroup id="system-description" label="Description" :error="form.errors.description">
@@ -196,12 +194,10 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                             </FormGroup>
                         </div>
                         <div class="sm:col-span-2">
-                            <TextInput id="system-url" v-model="form.url" type="url" label="Launch URL" :invalid="!!form.errors.url" />
-                            <InputError :message="form.errors.url" />
+                            <TextInput id="system-url" v-model="form.url" type="url" label="Launch URL" :error="form.errors.url" />
                         </div>
                         <div>
-                            <TextInput id="system-icon" v-model="form.icon" label="Icon name" :invalid="!!form.errors.icon" />
-                            <InputError :message="form.errors.icon" />
+                            <TextInput id="system-icon" v-model="form.icon" label="Icon name" :error="form.errors.icon" />
                         </div>
                         <FormGroup id="system-office" label="Managing office" :error="form.errors.organizational_unit_id">
                             <Select
@@ -211,12 +207,10 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                             />
                         </FormGroup>
                         <div>
-                            <TextInput id="system-category" v-model="form.category" label="Category" :invalid="!!form.errors.category" />
-                            <InputError :message="form.errors.category" />
+                            <TextInput id="system-category" v-model="form.category" label="Category" :error="form.errors.category" />
                         </div>
                         <div>
-                            <TextInput id="system-sort" v-model="form.sort_order" type="number" label="Display order" required :invalid="!!form.errors.sort_order" />
-                            <InputError :message="form.errors.sort_order" />
+                            <TextInput id="system-sort" v-model="form.sort_order" type="number" label="Display order" required :error="form.errors.sort_order" />
                         </div>
                         <FormGroup id="system-status" label="Status" required :error="form.errors.status">
                             <Select id="system-status" v-model="form.status" :options="options.statusOptions" />
@@ -267,29 +261,29 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                     </p>
 
                     <div class="overflow-x-auto rounded-md border border-border">
-                        <table class="min-w-full text-compact">
-                            <thead class="table-head">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <th scope="col" class="px-3 py-2">Role name</th>
-                                    <th scope="col" class="px-3 py-2">Launch URL</th>
-                                    <th scope="col" class="px-3 py-2 text-center">People</th>
-                                    <th scope="col" class="px-3 py-2 text-center">Status</th>
-                                    <th scope="col" class="px-3 py-2"><span class="sr-only">Actions</span></th>
+                                    <th scope="col">Role name</th>
+                                    <th scope="col">Launch URL</th>
+                                    <th scope="col" class="text-center">People</th>
+                                    <th scope="col" class="text-center">Status</th>
+                                    <th scope="col"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-border">
+                            <tbody>
                                 <tr v-if="!system.roles.length">
                                     <td colspan="5" class="px-3 py-6 text-center text-text-muted">No roles yet — add the first one below.</td>
                                 </tr>
                                 <tr v-for="role in system.roles" :key="role.id" :class="{ 'bg-info-bg/40': editingRoleId === role.id }">
-                                    <td class="px-3 py-2">
+                                    <td>
                                         <div class="font-medium text-text">{{ role.name }}</div>
                                         <div v-if="role.description" class="text-xs text-text-muted">{{ role.description }}</div>
                                     </td>
-                                    <td class="max-w-56 truncate px-3 py-2 text-text-muted">{{ role.launch_url || 'System URL' }}</td>
-                                    <td class="px-3 py-2 text-center">{{ role.users_count }}</td>
-                                    <td class="px-3 py-2 text-center"><StatusBadge :status="role.status" /></td>
-                                    <td class="px-3 py-2">
+                                    <td class="max-w-56 truncate text-text-muted">{{ role.launch_url || 'System URL' }}</td>
+                                    <td class="text-center">{{ role.users_count }}</td>
+                                    <td class="text-center"><StatusBadge :status="role.status" /></td>
+                                    <td>
                                         <div v-if="can('applications.update')" class="flex justify-end gap-1">
                                             <ActionButton icon="pencil" :label="`Edit role ${role.name}`" @click="editRole(role)" />
                                             <ActionButton
@@ -312,24 +306,19 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                         </p>
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <div>
-                                <TextInput id="role-name" v-model="roleForm.name" label="Role name" required :invalid="!!roleForm.errors.name" />
-                                <InputError :message="roleForm.errors.name" />
+                                <TextInput id="role-name" v-model="roleForm.name" label="Role name" required :error="roleForm.errors.name" />
                             </div>
                             <div>
-                                <TextInput id="role-code" v-model="roleForm.code" label="Code (optional)" placeholder="e.g. esd_admin" :invalid="!!roleForm.errors.code" />
-                                <InputError :message="roleForm.errors.code" />
+                                <TextInput id="role-code" v-model="roleForm.code" label="Code (optional)" placeholder="e.g. esd_admin" :error="roleForm.errors.code" />
                             </div>
                             <div>
-                                <TextInput id="role-description" v-model="roleForm.description" label="Description" :invalid="!!roleForm.errors.description" />
-                                <InputError :message="roleForm.errors.description" />
+                                <TextInput id="role-description" v-model="roleForm.description" label="Description" :error="roleForm.errors.description" />
                             </div>
                             <div>
-                                <TextInput id="role-url" v-model="roleForm.launch_url" type="url" label="Launch URL (optional)" :invalid="!!roleForm.errors.launch_url" />
-                                <InputError :message="roleForm.errors.launch_url" />
+                                <TextInput id="role-url" v-model="roleForm.launch_url" type="url" label="Launch URL (optional)" :error="roleForm.errors.launch_url" />
                             </div>
                             <div>
-                                <TextInput id="role-order" v-model="roleForm.sort_order" type="number" label="Order" required :invalid="!!roleForm.errors.sort_order" />
-                                <InputError :message="roleForm.errors.sort_order" />
+                                <TextInput id="role-order" v-model="roleForm.sort_order" type="number" label="Order" required :error="roleForm.errors.sort_order" />
                             </div>
                         </div>
                         <div class="mt-3 flex gap-2">

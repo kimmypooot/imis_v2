@@ -68,6 +68,7 @@ const demoTabs = [
 
 // A recent time, so the two-line cell shows a real "x ago".
 const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+const pickedPeople = ref([]);
 const people = [
     { id: 1, name: 'Maria Santos', username: 'msantos', role: 'Administrator', active: true, at: minutesAgo(3) },
     { id: 2, name: 'Juan Dela Cruz', username: 'jdelacruz', role: 'HR Officer', active: false, at: minutesAgo(190) },
@@ -187,6 +188,33 @@ const demoRows = [
             </div>
         </Card>
 
+        <Card title="Field states" description="TextInput and PasswordInput take error and helperText themselves; Select and Textarea sit in a FormGroup.">
+            <div class="grid gap-4 md:grid-cols-2">
+                <TextInput id="state-default" v-model="demoText" label="Default" helper-text="Helper text appears under the field." />
+                <TextInput id="state-error" v-model="demoText" label="With error" error="This field is required." />
+                <TextInput id="state-disabled" v-model="demoText" label="Disabled" disabled />
+                <PasswordInput id="state-password" v-model="demoText" label="Password with error" error="Use at least 12 characters." />
+            </div>
+        </Card>
+
+        <Card title="Usage" description="The shapes to copy.">
+            <pre v-pre class="overflow-x-auto rounded-md bg-surface-muted p-4 text-xs leading-relaxed text-text"><code>&lt;Alert tone="warning" title="Heads up"&gt;Message&lt;/Alert&gt;
+
+&lt;TextInput id="name" v-model="form.name" label="Name" :error="form.errors.name" helper-text="As on your ID" /&gt;
+
+&lt;Table density="compact" sticky :loading="busy" :empty="!rows.length"&gt;
+    &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Name&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+    &lt;tbody&gt;&lt;tr v-for="row in rows" :key="row.id"&gt;&lt;td&gt;{{ row.name }}&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;
+&lt;/Table&gt;
+
+&lt;DataTable v-model:selected="picked" selectable :columns="columns" :rows="rows" caption="People"&gt;
+    &lt;template #bulk="{ selected, clear }"&gt;…&lt;/template&gt;
+&lt;/DataTable&gt;
+
+&lt;StatusBadge status="active" /&gt;   &lt;Badge tone="info" pill dot&gt;New&lt;/Badge&gt;
+&lt;Button icon-only aria-label="Edit"&gt;&lt;Icon name="pencil" /&gt;&lt;/Button&gt;</code></pre>
+        </Card>
+
         <Card title="Shape &amp; elevation" description="Radius and shadow come from tokens. Cards are flat and bordered; only floating layers are elevated.">
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div v-for="r in ['sm', 'md', 'lg', 'xl']" :key="r" class="border border-border-strong bg-surface-muted p-4 text-center text-xs text-text-muted" :class="`rounded-${r}`">rounded-{{ r }}</div>
@@ -263,21 +291,26 @@ const demoRows = [
             </div>
         </Card>
 
-        <Card title="Table">
-            <Table :empty="false">
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="row in demoRows" :key="row.id">
-                        <td>{{ row.name }}</td>
-                        <td><Badge :tone="row.status === 'active' ? 'success' : 'warning'">{{ row.status }}</Badge></td>
-                    </tr>
-                </tbody>
-            </Table>
+        <Card title="Table" description="One look for every list. Table wraps hand-written rows; density is compact, default or comfortable; sticky pins the header; loading and empty have their own states.">
+            <div class="space-y-6">
+                <div v-for="density in ['compact', 'default', 'comfortable']" :key="density">
+                    <p class="mb-2 text-xs font-semibold tracking-wide text-text-muted uppercase">{{ density }}</p>
+                    <Table :density="density">
+                        <thead>
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in demoRows" :key="row.id">
+                                <td>{{ row.name }}</td>
+                                <td><Badge :tone="row.status === 'active' ? 'success' : 'warning'">{{ row.status }}</Badge></td>
+                            </tr>
+                        </tbody>
+                    </Table>
+                </div>
+            </div>
         </Card>
 
         <Card title="People &amp; status" description="Avatars fall back to initials and show a spinner while a photo loads.">
@@ -298,8 +331,11 @@ const demoRows = [
             </div>
         </Card>
 
-        <Card title="Data table" description="Search, sort, export and paging; people get an avatar cell and times read as &quot;x ago&quot;.">
-            <DataTable :columns="personColumns" :rows="people" row-key="id" caption="Example people" export-name="design-system-example">
+        <Card title="Data table" description="Search, sort, export and paging; tick rows for bulk actions. On a phone the rows stack as labelled cards.">
+            <DataTable v-model:selected="pickedPeople" selectable :columns="personColumns" :rows="people" row-key="id" caption="Example people" export-name="design-system-example">
+                <template #bulk="{ selected }">
+                    <Button size="sm" variant="primary">Email {{ selected.length }}</Button>
+                </template>
                 <template #cell-user="{ row }">
                     <div class="flex items-center gap-3">
                         <UserAvatar :name="row.name" size="sm" />
@@ -354,8 +390,15 @@ const demoRows = [
             <EmptyState title="No records found" description="This is what an empty list looks like." icon="info" />
         </Card>
 
-        <Card title="Loading state">
-            <Table loading />
+        <Card title="Loading &amp; empty tables" description="Placeholder rows while data loads; an empty state with an optional action when there is none.">
+            <div class="grid gap-6 lg:grid-cols-2">
+                <Table loading />
+                <Table empty>
+                    <template #empty>
+                        <EmptyState title="No payslips yet" description="Released payslips will appear here." icon="info" />
+                    </template>
+                </Table>
+            </div>
         </Card>
 
         <Card title="Modal & confirmation">

@@ -1,6 +1,14 @@
 <script setup>
+import { computed } from 'vue';
 import Icon from '../UI/Icon.vue';
+import HelperText from './HelperText.vue';
+import InputError from './InputError.vue';
 
+/**
+ * Label + input + helper text + error in one. Pass `error` (e.g.
+ * `form.errors.name`) to mark the field invalid and show the message under
+ * it; `helperText` is shown while there is no error.
+ */
 const props = defineProps({
     modelValue: {
         type: String,
@@ -34,6 +42,14 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    error: {
+        type: String,
+        default: null,
+    },
+    helperText: {
+        type: String,
+        default: null,
+    },
     disabled: {
         type: Boolean,
         default: false,
@@ -51,6 +67,9 @@ const props = defineProps({
 });
 
 defineEmits(['update:modelValue']);
+
+const isInvalid = computed(() => props.invalid || !!props.error);
+const describedBy = computed(() => (props.error ? undefined : props.helperText ? `${props.id}-helper` : undefined));
 </script>
 
 <template>
@@ -70,7 +89,8 @@ defineEmits(['update:modelValue']);
                 :autocomplete="autocomplete"
                 :required="required"
                 :autofocus="autofocus"
-                :aria-invalid="invalid"
+                :aria-invalid="isInvalid"
+                :aria-describedby="describedBy"
                 :disabled="disabled"
                 :list="suggestions.length ? `${id}-suggestions` : undefined"
                 class="block w-full form-control px-3 py-2"
@@ -81,5 +101,7 @@ defineEmits(['update:modelValue']);
         <datalist v-if="suggestions.length" :id="`${id}-suggestions`">
             <option v-for="suggestion in suggestions" :key="suggestion" :value="suggestion" />
         </datalist>
+        <HelperText v-if="helperText && !error" :id="`${id}-helper`">{{ helperText }}</HelperText>
+        <InputError :message="error" />
     </div>
 </template>

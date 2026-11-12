@@ -53,9 +53,8 @@ const submit = () => {
                 type="email"
                 autocomplete="email"
                 required
-                :invalid="!!form.errors.email"
+                :error="form.errors.email"
             />
-            <InputError :message="form.errors.email" />
         </div>
 
         <div>
@@ -78,9 +77,8 @@ const submit = () => {
                 label="Confirm new password"
                 autocomplete="new-password"
                 required
-                :invalid="!!form.errors.password_confirmation"
+                :error="form.errors.password_confirmation"
             />
-            <InputError :message="form.errors.password_confirmation" />
         </div>
 
         <Button type="submit" class="w-full" :disabled="form.processing">

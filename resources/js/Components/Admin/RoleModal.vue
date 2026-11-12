@@ -146,8 +146,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                             <InputError :message="form.errors.name" />
                         </div>
                         <div>
-                            <TextInput id="role-display" v-model="form.display_name" label="Display name" required :invalid="!!form.errors.display_name" />
-                            <InputError :message="form.errors.display_name" />
+                            <TextInput id="role-display" v-model="form.display_name" label="Display name" required :error="form.errors.display_name" />
                         </div>
                         <FormGroup id="role-status" label="Status" required :error="form.errors.status">
                             <Select id="role-status" v-model="form.status" :options="statusOptions" :disabled="isSuperAdmin" />

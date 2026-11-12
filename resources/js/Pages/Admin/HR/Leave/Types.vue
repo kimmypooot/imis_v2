@@ -127,12 +127,10 @@ const checks = [
     <Modal :open="open" :title="editing ? `Edit ${editing.name}` : 'Add leave type'" :tone="editing ? 'primary' : 'success'" size="xl" @close="open = false">
         <form id="leave-type-form" class="grid gap-4 sm:grid-cols-4" @submit.prevent="submit">
             <div>
-                <TextInput id="type-code" v-model="form.code" label="Code" required :invalid="!!form.errors.code" />
-                <InputError :message="form.errors.code" />
+                <TextInput id="type-code" v-model="form.code" label="Code" required :error="form.errors.code" />
             </div>
             <div class="sm:col-span-3">
-                <TextInput id="type-name" v-model="form.name" label="Name" required :invalid="!!form.errors.name" />
-                <InputError :message="form.errors.name" />
+                <TextInput id="type-name" v-model="form.name" label="Name" required :error="form.errors.name" />
             </div>
             <div class="sm:col-span-2">
                 <InputLabel for="type-workflow">Approval route</InputLabel>
@@ -181,12 +179,10 @@ const checks = [
             </fieldset>
 
             <div class="sm:col-span-4">
-                <TextInput id="type-docs" v-model="form.supporting_documents" label="Supporting documents to attach" :invalid="!!form.errors.supporting_documents" />
-                <InputError :message="form.errors.supporting_documents" />
+                <TextInput id="type-docs" v-model="form.supporting_documents" label="Supporting documents to attach" :error="form.errors.supporting_documents" />
             </div>
             <div class="sm:col-span-4">
-                <TextInput id="type-policy" v-model="form.policy_reference" label="Policy reference" :invalid="!!form.errors.policy_reference" />
-                <InputError :message="form.errors.policy_reference" />
+                <TextInput id="type-policy" v-model="form.policy_reference" label="Policy reference" :error="form.errors.policy_reference" />
             </div>
         </form>
         <template #footer>

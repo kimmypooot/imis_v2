@@ -32,27 +32,27 @@ const id = useId();
         </div>
 
         <p v-if="rows.length === 0" class="mt-4 rounded-md bg-surface-muted px-3 py-4 text-center text-sm text-text-muted">None yet.</p>
-        <div v-else class="mt-4 overflow-x-auto">
-            <table class="w-full text-left text-sm">
+        <div v-else class="table-card mt-4">
+            <table class="data-table">
                 <caption class="sr-only">{{ section.label }}</caption>
-                <thead class="border-b border-border text-xs text-text-muted uppercase">
+                <thead>
                     <tr>
-                        <th scope="col" class="py-2 pr-3 font-semibold">Title</th>
-                        <th scope="col" class="py-2 pr-3 font-semibold">Dates</th>
-                        <th scope="col" class="py-2 pr-3 text-right font-semibold">Hours</th>
-                        <th scope="col" class="py-2 pr-3 font-semibold">Type</th>
-                        <th scope="col" class="py-2 font-semibold">Conducted/sponsored by</th>
+                        <th scope="col" class="font-semibold">Title</th>
+                        <th scope="col" class="font-semibold">Dates</th>
+                        <th scope="col" class="text-right font-semibold">Hours</th>
+                        <th scope="col" class="font-semibold">Type</th>
+                        <th scope="col" class="font-semibold">Conducted/sponsored by</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody>
                     <tr v-for="row in rows" :key="row.id">
-                        <td class="py-2 pr-3 text-text">{{ row.title }}</td>
-                        <td class="py-2 pr-3 whitespace-nowrap text-text-muted">
+                        <td class="text-text">{{ row.title }}</td>
+                        <td class="whitespace-nowrap text-text-muted">
                             {{ formatCalendarDate(row.date_from) }}<template v-if="row.date_to && row.date_to !== row.date_from"> – {{ formatCalendarDate(row.date_to) }}</template>
                         </td>
-                        <td class="py-2 pr-3 text-right text-text-muted tabular-nums">{{ row.hours }}</td>
-                        <td class="py-2 pr-3 text-text-muted">{{ row.ld_type || '—' }}</td>
-                        <td class="py-2 text-text-muted">{{ row.sponsor || '—' }}</td>
+                        <td class="text-right text-text-muted tabular-nums">{{ row.hours }}</td>
+                        <td class="text-text-muted">{{ row.ld_type || '—' }}</td>
+                        <td class="text-text-muted">{{ row.sponsor || '—' }}</td>
                     </tr>
                 </tbody>
             </table>

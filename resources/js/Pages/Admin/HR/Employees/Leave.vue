@@ -148,8 +148,7 @@ const field = 'mt-1 block w-full';
                 <InputError :message="entry.errors.kind" />
             </div>
             <div>
-                <TextInput id="entry-date" v-model="entry.entry_date" type="date" label="As of" required :invalid="!!entry.errors.entry_date" />
-                <InputError :message="entry.errors.entry_date" />
+                <TextInput id="entry-date" v-model="entry.entry_date" type="date" label="As of" required :error="entry.errors.entry_date" />
             </div>
             <div>
                 <InputLabel for="entry-amount" required>Days</InputLabel>
@@ -166,8 +165,7 @@ const field = 'mt-1 block w-full';
                 <InputError :message="entry.errors.amount" />
             </div>
             <div class="sm:col-span-2">
-                <TextInput id="entry-particulars" v-model="entry.particulars" label="Particulars (e.g. Balance carried over from the paper leave card)" required :invalid="!!entry.errors.particulars" />
-                <InputError :message="entry.errors.particulars" />
+                <TextInput id="entry-particulars" v-model="entry.particulars" label="Particulars (e.g. Balance carried over from the paper leave card)" required :error="entry.errors.particulars" />
             </div>
         </form>
         <template #footer>
@@ -182,8 +180,7 @@ const field = 'mt-1 block w-full';
                 {{ reversing.code }} {{ reversing.amount > 0 ? '+' : '' }}{{ reversing.amount }} on {{ formatCalendarDate(reversing.date) }} — {{ reversing.particulars }}.
                 An equal and opposite entry is posted today; the original stays on the card.
             </p>
-            <TextInput id="reverse-reason" v-model="reversal.reason" label="Reason" required :invalid="!!reversal.errors.reason" />
-            <InputError :message="reversal.errors.reason" />
+            <TextInput id="reverse-reason" v-model="reversal.reason" label="Reason" required :error="reversal.errors.reason" />
         </form>
         <template #footer>
             <Button variant="secondary" @click="reversing = null">Cancel</Button>
@@ -209,12 +206,10 @@ const field = 'mt-1 block w-full';
             </div>
             <template v-if="settingsForm.is_solo_parent">
                 <div>
-                    <TextInput id="settings-solo-id" v-model="settingsForm.solo_parent_id_number" label="Solo Parent ID number" required :invalid="!!settingsForm.errors.solo_parent_id_number" />
-                    <InputError :message="settingsForm.errors.solo_parent_id_number" />
+                    <TextInput id="settings-solo-id" v-model="settingsForm.solo_parent_id_number" label="Solo Parent ID number" required :error="settingsForm.errors.solo_parent_id_number" />
                 </div>
                 <div>
-                    <TextInput id="settings-solo-expiry" v-model="settingsForm.solo_parent_id_expiry" type="date" label="ID valid until" :invalid="!!settingsForm.errors.solo_parent_id_expiry" />
-                    <InputError :message="settingsForm.errors.solo_parent_id_expiry" />
+                    <TextInput id="settings-solo-expiry" v-model="settingsForm.solo_parent_id_expiry" type="date" label="ID valid until" :error="settingsForm.errors.solo_parent_id_expiry" />
                 </div>
             </template>
         </form>

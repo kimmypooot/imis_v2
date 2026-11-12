@@ -96,27 +96,27 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
                 <strong :class="summary.errors ? 'text-danger' : ''">{{ summary.errors }}</strong> with errors (skipped), {{ summary.unchanged }} unchanged.
             </p>
 
-            <div class="mt-4 overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
+            <div class="table-card mt-4">
+                <table class="data-table">
                     <caption class="sr-only">Rows of the uploaded spreadsheet</caption>
-                    <thead class="border-b border-border text-text-muted">
+                    <thead>
                         <tr>
-                            <th scope="col" class="py-2 pr-4 font-medium">Line</th>
-                            <th scope="col" class="py-2 pr-4 font-medium">Item</th>
-                            <th scope="col" class="py-2 pr-4 font-medium">Holder</th>
-                            <th scope="col" class="py-2 font-medium">Changes or errors</th>
+                            <th scope="col" class="font-medium">Line</th>
+                            <th scope="col" class="font-medium">Item</th>
+                            <th scope="col" class="font-medium">Holder</th>
+                            <th scope="col" class="font-medium">Changes or errors</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-border">
+                    <tbody>
                         <tr v-for="row in shown" :key="row.line">
-                            <td class="py-2 pr-4 align-top tabular-nums text-text-muted">{{ row.line }}</td>
-                            <td class="py-2 pr-4 align-top">
+                            <td class="align-top tabular-nums text-text-muted">{{ row.line }}</td>
+                            <td class="align-top">
                                 <a v-if="row.item_id" :href="`/admin/hr/plantilla/${row.item_id}`" class="font-medium text-primary hover:underline">{{ row.item }}</a>
                                 <span v-else>{{ row.item }}</span>
                                 <div v-if="row.position_title" class="text-xs text-text-muted">{{ row.position_title }}</div>
                             </td>
-                            <td class="py-2 pr-4 align-top">{{ row.holder || 'Vacant' }}</td>
-                            <td class="py-2 align-top">
+                            <td class="align-top">{{ row.holder || 'Vacant' }}</td>
+                            <td class="align-top">
                                 <ul v-if="row.errors.length" class="space-y-0.5 text-danger">
                                     <li v-for="error in row.errors" :key="error">{{ error }}</li>
                                 </ul>

@@ -69,27 +69,22 @@ const sexOptions = [
             <Select :id="`${idPrefix}-honorific`" v-model="form.honorific" :options="honorifics" />
         </FormGroup>
         <div>
-            <TextInput :id="`${idPrefix}-first_name`" v-model="form.first_name" label="First name" required :invalid="!!form.errors.first_name" />
-            <InputError :message="form.errors.first_name" />
+            <TextInput :id="`${idPrefix}-first_name`" v-model="form.first_name" label="First name" required :error="form.errors.first_name" />
         </div>
         <div>
-            <TextInput :id="`${idPrefix}-middle_name`" v-model="form.middle_name" label="Middle name" :invalid="!!form.errors.middle_name" />
-            <InputError :message="form.errors.middle_name" />
+            <TextInput :id="`${idPrefix}-middle_name`" v-model="form.middle_name" label="Middle name" :error="form.errors.middle_name" />
         </div>
         <div>
-            <TextInput :id="`${idPrefix}-last_name`" v-model="form.last_name" label="Last name" required :invalid="!!form.errors.last_name" />
-            <InputError :message="form.errors.last_name" />
+            <TextInput :id="`${idPrefix}-last_name`" v-model="form.last_name" label="Last name" required :error="form.errors.last_name" />
         </div>
         <div>
-            <TextInput :id="`${idPrefix}-name_extension`" v-model="form.name_extension" label="Ext. (Jr.)" :invalid="!!form.errors.name_extension" />
-            <InputError :message="form.errors.name_extension" />
+            <TextInput :id="`${idPrefix}-name_extension`" v-model="form.name_extension" label="Ext. (Jr.)" :error="form.errors.name_extension" />
         </div>
     </div>
 
     <div class="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-            <TextInput :id="`${idPrefix}-email`" v-model="form.email" type="email" label="Email" required :invalid="!!form.errors.email" />
-            <InputError :message="form.errors.email" />
+            <TextInput :id="`${idPrefix}-email`" v-model="form.email" type="email" label="Email" required :error="form.errors.email" />
         </div>
         <FormGroup
             :id="`${idPrefix}-position`"
@@ -103,8 +98,7 @@ const sexOptions = [
             <Select :id="`${idPrefix}-sex`" v-model="form.sex" :options="sexOptions" />
         </FormGroup>
         <div>
-            <TextInput :id="`${idPrefix}-birthday`" v-model="form.birthday" type="date" label="Birthday" :invalid="!!form.errors.birthday" />
-            <InputError :message="form.errors.birthday" />
+            <TextInput :id="`${idPrefix}-birthday`" v-model="form.birthday" type="date" label="Birthday" :error="form.errors.birthday" />
         </div>
         <FormGroup :id="`${idPrefix}-office`" label="Division / Office" :error="form.errors.organizational_unit_id" class="sm:col-span-2">
             <Select

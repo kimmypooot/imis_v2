@@ -294,26 +294,26 @@ const recentColumns = [
                 IMIS records what payrolls take; it does not collect or remit anything. “Confirmed” is on a finalized payroll, “Paid” is when HR marks it remitted,
                 and “Overdue” is confirmed but not marked paid 30 days after release.
             </p>
-            <table class="w-full text-sm">
+            <div class="table-card"><table class="data-table" data-density="compact">
                 <caption class="sr-only">Installments of {{ scheduled.type }}</caption>
-                <thead class="text-left text-xs tracking-wide text-text-muted uppercase">
-                    <tr><th scope="col" class="py-1">Month</th><th scope="col" class="py-1 text-right">Amount</th><th scope="col" class="py-1 pl-4">Status</th><th v-if="canManage" scope="col" class="py-1" /></tr>
+                <thead>
+                    <tr><th scope="col">Month</th><th scope="col" class="text-right">Amount</th><th scope="col">Status</th><th v-if="canManage" scope="col"  /></tr>
                 </thead>
                 <tbody>
-                    <tr v-for="row in scheduled.schedule.rows" :key="row.month" class="border-t border-border">
-                        <td class="py-1.5 text-text">{{ row.month }}</td>
-                        <td class="py-1.5 text-right tabular-nums">{{ formatPeso(row.amount) }}</td>
-                        <td class="py-1.5 pl-4">
+                    <tr v-for="row in scheduled.schedule.rows" :key="row.month">
+                        <td class="text-text">{{ row.month }}</td>
+                        <td class="text-right tabular-nums">{{ formatPeso(row.amount) }}</td>
+                        <td>
                             <StatusBadge :status="scheduleTones[row.status]" :label="row.status_label" />
                             <span v-if="row.remitted_on" class="ml-1 text-xs text-text-muted">{{ formatCalendarDate(row.remitted_on) }}</span>
                         </td>
-                        <td v-if="canManage" class="py-1.5 text-right whitespace-nowrap">
+                        <td v-if="canManage" class="text-right whitespace-nowrap">
                             <button v-if="row.finalized && row.status !== 'paid'" type="button" class="text-primary hover:underline" @click="markPaid(scheduled, row, true)">Mark paid</button>
                             <button v-else-if="row.status === 'paid'" type="button" class="text-text-muted hover:underline" @click="markPaid(scheduled, row, false)">Undo</button>
                         </td>
                     </tr>
                 </tbody>
-            </table>
+            </table></div>
             <p v-if="scheduled.schedule.more" class="mt-2 text-xs text-text-muted">…and {{ scheduled.schedule.more }} more after these.</p>
             <p v-if="!scheduled.schedule.rows.length" class="py-2 text-sm text-text-muted">Nothing is scheduled: the loan is complete, suspended or cancelled.</p>
             <p v-if="scheduled.schedule.expected_end" class="mt-3 text-sm text-text">Expected last deduction: <strong>{{ scheduled.schedule.expected_end }}</strong>. Balance {{ formatPeso(scheduled.balance) }}.</p>

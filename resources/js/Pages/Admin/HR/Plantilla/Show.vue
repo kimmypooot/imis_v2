@@ -173,33 +173,33 @@ const field = 'mt-1 block w-full';
 
         <Card title="Holders" icon="users" description="Every period of service on this item, newest first.">
             <p v-if="history.length === 0" class="text-sm text-text-muted">Nobody has held this item yet.</p>
-            <div v-else class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-xs text-text-muted">
+            <div v-else class="table-card">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th scope="col" class="py-2 pr-4 font-medium">Employee</th>
-                            <th scope="col" class="py-2 pr-4 font-medium">Step</th>
-                            <th scope="col" class="py-2 pr-4 font-medium">Status / nature</th>
-                            <th scope="col" class="py-2 pr-4 font-medium">Period</th>
-                            <th scope="col" class="py-2 pr-4 text-right font-medium">Monthly salary</th>
-                            <th v-if="canManage" scope="col" class="py-2 font-medium"><span class="sr-only">Actions</span></th>
+                            <th scope="col" class="font-medium">Employee</th>
+                            <th scope="col" class="font-medium">Step</th>
+                            <th scope="col" class="font-medium">Status / nature</th>
+                            <th scope="col" class="font-medium">Period</th>
+                            <th scope="col" class="text-right font-medium">Monthly salary</th>
+                            <th v-if="canManage" scope="col" class="font-medium"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-border">
+                    <tbody>
                         <tr v-for="row in history" :key="row.id">
-                            <td class="py-2 pr-4 align-top">
+                            <td class="align-top">
                                 <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
                                 <StatusBadge v-if="row.current" status="active" label="Current" class="ml-2" />
                                 <div v-if="row.missing.length" class="text-xs text-warning">Incomplete: missing {{ row.missing.join(', ') }}</div>
                             </td>
-                            <td class="py-2 pr-4 align-top tabular-nums">{{ row.step ?? '—' }}</td>
-                            <td class="py-2 pr-4 align-top">{{ row.status_label ?? '—' }}<div class="text-xs text-text-muted">{{ row.nature_label }}</div></td>
-                            <td class="py-2 pr-4 align-top">
+                            <td class="align-top tabular-nums">{{ row.step ?? '—' }}</td>
+                            <td class="align-top">{{ row.status_label ?? '—' }}<div class="text-xs text-text-muted">{{ row.nature_label }}</div></td>
+                            <td class="align-top">
                                 <span class="whitespace-nowrap">{{ period(row) }}</span>
                                 <div v-if="row.end_reason" class="text-xs text-text-muted">{{ row.end_reason }}</div>
                             </td>
-                            <td class="py-2 pr-4 text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}<span v-if="row.salary_override !== null" class="block text-xs text-text-muted">Override</span></td>
-                            <td v-if="canManage" class="py-2 align-top">
+                            <td class="text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}<span v-if="row.salary_override !== null" class="block text-xs text-text-muted">Override</span></td>
+                            <td v-if="canManage" class="align-top">
                                 <div v-if="row.can_manage" class="flex flex-wrap justify-end gap-3 whitespace-nowrap">
                                     <button v-if="row.current && !row.missing.length && row.step < 8" type="button" class="text-success hover:underline" @click="open('step', row)">Step increment</button>
                                     <button v-if="row.current" type="button" class="text-warning hover:underline" @click="open('vacate', row)">Vacate</button>
@@ -266,8 +266,7 @@ const field = 'mt-1 block w-full';
                     <InputError :message="form.errors.step" />
                 </div>
                 <div>
-                    <TextInput id="action-from" v-model="form.date_from" type="date" :label="mode === 'correct' ? 'From' : 'Effective date'" required :invalid="!!form.errors.date_from" />
-                    <InputError :message="form.errors.date_from" />
+                    <TextInput id="action-from" v-model="form.date_from" type="date" :label="mode === 'correct' ? 'From' : 'Effective date'" required :error="form.errors.date_from" />
                 </div>
                 <div class="sm:col-span-2">
                     <TextInput id="action-salary-override" v-model="form.salary_override" type="number" step="0.01" min="0" label="Monthly salary override (optional)" :invalid="!!form.errors.salary_override" />
@@ -278,23 +277,19 @@ const field = 'mt-1 block w-full';
 
             <template v-if="mode === 'correct' || mode === 'vacate'">
                 <div>
-                    <TextInput id="action-to" v-model="form.date_to" type="date" label="Last day" :required="mode === 'vacate'" :invalid="!!form.errors.date_to" />
-                    <InputError :message="form.errors.date_to" />
+                    <TextInput id="action-to" v-model="form.date_to" type="date" label="Last day" :required="mode === 'vacate'" :error="form.errors.date_to" />
                 </div>
                 <div>
-                    <TextInput id="action-reason" v-model="form.end_reason" label="Reason (e.g. Retirement, Resignation)" :required="mode === 'vacate'" :invalid="!!form.errors.end_reason" />
-                    <InputError :message="form.errors.end_reason" />
+                    <TextInput id="action-reason" v-model="form.end_reason" label="Reason (e.g. Retirement, Resignation)" :required="mode === 'vacate'" :error="form.errors.end_reason" />
                 </div>
             </template>
 
             <template v-if="mode === 'abolish'">
                 <div>
-                    <TextInput id="abolish-on" v-model="form.abolished_on" type="date" label="Date abolished" required :invalid="!!form.errors.abolished_on" />
-                    <InputError :message="form.errors.abolished_on" />
+                    <TextInput id="abolish-on" v-model="form.abolished_on" type="date" label="Date abolished" required :error="form.errors.abolished_on" />
                 </div>
                 <div>
-                    <TextInput id="abolish-authority" v-model="form.abolition_authority" label="Authority" :invalid="!!form.errors.abolition_authority" />
-                    <InputError :message="form.errors.abolition_authority" />
+                    <TextInput id="abolish-authority" v-model="form.abolition_authority" label="Authority" :error="form.errors.abolition_authority" />
                 </div>
             </template>
 

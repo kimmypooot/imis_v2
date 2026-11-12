@@ -1,4 +1,6 @@
 <script setup>
+import Icon from '../UI/Icon.vue';
+
 defineProps({
     message: {
         type: String,
@@ -9,7 +11,7 @@ defineProps({
 
 <template>
     <p v-if="message" class="mt-1 flex items-center gap-1 text-sm text-danger" role="alert">
-        <span aria-hidden="true">&#9888;</span>
+        <Icon name="exclamation" size="sm" class="shrink-0" aria-hidden="true" />
         <span>{{ message }}</span>
     </p>
 </template>

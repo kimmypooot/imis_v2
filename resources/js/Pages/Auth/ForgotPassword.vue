@@ -44,9 +44,8 @@ const submit = () => {
                 autocomplete="email"
                 required
                 autofocus
-                :invalid="!!form.errors.email"
+                :error="form.errors.email"
             />
-            <InputError :message="form.errors.email" />
         </div>
 
         <Button type="submit" class="w-full" :disabled="form.processing">

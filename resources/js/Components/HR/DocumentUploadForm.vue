@@ -41,12 +41,10 @@ const submit = () =>
             <InputError :message="form.errors.document_type" />
         </div>
         <div>
-            <TextInput id="doc-date" v-model="form.document_date" type="date" label="Document date" :invalid="!!form.errors.document_date" />
-            <InputError :message="form.errors.document_date" />
+            <TextInput id="doc-date" v-model="form.document_date" type="date" label="Document date" :error="form.errors.document_date" />
         </div>
         <div class="sm:col-span-2">
-            <TextInput id="doc-title" v-model="form.title" :label="form.document_type === 'other' ? 'Title (what is it?)' : 'Title (optional)'" :required="form.document_type === 'other'" :invalid="!!form.errors.title" />
-            <InputError :message="form.errors.title" />
+            <TextInput id="doc-title" v-model="form.title" :label="form.document_type === 'other' ? 'Title (what is it?)' : 'Title (optional)'" :required="form.document_type === 'other'" :error="form.errors.title" />
         </div>
         <div class="sm:col-span-2">
             <InputLabel for="doc-remarks">Remarks</InputLabel>

@@ -134,9 +134,8 @@ const confirmStatusChange = () => {
                                 v-model="editForm.position"
                                 label="Position"
                                 required
-                                :invalid="!!editForm.errors.position"
+                                :error="editForm.errors.position"
                             />
-                            <InputError :message="editForm.errors.position" />
                         </div>
                         <FormGroup id="edit-status" label="Status" required :error="editForm.errors.status">
                             <Select id="edit-status" v-model="editForm.status" :options="statusOptions" />
@@ -147,9 +146,8 @@ const confirmStatusChange = () => {
                                 v-model="editForm.effective_from"
                                 type="date"
                                 label="Effective from"
-                                :invalid="!!editForm.errors.effective_from"
+                                :error="editForm.errors.effective_from"
                             />
-                            <InputError :message="editForm.errors.effective_from" />
                         </div>
                         <div>
                             <TextInput
@@ -157,9 +155,8 @@ const confirmStatusChange = () => {
                                 v-model="editForm.effective_until"
                                 type="date"
                                 label="Effective until"
-                                :invalid="!!editForm.errors.effective_until"
+                                :error="editForm.errors.effective_until"
                             />
-                            <InputError :message="editForm.errors.effective_until" />
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -212,9 +209,8 @@ const confirmStatusChange = () => {
                         label="Position"
                         placeholder="e.g. Chairperson"
                         required
-                        :invalid="!!addForm.errors.position"
+                        :error="addForm.errors.position"
                     />
-                    <InputError :message="addForm.errors.position" />
                 </div>
 
                 <div>
@@ -223,9 +219,8 @@ const confirmStatusChange = () => {
                         v-model="addForm.effective_from"
                         type="date"
                         label="Effective from"
-                        :invalid="!!addForm.errors.effective_from"
+                        :error="addForm.errors.effective_from"
                     />
-                    <InputError :message="addForm.errors.effective_from" />
                 </div>
 
                 <div>
@@ -234,9 +229,8 @@ const confirmStatusChange = () => {
                         v-model="addForm.effective_until"
                         type="date"
                         label="Effective until"
-                        :invalid="!!addForm.errors.effective_until"
+                        :error="addForm.errors.effective_until"
                     />
-                    <InputError :message="addForm.errors.effective_until" />
                 </div>
 
                 <Button type="submit" :loading="addForm.processing">Add member</Button>

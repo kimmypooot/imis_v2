@@ -287,9 +287,8 @@ const close = () => emit('close');
                                         label="New password"
                                         autocomplete="new-password"
                                         required
-                                        :invalid="!!passwordForm.errors.password"
+                                        :error="passwordForm.errors.password"
                                     />
-                                    <InputError :message="passwordForm.errors.password" />
                                 </div>
                                 <div>
                                     <PasswordInput
@@ -310,9 +309,8 @@ const close = () => emit('close');
                                     label="Your password, to confirm"
                                     autocomplete="current-password"
                                     required
-                                    :invalid="!!passwordForm.errors.admin_password"
+                                    :error="passwordForm.errors.admin_password"
                                 />
-                                <InputError :message="passwordForm.errors.admin_password" />
                             </div>
                             <Button type="submit" variant="danger":loading="passwordForm.processing">Set password</Button>
                         </form>

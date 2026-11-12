@@ -107,8 +107,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
         <form id="fwa-admin-form" class="space-y-3" @submit.prevent="submit">
             <p v-if="target" class="text-sm text-text">{{ target.name }}<template v-if="target.type_label"> — {{ target.type_label }}</template></p>
             <div v-if="mode === 'terminate'">
-                <TextInput id="fwa-last-day" v-model="form.effective_to" type="date" label="Last day" required :invalid="!!form.errors.effective_to" />
-                <InputError :message="form.errors.effective_to" />
+                <TextInput id="fwa-last-day" v-model="form.effective_to" type="date" label="Last day" required :error="form.errors.effective_to" />
             </div>
             <div>
                 <InputLabel for="fwa-admin-remarks">Remarks{{ mode === 'decide' && form.decision === 'rejected' ? '' : ' (optional)' }}</InputLabel>

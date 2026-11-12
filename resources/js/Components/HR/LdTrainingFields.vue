@@ -21,16 +21,13 @@ const field = 'mt-1 block w-full';
 
 <template>
     <div class="sm:col-span-2">
-        <TextInput :id="`${idPrefix}-title`" v-model="form.title" label="Title of the L&D intervention / training (write in full)" required :invalid="!!form.errors.title" />
-        <InputError :message="form.errors.title" />
+        <TextInput :id="`${idPrefix}-title`" v-model="form.title" label="Title of the L&D intervention / training (write in full)" required :error="form.errors.title" />
     </div>
     <div>
-        <TextInput :id="`${idPrefix}-from`" v-model="form.date_from" type="date" label="Start date" required :invalid="!!form.errors.date_from" />
-        <InputError :message="form.errors.date_from" />
+        <TextInput :id="`${idPrefix}-from`" v-model="form.date_from" type="date" label="Start date" required :error="form.errors.date_from" />
     </div>
     <div>
-        <TextInput :id="`${idPrefix}-to`" v-model="form.date_to" type="date" label="End date" required :invalid="!!form.errors.date_to" />
-        <InputError :message="form.errors.date_to" />
+        <TextInput :id="`${idPrefix}-to`" v-model="form.date_to" type="date" label="End date" required :error="form.errors.date_to" />
     </div>
     <div>
         <InputLabel :for="`${idPrefix}-hours`" required>Number of hours</InputLabel>
@@ -59,19 +56,15 @@ const field = 'mt-1 block w-full';
         <InputError :message="form.errors.ld_type" />
     </div>
     <div v-if="form.ld_type === 'other'">
-        <TextInput :id="`${idPrefix}-type-other`" v-model="form.ld_type_other" label="Type (specify)" required :invalid="!!form.errors.ld_type_other" />
-        <InputError :message="form.errors.ld_type_other" />
+        <TextInput :id="`${idPrefix}-type-other`" v-model="form.ld_type_other" label="Type (specify)" required :error="form.errors.ld_type_other" />
     </div>
     <div class="sm:col-span-2">
-        <TextInput :id="`${idPrefix}-sponsor`" v-model="form.sponsor" label="Conducted/sponsored by (write in full)" required :invalid="!!form.errors.sponsor" />
-        <InputError :message="form.errors.sponsor" />
+        <TextInput :id="`${idPrefix}-sponsor`" v-model="form.sponsor" label="Conducted/sponsored by (write in full)" required :error="form.errors.sponsor" />
     </div>
     <div>
-        <TextInput :id="`${idPrefix}-venue`" v-model="form.venue" label="Venue" :invalid="!!form.errors.venue" />
-        <InputError :message="form.errors.venue" />
+        <TextInput :id="`${idPrefix}-venue`" v-model="form.venue" label="Venue" :error="form.errors.venue" />
     </div>
     <div>
-        <TextInput :id="`${idPrefix}-speaker`" v-model="form.resource_speaker" label="Resource speaker/s" :invalid="!!form.errors.resource_speaker" />
-        <InputError :message="form.errors.resource_speaker" />
+        <TextInput :id="`${idPrefix}-speaker`" v-model="form.resource_speaker" label="Resource speaker/s" :error="form.errors.resource_speaker" />
     </div>
 </template>

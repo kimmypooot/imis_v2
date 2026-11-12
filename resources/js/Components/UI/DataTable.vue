@@ -3,12 +3,17 @@ import { computed, ref, useId, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Icon from './Icon.vue';
 import Button from './Button.vue';
+import Dropdown from './Dropdown.vue';
+import EmptyState from './EmptyState.vue';
+import Pagination from './Pagination.vue';
+import Skeleton from './Skeleton.vue';
 import { toast } from '../../Composables/useDialog';
 
 /**
  * The legacy IMIS admin table (jQuery DataTables) rebuilt for Vue:
- * "Show N entries", search, Copy / CSV / Print, sortable headers, a "#"
- * column, "Showing x to y of z entries", and pagination.
+ * Search, "Show N entries", an Export menu (Copy / CSV / Print), sortable
+ * headers, a "#" column, "Showing x to y of z entries", and pagination.
+ * Looks like every other list table (the `data-table` styles in app.css).
  *
  * Two modes:
  * - **Client** (`rows`): everything is loaded; search/sort/paging happen in
@@ -21,6 +26,15 @@ import { toast } from '../../Composables/useDialog';
  * Columns: [{ key, label, sortable = true, align = 'left', width?,
  *             value?: (row) => string  // for search/sort/export
  *             export = true }]
+ *
+ * Extras: `density` ("compact" | "default" | "comfortable"), `sticky`
+ * (pinned header inside a scrolling area), `loading` (skeleton rows; server
+ * mode also shows them while a reload is in flight), and an `empty` slot
+ * or `emptyIcon` / `emptyDescription` for the no-rows state. Below the
+ * `sm` breakpoint rows stack as labelled cards (`:stack="false"` keeps the
+ * horizontally scrolling table). `selectable` adds a checkbox column:
+ * `v-model:selected` holds the chosen `rowKey` values, and the `bulk` slot
+ * ({ selected, clear }) shows while any row is chosen.
  * Cells: slot `cell-<key>` with { row, value, index }; default text otherwise.
  */
 const props = defineProps({
@@ -42,7 +56,17 @@ const props = defineProps({
     defaultSort: { type: Object, default: null /** { key, direction } */ },
     emptyText: { type: String, default: 'No data available in table' },
     rowClass: { type: Function, default: null },
+    density: { type: String, default: 'default', validator: (value) => ['compact', 'default', 'comfortable'].includes(value) },
+    sticky: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
+    stack: { type: Boolean, default: true },
+    selectable: { type: Boolean, default: false },
+    selected: { type: Array, default: () => [] },
+    emptyIcon: { type: String, default: null },
+    emptyDescription: { type: String, default: null },
 });
+
+const emit = defineEmits(['update:selected']);
 
 const id = useId();
 const serverMode = computed(() => props.paginator !== null);
@@ -52,6 +76,8 @@ const perPage = ref(Number(props.query.per_page) || props.paginator?.per_page ||
 const sortKey = ref(props.query.sort ?? props.defaultSort?.key ?? null);
 const sortDirection = ref(props.query.direction ?? props.defaultSort?.direction ?? 'asc');
 const page = ref(1);
+const reloading = ref(false);
+const showSkeleton = computed(() => props.loading || reloading.value);
 
 const valueOf = (column, row) => {
     const raw = column.value ? column.value(row) : row[column.key];
@@ -110,7 +136,14 @@ const fetchServer = (overrides = {}) => {
             page: 1,
             ...overrides,
         },
-        { only: props.only, preserveState: true, preserveScroll: true, replace: true },
+        {
+            only: props.only,
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => (reloading.value = true),
+            onFinish: () => (reloading.value = false),
+        },
     );
 };
 
@@ -149,18 +182,6 @@ const ariaSort = (column) => {
 
     return sortDirection.value === 'asc' ? 'ascending' : 'descending';
 };
-
-// Compact page list: 1 … 4 5 6 … 12
-const pages = computed(() => {
-    const count = lastPage.value;
-    const current = currentPage.value;
-    if (count <= 7) return Array.from({ length: count }, (_, index) => index + 1);
-
-    const set = new Set([1, count, current - 1, current, current + 1].filter((value) => value >= 1 && value <= count));
-    const sorted = [...set].sort((a, b) => a - b);
-
-    return sorted.flatMap((value, index) => (index > 0 && value - sorted[index - 1] > 1 ? ['…', value] : [value]));
-});
 
 // ── Export ───────────────────────────────────────────────────────────
 const exportColumns = computed(() => props.columns.filter((column) => column.export !== false && column.label));
@@ -218,60 +239,113 @@ const printRows = () => {
     win.print();
 };
 
+// ── Selection ────────────────────────────────────────────────────────
+const keyOf = (row, index) => row[props.rowKey] ?? index;
+const isSelected = (row, index) => props.selected.includes(keyOf(row, index));
+const pageKeys = computed(() => visibleRows.value.map((row, index) => keyOf(row, index)));
+const allSelected = computed(() => pageKeys.value.length > 0 && pageKeys.value.every((key) => props.selected.includes(key)));
+const someSelected = computed(() => !allSelected.value && pageKeys.value.some((key) => props.selected.includes(key)));
+
+const toggleRow = (row, index) => {
+    const key = keyOf(row, index);
+    emit('update:selected', props.selected.includes(key) ? props.selected.filter((value) => value !== key) : [...props.selected, key]);
+};
+
+const toggleAll = () => {
+    emit('update:selected', allSelected.value ? props.selected.filter((key) => !pageKeys.value.includes(key)) : [...new Set([...props.selected, ...pageKeys.value])]);
+};
+
+const clearSelection = () => emit('update:selected', []);
+
 const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[column.align] ?? 'text-left';
 </script>
 
 <template>
     <div class="space-y-3">
-        <!-- Toolbar -->
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex flex-wrap items-center gap-3">
-                <label :for="`${id}-length`" class="flex items-center gap-2 text-sm text-text-muted">
-                    Show
-                    <select
-                        :id="`${id}-length`"
-                        v-model.number="perPage"
-                        class="form-control px-2 py-1"
-                    >
-                        <option v-for="size in pageSizes" :key="size" :value="size">{{ size }}</option>
-                    </select>
-                    entries
-                </label>
-
-                <div v-if="exportable" class="flex items-center gap-1" role="group" aria-label="Export">
-                    <Button variant="secondary" size="sm" @click="copyRows"><Icon name="copy" size="sm" />Copy</Button>
-                    <Button variant="secondary" size="sm" @click="downloadCsv"><Icon name="download" size="sm" />CSV</Button>
-                    <Button variant="secondary" size="sm" @click="printRows"><Icon name="printer" size="sm" />Print</Button>
-                </div>
-
-                <slot name="toolbar" />
-            </div>
-
-            <div v-if="searchable" class="relative w-full lg:w-72">
+        <!-- Toolbar: search first, then page size; export tucked into one menu -->
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div v-if="searchable" class="relative w-full sm:w-80">
                 <label :for="`${id}-search`" class="sr-only">Search {{ caption }}</label>
                 <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-text-muted" />
                 <input
                     :id="`${id}-search`"
                     v-model="search"
-                    type="search"
+                    type="text"
+                    inputmode="search"
+                    autocomplete="off"
                     placeholder="Search…"
-                    class="form-control block w-full py-1.5 pr-3 pl-8"
+                    class="form-control block w-full py-1.5 pr-8 pl-8"
                 />
+                <button
+                    v-if="search"
+                    type="button"
+                    class="absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-1 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    aria-label="Clear search"
+                    @click="search = ''"
+                >
+                    <Icon name="close" size="sm" />
+                </button>
+            </div>
+            <span v-else />
+
+            <div class="flex flex-wrap items-center gap-3">
+                <slot name="toolbar" />
+
+                <label :for="`${id}-length`" class="flex items-center gap-2 text-sm text-text-muted">
+                    Show
+                    <select :id="`${id}-length`" v-model.number="perPage" class="form-control px-2 py-1">
+                        <option v-for="size in pageSizes" :key="size" :value="size">{{ size }}</option>
+                    </select>
+                </label>
+
+                <Dropdown v-if="exportable" panel-class="w-44 py-1">
+                    <template #trigger="{ open, toggle, setTrigger, panelId }">
+                        <Button :ref="(component) => setTrigger(component?.$el ?? null)" variant="secondary" size="sm" aria-haspopup="true" :aria-expanded="open" :aria-controls="panelId" @click="toggle">
+                            <Icon name="download" size="sm" />
+                            Export
+                            <Icon name="chevronDown" size="sm" />
+                        </Button>
+                    </template>
+                    <template #default="{ close }">
+                        <button type="button" class="export-item" @click="copyRows(); close()"><Icon name="copy" size="sm" />Copy to clipboard</button>
+                        <button type="button" class="export-item" @click="downloadCsv(); close()"><Icon name="download" size="sm" />Download CSV</button>
+                        <button type="button" class="export-item" @click="printRows(); close()"><Icon name="printer" size="sm" />Print</button>
+                    </template>
+                </Dropdown>
+            </div>
+        </div>
+
+        <!-- Bulk actions -->
+        <div v-if="selectable && selected.length" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-info-bg px-4 py-2 text-sm" role="status">
+            <span class="font-medium text-primary">{{ selected.length }} selected</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <slot name="bulk" :selected="selected" :clear="clearSelection" />
+                <Button variant="secondary" size="sm" @click="clearSelection">Clear</Button>
             </div>
         </div>
 
         <!-- Table -->
-        <div class="relative overflow-x-auto rounded-md border border-border">
-            <table class="min-w-full text-compact">
+        <div class="table-card" :class="{ 'max-h-[70vh] overflow-y-auto': sticky }" :aria-busy="showSkeleton">
+            <table class="data-table" :data-density="density" :data-sticky="sticky ? '' : undefined" :data-stack="stack ? '' : undefined">
                 <caption class="sr-only">{{ caption }}</caption>
-                <thead class="table-head">
+                <thead>
                     <tr>
-                        <th v-if="numbered" scope="col" class="w-12 px-3 py-2.5 text-center">#</th>
+                        <th v-if="selectable" scope="col" class="w-10">
+                            <input
+                                type="checkbox"
+                                class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                                :checked="allSelected"
+                                :indeterminate="someSelected"
+                                aria-label="Select all rows on this page"
+                                @change="toggleAll"
+                            />
+                        </th>
+                        <th v-if="numbered" scope="col" class="w-12 text-center">#</th>
                         <th
                             v-for="column in columns"
                             :key="column.key"
                             scope="col"
-                            class="px-3 py-2.5 whitespace-nowrap"
+                            class="whitespace-nowrap"
                             :class="alignClass(column)"
                             :style="column.width ? { width: column.width } : undefined"
                             :aria-sort="ariaSort(column)"
@@ -294,31 +368,48 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                         </th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border bg-surface">
-                    <tr v-if="visibleRows.length === 0">
-                        <td :colspan="columns.length + (numbered ? 1 : 0)" class="px-3 py-10 text-center text-text-muted">
-                            <template v-if="search">
-                                <p>No records match “{{ search }}”.</p>
-                                <button type="button" class="mt-2 text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="search = ''">
-                                    Clear search
-                                </button>
-                            </template>
-                            <template v-else>{{ emptyText }}</template>
-                        </td>
-                    </tr>
-                    <tr
-                        v-for="(row, index) in visibleRows"
-                        :key="row[rowKey] ?? index"
-                        class="transition-colors even:bg-surface-muted/40 hover:bg-info-bg/60"
-                        :class="rowClass ? rowClass(row) : undefined"
-                    >
-                        <td v-if="numbered" class="px-3 py-2 text-center text-text-muted">{{ firstIndex + index }}</td>
-                        <td v-for="column in columns" :key="column.key" class="px-3 py-2 align-middle text-text" :class="alignClass(column)">
-                            <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]" :index="index">
-                                {{ valueOf(column, row) || '—' }}
+                <tbody>
+                    <template v-if="showSkeleton">
+                        <tr v-for="row in Math.min(perPage, 5)" :key="`skeleton-${row}`" aria-hidden="true">
+                            <td v-for="cell in columns.length + (numbered ? 1 : 0) + (selectable ? 1 : 0)" :key="cell"><Skeleton class="h-4 w-full max-w-40" /></td>
+                        </tr>
+                    </template>
+                    <tr v-else-if="visibleRows.length === 0" class="hover:!bg-transparent">
+                        <td :colspan="columns.length + (numbered ? 1 : 0) + (selectable ? 1 : 0)" class="!p-0">
+                            <slot name="empty" :search="search">
+                                <EmptyState
+                                    v-if="search"
+                                    icon="search"
+                                    :title="`No records match “${search}”`"
+                                    description="Check the spelling or try fewer words."
+                                >
+                                    <template #action>
+                                        <Button variant="secondary" size="sm" @click="search = ''">Clear search</Button>
+                                    </template>
+                                </EmptyState>
+                                <EmptyState v-else :icon="emptyIcon" :title="emptyText" :description="emptyDescription" />
                             </slot>
                         </td>
                     </tr>
+                    <template v-else>
+                        <tr v-for="(row, index) in visibleRows" :key="row[rowKey] ?? index" :class="rowClass ? rowClass(row) : undefined">
+                            <td v-if="selectable">
+                                <input
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                                    :checked="isSelected(row, index)"
+                                    :aria-label="`Select row ${firstIndex + index}`"
+                                    @change="toggleRow(row, index)"
+                                />
+                            </td>
+                            <td v-if="numbered" class="text-center text-text-muted tabular-nums max-sm:hidden">{{ firstIndex + index }}</td>
+                            <td v-for="column in columns" :key="column.key" :class="alignClass(column)" :data-label="column.label || undefined">
+                                <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]" :index="index">
+                                    {{ valueOf(column, row) || '—' }}
+                                </slot>
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -330,29 +421,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                 <span v-if="!serverMode && search">(filtered from {{ rows?.length ?? 0 }} total)</span>
             </p>
 
-            <nav v-if="lastPage > 1" :aria-label="`${caption} pages`">
-                <ul class="flex flex-wrap items-center gap-1">
-                    <li>
-                        <button type="button" class="dt-page" :disabled="currentPage === 1" @click="goTo(currentPage - 1)">Previous</button>
-                    </li>
-                    <li v-for="(item, index) in pages" :key="`${item}-${index}`">
-                        <span v-if="item === '…'" class="px-2" aria-hidden="true">…</span>
-                        <button
-                            v-else
-                            type="button"
-                            class="dt-page"
-                            :class="{ 'is-current': item === currentPage }"
-                            :aria-current="item === currentPage ? 'page' : undefined"
-                            @click="goTo(item)"
-                        >
-                            {{ item }}
-                        </button>
-                    </li>
-                    <li>
-                        <button type="button" class="dt-page" :disabled="currentPage === lastPage" @click="goTo(currentPage + 1)">Next</button>
-                    </li>
-                </ul>
-            </nav>
+            <Pagination numbered :current-page="currentPage" :last-page="lastPage" :label="`${caption} pages`" @change="goTo" />
         </div>
     </div>
 </template>
@@ -360,11 +429,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
 <style scoped>
 @reference '../../../css/app.css';
 
-.dt-page {
-    @apply min-w-8 rounded-md border border-border bg-surface px-2.5 py-1 text-sm text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50;
-}
-
-.dt-page.is-current {
-    @apply border-primary bg-primary text-white hover:bg-primary;
+.export-item {
+    @apply flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none;
 }
 </style>

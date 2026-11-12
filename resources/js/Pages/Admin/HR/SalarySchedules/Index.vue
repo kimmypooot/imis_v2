@@ -180,16 +180,13 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
 
             <div v-if="editing" class="mb-4 grid gap-4 sm:grid-cols-3">
                 <div>
-                    <TextInput id="schedule-name" v-model="table.name" label="Name" required :invalid="!!table.errors.name" />
-                    <InputError :message="table.errors.name" />
+                    <TextInput id="schedule-name" v-model="table.name" label="Name" required :error="table.errors.name" />
                 </div>
                 <div>
-                    <TextInput id="schedule-reference" v-model="table.reference" label="Reference (e.g. NBC No. 601)" :invalid="!!table.errors.reference" />
-                    <InputError :message="table.errors.reference" />
+                    <TextInput id="schedule-reference" v-model="table.reference" label="Reference (e.g. NBC No. 601)" :error="table.errors.reference" />
                 </div>
                 <div>
-                    <TextInput id="schedule-effective" v-model="table.effective_date" type="date" label="Effective date" required :invalid="!!table.errors.effective_date" />
-                    <InputError :message="table.errors.effective_date" />
+                    <TextInput id="schedule-effective" v-model="table.effective_date" type="date" label="Effective date" required :error="table.errors.effective_date" />
                 </div>
             </div>
 
@@ -251,16 +248,13 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
     <Modal :open="createOpen" title="New salary schedule" icon="plus" tone="success" @close="createOpen = false">
         <form id="schedule-create-form" class="grid gap-4" @submit.prevent="submitCreate">
             <div>
-                <TextInput id="new-name" v-model="create.name" label="Name (e.g. Third tranche, 2026)" required :invalid="!!create.errors.name" />
-                <InputError :message="create.errors.name" />
+                <TextInput id="new-name" v-model="create.name" label="Name (e.g. Third tranche, 2026)" required :error="create.errors.name" />
             </div>
             <div>
-                <TextInput id="new-reference" v-model="create.reference" label="Reference (e.g. NBC No. 601)" :invalid="!!create.errors.reference" />
-                <InputError :message="create.errors.reference" />
+                <TextInput id="new-reference" v-model="create.reference" label="Reference (e.g. NBC No. 601)" :error="create.errors.reference" />
             </div>
             <div>
-                <TextInput id="new-effective" v-model="create.effective_date" type="date" label="Effective date" required :invalid="!!create.errors.effective_date" />
-                <InputError :message="create.errors.effective_date" />
+                <TextInput id="new-effective" v-model="create.effective_date" type="date" label="Effective date" required :error="create.errors.effective_date" />
             </div>
             <div>
                 <InputLabel for="new-copy">Amounts</InputLabel>

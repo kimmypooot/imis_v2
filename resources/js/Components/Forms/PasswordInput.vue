@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Icon from '../UI/Icon.vue';
+import HelperText from './HelperText.vue';
+import InputError from './InputError.vue';
 
 const props = defineProps({
     modelValue: {
@@ -27,6 +29,15 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Shown under the field (and marks it invalid); helperText shows while there is no error.
+    error: {
+        type: String,
+        default: null,
+    },
+    helperText: {
+        type: String,
+        default: null,
+    },
     // Optional Icon name shown inside the field, before the text.
     icon: {
         type: String,
@@ -38,6 +49,8 @@ defineEmits(['update:modelValue']);
 
 const visible = ref(false);
 const inputType = computed(() => (visible.value ? 'text' : 'password'));
+const isInvalid = computed(() => props.invalid || !!props.error);
+const describedBy = computed(() => (props.error ? undefined : props.helperText ? `${props.id}-helper` : undefined));
 </script>
 
 <template>
@@ -56,7 +69,8 @@ const inputType = computed(() => (visible.value ? 'text' : 'password'));
                 :value="modelValue"
                 :autocomplete="autocomplete"
                 :required="required"
-                :aria-invalid="invalid"
+                :aria-invalid="isInvalid"
+                :aria-describedby="describedBy"
                 class="block w-full form-control px-3 py-2 pr-10"
                 :class="{ 'pl-9': icon }"
                 @input="$emit('update:modelValue', $event.target.value)"
@@ -72,5 +86,7 @@ const inputType = computed(() => (visible.value ? 'text' : 'password'));
                 <Icon :name="visible ? 'eyeSlash' : 'eye'" size="sm" />
             </button>
         </div>
+        <HelperText v-if="helperText && !error" :id="`${id}-helper`">{{ helperText }}</HelperText>
+        <InputError :message="error" />
     </div>
 </template>

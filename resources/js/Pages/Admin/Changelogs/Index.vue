@@ -7,11 +7,13 @@ import PageHeader from '../../../Components/UI/PageHeader.vue';
 import Card from '../../../Components/UI/Card.vue';
 import DataTable from '../../../Components/UI/DataTable.vue';
 import Button from '../../../Components/UI/Button.vue';
+import Icon from '../../../Components/UI/Icon.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import TextInput from '../../../Components/Forms/TextInput.vue';
 import InputError from '../../../Components/Forms/InputError.vue';
 import Select from '../../../Components/Forms/Select.vue';
+import Modal from '../../../Components/Feedback/Modal.vue';
 import ReleaseNotes from '../../../Components/Portal/ReleaseNotes.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { confirm } from '../../../Composables/useDialog';
@@ -74,6 +76,15 @@ const submit = () => {
     else form.post('/admin/changelogs', options);
 };
 
+// The release being read in the dialog (any release, draft or published).
+const viewing = ref(null);
+const viewed = computed(() => (viewing.value ? { ...viewing.value, items: viewing.value.items.map((item) => ({ ...item, type_label: typeLabel(item.type) })) } : null));
+const editFromView = () => {
+    const changelog = viewing.value;
+    viewing.value = null;
+    startEdit(changelog);
+};
+
 const typeLabel = (type) => props.typeOptions.find((option) => option.value === type)?.label ?? type;
 const preview = computed(() => ({
     version: form.version || '0.0.0',
@@ -101,7 +112,7 @@ const columns = [
     { key: 'title', label: 'Title & entries' },
     { key: 'release_date', label: 'Release date', value: (row) => (row.release_date ? formatDate(row.release_date) : '') },
     { key: 'status', label: 'Status', align: 'center' },
-    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '6rem' },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '8rem' },
 ];
 </script>
 
@@ -125,17 +136,14 @@ const columns = [
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="grid gap-3 sm:grid-cols-3">
                     <div>
-                        <TextInput id="version" v-model="form.version" label="Version" required :invalid="!!form.errors.version" />
-                        <InputError :message="form.errors.version" />
+                        <TextInput id="version" v-model="form.version" label="Version" required :error="form.errors.version" />
                     </div>
                     <div class="sm:col-span-2">
-                        <TextInput id="release_date" v-model="form.release_date" type="date" label="Release date" :invalid="!!form.errors.release_date" />
-                        <InputError :message="form.errors.release_date" />
+                        <TextInput id="release_date" v-model="form.release_date" type="date" label="Release date" :error="form.errors.release_date" />
                     </div>
                 </div>
                 <div>
-                    <TextInput id="title" v-model="form.title" label="Title" required :invalid="!!form.errors.title" />
-                    <InputError :message="form.errors.title" />
+                    <TextInput id="title" v-model="form.title" label="Title" required :error="form.errors.title" />
                 </div>
 
                 <fieldset>
@@ -198,6 +206,7 @@ const columns = [
                 </template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-center gap-1">
+                        <ActionButton icon="eye" :label="`View ${row.version}`" @click="viewing = row" />
                         <ActionButton v-if="can('changelogs.manage')" icon="pencil" :label="`Edit ${row.version}`" @click="startEdit(row)" />
                         <ActionButton
                             v-if="can('changelogs.publish')"
@@ -211,4 +220,22 @@ const columns = [
             </DataTable>
         </Card>
     </div>
+
+    <Modal :open="!!viewing" :title="viewing ? `Release ${viewing.version}` : 'Release'" tone="primary" icon="eye" size="lg" @close="viewing = null">
+        <template v-if="viewed">
+            <div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-text-muted">
+                <StatusBadge :status="viewed.status" />
+                <span v-if="viewed.published_at">Published {{ formatDateTime(viewed.published_at) }}</span>
+                <span v-else>Not published yet: only administrators can see this release.</span>
+            </div>
+            <ReleaseNotes :release="viewed" heading-level="h3" />
+        </template>
+        <template #footer>
+            <Button variant="secondary" @click="viewing = null">Close</Button>
+            <Button v-if="can('changelogs.manage')" @click="editFromView">
+                <Icon name="pencil" size="sm" />
+                Edit
+            </Button>
+        </template>
+    </Modal>
 </template>

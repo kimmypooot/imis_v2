@@ -114,26 +114,26 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
         <div class="grid gap-4 xl:grid-cols-12">
             <Card v-if="dashboard.accessBySystem" title="Top Systems" icon="grid" class="xl:col-span-5">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-compact">
+                    <table class="data-table">
                         <caption class="sr-only">Systems with the most people assigned</caption>
-                        <thead class="table-head">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-3 py-2">System</th>
-                                <th scope="col" class="px-3 py-2 text-center">Status</th>
-                                <th scope="col" class="px-3 py-2 text-right">Assigned</th>
+                                <th scope="col">System</th>
+                                <th scope="col" class="text-center">Status</th>
+                                <th scope="col" class="text-right">Assigned</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-border">
+                        <tbody>
                             <tr v-if="!dashboard.accessBySystem.top.length">
                                 <td colspan="3" class="px-3 py-6 text-center text-text-muted">No systems yet.</td>
                             </tr>
                             <tr v-for="(system, index) in dashboard.accessBySystem.top" :key="system.id">
-                                <td class="px-3 py-2">
+                                <td>
                                     <span class="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-muted text-xs text-text-muted">{{ index + 1 }}</span>
                                     {{ system.name }}
                                 </td>
-                                <td class="px-3 py-2 text-center"><StatusBadge :status="system.status" /></td>
-                                <td class="px-3 py-2 text-right tabular-nums">{{ system.assigned }}</td>
+                                <td class="text-center"><StatusBadge :status="system.status" /></td>
+                                <td class="text-right tabular-nums">{{ system.assigned }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -151,26 +151,26 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                     <Link href="/admin/user-access" class="text-sm font-medium text-primary hover:text-primary-hover">Assign access</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-compact">
+                    <table class="data-table" data-sticky>
                         <caption class="sr-only">Active accounts with no system access</caption>
-                        <thead class="sticky top-0 table-head">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-3 py-2">Name / Position</th>
-                                <th scope="col" class="px-3 py-2">Office</th>
-                                <th scope="col" class="px-3 py-2 text-center">IMIS role</th>
+                                <th scope="col">Name / Position</th>
+                                <th scope="col">Office</th>
+                                <th scope="col" class="text-center">IMIS role</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-border">
+                        <tbody>
                             <tr v-if="!dashboard.usersWithoutAccess.users.length">
                                 <td colspan="3" class="px-3 py-6 text-center text-text-muted">Everyone active has access to at least one system.</td>
                             </tr>
                             <tr v-for="person in dashboard.usersWithoutAccess.users" :key="person.id">
-                                <td class="px-3 py-2">
+                                <td>
                                     <Link :href="`/admin/user-access?user=${person.id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
                                     <div class="text-xs text-text-muted">{{ person.position || '—' }}</div>
                                 </td>
-                                <td class="px-3 py-2 text-text-muted">{{ person.office || '—' }}</td>
-                                <td class="px-3 py-2 text-center text-xs">{{ person.roles.join(', ') || '—' }}</td>
+                                <td class="text-text-muted">{{ person.office || '—' }}</td>
+                                <td class="text-center text-xs">{{ person.roles.join(', ') || '—' }}</td>
                             </tr>
                         </tbody>
                     </table>

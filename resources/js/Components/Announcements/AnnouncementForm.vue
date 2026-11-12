@@ -32,8 +32,7 @@ defineEmits(['submit']);
 <template>
     <form class="space-y-5" @submit.prevent="$emit('submit')">
         <div>
-            <TextInput id="title" v-model="form.title" label="Title" required :invalid="!!form.errors.title" />
-            <InputError :message="form.errors.title" />
+            <TextInput id="title" v-model="form.title" label="Title" required :error="form.errors.title" />
         </div>
 
         <FormGroup

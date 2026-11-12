@@ -240,15 +240,13 @@ const feedTones = { ok: 'success', failed: 'danger' };
                             <td colspan="5" class="bg-surface-muted">
                                 <form class="grid gap-3 py-2 sm:grid-cols-2 lg:grid-cols-5 lg:items-end" @submit.prevent="saveTarget">
                                     <div>
-                                        <TextInput :id="`target-${figure.id}`" v-model="form.target" type="number" :label="`Target (${figure.unit})`" required :invalid="!!form.errors.target" />
-                                        <InputError :message="form.errors.target" />
+                                        <TextInput :id="`target-${figure.id}`" v-model="form.target" type="number" :label="`Target (${figure.unit})`" required :error="form.errors.target" />
                                     </div>
                                     <FormGroup :id="`direction-${figure.id}`" label="Better when" :error="form.errors.direction">
                                         <Select :id="`direction-${figure.id}`" v-model="form.direction" :options="directions" />
                                     </FormGroup>
                                     <div>
-                                        <TextInput :id="`tolerance-${figure.id}`" v-model="form.tolerance" type="number" label="At-risk tolerance (%)" required :invalid="!!form.errors.tolerance" />
-                                        <InputError :message="form.errors.tolerance" />
+                                        <TextInput :id="`tolerance-${figure.id}`" v-model="form.tolerance" type="number" label="At-risk tolerance (%)" required :error="form.errors.tolerance" />
                                     </div>
                                     <div>
                                         <TextInput :id="`note-${figure.id}`" v-model="form.note" label="Basis (optional)" :invalid="!!form.errors.note" />

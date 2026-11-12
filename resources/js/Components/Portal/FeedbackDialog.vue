@@ -77,8 +77,7 @@ const submit = () => {
             </fieldset>
 
             <div>
-                <TextInput id="feedback-subject" v-model="form.subject" label="Subject" required :invalid="!!form.errors.subject" />
-                <InputError :message="form.errors.subject" />
+                <TextInput id="feedback-subject" v-model="form.subject" label="Subject" required :error="form.errors.subject" />
             </div>
 
             <FormGroup

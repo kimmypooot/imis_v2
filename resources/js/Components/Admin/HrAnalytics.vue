@@ -145,30 +145,30 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
 
             <Card title="Upcoming retirees" description="Optional at 60, compulsory at 65 (RA 8291): who reaches either in the next 12 months, and who is already eligible" icon="clock" class="xl:col-span-7">
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-compact">
+                    <table class="data-table" data-sticky>
                         <caption class="sr-only">Personnel reaching retirement age within 12 months, or already eligible</caption>
-                        <thead class="sticky top-0 table-head">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-3 py-2">Name / Position</th>
-                                <th scope="col" class="px-3 py-2">Office</th>
-                                <th scope="col" class="px-3 py-2">Retirement</th>
-                                <th scope="col" class="px-3 py-2 text-right">Reaches age on</th>
+                                <th scope="col">Name / Position</th>
+                                <th scope="col">Office</th>
+                                <th scope="col">Retirement</th>
+                                <th scope="col" class="text-right">Reaches age on</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-border">
+                        <tbody>
                             <tr v-if="!hr.retirement.people.length">
                                 <td colspan="4" class="px-3 py-6 text-center text-text-muted">No one reaches or has reached retirement age.</td>
                             </tr>
                             <tr v-for="person in hr.retirement.people" :key="person.employee_id">
-                                <td class="px-3 py-2">
+                                <td>
                                     <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
                                     <div class="text-xs text-text-muted">{{ person.position || '—' }} · age {{ person.age }}</div>
                                 </td>
-                                <td class="px-3 py-2 text-text-muted">{{ person.office || '—' }}</td>
-                                <td class="px-3 py-2">
+                                <td class="text-text-muted">{{ person.office || '—' }}</td>
+                                <td>
                                     <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="retirementKinds[person.kind].classes">{{ retirementKinds[person.kind].label }}</span>
                                 </td>
-                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ formatCalendarDate(person.date) }}</td>
+                                <td class="text-right whitespace-nowrap">{{ formatCalendarDate(person.date) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -198,26 +198,26 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <Link href="/admin/hr/leave/applications" class="text-sm font-medium text-primary hover:text-primary-hover">All applications</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
-                    <table class="w-full text-compact">
+                    <table class="data-table" data-sticky>
                         <caption class="sr-only">The latest leave applications</caption>
-                        <thead class="sticky top-0 table-head">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-3 py-2">Name / Leave</th>
-                                <th scope="col" class="px-3 py-2">Dates</th>
-                                <th scope="col" class="px-3 py-2 text-right">Status</th>
+                                <th scope="col">Name / Leave</th>
+                                <th scope="col">Dates</th>
+                                <th scope="col" class="text-right">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-border">
+                        <tbody>
                             <tr v-if="!hr.leave.recent.length">
                                 <td colspan="3" class="px-3 py-6 text-center text-text-muted">No leave applications yet.</td>
                             </tr>
                             <tr v-for="item in hr.leave.recent" :key="item.id">
-                                <td class="px-3 py-2">
+                                <td>
                                     <span class="font-medium text-text">{{ item.name }}</span>
                                     <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                                 </td>
-                                <td class="px-3 py-2 whitespace-nowrap text-text-muted">{{ shortDate(item.date_from) }} – {{ shortDate(item.date_to) }}</td>
-                                <td class="px-3 py-2 text-right text-xs font-medium text-text">{{ item.status_label }}</td>
+                                <td class="whitespace-nowrap text-text-muted">{{ shortDate(item.date_from) }} – {{ shortDate(item.date_to) }}</td>
+                                <td class="text-right text-xs font-medium text-text">{{ item.status_label }}</td>
                             </tr>
                         </tbody>
                     </table>
