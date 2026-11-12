@@ -13,6 +13,7 @@ use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\Security\SessionLimits;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -99,6 +100,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
                 'error' => fn () => $request->session()->get('error'),
+                // Identifies this message. Partial reloads keep the old flash in the
+                // page props, so the client toasts each id only once.
+                'id' => fn () => $request->session()->has('status') || $request->session()->has('error') ? Str::uuid()->toString() : null,
                 // Set right after signing in — drives the splash.
                 'signedIn' => fn () => $request->session()->get('signed_in'),
                 // HR's Excel import of a PDS, awaiting confirmation (see PdsImport).

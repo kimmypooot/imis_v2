@@ -526,7 +526,8 @@ class ApplicationAccessTest extends TestCase
                 ['application_id' => $toRevoke->application_id, 'application_role_id' => null],
                 ['application_id' => $newRole->application_id, 'application_role_id' => $newRole->id],
             ]])
-            ->assertRedirect("/users/{$target->id}");
+            ->assertRedirect()
+            ->assertSessionHas('status');
 
         $this->assertSame($changedRole->id, $toChange->fresh()->application_role_id);
         $this->assertModelMissing($toRevoke);

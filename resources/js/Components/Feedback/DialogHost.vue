@@ -49,8 +49,11 @@ const onKeydown = (event) => {
     }
 };
 
-// Server flash messages → toasts.
+// Server flash messages → toasts. A partial reload (a poll, a filter, a refresh
+// button) keeps the previous flash in the page props, so each message carries an
+// id and is shown once.
 let removeListener;
+let lastFlashId = null;
 onMounted(() => {
     document.addEventListener('keydown', onKeydown, true);
     removeListener = router.on('success', (event) => {
@@ -58,6 +61,9 @@ onMounted(() => {
         if (event.detail.page.component.startsWith('Auth/')) return;
 
         const flash = event.detail.page.props.flash ?? {};
+        if (!flash.id || flash.id === lastFlashId) return;
+
+        lastFlashId = flash.id;
         if (flash.status) toast.success(flash.status);
         if (flash.error) toast.error(flash.error);
     });

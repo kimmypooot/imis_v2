@@ -23,6 +23,6 @@ class UserSystemAccessController extends Controller
             }
         });
 
-        return to_route('users.show', $user);
+        return back()->with('status', "System access for {$user->name} was saved.");
     }
 }
