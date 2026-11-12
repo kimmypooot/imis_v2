@@ -343,6 +343,66 @@ class UsersTest extends TestCase
         $this->actingAs($actor)->get('/users/999999')->assertNotFound();
     }
 
+    public function test_unauthorized_user_cannot_bulk_change_status(): void
+    {
+        $actor = $this->userWithPermission('users.view');
+        $target = User::factory()->create();
+
+        $this->actingAs($actor)
+            ->post('/users/bulk-status', ['ids' => [$target->id], 'status' => 'inactive'])
+            ->assertForbidden();
+
+        $this->assertSame('active', $target->fresh()->status->value);
+    }
+
+    public function test_bulk_status_deactivates_and_reactivates_the_selected_accounts(): void
+    {
+        $actor = $this->userWithPermission('users.delete');
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+        $untouched = User::factory()->create();
+
+        $this->actingAs($actor)
+            ->post('/users/bulk-status', ['ids' => [$first->id, $second->id], 'status' => 'inactive'])
+            ->assertSessionHas('status', '2 accounts deactivated.');
+
+        $this->assertSame('inactive', $first->fresh()->status->value);
+        $this->assertSame('inactive', $second->fresh()->status->value);
+        $this->assertSame('active', $untouched->fresh()->status->value);
+
+        $this->actingAs($actor)
+            ->post('/users/bulk-status', ['ids' => [$first->id], 'status' => 'active'])
+            ->assertSessionHas('status', '1 account activated.');
+
+        $this->assertSame('active', $first->fresh()->status->value);
+    }
+
+    public function test_bulk_status_skips_protected_accounts_and_the_actor_but_changes_the_rest(): void
+    {
+        $superAdminRole = Role::factory()->create(['name' => RoleName::SuperAdmin->value]);
+        $protectedAdmin = User::factory()->create();
+        $protectedAdmin->roles()->attach($superAdminRole);
+        $actor = $this->userWithPermission('users.delete');
+        $ordinary = User::factory()->create();
+
+        $this->actingAs($actor)
+            ->post('/users/bulk-status', ['ids' => [$protectedAdmin->id, $actor->id, $ordinary->id], 'status' => 'inactive'])
+            ->assertSessionHas('error');
+
+        $this->assertSame('inactive', $ordinary->fresh()->status->value);
+        $this->assertSame('active', $protectedAdmin->fresh()->status->value);
+        $this->assertSame('active', $actor->fresh()->status->value);
+    }
+
+    public function test_bulk_status_needs_at_least_one_account_and_a_valid_status(): void
+    {
+        $actor = $this->userWithPermission('users.delete');
+
+        $this->actingAs($actor)
+            ->post('/users/bulk-status', ['ids' => [], 'status' => 'gone'])
+            ->assertSessionHasErrors(['ids', 'status']);
+    }
+
     private function userWithPermission(string $permission): User
     {
         $user = User::factory()->create();

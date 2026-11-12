@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
@@ -70,6 +70,27 @@ const columns = [
     { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '7rem' },
 ];
 
+// Bulk activate / deactivate (needs the same permission as the row button).
+const picked = ref([]);
+watch([statusTab, roleFilter], () => (picked.value = []));
+
+const bulkSetStatus = async (clear) => {
+    const deactivating = statusTab.value === 'active';
+    const count = picked.value.length;
+    const confirmed = await confirm({
+        title: deactivating ? `Deactivate ${count} ${count === 1 ? 'account' : 'accounts'}?` : `Activate ${count} ${count === 1 ? 'account' : 'accounts'}?`,
+        text: deactivating
+            ? 'They will be signed out and unable to sign in. Nothing is deleted. Protected administrators and your own account are skipped.'
+            : 'They will be able to sign in again.',
+        tone: deactivating ? 'danger' : 'primary',
+        confirmText: deactivating ? 'Deactivate' : 'Activate',
+    });
+
+    if (!confirmed) return;
+
+    router.post('/users/bulk-status', { ids: picked.value, status: deactivating ? 'inactive' : 'active' }, { preserveScroll: true, onSuccess: clear });
+};
+
 const adding = ref(false);
 const editingId = ref(null);
 const editing = computed(() => props.users.find((user) => user.id === editingId.value) ?? null);
@@ -109,12 +130,20 @@ const toggleStatus = async (user) => {
             <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
                 <DataTable
                     v-if="tab.key === statusTab"
+                    v-model:selected="picked"
+                    :selectable="can('users.delete')"
                     :columns="columns"
                     :rows="rows"
                     :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} users`"
                     :export-name="`imis-users-${tab.key}`"
                     :default-sort="{ key: 'name', direction: 'asc' }"
                 >
+                    <template #bulk="{ clear }">
+                        <Button size="sm" :variant="statusTab === 'active' ? 'danger' : 'success'" @click="bulkSetStatus(clear)">
+                            <Icon name="power" size="sm" />
+                            {{ statusTab === 'active' ? 'Deactivate' : 'Activate' }}
+                        </Button>
+                    </template>
                     <template #toolbar>
                         <div class="w-44">
                             <label for="role-filter" class="sr-only">Filter by IMIS role</label>

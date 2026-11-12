@@ -153,6 +153,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:users.delete')->group(function () {
         Route::patch('users/{user}/status', [UserController::class, 'updateStatus'])->name('users.update-status');
+        Route::post('users/bulk-status', [UserController::class, 'bulkStatus'])->name('users.bulk-status');
     });
 
     Route::middleware('permission:organizational_units.view')->group(function () {

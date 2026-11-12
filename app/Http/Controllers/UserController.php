@@ -8,7 +8,9 @@ use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\UnitType;
 use App\Enums\UserStatus;
+use App\Http\Requests\Concerns\GuardsLastSuperAdmin;
 use App\Http\Requests\User\AssignRolesRequest;
+use App\Http\Requests\User\BulkUserStatusRequest;
 use App\Http\Requests\User\SetUserPasswordRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserPhotoRequest;
@@ -46,6 +48,8 @@ use Inertia\Response;
  */
 class UserController extends Controller
 {
+    use GuardsLastSuperAdmin;
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', User::class);
@@ -257,6 +261,53 @@ class UserController extends Controller
         $this->syncOfficeAdmin($user);
 
         return back()->with('status', "{$user->name} was ".Str::lower($verb).'.');
+    }
+
+    /**
+     * Activate or deactivate the selected accounts. Anyone the actor may not
+     * change (a Super Administrator, the last active one, themselves) is
+     * skipped and named in the message rather than failing the whole batch.
+     */
+    public function bulkStatus(BulkUserStatusRequest $request): RedirectResponse
+    {
+        $status = UserStatus::from($request->validated('status'));
+        $actor = $request->user();
+        $changed = 0;
+        $skipped = [];
+
+        foreach (User::query()->whereKey($request->validated('ids'))->get() as $user) {
+            $blocked = ! $actor->can('updateStatus', $user)
+                || ($status === UserStatus::Inactive && ($user->is($actor) || $this->isLastActiveSuperAdmin($user)));
+
+            if ($blocked) {
+                $skipped[] = $user->name;
+
+                continue;
+            }
+
+            if ($user->status === $status) {
+                continue;
+            }
+
+            $user->update(['status' => $status]);
+            $this->audit()->recordChanges(AuditEvent::UserStatusChanged, "{$this->activationVerb($status)} user {$user->name}", $user);
+
+            if ($status === UserStatus::Inactive) {
+                app(AccountLifecycle::class)->ended($user);
+            } else {
+                $this->syncOfficeAdmin($user);
+            }
+
+            $changed++;
+        }
+
+        $message = "{$changed} ".Str::plural('account', $changed).' '.Str::lower($this->activationVerb($status)).'.';
+
+        if ($skipped !== []) {
+            return back()->with('error', $message.' Skipped: '.implode(', ', $skipped).'.');
+        }
+
+        return back()->with('status', $message);
     }
 
     public function assignRoles(AssignRolesRequest $request, User $user): RedirectResponse

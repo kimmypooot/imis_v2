@@ -315,15 +315,6 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
             </div>
         </div>
 
-        <!-- Bulk actions -->
-        <div v-if="selectable && selected.length" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-info-bg px-4 py-2 text-sm" role="status">
-            <span class="font-medium text-primary">{{ selected.length }} selected</span>
-            <div class="flex flex-wrap items-center gap-2">
-                <slot name="bulk" :selected="selected" :clear="clearSelection" />
-                <Button variant="secondary" size="sm" @click="clearSelection">Clear</Button>
-            </div>
-        </div>
-
         <!-- Table -->
         <div class="table-card" :class="{ 'max-h-[70vh] overflow-y-auto': sticky }" :aria-busy="showSkeleton">
             <table class="data-table" :data-density="density" :data-sticky="sticky ? '' : undefined" :data-stack="stack ? '' : undefined">
@@ -412,6 +403,15 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                     </template>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Bulk actions: pinned to the bottom of the screen so ticking rows never shifts them -->
+        <div v-if="selectable && selected.length" class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-surface px-4 py-2.5 text-sm shadow-lg" role="status">
+            <span class="font-medium text-primary">{{ selected.length }} selected</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <slot name="bulk" :selected="selected" :clear="clearSelection" />
+                <Button variant="secondary" size="sm" @click="clearSelection">Clear</Button>
+            </div>
         </div>
 
         <!-- Footer -->
