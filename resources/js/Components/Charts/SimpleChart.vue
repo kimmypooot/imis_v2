@@ -93,9 +93,19 @@ const build = () => {
     });
 };
 
-onMounted(build);
+let themeObserver = null;
+
+onMounted(() => {
+    build();
+    // The series and grid colors come from tokens: redraw when the theme switches.
+    themeObserver = new MutationObserver(build);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+});
 watch(() => [props.labels, props.values], build, { deep: true });
-onBeforeUnmount(() => chart?.destroy());
+onBeforeUnmount(() => {
+    themeObserver?.disconnect();
+    chart?.destroy();
+});
 
 const empty = computed(() => props.values.every((value) => !value));
 </script>

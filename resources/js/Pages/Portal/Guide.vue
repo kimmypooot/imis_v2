@@ -125,7 +125,7 @@ const goTo = (id) => {
 
     <div class="space-y-8">
         <!-- Search banner -->
-        <section class="relative overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8 print:hidden">
+        <section class="relative overflow-hidden rounded-lg bg-brand p-6 text-white md:p-8 print:hidden">
             <span class="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full border border-white/10" aria-hidden="true" />
             <span class="pointer-events-none absolute -right-4 -bottom-20 h-48 w-48 rounded-full border border-white/10" aria-hidden="true" />
             <div class="relative max-w-2xl">

@@ -41,7 +41,7 @@ const details = computed(() =>
     />
 
     <div class="max-w-5xl space-y-6">
-        <section class="relative overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8">
+        <section class="relative overflow-hidden rounded-lg bg-brand p-6 text-white md:p-8">
             <OrbitCircles />
             <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center">
                 <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25" aria-hidden="true">

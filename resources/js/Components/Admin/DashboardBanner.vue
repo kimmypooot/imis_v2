@@ -34,7 +34,7 @@ onBeforeUnmount(() => window.clearInterval(clock));
 </script>
 
 <template>
-    <section class="relative mb-4 overflow-hidden rounded-lg bg-primary px-6 py-6 text-white">
+    <section class="relative mb-4 overflow-hidden rounded-lg bg-brand px-6 py-6 text-white">
         <OrbitCircles />
 
         <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">

@@ -103,7 +103,7 @@ const historyColumns = [
 
     <template v-else>
         <!-- The latest finalized payroll at a glance. -->
-        <section class="relative mb-6 overflow-hidden rounded-lg bg-primary p-6 text-white md:p-8" aria-label="Latest payroll summary">
+        <section class="relative mb-6 overflow-hidden rounded-lg bg-brand p-6 text-white md:p-8" aria-label="Latest payroll summary">
             <OrbitCircles />
             <div class="relative z-10">
                 <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-white/75 uppercase">
@@ -118,7 +118,7 @@ const historyColumns = [
                         <p class="text-xs text-white/75">Total deductions</p>
                         <p class="mt-1 text-xl font-semibold tabular-nums">{{ formatPeso(latest.total_deductions) }}</p>
                     </div>
-                    <div class="rounded-lg bg-white p-4 text-text">
+                    <div class="rounded-lg bg-surface p-4 text-text">
                         <p class="text-xs text-text-muted">Net pay</p>
                         <p class="mt-1 text-2xl font-bold text-link tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
                         <p v-if="change" class="mt-1 flex items-center gap-1 text-xs font-medium" :class="change.amount === 0 ? 'text-text-muted' : change.amount > 0 ? 'text-success-fg' : 'text-danger-fg'">

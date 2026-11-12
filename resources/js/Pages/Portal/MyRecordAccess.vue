@@ -67,7 +67,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
 
     <div v-else class="space-y-6">
         <!-- Data-privacy banner: your right to know, in the CSC navy. -->
-        <div class="relative overflow-hidden rounded-lg bg-primary p-6 text-white">
+        <div class="relative overflow-hidden rounded-lg bg-brand p-6 text-white">
             <span class="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full border border-white/10" aria-hidden="true" />
             <span class="pointer-events-none absolute -right-2 -bottom-16 h-40 w-40 rounded-full border border-white/10" aria-hidden="true" />
             <div class="relative flex items-center gap-5">

@@ -111,6 +111,9 @@
        stays readable while fills (buttons, with white text) stay dark enough.
        Use `text-link` / `text-success-fg`… for text, `bg-primary`… for fills. */
     --color-link: var(--color-primary);
+    /* Big brand-colored surfaces (hero banners). Same blue as primary in light;
+       deeper in dark so a large fill does not glare. */
+    --color-brand: var(--color-primary);
     --color-success-fg: var(--color-success);
     --color-warning-fg: var(--color-warning);
     --color-danger-fg: var(--color-danger);
@@ -198,6 +201,10 @@
         --color-primary: #5a65dc;
         --color-primary-hover: #4b56cc;
         --color-link: #9aa4ff;
+        --color-brand: #2a338f;
+
+        /* Chart and data-mark blue: light enough for 3:1 against dark cards. */
+        --color-csc-blue-light: #8e98f5;
 
         --color-success-fg: #4ade80;
         --color-success-bg: #12281d;

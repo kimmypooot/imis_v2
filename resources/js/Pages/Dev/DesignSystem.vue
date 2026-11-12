@@ -381,7 +381,7 @@ const demoRows = [
                 <div class="rounded-md px-3 py-2 text-white/80">Other page</div>
                 <div class="flex items-center justify-between rounded-md px-3 py-2 text-white/80">
                     Page with a count
-                    <span class="rounded-full bg-accent px-1.5 text-xs font-semibold text-white ring-2 ring-white/40">4</span>
+                    <span class="rounded-full bg-danger px-1.5 text-xs font-semibold text-white ring-2 ring-white/40">4</span>
                 </div>
             </div>
         </Card>

@@ -22,7 +22,7 @@ const brand = useBranding();
 </script>
 
 <template>
-    <section class="relative overflow-hidden rounded-lg bg-primary px-5 py-5 text-center text-white shadow-md md:px-9 md:py-7">
+    <section class="relative overflow-hidden rounded-lg bg-brand px-5 py-5 text-center text-white shadow-md md:px-9 md:py-7">
         <!-- Decorative photo under a navy tint, so the text keeps its contrast. -->
         <div
             class="absolute inset-0 bg-cover bg-center"
