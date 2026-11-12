@@ -81,7 +81,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                     <div v-if="application.remarks" class="sm:col-span-2"><dt class="text-text-muted">Remarks</dt><dd class="mt-0.5 whitespace-pre-line text-text">{{ application.remarks }}</dd></div>
                     <div v-if="application.has_attachment" class="sm:col-span-2">
                         <dt class="text-text-muted">Supporting document</dt>
-                        <dd class="mt-0.5"><a :href="`/leave/applications/${application.id}/attachment`" target="_blank" rel="noopener" class="text-primary hover:underline">{{ application.attachment_name }}</a></dd>
+                        <dd class="mt-0.5"><a :href="`/leave/applications/${application.id}/attachment`" target="_blank" rel="noopener" class="text-link hover:underline">{{ application.attachment_name }}</a></dd>
                     </div>
                     <div><dt class="text-text-muted">Submitted</dt><dd class="mt-0.5 text-text">{{ application.submitted_at ? formatDateTime(application.submitted_at) : '—' }}</dd></div>
                     <div v-if="application.decided_at"><dt class="text-text-muted">Decided</dt><dd class="mt-0.5 text-text">{{ formatDateTime(application.decided_at) }}</dd></div>
@@ -94,7 +94,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <legend class="sr-only">Action</legend>
                         <div class="flex flex-wrap gap-x-5 gap-y-2">
                             <label v-for="option in action.options" :key="option.value" class="inline-flex items-center gap-2 text-sm text-text">
-                                <input v-model="form.action" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                                <input v-model="form.action" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                                 {{ option.label }}
                             </label>
                         </div>

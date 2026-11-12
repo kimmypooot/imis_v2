@@ -87,7 +87,7 @@ watch(() => props.month, () => { selected.value = defaultDay(); });
 const selectedLeave = computed(() => (selected.value ? byDate.value[selected.value] ?? [] : []));
 const selectedHoliday = computed(() => props.holidays.find((holiday) => holiday.date === selected.value));
 
-const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white' : 'border border-warning text-warning');
+const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white' : 'border border-warning text-warning-fg');
 
 </script>
 
@@ -96,7 +96,7 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
 
     <PageHeader title="Leave Calendar" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Calendar' }]">
         <template #actions>
-            <span v-if="!seesEveryone && division" class="inline-flex items-center rounded-md bg-info-bg px-3 py-2 text-sm font-medium text-primary">{{ division }}</span>
+            <span v-if="!seesEveryone && division" class="inline-flex items-center rounded-md bg-info-bg px-3 py-2 text-sm font-medium text-link">{{ division }}</span>
             <label v-if="seesEveryone" class="sr-only" for="cal-office">Office</label>
             <select v-if="seesEveryone" id="cal-office" :value="filters.office ?? ''" class="filter-control" @change="visit({ office: $event.target.value || null })">
                 <option value="">All offices</option>
@@ -154,7 +154,7 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
                                     <span>{{ date.getDate() }}</span>
                                     <span v-if="leaveOn(date).length" class="rounded-full bg-primary px-1.5 text-2xs font-medium text-white">{{ leaveOn(date).length }}</span>
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
+                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
                                 <Link
                                     v-for="item in leaveOn(date).slice(0, MAX_PER_DAY)"
                                     :key="item.id"
@@ -168,7 +168,7 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
                                 <button
                                     v-if="leaveOn(date).length > MAX_PER_DAY"
                                     type="button"
-                                    class="mt-0.5 text-2xs font-medium text-primary hover:underline"
+                                    class="mt-0.5 text-2xs font-medium text-link hover:underline"
                                     @click="selected = iso(date)"
                                 >
                                     +{{ leaveOn(date).length - MAX_PER_DAY }} more
@@ -187,12 +187,12 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
     </BusyRegion>
 
     <Card v-if="selected" class="mt-6" icon="users" :title="`On leave — ${formatCalendarDate(selected)}`">
-        <p v-if="selectedHoliday" class="mb-3 text-sm text-info">{{ selectedHoliday.name }}</p>
+        <p v-if="selectedHoliday" class="mb-3 text-sm text-info-fg">{{ selectedHoliday.name }}</p>
         <p v-if="!selectedLeave.length" class="text-sm text-text-muted">No one is on leave this day.</p>
         <ul v-else class="divide-y divide-border">
             <li v-for="item in selectedLeave" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                    <Link :href="`/leave/applications/${item.id}`" class="font-medium text-primary hover:underline">{{ item.name }}</Link>
+                    <Link :href="`/leave/applications/${item.id}`" class="font-medium text-link hover:underline">{{ item.name }}</Link>
                     <span v-if="item.office" class="ml-2 text-xs text-text-muted">{{ item.office }}</span>
                     <div class="text-xs text-text-muted">{{ item.type_name }} · {{ leaveDates(item, formatCalendarDate) }}</div>
                 </div>

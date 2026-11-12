@@ -77,7 +77,7 @@ const columns = [
                 :key="option.value"
                 type="button"
                 class="mr-4 inline-block rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="status === option.value ? 'font-semibold text-primary underline' : 'hover:text-primary'"
+                :class="status === option.value ? 'font-semibold text-link underline' : 'hover:text-link'"
                 :aria-pressed="status === option.value"
                 @click="filterByStatus(option.value)"
             >
@@ -95,7 +95,7 @@ const columns = [
                 <Select id="filter-type" v-model="type" :options="[{ value: '', label: 'Any kind' }, ...typeOptions.map(({ value, label }) => ({ value, label }))]" @update:model-value="applyFilters" />
             </div>
             <div class="flex items-end gap-2 lg:col-span-2">
-                <button type="button" class="rounded-md px-3 py-2 text-sm text-primary hover:underline" @click="reset">Reset</button>
+                <button type="button" class="rounded-md px-3 py-2 text-sm text-link hover:underline" @click="reset">Reset</button>
             </div>
         </form>
 
@@ -110,7 +110,7 @@ const columns = [
             :numbered="false"
         >
             <template #cell-subject="{ row }">
-                <Link :href="`/admin/feedback/${row.id}`" class="font-medium text-primary hover:underline" :class="{ 'font-bold': row.is_unseen }">{{ row.subject }}</Link>
+                <Link :href="`/admin/feedback/${row.id}`" class="font-medium text-link hover:underline" :class="{ 'font-bold': row.is_unseen }">{{ row.subject }}</Link>
             </template>
             <template #cell-status="{ row }">
                 <Badge :tone="statusTones[row.status]">{{ row.status_label }}</Badge>

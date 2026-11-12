@@ -158,7 +158,7 @@ const goTo = (id) => {
                             class="relative flex items-center gap-3 rounded-md px-3 py-2 text-compact whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-lg:border"
                             :class="
                                 activeCategory === categoryId(category.title)
-                                    ? 'bg-info-bg font-semibold text-primary max-lg:border-info-border'
+                                    ? 'bg-info-bg font-semibold text-link max-lg:border-info-border'
                                     : 'text-text-muted hover:bg-surface-muted hover:text-text max-lg:border-border max-lg:bg-surface'
                             "
                             :aria-current="activeCategory === categoryId(category.title) ? 'location' : undefined"
@@ -169,7 +169,7 @@ const goTo = (id) => {
                                 :class="activeCategory === categoryId(category.title) ? 'opacity-100' : 'opacity-0'"
                                 aria-hidden="true"
                             />
-                            <Icon :name="category.icon" size="sm" class="shrink-0 text-primary" />
+                            <Icon :name="category.icon" size="sm" class="shrink-0 text-link" />
                             <span class="flex-1">{{ category.title }}</span>
                         </a>
 
@@ -182,7 +182,7 @@ const goTo = (id) => {
                                 <a
                                     :href="`#${article.slug}`"
                                     class="block rounded-sm py-1 pr-2 text-xs leading-snug transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                                    :class="activeArticle === article.slug ? 'font-semibold text-primary' : 'text-text-muted hover:text-text'"
+                                    :class="activeArticle === article.slug ? 'font-semibold text-link' : 'text-text-muted hover:text-text'"
                                     :aria-current="activeArticle === article.slug ? 'location' : undefined"
                                     @click.prevent="goTo(article.slug)"
                                 >{{ article.title }}</a>
@@ -195,7 +195,7 @@ const goTo = (id) => {
             <div class="min-w-0 flex-1 space-y-10">
                 <section v-for="category in visible" :id="categoryId(category.title)" :key="category.title" class="scroll-mt-20" :aria-labelledby="`${categoryId(category.title)}-title`">
                     <h2 :id="`${categoryId(category.title)}-title`" class="mb-4 flex items-center gap-3 text-lg font-semibold text-text">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                             <Icon :name="category.icon" />
                         </span>
                         {{ category.title }}
@@ -220,10 +220,10 @@ const goTo = (id) => {
                             </ol>
 
                             <div v-if="article.tips.length" class="mt-6 rounded-md border border-info-border bg-info-bg p-4">
-                                <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-primary uppercase">
+                                <p class="flex items-center gap-2 text-xs font-semibold tracking-wide text-link uppercase">
                                     <Icon name="info" size="sm" />Good to know
                                 </p>
-                                <ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-text-muted marker:text-primary">
+                                <ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-text-muted marker:text-link">
                                     <li v-for="tip in article.tips" :key="tip">{{ tip }}</li>
                                 </ul>
                             </div>

@@ -185,12 +185,12 @@ const recentColumns = [
                     </template>
                     <template #cell-actions="{ row }">
                         <div v-if="canManage" class="flex justify-end gap-3 text-sm whitespace-nowrap">
-                            <button type="button" class="text-primary hover:underline" @click="scheduleId = row.id">Schedule</button>
-                            <button type="button" class="text-primary hover:underline" @click="editLoan(row)">Edit</button>
-                            <button v-if="row.status === 'active'" type="button" class="text-primary hover:underline" @click="stopping = row">Suspend</button>
-                            <button v-if="row.status === 'stopped'" type="button" class="text-primary hover:underline" @click="resume(row)">Resume</button>
-                            <button v-if="row.status === 'active' || row.status === 'stopped'" type="button" class="text-danger hover:underline" @click="cancelling = row">Cancel</button>
-                            <button v-if="row.deletable" type="button" class="text-danger hover:underline" @click="removeLoan(row)">Delete</button>
+                            <button type="button" class="text-link hover:underline" @click="scheduleId = row.id">Schedule</button>
+                            <button type="button" class="text-link hover:underline" @click="editLoan(row)">Edit</button>
+                            <button v-if="row.status === 'active'" type="button" class="text-link hover:underline" @click="stopping = row">Suspend</button>
+                            <button v-if="row.status === 'stopped'" type="button" class="text-link hover:underline" @click="resume(row)">Resume</button>
+                            <button v-if="row.status === 'active' || row.status === 'stopped'" type="button" class="text-danger-fg hover:underline" @click="cancelling = row">Cancel</button>
+                            <button v-if="row.deletable" type="button" class="text-danger-fg hover:underline" @click="removeLoan(row)">Delete</button>
                         </div>
                     </template>
                 </DataTable>
@@ -210,14 +210,14 @@ const recentColumns = [
             <Card title="Recent pay" icon="database">
                 <DataTable :columns="recentColumns" :rows="recent" :caption="`Recent pay of ${employee.name}`" export-name="imis-recent-pay" :searchable="false" :exportable="false" empty-text="Not on a payroll yet.">
                     <template #cell-period="{ row }">
-                        <Link :href="`/admin/hr/payroll/runs/${row.run_id}`" class="text-text hover:text-primary">{{ row.period }}</Link>
+                        <Link :href="`/admin/hr/payroll/runs/${row.run_id}`" class="text-text hover:text-link">{{ row.period }}</Link>
                         <Badge v-if="!row.finalized" tone="neutral" class="ml-1">Draft</Badge>
                     </template>
                     <template #cell-gross_pay="{ row }"><span class="tabular-nums">{{ formatPeso(row.gross_pay) }}</span></template>
                     <template #cell-total_deductions="{ row }"><span class="tabular-nums">{{ formatPeso(row.total_deductions) }}</span></template>
                     <template #cell-net_pay="{ row }"><span class="font-medium tabular-nums">{{ formatPeso(row.net_pay) }}</span></template>
                     <template #cell-actions="{ row }">
-                        <a v-if="row.finalized" :href="`/payslips/${row.id}`" target="_blank" rel="noopener" class="text-sm text-primary hover:underline">Payslip</a>
+                        <a v-if="row.finalized" :href="`/payslips/${row.id}`" target="_blank" rel="noopener" class="text-sm text-link hover:underline">Payslip</a>
                     </template>
                 </DataTable>
             </Card>
@@ -308,7 +308,7 @@ const recentColumns = [
                             <span v-if="row.remitted_on" class="ml-1 text-xs text-text-muted">{{ formatCalendarDate(row.remitted_on) }}</span>
                         </td>
                         <td v-if="canManage" class="text-right whitespace-nowrap">
-                            <button v-if="row.finalized && row.status !== 'paid'" type="button" class="text-primary hover:underline" @click="markPaid(scheduled, row, true)">Mark paid</button>
+                            <button v-if="row.finalized && row.status !== 'paid'" type="button" class="text-link hover:underline" @click="markPaid(scheduled, row, true)">Mark paid</button>
                             <button v-else-if="row.status === 'paid'" type="button" class="text-text-muted hover:underline" @click="markPaid(scheduled, row, false)">Undo</button>
                         </td>
                     </tr>

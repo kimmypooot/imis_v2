@@ -42,10 +42,10 @@ const dismissWhatsNew = () => {
 };
 
 const tileTones = {
-    info: 'bg-info-bg text-primary',
-    success: 'bg-success-bg text-success',
-    warning: 'bg-warning-bg text-warning',
-    danger: 'bg-danger-bg text-danger',
+    info: 'bg-info-bg text-link',
+    success: 'bg-success-bg text-success-fg',
+    warning: 'bg-warning-bg text-warning-fg',
+    danger: 'bg-danger-bg text-danger-fg',
 };
 
 const page = usePage();
@@ -151,7 +151,7 @@ const greeting = computed(() => {
         <ReleaseNotes :release="whatsNew" />
 
         <template #footer>
-            <Link href="/whats-new" class="mr-auto self-center text-sm font-medium text-primary hover:text-primary-hover">
+            <Link href="/whats-new" class="mr-auto self-center text-sm font-medium text-link hover:text-primary-hover">
                 All release notes
             </Link>
             <Button data-autofocus @click="dismissWhatsNew">Got it</Button>

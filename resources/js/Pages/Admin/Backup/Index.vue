@@ -182,10 +182,10 @@ const columns = [
                             A compressed backup is saved every night at 02:00; the newest {{ schedule.keep }} are kept.
                         </template>
                         <template v-else>
-                            Nightly backups are <strong class="text-danger">off</strong>. Only backups made here are saved
+                            Nightly backups are <strong class="text-danger-fg">off</strong>. Only backups made here are saved
                             (newest {{ schedule.keep }} kept).
                         </template>
-                        <Link href="/admin/settings" class="text-primary underline">Change in System Settings</Link>
+                        <Link href="/admin/settings" class="text-link underline">Change in System Settings</Link>
                     </p>
                     <Button variant="primary" :loading="saving" @click="backUpNow">
                         <Icon name="database" size="sm" />
@@ -224,7 +224,7 @@ const columns = [
                     <span class="tabular-nums">{{ row.structure_only ? '—' : row.rows.toLocaleString() }}</span>
                 </template>
                 <template #cell-structure_only="{ row }">
-                    <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="row.structure_only ? 'bg-surface-muted text-text-muted' : 'bg-success-bg text-success'">
+                    <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="row.structure_only ? 'bg-surface-muted text-text-muted' : 'bg-success-bg text-success-fg'">
                         {{ row.structure_only ? 'Structure only' : 'Structure and data' }}
                     </span>
                 </template>

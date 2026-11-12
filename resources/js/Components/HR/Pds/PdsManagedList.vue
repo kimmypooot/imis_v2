@@ -26,7 +26,7 @@ const id = useId();
                     Kept in {{ section.managed_by.label }}: your approved and pending trainings appear here automatically.
                 </p>
             </div>
-            <Link v-if="manageLink" :href="section.managed_by.url" class="text-sm font-medium text-primary hover:underline">
+            <Link v-if="manageLink" :href="section.managed_by.url" class="text-sm font-medium text-link hover:underline">
                 Manage in {{ section.managed_by.label }} →
             </Link>
         </div>

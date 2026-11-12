@@ -128,7 +128,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                 <td class="py-2 pr-4 align-top text-text-muted">{{ month.particulars }}</td>
                                 <template v-for="group in ['vl', 'sl']" :key="group">
                                     <td class="border-l border-border px-3 py-2 text-right align-top tabular-nums">{{ figure(month[group].earned) }}</td>
-                                    <td class="px-3 py-2 text-right align-top tabular-nums" :class="month[group].used > 0 ? 'text-danger' : 'text-text-muted'">{{ usedFigure(month[group].used) }}</td>
+                                    <td class="px-3 py-2 text-right align-top tabular-nums" :class="month[group].used > 0 ? 'text-danger-fg' : 'text-text-muted'">{{ usedFigure(month[group].used) }}</td>
                                     <td class="px-3 py-2 text-right align-top font-medium tabular-nums">
                                         {{ figure(month[group].balance) }}
                                         <div v-if="month[group].adjusted" class="text-xs font-normal text-text-muted">{{ signed(month[group].adjusted) }} adjusted</div>
@@ -150,7 +150,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                         </tfoot>
                     </table>
                 </div>
-                <p v-if="hasSystemMonths" class="mt-3 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-warning" role="note">
+                <p v-if="hasSystemMonths" class="mt-3 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-warning-fg" role="note">
                     Months marked "system" do not yet include leave that was filed on paper after the card's last month, or undertime. If you took leave
                     in those months, ask the HR office to add it; until then your balance there may read higher than it really is.
                 </p>
@@ -193,11 +193,11 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                     {{ line.kind_label }}<template v-if="line.recorded_by"> · {{ line.recorded_by }}</template>
                                 </div>
                             </td>
-                            <td class="whitespace-nowrap py-2 pr-4 text-right align-top tabular-nums" :class="line.amount < 0 ? 'text-danger' : 'text-success'">{{ signed(line.amount) }}</td>
+                            <td class="whitespace-nowrap py-2 pr-4 text-right align-top tabular-nums" :class="line.amount < 0 ? 'text-danger-fg' : 'text-success-fg'">{{ signed(line.amount) }}</td>
                             <td class="whitespace-nowrap py-2 pr-4 text-right align-top tabular-nums">{{ days(line.balance) }}</td>
                             <td v-if="canReverse" class="py-2 text-right align-top">
                                 <StatusBadge v-if="line.reversed" status="logged_out" label="Reversed" />
-                                <button v-else-if="!line.reverses_id" type="button" class="text-sm text-danger hover:underline" @click="emit('reverse', line)">
+                                <button v-else-if="!line.reverses_id" type="button" class="text-sm text-danger-fg hover:underline" @click="emit('reverse', line)">
                                     Reverse<span class="sr-only"> the {{ line.code }} entry of {{ formatCalendarDate(line.date) }}</span>
                                 </button>
                             </td>

@@ -6,6 +6,7 @@ import Icon from '../UI/Icon.vue';
 import UserAvatar from '../UI/UserAvatar.vue';
 import Modal from '../Feedback/Modal.vue';
 import Button from '../UI/Button.vue';
+import { useTheme } from '../../Composables/useTheme';
 import { firstName, useSplash } from '../../Composables/useSplash';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -15,6 +16,13 @@ import { formatDateTime } from '../../Utils/datetime';
  * Sign out (confirmed, then the "Signing Out" splash carries you to the
  * login page). HR Management and Administration live in the sidebar.
  */
+const { theme, setTheme } = useTheme();
+const themeOptions = [
+    { value: 'light', label: 'Light', icon: 'sun' },
+    { value: 'dark', label: 'Dark', icon: 'moon' },
+    { value: 'system', label: 'Auto', icon: 'desktop' },
+];
+
 const props = defineProps({
     user: {
         type: Object,
@@ -106,6 +114,24 @@ const groupClass = 'border-b border-border py-1';
                     <Icon name="chat" size="sm" />
                     Send feedback
                 </button>
+            </div>
+
+            <div class="border-b border-border px-3 py-2" role="group" aria-label="Appearance">
+                <p class="mb-1.5 text-xs font-semibold tracking-wide text-text-muted uppercase">Appearance</p>
+                <div class="grid grid-cols-3 gap-1 rounded-md bg-surface-muted p-1">
+                    <button
+                        v-for="option in themeOptions"
+                        :key="option.value"
+                        type="button"
+                        class="flex items-center justify-center gap-1 rounded px-2 py-1 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        :class="theme === option.value ? 'bg-surface text-link shadow-xs' : 'text-text-muted hover:text-text'"
+                        :aria-pressed="theme === option.value"
+                        @click="setTheme(option.value)"
+                    >
+                        <Icon :name="option.icon" size="sm" />
+                        {{ option.label }}
+                    </button>
+                </div>
             </div>
 
             <div class="pt-1">

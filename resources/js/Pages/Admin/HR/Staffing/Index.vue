@@ -80,12 +80,12 @@ const vacancyColumns = [
 
         <p v-if="totals.no_place" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
             {{ totals.no_place }} {{ totals.no_place === 1 ? 'item has' : 'items have' }} no place of assignment, so {{ totals.no_place === 1 ? 'it isn’t' : 'they aren’t' }} counted
-            under any office. Set it on the <Link href="/admin/hr/plantilla" class="font-medium text-primary hover:underline">Plantilla</Link>.
+            under any office. Set it on the <Link href="/admin/hr/plantilla" class="font-medium text-link hover:underline">Plantilla</Link>.
         </p>
 
         <p v-if="totals.headed_by_designation" class="rounded-md border border-info-border bg-info-bg px-4 py-3 text-sm text-text">
             {{ totals.headed_by_designation }} {{ totals.headed_by_designation === 1 ? 'office is' : 'offices are' }} headed by designation, by someone who also
-            heads their own office. See <a href="#headed-by-designation" class="font-medium text-primary hover:underline">Offices headed by designation</a> for the staffing plan.
+            heads their own office. See <a href="#headed-by-designation" class="font-medium text-link hover:underline">Offices headed by designation</a> for the staffing plan.
         </p>
 
         <Card title="By office" icon="building" description="Where each office's positions are, against who actually serves there today.">
@@ -100,13 +100,13 @@ const vacancyColumns = [
                 <template #cell-name="{ row }">
                     {{ row.name }}
                     <div v-if="row.headed_by.length" class="mt-0.5 text-xs text-text-muted">
-                        <span class="rounded-full bg-info-bg px-2 py-0.5 text-primary">headed by designation</span>
+                        <span class="rounded-full bg-info-bg px-2 py-0.5 text-link">headed by designation</span>
                         {{ row.headed_by.join(', ') }}
                     </div>
                     <div v-if="row.also_heads.length" class="mt-0.5 text-xs text-text-muted">Its head also heads {{ row.also_heads.join(', ') }}</div>
                 </template>
                 <template #cell-vacant="{ row }">
-                    <span class="tabular-nums" :class="row.vacant ? 'font-semibold text-warning' : ''">{{ row.vacant }}</span>
+                    <span class="tabular-nums" :class="row.vacant ? 'font-semibold text-warning-fg' : ''">{{ row.vacant }}</span>
                 </template>
                 <template #cell-present="{ row }">
                     <span class="font-semibold tabular-nums">{{ row.present }}</span>
@@ -130,15 +130,15 @@ const vacancyColumns = [
                 empty-text="Everyone serves in their item's place of assignment."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title }}
-                    <div class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-primary hover:underline">{{ row.item }}</Link></div>
+                    <div class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item }}</Link></div>
                 </template>
                 <template #cell-office="{ row }">
                     {{ row.office }}
-                    <span v-if="row.detail" class="ml-1 rounded-full bg-info-bg px-2 py-0.5 text-xs text-primary">detail</span>
+                    <span v-if="row.detail" class="ml-1 rounded-full bg-info-bg px-2 py-0.5 text-xs text-link">detail</span>
                 </template>
                 <template #cell-since="{ row }">{{ row.since ? formatCalendarDate(row.since) : '—' }}</template>
                 <template #cell-order_number="{ row }">
@@ -164,12 +164,12 @@ const vacancyColumns = [
                 empty-text="No office is headed by designation."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-home_office="{ row }">{{ row.home_office || '—' }}</template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title || '—' }}
-                    <div v-if="row.item_id" class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-primary hover:underline">{{ row.item }}</Link></div>
+                    <div v-if="row.item_id" class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item }}</Link></div>
                 </template>
                 <template #cell-since="{ row }">
                     {{ formatCalendarDate(row.since) }}
@@ -194,7 +194,7 @@ const vacancyColumns = [
             >
                 <template #cell-place_of_assignment="{ row }">{{ row.place_of_assignment || '—' }}</template>
                 <template #cell-item_number="{ row }">
-                    <Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-primary hover:underline">{{ row.item_number || 'No item no.' }}</Link>
+                    <Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link>
                 </template>
                 <template #cell-salary_grade="{ row }"><span class="tabular-nums">{{ row.salary_grade ?? '—' }}</span></template>
                 <template #cell-monthly_salary="{ row }">

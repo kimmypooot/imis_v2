@@ -120,8 +120,8 @@ const historyColumns = [
                     </div>
                     <div class="rounded-lg bg-white p-4 text-text">
                         <p class="text-xs text-text-muted">Net pay</p>
-                        <p class="mt-1 text-2xl font-bold text-primary tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
-                        <p v-if="change" class="mt-1 flex items-center gap-1 text-xs font-medium" :class="change.amount === 0 ? 'text-text-muted' : change.amount > 0 ? 'text-success' : 'text-danger'">
+                        <p class="mt-1 text-2xl font-bold text-link tabular-nums">{{ formatPeso(latest.net_pay) }}</p>
+                        <p v-if="change" class="mt-1 flex items-center gap-1 text-xs font-medium" :class="change.amount === 0 ? 'text-text-muted' : change.amount > 0 ? 'text-success-fg' : 'text-danger-fg'">
                             <Icon v-if="change.amount !== 0" :name="change.amount > 0 ? 'chevronUp' : 'chevronDown'" size="sm" />
                             {{ change.amount === 0 ? 'Same as' : `${change.percent}% ${change.amount > 0 ? 'more' : 'less'} than` }} {{ change.previous }}
                         </p>
@@ -205,7 +205,7 @@ const historyColumns = [
                     <div><dt class="text-text-muted">Outstanding balance</dt><dd class="font-medium tabular-nums text-text">{{ formatPeso(loan.balance) }}</dd></div>
                 </dl>
                 <details v-if="loan.schedule.rows.length" class="mt-3 text-sm">
-                    <summary class="cursor-pointer text-primary hover:underline">Schedule</summary>
+                    <summary class="cursor-pointer text-link hover:underline">Schedule</summary>
                     <table class="mt-2 w-full">
                         <caption class="sr-only">Installments of {{ loan.type }}</caption>
                         <tbody>
@@ -254,9 +254,9 @@ const historyColumns = [
             <template #cell-net_pay="{ row }"><span class="font-semibold tabular-nums">{{ formatPeso(row.net_pay) }}</span></template>
             <template #cell-actions="{ row }">
                 <div class="text-right text-sm whitespace-nowrap">
-                    <a v-if="row.payslip_ready" :href="`/payslips/${row.id}`" target="_blank" rel="noopener" class="text-primary hover:underline">View / print<span class="sr-only"> {{ row.period }} payslip</span></a>
+                    <a v-if="row.payslip_ready" :href="`/payslips/${row.id}`" target="_blank" rel="noopener" class="text-link hover:underline">View / print<span class="sr-only"> {{ row.period }} payslip</span></a>
                     <Link v-else-if="row.request_status === 'pending'" href="/my/payslips" class="text-text-muted hover:underline">Request pending</Link>
-                    <Link v-else href="/my/payslips" class="text-primary hover:underline">Request payslip<span class="sr-only"> for {{ row.period }}</span></Link>
+                    <Link v-else href="/my/payslips" class="text-link hover:underline">Request payslip<span class="sr-only"> for {{ row.period }}</span></Link>
                 </div>
             </template>
         </DataTable>

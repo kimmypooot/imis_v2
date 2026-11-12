@@ -101,10 +101,10 @@ const columns = [
             <template #cell-actions="{ row }">
                 <div v-if="canManage && !row.own" class="flex justify-end gap-3 whitespace-nowrap text-sm">
                     <template v-if="row.status === 'pending'">
-                        <button type="button" class="text-success hover:underline" @click="openDecision(row, 'approved')">Approve</button>
-                        <button type="button" class="text-danger hover:underline" @click="openDecision(row, 'rejected')">Reject</button>
+                        <button type="button" class="text-success-fg hover:underline" @click="openDecision(row, 'approved')">Approve</button>
+                        <button type="button" class="text-danger-fg hover:underline" @click="openDecision(row, 'rejected')">Reject</button>
                     </template>
-                    <button v-if="row.status === 'approved'" type="button" class="text-primary hover:underline" @click="release(row)">Mark released</button>
+                    <button v-if="row.status === 'approved'" type="button" class="text-link hover:underline" @click="release(row)">Mark released</button>
                 </div>
                 <span v-else-if="row.own" class="text-xs text-text-muted">Your own</span>
             </template>

@@ -29,9 +29,9 @@ const props = defineProps({
 
 const count = (...statuses) => props.requests.filter((row) => statuses.includes(row.status)).length;
 const stats = computed(() => [
-    { label: 'Months available', value: props.months.length, icon: 'calendar', tile: 'bg-info-bg text-primary' },
-    { label: 'Pending approval', value: count('pending'), icon: 'clock', tile: 'bg-warning-bg text-warning' },
-    { label: 'Ready to view', value: count('approved'), icon: 'check', tile: 'bg-success-bg text-success' },
+    { label: 'Months available', value: props.months.length, icon: 'calendar', tile: 'bg-info-bg text-link' },
+    { label: 'Pending approval', value: count('pending'), icon: 'clock', tile: 'bg-warning-bg text-warning-fg' },
+    { label: 'Ready to view', value: count('approved'), icon: 'check', tile: 'bg-success-bg text-success-fg' },
     { label: 'Rejected or cancelled', value: count('rejected', 'cancelled'), icon: 'exclamation', tile: 'bg-surface-muted text-text-muted' },
 ]);
 
@@ -49,8 +49,8 @@ const monthTiles = computed(() =>
     }),
 );
 const monthState = {
-    approved: { label: 'Ready to view', classes: 'border-success-border bg-success-bg text-success', icon: 'check' },
-    pending: { label: 'Awaiting approval', classes: 'border-warning-border bg-warning-bg text-warning', icon: 'clock' },
+    approved: { label: 'Ready to view', classes: 'border-success-border bg-success-bg text-success-fg', icon: 'check' },
+    pending: { label: 'Awaiting approval', classes: 'border-warning-border bg-warning-bg text-warning-fg', icon: 'clock' },
 };
 const pickMonth = (month) => {
     form.payroll_entry_id = month.entry_id;
@@ -97,7 +97,7 @@ const columns = [
     </div>
 
     <div v-if="latestReady" class="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-success-border bg-success-bg p-5">
-        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-success" aria-hidden="true"><Icon name="check" size="lg" /></span>
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-success-fg" aria-hidden="true"><Icon name="check" size="lg" /></span>
         <div class="min-w-0 flex-1">
             <p class="font-semibold text-text">Your {{ latestReady.period }} payslip is ready</p>
             <p class="text-sm text-text-muted">Approved<template v-if="latestReady.decided_by"> by {{ latestReady.decided_by }}</template>. Open it to view, print or save as PDF.</p>
@@ -127,7 +127,7 @@ const columns = [
                         <span class="block truncate text-sm font-medium text-text">{{ month.period }}</span>
                         <span class="block text-xs text-text-muted">Not requested yet</span>
                     </span>
-                    <span class="text-xs font-medium text-primary">Request</span>
+                    <span class="text-xs font-medium text-link">Request</span>
                 </button>
             </li>
         </ul>
@@ -176,7 +176,7 @@ const columns = [
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end gap-3 text-sm whitespace-nowrap">
                         <Button v-if="row.status === 'approved'" size="sm" :href="`/payslips/${row.entry_id}`" external>View payslip</Button>
-                        <button v-if="row.status === 'pending'" type="button" class="text-danger hover:underline" @click="cancel(row)">Cancel</button>
+                        <button v-if="row.status === 'pending'" type="button" class="text-danger-fg hover:underline" @click="cancel(row)">Cancel</button>
                     </div>
                 </template>
             </DataTable>

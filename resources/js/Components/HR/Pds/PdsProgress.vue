@@ -56,8 +56,8 @@ const percent = computed(() => Math.round((doneCount.value / counted.value.lengt
 const next = computed(() => counted.value.find((part) => part.state !== 'done'));
 
 const looks = {
-    done: { icon: 'check', chip: 'bg-success-bg text-success', label: 'Done' },
-    started: { icon: 'pencil', chip: 'bg-warning-bg text-warning', label: 'Started' },
+    done: { icon: 'check', chip: 'bg-success-bg text-success-fg', label: 'Done' },
+    started: { icon: 'pencil', chip: 'bg-warning-bg text-warning-fg', label: 'Started' },
     empty: { icon: 'plus', chip: 'bg-surface-muted text-text-muted', label: 'Not started' },
     optional: { icon: 'plus', chip: 'bg-surface-muted text-text-muted', label: 'Optional' },
 };
@@ -69,7 +69,7 @@ const looks = {
             <button
                 v-if="next"
                 type="button"
-                class="rounded-md text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                class="rounded-md text-sm font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 @click="emit('open', next.key)"
             >
                 Continue with {{ next.label }}

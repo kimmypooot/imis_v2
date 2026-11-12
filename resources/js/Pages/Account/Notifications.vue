@@ -45,7 +45,7 @@ const reset = () => form.reset();
         >
             <span
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface"
-                :class="email ? 'text-primary' : 'text-warning'"
+                :class="email ? 'text-link' : 'text-warning-fg'"
                 aria-hidden="true"
             >
                 <Icon :name="email ? 'envelope' : 'exclamation'" />
@@ -63,9 +63,9 @@ const reset = () => form.reset();
 
         <Card title="Also send by email" icon="bell" description="The bell always shows everything. Switch on the ones you want in your inbox too.">
             <template v-if="email" #actions>
-                <button type="button" class="rounded-sm text-xs font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="setAll(true)">Turn all on</button>
+                <button type="button" class="rounded-sm text-xs font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="setAll(true)">Turn all on</button>
                 <span class="text-border" aria-hidden="true">|</span>
-                <button type="button" class="rounded-sm text-xs font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="setAll(false)">Turn all off</button>
+                <button type="button" class="rounded-sm text-xs font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="setAll(false)">Turn all off</button>
             </template>
 
             <form @submit.prevent="save">
@@ -77,7 +77,7 @@ const reset = () => form.reset();
                         >
                             <span
                                 class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors"
-                                :class="form.email[kind.kind] && email ? 'bg-info-bg text-primary' : 'bg-surface-muted text-text-muted'"
+                                :class="form.email[kind.kind] && email ? 'bg-info-bg text-link' : 'bg-surface-muted text-text-muted'"
                                 aria-hidden="true"
                             >
                                 <Icon :name="form.email[kind.kind] && email ? 'envelope' : 'bell'" size="sm" />
@@ -98,7 +98,7 @@ const reset = () => form.reset();
                                     class="peer sr-only"
                                 />
                                 <span class="h-6 w-11 rounded-full bg-border-strong transition-colors duration-200 peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-focus-ring peer-focus-visible:ring-offset-2" />
-                                <span class="pointer-events-none absolute left-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-primary shadow-sm transition-transform duration-200 peer-checked:translate-x-5">
+                                <span class="pointer-events-none absolute left-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-csc-blue shadow-sm transition-transform duration-200 peer-checked:translate-x-5">
                                     <Icon v-if="form.email[kind.kind]" name="check" size="xs" />
                                 </span>
                                 <span class="sr-only">{{ form.email[kind.kind] ? 'On' : 'Off' }}</span>
@@ -115,11 +115,11 @@ const reset = () => form.reset();
                 <div class="mt-6 flex flex-wrap items-center gap-4 border-t border-border pt-5">
                     <Button type="submit" :loading="form.processing" :disabled="!form.isDirty || !email">Save changes</Button>
                     <Button v-if="form.isDirty" type="button" variant="secondary" @click="reset">Discard</Button>
-                    <p v-if="form.isDirty" class="flex items-center gap-1.5 text-xs text-warning" role="status">
+                    <p v-if="form.isDirty" class="flex items-center gap-1.5 text-xs text-warning-fg" role="status">
                         <span class="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
                         Unsaved changes
                     </p>
-                    <p v-else-if="form.recentlySuccessful" class="flex items-center gap-1.5 text-xs text-success" role="status">
+                    <p v-else-if="form.recentlySuccessful" class="flex items-center gap-1.5 text-xs text-success-fg" role="status">
                         <Icon name="check" size="xs" />
                         Saved
                     </p>

@@ -118,7 +118,7 @@ const columns = [
             </div>
 
             <p v-if="duplicateCount" class="mb-3 flex items-center gap-2 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text" role="status">
-                <Icon name="exclamation" size="sm" class="shrink-0 text-warning" />
+                <Icon name="exclamation" size="sm" class="shrink-0 text-warning-fg" />
                 {{ duplicateCount }} {{ duplicateCount === 1 ? 'entry looks' : 'entries look' }} like a repeat of another one this year. Check whether it is the same training, and remove the extra one if so.
             </p>
 
@@ -126,7 +126,7 @@ const columns = [
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">{{ row.title }}</div>
                     <div class="text-xs text-text-muted">{{ row.sponsor }}</div>
-                    <div v-if="row.possible_duplicate_of" class="mt-1 flex items-start gap-1.5 text-xs text-warning">
+                    <div v-if="row.possible_duplicate_of" class="mt-1 flex items-start gap-1.5 text-xs text-warning-fg">
                         <Icon name="exclamation" size="xs" class="mt-0.5 shrink-0" />
                         <span>Possible duplicate of “{{ row.possible_duplicate_of.title }}”</span>
                     </div>
@@ -135,7 +135,7 @@ const columns = [
                         :href="`/hr/trainings/${row.id}/certificate`"
                         target="_blank"
                         rel="noopener"
-                        class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-link hover:underline"
                     >
                         <Icon name="clipboard" size="sm" />Certificate<span class="sr-only"> (opens in a new tab)</span>
                     </a>
@@ -148,7 +148,7 @@ const columns = [
                 <template #cell-resource_speaker="{ row }">{{ row.resource_speaker || '—' }}</template>
                 <template #cell-status="{ row }">
                     <StatusBadge :status="badge[row.approval_status]" :label="row.status_label" />
-                    <p v-if="row.rejection_reason" class="mt-1 max-w-48 text-left text-xs text-danger">{{ row.rejection_reason }}</p>
+                    <p v-if="row.rejection_reason" class="mt-1 max-w-48 text-left text-xs text-danger-fg">{{ row.rejection_reason }}</p>
                 </template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-center gap-1">

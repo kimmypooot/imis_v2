@@ -58,14 +58,14 @@ const shortcuts = [
                 :href="shortcut.href"
                 class="group flex items-center gap-3.5 rounded-lg border border-border bg-surface p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-link transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
                     <Icon :name="shortcut.icon" />
                 </span>
                 <span class="min-w-0 flex-1">
                     <span class="block text-sm font-medium text-text">{{ shortcut.label }}</span>
                     <span class="block text-xs text-text-muted">{{ shortcut.hint }}</span>
                 </span>
-                <Icon name="arrowRight" size="sm" class="shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                <Icon name="arrowRight" size="sm" class="shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-link" />
             </Link>
         </nav>
 

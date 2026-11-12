@@ -49,7 +49,7 @@ const sign = () =>
 
             <div>
                 <label class="flex items-start gap-2 text-sm font-medium text-text">
-                    <input v-model="form.declaration" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="form.declaration" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                     I have read and accept this declaration.
                 </label>
                 <InputError :message="form.errors.declaration" />

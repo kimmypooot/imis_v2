@@ -62,7 +62,7 @@ const quickActions = computed(() =>
             <strong>Cutover readiness:</strong>
             {{ readiness.remaining }} of {{ readiness.total }} checks still to do before the legacy LMS and ldms can be retired.
         </span>
-        <span class="font-medium text-primary">Open checklist</span>
+        <span class="font-medium text-link">Open checklist</span>
     </Link>
 
     <template v-if="hr">

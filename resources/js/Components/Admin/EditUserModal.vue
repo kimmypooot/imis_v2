@@ -198,7 +198,7 @@ const close = () => emit('close');
                                 <button
                                     v-if="user.profile_photo_url && canEdit"
                                     type="button"
-                                    class="text-xs font-medium text-danger hover:underline"
+                                    class="text-xs font-medium text-danger-fg hover:underline"
                                     @click="removePhoto"
                                 >
                                     Remove photo

@@ -324,7 +324,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                         <th v-if="selectable" scope="col" class="w-10">
                             <input
                                 type="checkbox"
-                                class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                                class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                                 :checked="allSelected"
                                 :indeterminate="someSelected"
                                 aria-label="Select all rows on this page"
@@ -351,7 +351,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                                 <Icon
                                     :name="sortKey === column.key ? (sortDirection === 'asc' ? 'chevronUp' : 'chevronDown') : 'sort'"
                                     size="sm"
-                                    :class="sortKey === column.key ? 'text-primary' : 'opacity-40'"
+                                    :class="sortKey === column.key ? 'text-link' : 'opacity-40'"
                                 />
                             </button>
                             <span v-else-if="column.label">{{ column.label }}</span>
@@ -387,7 +387,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                             <td v-if="selectable">
                                 <input
                                     type="checkbox"
-                                    class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                                    class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                                     :checked="isSelected(row, index)"
                                     :aria-label="`Select row ${firstIndex + index}`"
                                     @change="toggleRow(row, index)"
@@ -407,7 +407,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
 
         <!-- Bulk actions: pinned to the bottom of the screen so ticking rows never shifts them -->
         <div v-if="selectable && selected.length" class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-surface px-4 py-2.5 text-sm shadow-lg" role="status">
-            <span class="font-medium text-primary">{{ selected.length }} selected</span>
+            <span class="font-medium text-link">{{ selected.length }} selected</span>
             <div class="flex flex-wrap items-center gap-2">
                 <slot name="bulk" :selected="selected" :clear="clearSelection" />
                 <Button variant="secondary" size="sm" @click="clearSelection">Clear</Button>

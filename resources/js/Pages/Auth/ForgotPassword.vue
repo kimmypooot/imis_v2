@@ -54,7 +54,7 @@ const submit = () => {
     </form>
 
     <p class="mt-6 text-center text-sm text-text-muted">
-        <Link href="/login" class="font-medium text-primary hover:text-primary-hover">
+        <Link href="/login" class="font-medium text-link hover:text-primary-hover">
             Back to sign in
         </Link>
     </p>

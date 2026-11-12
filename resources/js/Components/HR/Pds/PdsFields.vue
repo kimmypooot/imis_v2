@@ -31,7 +31,7 @@ const spanClass = (field) =>
         <template v-for="field in fields" :key="field.key">
             <h4
                 v-if="field.type === 'heading'"
-                class="mt-2 border-b border-border pb-1 text-xs font-bold tracking-wide text-primary uppercase sm:col-span-2"
+                class="mt-2 border-b border-border pb-1 text-xs font-bold tracking-wide text-link uppercase sm:col-span-2"
             >
                 {{ field.label }}
             </h4>

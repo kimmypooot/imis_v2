@@ -35,7 +35,7 @@ defineProps({
             <Link
                 v-if="viewAllHref"
                 :href="viewAllHref"
-                class="shrink-0 text-sm font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
+                class="shrink-0 text-sm font-medium text-link transition-colors hover:text-primary-hover hover:underline"
             >
                 View all →
             </Link>

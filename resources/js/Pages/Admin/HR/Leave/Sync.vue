@@ -55,9 +55,9 @@ const toggleShown = () => {
 const days = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const signed = (value) => (Math.abs(value) < 0.0005 ? '—' : (value > 0 ? '+' : '') + days(value));
 const statuses = {
-    in_sync: { label: 'In sync', class: 'bg-success-bg text-success' },
-    adjust: { label: 'Will adjust', class: 'bg-info-bg text-primary' },
-    large: { label: 'Check first', class: 'bg-warning-bg text-warning' },
+    in_sync: { label: 'In sync', class: 'bg-success-bg text-success-fg' },
+    adjust: { label: 'Will adjust', class: 'bg-info-bg text-link' },
+    large: { label: 'Check first', class: 'bg-warning-bg text-warning-fg' },
     check: { label: 'History only', class: 'bg-surface-muted text-text-muted' },
 };
 
@@ -121,7 +121,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
             <p class="text-sm text-text">
                 {{ summary.sheets }} sheets: <strong>{{ summary.in_sync }}</strong> already in sync, <strong>{{ summary.adjust }}</strong> with a balance difference,
                 <strong v-if="summary.check">{{ summary.check }} to check, </strong>
-                <strong :class="summary.errors ? 'text-danger' : ''">{{ summary.errors }}</strong> that could not be matched to an employee.
+                <strong :class="summary.errors ? 'text-danger-fg' : ''">{{ summary.errors }}</strong> that could not be matched to an employee.
             </p>
             <p class="mt-1 text-xs text-text-muted">
                 Difference = what the card says minus what the system has at the card's last month. Differences over {{ large }} days are not selected until you look at them.
@@ -155,9 +155,9 @@ const discard = () => router.delete('/admin/hr/leave/sync');
                                 <input v-model="selected" type="checkbox" :value="row.employee_id" :aria-label="`Sync ${row.name}`" />
                             </td>
                             <td class="py-2 pr-4 align-top">
-                                <a :href="`/admin/hr/employees/${row.employee_id}/leave`" class="font-medium text-primary hover:underline">{{ row.name }}</a>
+                                <a :href="`/admin/hr/employees/${row.employee_id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</a>
                                 <div class="text-xs text-text-muted">{{ row.months }} card months</div>
-                                <ul v-if="row.warnings.length" class="mt-1 space-y-0.5 text-xs text-warning">
+                                <ul v-if="row.warnings.length" class="mt-1 space-y-0.5 text-xs text-warning-fg">
                                     <li v-for="warning in row.warnings" :key="warning">{{ warning }}</li>
                                 </ul>
                             </td>
@@ -166,7 +166,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
                                 <template v-if="row.sync[group]">
                                     <td class="border-l border-border px-3 py-2 text-right align-top tabular-nums">{{ days(row.sync[group].card) }}</td>
                                     <td class="px-3 py-2 text-right align-top tabular-nums">{{ days(row.sync[group].system) }}</td>
-                                    <td class="px-3 py-2 text-right align-top font-medium tabular-nums" :class="Math.abs(row.sync[group].diff) >= 0.0005 ? (Math.abs(row.sync[group].diff) > large ? 'text-warning' : 'text-primary') : 'text-text-muted'">
+                                    <td class="px-3 py-2 text-right align-top font-medium tabular-nums" :class="Math.abs(row.sync[group].diff) >= 0.0005 ? (Math.abs(row.sync[group].diff) > large ? 'text-warning-fg' : 'text-link') : 'text-text-muted'">
                                         {{ signed(row.sync[group].diff) }}
                                     </td>
                                 </template>

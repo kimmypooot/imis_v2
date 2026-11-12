@@ -49,7 +49,7 @@ const remaining = computed(() => props.checks.filter((check) => check.status ===
                         <p class="text-sm text-text-muted">{{ check.detail }}</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <Link v-if="check.href && check.status !== 'ok'" :href="check.href" class="text-sm font-medium text-primary hover:underline">Fix</Link>
+                        <Link v-if="check.href && check.status !== 'ok'" :href="check.href" class="text-sm font-medium text-link hover:underline">Fix</Link>
                         <StatusBadge :status="badge[check.status].status" :label="badge[check.status].label" />
                     </div>
                 </li>

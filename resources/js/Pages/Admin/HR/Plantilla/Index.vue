@@ -86,13 +86,13 @@ const columns = [
         </div>
 
         <p v-if="schedule" class="text-sm text-text-muted">
-            Salaries from <Link href="/admin/hr/salary-schedules" class="font-medium text-primary hover:underline">{{ schedule.name }}</Link>
+            Salaries from <Link href="/admin/hr/salary-schedules" class="font-medium text-link hover:underline">{{ schedule.name }}</Link>
             <template v-if="schedule.reference"> ({{ schedule.reference }})</template>, in force since {{ formatCalendarDate(schedule.effective_date) }}.
             Vacant items are priced at step 1.
         </p>
         <p v-else class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
             No salary schedule is in force yet, so salaries can't be shown.
-            <Link href="/admin/hr/salary-schedules" class="font-medium text-primary hover:underline">Enter the salary schedule</Link>.
+            <Link href="/admin/hr/salary-schedules" class="font-medium text-link hover:underline">Enter the salary schedule</Link>.
         </p>
 
         <Card title="Items" icon="grid">
@@ -114,7 +114,7 @@ const columns = [
 
             <DataTable :columns="columns" :rows="shown" caption="Plantilla of positions" :export-name="`imis-plantilla-${view}`" empty-text="No items here.">
                 <template #cell-item_number="{ row }">
-                    <Link :href="`/admin/hr/plantilla/${row.id}`" class="font-medium text-primary hover:underline">{{ row.item_number || 'No item no.' }}</Link>
+                    <Link :href="`/admin/hr/plantilla/${row.id}`" class="font-medium text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link>
                 </template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title }}
@@ -122,12 +122,12 @@ const columns = [
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-holder="{ row }">
-                    <Link v-if="row.holder" :href="`/admin/hr/employees/${row.holder.employee_id}`" class="text-primary hover:underline">{{ row.holder.name }}</Link>
+                    <Link v-if="row.holder" :href="`/admin/hr/employees/${row.holder.employee_id}`" class="text-link hover:underline">{{ row.holder.name }}</Link>
                     <span v-else class="text-text-muted">—</span>
-                    <div v-if="row.serving?.elsewhere" class="text-xs text-info">
+                    <div v-if="row.serving?.elsewhere" class="text-xs text-info-fg">
                         Serving at {{ row.serving.office }}<template v-if="row.serving.order_number"> ({{ row.serving.order_number }})</template>
                     </div>
-                    <div v-if="row.holder?.missing.length" class="text-xs text-warning" :title="`Missing: ${row.holder.missing.join(', ')}`">Incomplete link</div>
+                    <div v-if="row.holder?.missing.length" class="text-xs text-warning-fg" :title="`Missing: ${row.holder.missing.join(', ')}`">Incomplete link</div>
                 </template>
                 <template #cell-step="{ row }"><span class="tabular-nums">{{ row.holder?.step ?? '—' }}</span></template>
                 <template #cell-monthly_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span></template>

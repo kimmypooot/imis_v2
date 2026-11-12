@@ -4,6 +4,17 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        {{-- Apply the remembered appearance before first paint (see useTheme.js). --}}
+        <script>
+            (function () {
+                try {
+                    var t = localStorage.getItem('imis-theme');
+                    var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+                    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+                } catch (e) {}
+            })();
+        </script>
+
         <title inertia>{{ config('app.name', 'CSC RO VIII IMIS') }}</title>
 
         {{-- The legacy IMIS icons (old-imis assets/img). --}}

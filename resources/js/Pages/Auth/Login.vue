@@ -231,7 +231,7 @@ const submit = () => {
     <Head title="Log in" />
 
     <div class="mb-6 text-center">
-        <span class="inline-flex items-center gap-2 rounded-full bg-info-bg px-4 py-1.5 text-xs font-medium text-primary">
+        <span class="inline-flex items-center gap-2 rounded-full bg-info-bg px-4 py-1.5 text-xs font-medium text-link">
             <Icon name="user" size="sm" />
             Login as CSC RO VIII Employee
         </span>
@@ -247,7 +247,7 @@ const submit = () => {
     <div ref="swapRef">
         <div v-if="choosing" ref="chooserRef">
             <div class="mb-4 text-center">
-                <span class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-info-bg text-primary">
+                <span class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-info-bg text-link">
                     <Icon name="users" />
                 </span>
                 <p class="text-base font-semibold">Choose an account</p>
@@ -268,7 +268,7 @@ const submit = () => {
                     </button>
                     <button
                         type="button"
-                        class="rounded-full p-1 text-muted transition-colors hover:text-danger"
+                        class="rounded-full p-1 text-muted transition-colors hover:text-danger-fg"
                         :title="`Remove ${account.name} from this device`"
                         :aria-label="`Remove ${account.name} from this device`"
                         @click="removeAccount(account.username)"
@@ -279,7 +279,7 @@ const submit = () => {
             </ul>
             <button
                 type="button"
-                class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm font-medium text-primary hover:border-primary hover:bg-info-bg"
+                class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm font-medium text-link hover:border-primary hover:bg-info-bg"
                 @click="useAnotherAccount"
             >
                 <Icon name="plus" size="sm" />
@@ -312,7 +312,7 @@ const submit = () => {
             <div v-if="selected" class="relative rounded-xl bg-info-bg px-4 py-5 text-center">
                 <button
                     type="button"
-                    class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-primary shadow-xs ring-1 ring-border transition-colors hover:bg-primary hover:text-white"
+                    class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-surface text-link shadow-xs ring-1 ring-border transition-colors hover:bg-primary hover:text-white"
                     title="Switch account"
                     aria-label="Switch account"
                     @click="backToList"
@@ -320,7 +320,7 @@ const submit = () => {
                     <Icon name="users" size="sm" />
                 </button>
                 <UserAvatar :name="selected.name" :photo-url="selected.photoUrl" size="xl" highlight class="mx-auto" />
-                <p class="mt-3 text-xs font-medium text-primary">Welcome back, {{ firstName(selected.name) }}</p>
+                <p class="mt-3 text-xs font-medium text-link">Welcome back, {{ firstName(selected.name) }}</p>
                 <p class="truncate text-base font-semibold">{{ selected.name }}</p>
                 <p class="truncate text-xs text-muted">{{ selected.username }}</p>
             </div>
@@ -328,7 +328,7 @@ const submit = () => {
             <button
                 v-if="!selected && rememberAccounts && accounts.length"
                 type="button"
-                class="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover"
+                class="flex items-center gap-1 text-sm font-medium text-link hover:text-primary-hover"
                 @click="backToList"
             >
                 <Icon name="chevronLeft" size="sm" />
@@ -371,7 +371,7 @@ const submit = () => {
                     required
                     :invalid="!!form.errors.password"
                 />
-                <p v-if="capsLockOn" class="mt-1 flex items-center gap-1 text-xs font-medium text-warning" role="status">
+                <p v-if="capsLockOn" class="mt-1 flex items-center gap-1 text-xs font-medium text-warning-fg" role="status">
                     <Icon name="exclamation" size="sm" />
                     Caps Lock is on
                 </p>
@@ -386,7 +386,7 @@ const submit = () => {
             <div class="flex items-center justify-between">
                 <Checkbox id="remember" v-model="form.remember" label="Keep me signed in" />
 
-                <Link href="/forgot-password" class="text-sm font-medium text-primary hover:text-primary-hover">
+                <Link href="/forgot-password" class="text-sm font-medium text-link hover:text-primary-hover">
                     Forgot password?
                 </Link>
             </div>

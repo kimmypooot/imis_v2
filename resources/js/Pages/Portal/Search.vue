@@ -207,10 +207,10 @@ const onKeydown = (event) => {
         >
             <template #action>
                 <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm">
-                    <Link href="/services" class="text-primary underline">Services</Link>
-                    <Link href="/applications" class="text-primary underline">Systems / Applications</Link>
-                    <Link href="/organizational-units" class="text-primary underline">Organizational Units</Link>
-                    <Link href="/announcements" class="text-primary underline">Announcements</Link>
+                    <Link href="/services" class="text-link underline">Services</Link>
+                    <Link href="/applications" class="text-link underline">Systems / Applications</Link>
+                    <Link href="/organizational-units" class="text-link underline">Organizational Units</Link>
+                    <Link href="/announcements" class="text-link underline">Announcements</Link>
                 </div>
             </template>
         </EmptyState>
@@ -247,7 +247,7 @@ const onKeydown = (event) => {
                     <Link
                         v-if="group.total > group.items.length"
                         :href="searchUrl(group.type)"
-                        class="shrink-0 text-sm font-medium text-primary hover:text-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        class="shrink-0 text-sm font-medium text-link hover:text-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     >
                         View all {{ group.total }}<span class="sr-only"> {{ group.label }} results</span>
                     </Link>

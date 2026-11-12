@@ -41,7 +41,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
         </div>
 
         <Transition enter-active-class="transition duration-150" enter-from-class="scale-90 opacity-0" leave-active-class="transition duration-100" leave-to-class="opacity-0">
-            <div v-if="showing" class="absolute top-2 right-2 z-10 rounded-full bg-surface p-1.5 text-primary shadow-sm ring-1 ring-border">
+            <div v-if="showing" class="absolute top-2 right-2 z-10 rounded-full bg-surface p-1.5 text-link shadow-sm ring-1 ring-border">
                 <Spinner size="sm" label="Updating…" />
             </div>
         </Transition>

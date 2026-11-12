@@ -50,14 +50,14 @@ const summary = computed(() => [
 
         <Card title="Verified PDS history" icon="checkCircle">
             <p v-if="pdsHistory.length === 0" class="text-sm text-text-muted">
-                None yet. <Link href="/my/pds" class="font-medium text-primary hover:underline">Sign and submit your PDS</Link> for HR to verify.
+                None yet. <Link href="/my/pds" class="font-medium text-link hover:underline">Sign and submit your PDS</Link> for HR to verify.
             </p>
             <ul v-else class="divide-y divide-border text-sm">
                 <li v-for="item in pdsHistory" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
                     <span class="text-text">Signed {{ formatDateTime(item.signed_at) }} · verified {{ formatDateTime(item.reviewed_at) }}</span>
                     <span class="flex gap-3 font-medium">
-                        <Link :href="`/my/pds/submissions/${item.id}`" class="text-primary hover:underline">View</Link>
-                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-primary hover:underline">
+                        <Link :href="`/my/pds/submissions/${item.id}`" class="text-link hover:underline">View</Link>
+                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-link hover:underline">
                             Print<span class="sr-only"> (opens in a new tab)</span>
                         </a>
                     </span>

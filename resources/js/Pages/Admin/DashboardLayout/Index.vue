@@ -90,7 +90,7 @@ const save = () => {
             <template #actions>
                 <Link
                     :href="category.key === 'committees' ? '/admin/committees' : '/admin/organizational-units'"
-                    class="text-sm font-medium text-primary hover:text-primary-hover"
+                    class="text-sm font-medium text-link hover:text-primary-hover"
                 >
                     Edit {{ category.key === 'committees' ? 'committees' : 'offices' }}
                 </Link>
@@ -138,7 +138,7 @@ const save = () => {
                 <label class="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-surface-muted" :class="{ 'cursor-not-allowed opacity-80': isOwned(system) }">
                     <input
                         type="checkbox"
-                        class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-focus-ring"
+                        class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-focus-ring"
                         :checked="isOn(system)"
                         :disabled="isOwned(system)"
                         @change="toggle(system)"
@@ -152,7 +152,7 @@ const save = () => {
                 </label>
             </li>
         </ul>
-        <p v-if="form.errors.application_ids" class="mt-2 text-sm text-danger">{{ form.errors.application_ids }}</p>
+        <p v-if="form.errors.application_ids" class="mt-2 text-sm text-danger-fg">{{ form.errors.application_ids }}</p>
 
         <template #footer>
             <Button variant="secondary" @click="editing = null">Cancel</Button>

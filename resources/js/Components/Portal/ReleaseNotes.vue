@@ -27,7 +27,7 @@ const groups = computed(() =>
     <article>
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <component :is="headingLevel" class="text-base font-semibold text-text">{{ release.title }}</component>
-            <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-primary">v{{ release.version }}</span>
+            <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-link">v{{ release.version }}</span>
             <time v-if="release.release_date" :datetime="release.release_date" class="text-xs text-text-muted">
                 {{ formatDate(release.release_date) }}
             </time>

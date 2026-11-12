@@ -171,7 +171,7 @@ const columns = [
     <Card title="Payroll register" icon="users" :description="isDraft ? 'Open a row to see and adjust that person’s pay.' : 'Open a row to see that person’s pay, or their payslip.'">
         <DataTable :columns="columns" :rows="entries" :caption="`Payroll register, ${run.period}`" :export-name="`imis-payroll-${run.month}`" numbered>
             <template #cell-name="{ row }">
-                <button type="button" class="text-left font-medium text-text hover:text-primary" @click="openId = row.id">{{ row.name }}</button>
+                <button type="button" class="text-left font-medium text-text hover:text-link" @click="openId = row.id">{{ row.name }}</button>
                 <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.item_number"> · {{ row.item_number }}</template></div>
                 <div class="mt-0.5 flex flex-wrap gap-1">
                     <Badge v-if="row.cancelled" tone="danger">Cancelled</Badge>
@@ -198,7 +198,7 @@ const columns = [
     <Card v-if="leftOut.length" title="Not on this payroll" icon="exclamation" class="mt-6" description="In service, but not paid here. Fix the cause, then regenerate.">
         <ul class="divide-y divide-border text-sm">
             <li v-for="person in leftOut" :key="person.employee_id" class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-                <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
+                <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
                 <span class="text-text-muted">{{ person.reason }}</span>
             </li>
         </ul>

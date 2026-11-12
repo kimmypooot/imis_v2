@@ -19,7 +19,7 @@ const preview = computed(() => previewAccess(props.permissions, { superAdmin: pr
 
 <template>
     <div class="space-y-4 text-sm">
-        <p v-if="preview.superAdmin" class="rounded-md bg-warning-bg px-3 py-2 text-warning">
+        <p v-if="preview.superAdmin" class="rounded-md bg-warning-bg px-3 py-2 text-warning-fg">
             Super Administrator: every page and every action, whatever else is ticked.
         </p>
 
@@ -34,7 +34,7 @@ const preview = computed(() => previewAccess(props.permissions, { superAdmin: pr
             <h3 class="text-xs font-semibold tracking-wide text-text-muted uppercase">{{ area.area }}</h3>
             <ul class="mt-1.5 grid gap-1 sm:grid-cols-2">
                 <li v-for="page in area.pages" :key="page.href" class="flex items-center gap-2 text-text">
-                    <Icon name="check" size="sm" class="shrink-0 text-success" />
+                    <Icon name="check" size="sm" class="shrink-0 text-success-fg" />
                     {{ page.label }}
                 </li>
             </ul>

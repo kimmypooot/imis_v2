@@ -109,7 +109,7 @@ const demoRows = [
                 <p class="text-sm text-text">Body text — text-sm text-text</p>
                 <p class="text-sm text-text-muted">Supporting text — text-sm text-text-muted</p>
                 <p class="text-xs text-text-muted">Helper/label text — text-xs text-text-muted</p>
-                <p class="text-sm text-danger">Error text — text-sm text-danger</p>
+                <p class="text-sm text-danger-fg">Error text — text-sm text-danger-fg</p>
             </div>
         </Card>
 
@@ -325,9 +325,9 @@ const demoRows = [
                 <StatusBadge status="expired" />
                 <StatusBadge status="inactive" label="Ended by Admin" />
                 <StatusBadge status="draft" />
-                <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success">Active</span>
+                <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success-fg">Active</span>
                 <span class="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-text-muted">Idle</span>
-                <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">New</span>
+                <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-link">New</span>
             </div>
         </Card>
 
@@ -349,7 +349,7 @@ const demoRows = [
                     <div>{{ timeAgo(row.at) }}</div>
                     <span
                         class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium"
-                        :class="row.active ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted'"
+                        :class="row.active ? 'bg-success-bg text-success-fg' : 'bg-surface-muted text-text-muted'"
                     >{{ row.active ? 'Active' : 'Idle' }}</span>
                 </template>
             </DataTable>

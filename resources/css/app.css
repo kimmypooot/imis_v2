@@ -106,6 +106,16 @@
     --color-text-muted: #5a5d70;
     --color-focus-ring: var(--color-csc-blue);
 
+    /* Colors for *text* (and icons) in each hue. In the light theme they are
+       the same as the fill colors; the dark theme makes them lighter so text
+       stays readable while fills (buttons, with white text) stay dark enough.
+       Use `text-link` / `text-success-fg`… for text, `bg-primary`… for fills. */
+    --color-link: var(--color-primary);
+    --color-success-fg: var(--color-success);
+    --color-warning-fg: var(--color-warning);
+    --color-danger-fg: var(--color-danger);
+    --color-info-fg: var(--color-info);
+
     /* Semantic feedback colors — used by Alert/Badge/status components so
        every part of the UI agrees on what "success"/"danger"/etc. look
        like, instead of each component picking its own shade. */
@@ -165,6 +175,46 @@
 
     /* Motion: one easing curve for UI transitions. */
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
+ * Dark theme: set `data-theme="dark"` on <html> (see useTheme and the inline
+ * script in app.blade.php). Only the tokens change, so every component follows.
+ * Fills (primary, success, warning, danger) keep white text at AA contrast; the
+ * `-fg` tokens carry the light text colors. Screen only: printing stays light.
+ */
+@media not print {
+    :root[data-theme='dark'] {
+        color-scheme: dark;
+
+        --color-surface: #181b29;
+        --color-surface-muted: #0f111a;
+        --color-border: #2b2f42;
+        --color-border-strong: #7d819a;
+        --color-text: #e8e9f1;
+        --color-text-muted: #a9acc0;
+        --color-focus-ring: #9aa4ff;
+
+        --color-primary: #5a65dc;
+        --color-primary-hover: #4b56cc;
+        --color-link: #9aa4ff;
+
+        --color-success-fg: #4ade80;
+        --color-success-bg: #12281d;
+        --color-success-border: #1f5c3a;
+        --color-warning-fg: #fbbf24;
+        --color-warning-bg: #2b2210;
+        --color-warning-border: #5c4713;
+        --color-danger-fg: #ff8a93;
+        --color-danger-bg: #2f161a;
+        --color-danger-border: #6b2a31;
+        --color-info-fg: #9aa4ff;
+        --color-info-bg: #1f2447;
+        --color-info-border: #343c7a;
+
+        --shadow-menu: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+        --shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    }
 }
 
 /* Stacking order for layers that float above the page. Numeric `z-10` to

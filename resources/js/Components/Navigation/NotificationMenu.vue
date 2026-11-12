@@ -174,12 +174,12 @@ onBeforeUnmount(() => {
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-border px-3 py-2">
                 <h2 class="flex items-center gap-2 text-compact font-semibold text-text">
                     Notifications
-                    <span v-if="count" class="rounded-full bg-info-bg px-2 py-0.5 text-2xs font-medium text-primary">{{ badge }} new</span>
+                    <span v-if="count" class="rounded-full bg-info-bg px-2 py-0.5 text-2xs font-medium text-link">{{ badge }} new</span>
                 </h2>
                 <button
                     v-if="count"
                     type="button"
-                    class="rounded-sm text-xs text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    class="rounded-sm text-xs text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     @click="markAllRead"
                 >Mark all as read</button>
             </div>
@@ -196,7 +196,7 @@ onBeforeUnmount(() => {
                     </div>
                     <span class="sr-only">Loading…</span>
                 </div>
-                <p v-else-if="failed" class="px-3 py-6 text-center text-sm text-danger">Couldn't load notifications. Try again.</p>
+                <p v-else-if="failed" class="px-3 py-6 text-center text-sm text-danger-fg">Couldn't load notifications. Try again.</p>
                 <p v-else-if="!items.length" class="px-3 py-6 text-center text-xs text-text-muted">You're all caught up.</p>
                 <div v-else>
                     <section v-for="group in groups" :key="group.label" :aria-label="group.label">
@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
                                 >
                                     <span
                                         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                                        :class="item.read ? 'bg-surface-muted text-text-muted' : 'bg-info-bg text-primary'"
+                                        :class="item.read ? 'bg-surface-muted text-text-muted' : 'bg-info-bg text-link'"
                                         aria-hidden="true"
                                     >
                                         <Icon :name="iconFor(item)" size="sm" />
@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
 
             <Link
                 href="/notifications"
-                class="shrink-0 rounded-b-md border-t border-border px-3 py-2 text-center text-xs font-medium text-primary hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+                class="shrink-0 rounded-b-md border-t border-border px-3 py-2 text-center text-xs font-medium text-link hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
                 @click="close"
             >Show all notifications</Link>
         </div>

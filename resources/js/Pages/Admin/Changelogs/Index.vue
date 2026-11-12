@@ -168,9 +168,9 @@ const columns = [
                             </div>
                             <InputError :message="form.errors[`items.${index}.description`] || form.errors[`items.${index}.type`]" />
                             <div class="mt-1 flex justify-end gap-3 text-xs">
-                                <button type="button" class="text-primary disabled:text-text-muted" :disabled="index === 0" @click="moveItem(index, -1)">Up</button>
-                                <button type="button" class="text-primary disabled:text-text-muted" :disabled="index === form.items.length - 1" @click="moveItem(index, 1)">Down</button>
-                                <button type="button" class="text-danger disabled:text-text-muted" :disabled="form.items.length === 1" @click="removeItem(index)">Remove</button>
+                                <button type="button" class="text-link disabled:text-text-muted" :disabled="index === 0" @click="moveItem(index, -1)">Up</button>
+                                <button type="button" class="text-link disabled:text-text-muted" :disabled="index === form.items.length - 1" @click="moveItem(index, 1)">Down</button>
+                                <button type="button" class="text-danger-fg disabled:text-text-muted" :disabled="form.items.length === 1" @click="removeItem(index)">Remove</button>
                             </div>
                         </li>
                     </ol>
@@ -181,7 +181,7 @@ const columns = [
                 <div class="flex flex-wrap items-center gap-2">
                     <Button type="submit" :variant="isEditing ? 'primary' : 'success'" :loading="form.processing">{{ isEditing ? 'Save changes' : 'Save draft' }}</Button>
                     <Button v-if="isEditing" variant="secondary" @click="cancelEdit">Cancel</Button>
-                    <button type="button" class="ml-auto text-sm text-primary hover:underline" :aria-expanded="showPreview" @click="showPreview = !showPreview">
+                    <button type="button" class="ml-auto text-sm text-link hover:underline" :aria-expanded="showPreview" @click="showPreview = !showPreview">
                         {{ showPreview ? 'Hide preview' : 'Preview' }}
                     </button>
                 </div>
@@ -194,7 +194,7 @@ const columns = [
         <Card title="Releases" icon="megaphone" :class="can('changelogs.manage') ? 'xl:col-span-7' : 'xl:col-span-12'">
             <DataTable :columns="columns" :rows="changelogs" caption="Releases" export-name="imis-changelog" :numbered="false">
                 <template #cell-version="{ row }">
-                    <span class="rounded-sm bg-info-bg px-2 py-0.5 font-mono text-xs text-primary">v{{ row.version }}</span>
+                    <span class="rounded-sm bg-info-bg px-2 py-0.5 font-mono text-xs text-link">v{{ row.version }}</span>
                 </template>
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">{{ row.title }}</div>

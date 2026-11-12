@@ -84,7 +84,7 @@ const remove = async () => {
                     {{ form.processing ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo' }}
                 </label>
                 <p class="text-xs text-text-muted">JPG, PNG or WebP. You can also drop a photo on the frame.</p>
-                <Button v-if="photoUrl" variant="link" class="block text-danger" @click="remove">Remove</Button>
+                <Button v-if="photoUrl" variant="link" class="block text-danger-fg" @click="remove">Remove</Button>
                 <InputError :message="form.errors.photo" />
             </div>
         </div>

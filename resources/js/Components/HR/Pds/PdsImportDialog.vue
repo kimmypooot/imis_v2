@@ -97,7 +97,7 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
                             type="checkbox"
                             :value="section.key"
                             :disabled="!importable(section)"
-                            class="mt-1 h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-focus-ring"
+                            class="mt-1 h-4 w-4 rounded-sm border-border-strong text-link focus:ring-focus-ring"
                         />
                         <span class="min-w-0 flex-1">
                             <span class="block text-sm font-medium text-text">{{ section.label }}</span>
@@ -115,7 +115,7 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
                         </span>
                     </label>
                     <details v-if="section.skipped_items?.length" class="mt-2 ml-7 text-xs text-text-muted">
-                        <summary class="cursor-pointer font-medium text-primary">See the {{ section.skipped }} left out</summary>
+                        <summary class="cursor-pointer font-medium text-link">See the {{ section.skipped }} left out</summary>
                         <ul class="mt-1 space-y-1">
                             <li v-for="item in section.skipped_items" :key="item.title">
                                 {{ item.title }}
@@ -123,7 +123,7 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
                             </li>
                         </ul>
                     </details>
-                    <ul v-if="section.errors.length" class="mt-2 ml-7 list-disc space-y-0.5 pl-4 text-xs text-danger">
+                    <ul v-if="section.errors.length" class="mt-2 ml-7 list-disc space-y-0.5 pl-4 text-xs text-danger-fg">
                         <li v-for="error in section.errors.slice(0, 5)" :key="error">{{ error }}</li>
                         <li v-if="section.errors.length > 5">…and {{ section.errors.length - 5 }} more. Fix them in the Excel file and upload it again.</li>
                     </ul>

@@ -143,7 +143,7 @@ const agencyLogos = computed(() => [
                             draggable="false"
                         />
                         <div>
-                            <p class="text-base leading-snug font-semibold text-primary">
+                            <p class="text-base leading-snug font-semibold text-link">
                                 Integrated Management Information System (IMIS)
                             </p>
                             <p class="text-xs text-text-muted">Civil Service Commission Regional Office VIII</p>
@@ -154,7 +154,7 @@ const agencyLogos = computed(() => [
 
                     <p class="mt-8 text-center text-xs text-text-muted">
                         CSC RO VIII &copy; {{ year }} ·
-                        <a href="/privacy" class="text-primary hover:underline">Privacy Notice</a>
+                        <a href="/privacy" class="text-link hover:underline">Privacy Notice</a>
                     </p>
                     </div>
                 </div>

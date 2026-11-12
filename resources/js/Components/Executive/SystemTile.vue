@@ -14,9 +14,9 @@ const props = defineProps({
 
 const state = computed(() => systemStates[props.system.state] ?? systemStates.waiting);
 const chip = {
-    success: 'bg-success-bg text-success',
-    warning: 'bg-warning-bg text-warning',
-    danger: 'bg-danger-bg text-danger',
+    success: 'bg-success-bg text-success-fg',
+    warning: 'bg-warning-bg text-warning-fg',
+    danger: 'bg-danger-bg text-danger-fg',
     neutral: 'bg-surface-muted text-text-muted',
 };
 </script>

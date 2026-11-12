@@ -102,7 +102,7 @@ const save = (changes) => {
     <Card title="Users" icon="users">
         <p v-if="hiddenInactive" class="mb-3 text-xs text-text-muted">
             {{ hiddenInactive }} inactive account{{ hiddenInactive === 1 ? ' is' : 's are' }} not listed.
-            <Link href="/users?status=inactive" class="font-medium text-primary hover:underline">View inactive accounts</Link>
+            <Link href="/users?status=inactive" class="font-medium text-link hover:underline">View inactive accounts</Link>
         </p>
         <DataTable :columns="columns" :rows="users" caption="Users and their system access" export-name="imis-user-access" :default-sort="{ key: 'name', direction: 'asc' }">
             <template #cell-name="{ row }">

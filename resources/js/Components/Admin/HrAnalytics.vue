@@ -30,9 +30,9 @@ const sexSegments = computed(() => [
 ]);
 
 const retirementKinds = {
-    past_compulsory: { label: 'Past compulsory age', classes: 'bg-danger-bg text-danger' },
-    compulsory: { label: 'Compulsory (65)', classes: 'bg-warning-bg text-warning' },
-    optional: { label: 'Optional (60)', classes: 'bg-info-bg text-primary' },
+    past_compulsory: { label: 'Past compulsory age', classes: 'bg-danger-bg text-danger-fg' },
+    compulsory: { label: 'Compulsory (65)', classes: 'bg-warning-bg text-warning-fg' },
+    optional: { label: 'Optional (60)', classes: 'bg-info-bg text-link' },
     // Already 60–64: may retire any time; dated at 65.
     eligible: { label: 'Eligible (60+)', classes: 'bg-surface-muted text-text-muted' },
 };
@@ -58,7 +58,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                 :progress="percent(hr.plantilla.filled, hr.plantilla.items)"
             >
                 {{ hr.plantilla.filled }} of {{ hr.plantilla.items }} items ·
-                <Link href="/admin/hr/staffing" class="font-semibold text-primary hover:underline">{{ hr.plantilla.vacant }} vacant</Link>
+                <Link href="/admin/hr/staffing" class="font-semibold text-link hover:underline">{{ hr.plantilla.vacant }} vacant</Link>
             </StatTile>
             <StatTile v-if="hr.leave" label="On leave today" :value="onLeaveToday" icon="calendar" tone="info">
                 {{ hr.leave.upcoming.length }} more in the next 14 days · {{ hr.leave.inReview }} in review
@@ -73,7 +73,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
             <Card title="Waiting on HR" :description="pendingTotal ? `${pendingTotal} to act on` : 'Nothing waiting'" icon="bell" class="xl:col-span-7">
                 <ul class="divide-y divide-border">
                     <li v-for="item in hr.pending" :key="item.href" class="flex items-center justify-between py-2 text-sm">
-                        <Link :href="item.href" class="font-medium text-primary hover:text-primary-hover">{{ item.label }}</Link>
+                        <Link :href="item.href" class="font-medium text-link hover:text-primary-hover">{{ item.label }}</Link>
                         <Badge pill :tone="item.count ? 'warning' : 'neutral'">
                             {{ item.count }}
                         </Badge>
@@ -88,7 +88,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <li v-if="hr.gaps.sex"><strong>{{ hr.gaps.sex }}</strong> without sex recorded</li>
                 </ul>
                 <p v-else class="text-sm text-text-muted">Every record has what these figures need.</p>
-                <Link href="/admin/hr/employees" class="mt-3 inline-block text-sm font-medium text-primary hover:underline">Go to employee records</Link>
+                <Link href="/admin/hr/employees" class="mt-3 inline-block text-sm font-medium text-link hover:underline">Go to employee records</Link>
             </Card>
         </div>
 
@@ -129,16 +129,16 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <li v-for="person in hr.birthdays" :key="person.employee_id" class="flex items-center gap-3 py-2 text-sm">
                         <span
                             class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg text-2xs leading-tight font-semibold"
-                            :class="person.in_days === 0 ? 'bg-primary text-white' : 'bg-info-bg text-primary'"
+                            :class="person.in_days === 0 ? 'bg-primary text-white' : 'bg-info-bg text-link'"
                         >
                             {{ shortDate(person.date).split(' ')[0] }}
                             <span class="text-sm">{{ shortDate(person.date).split(' ')[1] }}</span>
                         </span>
                         <div class="min-w-0 flex-1">
-                            <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
+                            <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
                             <div class="text-xs text-text-muted">{{ person.office || '—' }} · turns {{ person.turning }}</div>
                         </div>
-                        <span class="text-xs font-medium" :class="person.in_days === 0 ? 'text-primary' : 'text-text-muted'">{{ when(person.in_days) }}</span>
+                        <span class="text-xs font-medium" :class="person.in_days === 0 ? 'text-link' : 'text-text-muted'">{{ when(person.in_days) }}</span>
                     </li>
                 </ul>
             </Card>
@@ -161,7 +161,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                             </tr>
                             <tr v-for="person in hr.retirement.people" :key="person.employee_id">
                                 <td>
-                                    <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
+                                    <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
                                     <div class="text-xs text-text-muted">{{ person.position || '—' }} · age {{ person.age }}</div>
                                 </td>
                                 <td class="text-text-muted">{{ person.office || '—' }}</td>
@@ -183,10 +183,10 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <li v-if="!hr.leave.onLeaveToday.length && !hr.leave.upcoming.length" class="py-6 text-center text-text-muted">No approved leave today or in the next 14 days.</li>
                     <li v-for="item in [...hr.leave.onLeaveToday.map((row) => ({ ...row, today: true })), ...hr.leave.upcoming]" :key="item.id" class="flex items-center gap-3 py-2">
                         <div class="min-w-0 flex-1">
-                            <Link :href="`/admin/hr/employees/${item.employee_id}/leave`" class="font-medium text-text hover:text-primary">{{ item.name }}</Link>
+                            <Link :href="`/admin/hr/employees/${item.employee_id}/leave`" class="font-medium text-text hover:text-link">{{ item.name }}</Link>
                             <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                         </div>
-                        <span class="text-right text-xs whitespace-nowrap" :class="item.today ? 'font-semibold text-primary' : 'text-text-muted'">
+                        <span class="text-right text-xs whitespace-nowrap" :class="item.today ? 'font-semibold text-link' : 'text-text-muted'">
                             {{ item.today ? 'On leave · until ' : '' }}{{ item.today ? shortDate(item.date_to) : `${shortDate(item.date_from)} – ${shortDate(item.date_to)}` }}
                         </span>
                     </li>
@@ -195,7 +195,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
 
             <Card title="Recent leave applications" icon="clipboard" class="xl:col-span-7">
                 <template #actions>
-                    <Link href="/admin/hr/leave/applications" class="text-sm font-medium text-primary hover:text-primary-hover">All applications</Link>
+                    <Link href="/admin/hr/leave/applications" class="text-sm font-medium text-link hover:text-primary-hover">All applications</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
                     <table class="data-table" data-sticky>
@@ -243,7 +243,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                     <li v-else-if="!hr.loyalty.people.length" class="py-6 text-center text-text-muted">No milestones this year.</li>
                     <li v-for="person in hr.loyalty.people" :key="person.employee_id" class="flex items-center justify-between gap-3 py-2">
                         <div class="min-w-0">
-                            <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
+                            <Link :href="`/admin/hr/employees/${person.employee_id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
                             <div class="text-xs text-text-muted">{{ person.office || '—' }} · {{ formatCalendarDate(person.date) }}</div>
                         </div>
                         <Badge pill tone="success">{{ ordinal(person.years) }} year</Badge>
@@ -263,7 +263,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                         <dd class="font-semibold text-text">{{ hr.learning.trainings }} · {{ hr.learning.hours }}</dd>
                     </div>
                 </dl>
-                <Link href="/admin/hr/learning-development/dashboard" class="mt-3 inline-block text-sm font-medium text-primary hover:underline">L&D dashboard</Link>
+                <Link href="/admin/hr/learning-development/dashboard" class="mt-3 inline-block text-sm font-medium text-link hover:underline">L&D dashboard</Link>
             </Card>
         </div>
     </div>

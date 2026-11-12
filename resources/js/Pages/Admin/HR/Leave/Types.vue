@@ -161,7 +161,7 @@ const checks = [
                 <legend class="block text-sm font-medium text-text">Employment statuses (none ticked = everyone)</legend>
                 <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                     <label v-for="option in statusOptions" :key="option.value" class="inline-flex items-center gap-1.5 text-sm text-text">
-                        <input v-model="form.eligible_statuses" type="checkbox" :value="option.value" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.eligible_statuses" type="checkbox" :value="option.value" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                         {{ option.label }}
                     </label>
                 </div>
@@ -172,7 +172,7 @@ const checks = [
                 <legend class="sr-only">Rules</legend>
                 <div class="grid gap-2 sm:grid-cols-2">
                     <label v-for="[key, label] in checks" :key="key" class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form[key]" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form[key]" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                         {{ label }}
                     </label>
                 </div>

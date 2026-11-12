@@ -33,8 +33,8 @@ const badge = { submitted: 'info', verified: 'active', returned: 'inactive', sup
                     <p v-if="item.remarks" class="text-xs whitespace-pre-line text-text-muted">Remarks: {{ item.remarks }}</p>
                 </div>
                 <div class="flex shrink-0 gap-3 text-sm font-medium">
-                    <Link :href="viewUrl(item)" class="text-primary hover:underline">View</Link>
-                    <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-primary hover:underline">
+                    <Link :href="viewUrl(item)" class="text-link hover:underline">View</Link>
+                    <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-link hover:underline">
                         Print<span class="sr-only"> (opens in a new tab)</span>
                     </a>
                 </div>

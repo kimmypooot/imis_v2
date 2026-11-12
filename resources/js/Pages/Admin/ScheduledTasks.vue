@@ -66,7 +66,7 @@ const lastState = (task) => {
     />
 
     <section v-if="lastRun" class="mb-4 rounded-lg border p-4" :class="lastRun.ok ? 'border-success-border bg-success-bg' : 'border-danger-border bg-danger-bg'" aria-live="polite">
-        <h2 class="text-sm font-semibold" :class="lastRun.ok ? 'text-success' : 'text-danger'">
+        <h2 class="text-sm font-semibold" :class="lastRun.ok ? 'text-success-fg' : 'text-danger-fg'">
             {{ lastRun.task }} {{ lastRun.ok ? 'finished' : 'failed' }}
         </h2>
         <pre class="mt-2 max-h-48 overflow-auto text-xs whitespace-pre-wrap text-text">{{ lastRun.output }}</pre>
@@ -87,7 +87,7 @@ const lastState = (task) => {
                         <template v-if="!task.paused"> · next {{ formatDateTime(task.next_run) }}</template>
                         <template v-if="task.last_run"> · last ran {{ formatDateTime(task.last_run) }}</template>
                     </p>
-                    <p v-if="task.paused" class="text-xs text-warning">
+                    <p v-if="task.paused" class="text-xs text-warning-fg">
                         Paused {{ formatDateTime(task.paused.at) }}<template v-if="task.paused.by"> by {{ task.paused.by }}</template><template v-if="task.paused.reason">: {{ task.paused.reason }}</template>
                     </p>
                     <p v-if="task.manual" class="text-xs text-text-muted">

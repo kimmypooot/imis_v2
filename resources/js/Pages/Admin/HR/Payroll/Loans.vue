@@ -76,7 +76,7 @@ const columns = [
 
         <DataTable :columns="columns" :rows="rows" caption="Loans" :export-name="`imis-loans-${filter}`" empty-text="No loans here.">
             <template #cell-employee="{ row }">
-                <Link :href="`/admin/hr/payroll/profiles/${row.employee_id}`" class="font-medium text-text hover:text-primary">{{ row.employee }}</Link>
+                <Link :href="`/admin/hr/payroll/profiles/${row.employee_id}`" class="font-medium text-text hover:text-link">{{ row.employee }}</Link>
             </template>
             <template #cell-type="{ row }">
                 {{ row.type }}

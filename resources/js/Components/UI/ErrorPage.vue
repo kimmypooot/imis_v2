@@ -26,7 +26,7 @@ defineProps({
 <template>
     <div class="flex min-h-screen items-center justify-center bg-surface-muted px-4">
         <div class="w-full max-w-md rounded-lg border border-border bg-surface p-8 text-center shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wider text-danger">Error {{ code }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-danger-fg">Error {{ code }}</p>
             <h1 class="mt-2 text-xl font-semibold text-text">{{ title }}</h1>
             <p class="mt-2 text-sm text-text-muted">{{ message }}</p>
             <Button href="/dashboard" class="mt-6">Return to dashboard</Button>

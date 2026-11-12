@@ -42,7 +42,7 @@ const text = computed(() =>
                     Last verified {{ formatDateTime(status.last_verified_at) }}
                 </p>
                 <div v-if="status.state === 'returned' && status.latest?.remarks" class="mt-2 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-sm text-text">
-                    <p class="text-xs font-semibold text-danger uppercase">HR's remarks<template v-if="status.latest.reviewer"> — {{ status.latest.reviewer }}</template></p>
+                    <p class="text-xs font-semibold text-danger-fg uppercase">HR's remarks<template v-if="status.latest.reviewer"> — {{ status.latest.reviewer }}</template></p>
                     <p class="mt-1 whitespace-pre-line">{{ status.latest.remarks }}</p>
                 </div>
             </div>

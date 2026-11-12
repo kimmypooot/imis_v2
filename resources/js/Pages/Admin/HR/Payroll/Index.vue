@@ -82,11 +82,11 @@ const columns = [
         </StatTile>
         <StatTile label="Payslip requests" :value="requests.pending ?? 0" icon="clipboard" :tone="requests.pending ? 'warning' : 'primary'">
             waiting for the head of HRD ·
-            <Link href="/admin/hr/payroll/requests" class="font-semibold text-primary hover:underline">see all</Link>
+            <Link href="/admin/hr/payroll/requests" class="font-semibold text-link hover:underline">see all</Link>
         </StatTile>
         <StatTile label="Active loans" :value="loans.active" icon="key" tone="primary">
             {{ formatPeso(loans.balance) }} outstanding ·
-            <Link href="/admin/hr/payroll/loans" class="font-semibold text-primary hover:underline">see all</Link>
+            <Link href="/admin/hr/payroll/loans" class="font-semibold text-link hover:underline">see all</Link>
         </StatTile>
     </div>
 
@@ -94,7 +94,7 @@ const columns = [
         <Card title="Payrolls" icon="database" class="xl:col-span-2">
             <DataTable :columns="columns" :rows="runs" caption="Monthly payrolls" export-name="imis-payrolls" :searchable="false" empty-text="No payrolls yet.">
                 <template #cell-period="{ row }">
-                    <Link :href="`/admin/hr/payroll/runs/${row.id}`" class="font-medium text-text hover:text-primary">{{ row.period }}</Link>
+                    <Link :href="`/admin/hr/payroll/runs/${row.id}`" class="font-medium text-text hover:text-link">{{ row.period }}</Link>
                 </template>
                 <template #cell-status="{ row }"><StatusBadge :status="row.status === 'finalized' ? 'active' : 'draft'" :label="row.status_label" /></template>
                 <template #cell-people="{ row }"><span class="tabular-nums">{{ row.totals.people }}</span></template>
@@ -115,7 +115,7 @@ const columns = [
                 <ul v-if="loans.nearlyPaid.length" class="divide-y divide-border text-sm">
                     <li v-for="loan in loans.nearlyPaid" :key="loan.id" class="flex items-start justify-between gap-3 py-2">
                         <div class="min-w-0">
-                            <Link :href="`/admin/hr/payroll/profiles/${loan.employee_id}`" class="font-medium text-text hover:text-primary">{{ loan.employee }}</Link>
+                            <Link :href="`/admin/hr/payroll/profiles/${loan.employee_id}`" class="font-medium text-text hover:text-link">{{ loan.employee }}</Link>
                             <div class="text-xs text-text-muted">{{ loan.type }}<template v-if="loan.reference"> · {{ loan.reference }}</template></div>
                         </div>
                         <div class="text-right text-xs whitespace-nowrap">
@@ -131,7 +131,7 @@ const columns = [
                 <p class="text-sm text-text">
                     Requests go to the head of the Human Resource Division:
                     <strong v-if="approvers.length">{{ approvers.join(', ') }}</strong>
-                    <span v-else class="text-danger">no one at the moment</span>.
+                    <span v-else class="text-danger-fg">no one at the moment</span>.
                 </p>
                 <p class="mt-2 text-xs text-text-muted">
                     That is whoever holds the Chief HRS item at HRD, plus anyone designated head of HRD while the designation runs

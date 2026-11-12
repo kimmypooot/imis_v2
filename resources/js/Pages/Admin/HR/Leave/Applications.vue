@@ -58,7 +58,7 @@ const columns = [
     <Card :title="`Applications — ${filters.year}`" icon="clipboard">
         <DataTable :columns="columns" :rows="applications" caption="Leave applications" :export-name="`imis-leave-applications-${filters.year}`" empty-text="No applications.">
             <template #cell-reference_number="{ row }">
-                <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
+                <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
             </template>
             <template #cell-name="{ row }">
                 {{ row.name }}

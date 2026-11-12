@@ -37,7 +37,7 @@ const period = (row) => `${row.date_from ? formatCalendarDate(row.date_from) : '
                 <tbody>
                     <tr v-for="row in periods" :key="row.id">
                         <td class="align-top">
-                            <Link v-if="linkItems" :href="`/admin/hr/plantilla/${row.item_id}`" class="font-medium text-primary hover:underline">{{ row.item_number || 'No item no.' }}</Link>
+                            <Link v-if="linkItems" :href="`/admin/hr/plantilla/${row.item_id}`" class="font-medium text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link>
                             <span v-else class="font-medium text-text">{{ row.item_number || 'No item no.' }}</span>
                         </td>
                         <td class="align-top text-text">

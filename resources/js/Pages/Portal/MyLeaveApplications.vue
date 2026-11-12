@@ -39,10 +39,10 @@ const filter = ref('all');
 const count = (key) => props.applications.filter(matches[key]).length;
 
 const stats = computed(() => [
-    { key: 'all', label: 'Filed', icon: 'clipboard', tile: 'bg-info-bg text-primary' },
-    { key: 'pending', label: 'For review', icon: 'clock', tile: 'bg-warning-bg text-warning' },
-    { key: 'returned', label: 'Needs correction', icon: 'exclamation', tile: 'bg-danger-bg text-danger' },
-    { key: 'approved', label: 'Approved', icon: 'check', tile: 'bg-success-bg text-success' },
+    { key: 'all', label: 'Filed', icon: 'clipboard', tile: 'bg-info-bg text-link' },
+    { key: 'pending', label: 'For review', icon: 'clock', tile: 'bg-warning-bg text-warning-fg' },
+    { key: 'returned', label: 'Needs correction', icon: 'exclamation', tile: 'bg-danger-bg text-danger-fg' },
+    { key: 'approved', label: 'Approved', icon: 'check', tile: 'bg-success-bg text-success-fg' },
 ].map((stat) => ({ ...stat, value: count(stat.key) })));
 
 const rows = computed(() => props.applications.filter(matches[filter.value]));
@@ -85,7 +85,7 @@ const rows = computed(() => props.applications.filter(matches[filter.value]));
         <Card title="Applications" icon="clipboard">
             <DataTable :columns="columns" :rows="rows" caption="My leave applications" export-name="imis-my-leave-applications" :empty-text="applications.length ? 'None match this filter.' : 'You haven\'t filed any leave yet.'">
                 <template #cell-reference_number="{ row }">
-                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
+                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
                 </template>
                 <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>

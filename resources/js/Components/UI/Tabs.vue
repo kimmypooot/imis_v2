@@ -50,7 +50,7 @@ const onKeydown = (event, index) => {
                 :aria-controls="`${id}-panel-${tab.key}`"
                 :tabindex="tab.key === modelValue ? 0 : -1"
                 class="-mb-px flex shrink-0 items-center gap-1.5 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="tab.key === modelValue ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:border-border-strong/40 hover:text-text'"
+                :class="tab.key === modelValue ? 'border-primary text-link' : 'border-transparent text-text-muted hover:border-border-strong/40 hover:text-text'"
                 @click="select(tab.key)"
                 @keydown="onKeydown($event, index)"
             >

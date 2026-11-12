@@ -122,7 +122,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
         </p>
 
         <section v-if="newKey" class="rounded-lg border border-warning-border bg-warning-bg p-4" aria-live="polite">
-            <h2 class="text-sm font-semibold text-warning">New key for {{ newKey.name }} — copy it now</h2>
+            <h2 class="text-sm font-semibold text-warning-fg">New key for {{ newKey.name }} — copy it now</h2>
             <p class="mt-1 text-sm text-text">
                 It won't be shown again. Put it in {{ newKey.name }}'s settings (<code>IMIS_FEED_KEY</code> in its <code>.env</code>), as
                 described in <code>docs/executive-feed.md</code>.
@@ -177,7 +177,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
                             <template v-if="feed.last">
                                 <Badge :tone="feedTones[feed.last.status] ?? 'neutral'">{{ feed.last.status === 'ok' ? 'Received' : 'Failed' }}</Badge>
                                 <p class="mt-1 text-xs text-text-muted">{{ formatAge(feed.last.at) }}</p>
-                                <p v-if="feed.last.error" class="mt-1 max-w-xs text-xs text-danger">{{ feed.last.error }}</p>
+                                <p v-if="feed.last.error" class="mt-1 max-w-xs text-xs text-danger-fg">{{ feed.last.error }}</p>
                             </template>
                             <span v-else class="text-xs text-text-muted">{{ feed.feed_url ? 'Not collected yet' : 'Not connected' }}</span>
                         </td>
@@ -278,7 +278,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
         </Card>
 
         <p class="text-sm">
-            <Link href="/executive" class="text-primary hover:underline">Back to the Executive Dashboard</Link>
+            <Link href="/executive" class="text-link hover:underline">Back to the Executive Dashboard</Link>
         </p>
     </div>
 </template>

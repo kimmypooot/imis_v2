@@ -21,7 +21,7 @@ const kind = (mime) => (mime === 'application/pdf' ? 'PDF' : 'Image');
     <p v-if="documents.length === 0" class="rounded-md bg-surface-muted px-4 py-6 text-center text-sm text-text-muted">{{ empty }}</p>
     <ul v-else class="divide-y divide-border">
         <li v-for="document in documents" :key="document.id" class="flex flex-wrap items-start gap-3 py-3 first:pt-0 last:pb-0" :class="{ 'opacity-70': document.archived_at }">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                 <Icon :name="document.mime_type === 'application/pdf' ? 'clipboard' : 'camera'" size="sm" />
             </span>
             <div class="min-w-0 flex-1">
@@ -35,15 +35,15 @@ const kind = (mime) => (mime === 'application/pdf' ? 'PDF' : 'Image');
                     {{ kind(document.mime_type) }}, {{ size(document.size) }} · Added {{ formatDateTime(document.uploaded_at) }}<template v-if="document.uploaded_by"> by {{ document.uploaded_by }}</template>
                 </p>
                 <p v-if="document.remarks" class="mt-0.5 text-xs whitespace-pre-line text-text-muted">{{ document.remarks }}</p>
-                <p v-if="document.archived_at" class="mt-0.5 text-xs text-danger">
+                <p v-if="document.archived_at" class="mt-0.5 text-xs text-danger-fg">
                     Archived {{ formatDateTime(document.archived_at) }}<template v-if="document.archived_by"> by {{ document.archived_by }}</template>: {{ document.archive_reason }}
                 </p>
             </div>
             <div class="flex shrink-0 flex-wrap items-center gap-3 text-sm font-medium">
-                <a :href="`/hr/documents/${document.id}`" target="_blank" rel="noopener" class="text-primary hover:underline">
+                <a :href="`/hr/documents/${document.id}`" target="_blank" rel="noopener" class="text-link hover:underline">
                     Open<span class="sr-only"> {{ document.type_label }} (opens in a new tab)</span>
                 </a>
-                <a :href="`/hr/documents/${document.id}/download`" class="text-primary hover:underline">
+                <a :href="`/hr/documents/${document.id}/download`" class="text-link hover:underline">
                     Download<span class="sr-only"> {{ document.type_label }}</span>
                 </a>
                 <slot name="actions" :document="document" />

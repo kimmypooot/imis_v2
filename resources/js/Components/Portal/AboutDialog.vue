@@ -75,7 +75,7 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
                 <h3 class="text-sm font-semibold text-text">What you can do</h3>
                 <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <li v-for="feature in features" :key="feature.title" class="flex gap-3 rounded-lg border border-border p-3">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                             <Icon :name="feature.icon" size="sm" />
                         </span>
                         <span>

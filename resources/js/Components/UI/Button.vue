@@ -57,12 +57,12 @@ const variantClasses = {
     primary: 'bg-primary text-white shadow-sm hover:bg-primary-hover hover:shadow',
     secondary: 'border border-border bg-surface text-text hover:bg-surface-muted',
     // Toolbar actions (Refresh, Export): quieter than primary, still branded.
-    outline: 'border border-primary/40 bg-surface text-primary hover:bg-primary hover:text-white',
+    outline: 'border border-primary/40 bg-surface text-link hover:bg-primary hover:text-white',
     danger: 'bg-danger text-white shadow-sm hover:bg-danger-hover hover:shadow',
     // Legacy "Add …" / "Save" actions were green.
     success: 'bg-success text-white shadow-sm hover:bg-success-hover hover:shadow',
     ghost: 'text-text hover:bg-surface-muted',
-    link: 'text-primary hover:text-primary-hover underline-offset-2 hover:underline',
+    link: 'text-link hover:text-primary-hover underline-offset-2 hover:underline',
 };
 
 const sizeClasses = computed(() => {

@@ -135,7 +135,7 @@ const visible = computed(() =>
                     <button
                         type="button"
                         class="-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
-                        :class="activeStatus === tab.key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:border-border-strong hover:text-text'"
+                        :class="activeStatus === tab.key ? 'border-primary text-link' : 'border-transparent text-text-muted hover:border-border-strong hover:text-text'"
                         :aria-pressed="activeStatus === tab.key"
                         @click="selectStatus(tab.key)"
                     >

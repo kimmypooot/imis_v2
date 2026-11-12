@@ -118,7 +118,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                         </div>
                         <div class="text-right">
                             <StatusBadge :status="tones[row.status]" :label="row.status" />
-                            <button v-if="row.status === 'pending'" type="button" class="mt-1 block text-xs text-danger hover:underline" @click="cancel(row)">Cancel</button>
+                            <button v-if="row.status === 'pending'" type="button" class="mt-1 block text-xs text-danger-fg hover:underline" @click="cancel(row)">Cancel</button>
                         </div>
                     </li>
                 </ul>
@@ -134,7 +134,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
                         </div>
                         <div class="text-right">
                             <StatusBadge :status="row.status === 'acknowledged' ? 'active' : 'warning'" :label="row.status === 'acknowledged' ? 'Acknowledged' : 'Submitted'" />
-                            <button v-if="row.status !== 'acknowledged'" type="button" class="mt-1 block text-xs text-primary hover:underline" @click="editReport(row)">Edit</button>
+                            <button v-if="row.status !== 'acknowledged'" type="button" class="mt-1 block text-xs text-link hover:underline" @click="editReport(row)">Edit</button>
                         </div>
                     </li>
                 </ul>

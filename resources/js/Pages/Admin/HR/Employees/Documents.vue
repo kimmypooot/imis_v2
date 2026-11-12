@@ -78,17 +78,17 @@ const breadcrumbs = computed(() => [
         <Card title="Documents" icon="clipboard" :description="`${active.length} current`">
             <template v-if="archived.length" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showArchived" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                     Show archived ({{ archived.length }})
                 </label>
             </template>
 
             <DocumentList :documents="showArchived ? [...active, ...archived] : active" empty="No documents in this 201 file yet.">
                 <template v-if="canManage" #actions="{ document }">
-                    <button v-if="!document.archived_at" type="button" class="text-danger hover:underline" @click="openArchive(document)">
+                    <button v-if="!document.archived_at" type="button" class="text-danger-fg hover:underline" @click="openArchive(document)">
                         Archive<span class="sr-only"> {{ document.type_label }}</span>
                     </button>
-                    <button v-else type="button" class="text-success hover:underline" @click="restore(document)">
+                    <button v-else type="button" class="text-success-fg hover:underline" @click="restore(document)">
                         Restore<span class="sr-only"> {{ document.type_label }}</span>
                     </button>
                 </template>
@@ -101,8 +101,8 @@ const breadcrumbs = computed(() => [
                 <li v-for="item in pdsHistory" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
                     <span class="text-text">Signed {{ formatDateTime(item.signed_at) }} · verified by {{ item.reviewer }} on {{ formatDateTime(item.reviewed_at) }}</span>
                     <span class="flex gap-3 font-medium">
-                        <Link :href="`/admin/hr/pds-verifications/${item.id}`" class="text-primary hover:underline">View</Link>
-                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-primary hover:underline">
+                        <Link :href="`/admin/hr/pds-verifications/${item.id}`" class="text-link hover:underline">View</Link>
+                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-link hover:underline">
                             Print<span class="sr-only"> (opens in a new tab)</span>
                         </a>
                     </span>

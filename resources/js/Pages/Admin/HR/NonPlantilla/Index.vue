@@ -124,7 +124,7 @@ const remove = async (contract) => {
     <div class="space-y-6">
         <p class="text-sm text-text-muted">
             Casual and contractual appointees, Job Order and Contract of Service workers. They hold no plantilla item, so they're kept here instead of on the
-            <Link href="/admin/hr/plantilla" class="font-medium text-primary hover:underline">Plantilla</Link>.
+            <Link href="/admin/hr/plantilla" class="font-medium text-link hover:underline">Plantilla</Link>.
         </p>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -153,14 +153,14 @@ const remove = async (contract) => {
 
             <DataTable :columns="columns" :rows="shown" caption="Non-plantilla personnel" :export-name="`imis-non-plantilla-${status}`" empty-text="No one here.">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-designation="{ row }">{{ row.designation || '—' }}</template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-period="{ row }">
                     <template v-if="row.contract">
                         {{ period(row.contract) }}
-                        <div v-if="row.state === 'expiring'" class="text-xs text-warning">{{ row.days_left }} {{ row.days_left === 1 ? 'day' : 'days' }} left</div>
+                        <div v-if="row.state === 'expiring'" class="text-xs text-warning-fg">{{ row.days_left }} {{ row.days_left === 1 ? 'day' : 'days' }} left</div>
                     </template>
                     <span v-else class="text-text-muted">—</span>
                 </template>

@@ -78,7 +78,7 @@ const groups = computed(() =>
                     >
                         <span
                             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                            :class="notification.read ? 'bg-surface-muted text-text-muted' : 'bg-info-bg text-primary'"
+                            :class="notification.read ? 'bg-surface-muted text-text-muted' : 'bg-info-bg text-link'"
                             aria-hidden="true"
                         >
                             <Icon :name="iconFor(notification)" />
@@ -102,13 +102,13 @@ const groups = computed(() =>
         <Card v-if="!groups.length">
             <EmptyState icon="check" title="You're all caught up" description="No unread notifications.">
                 <template #action>
-                    <button type="button" class="text-sm font-medium text-primary hover:underline" @click="filter = 'all'">Show all notifications</button>
+                    <button type="button" class="text-sm font-medium text-link hover:underline" @click="filter = 'all'">Show all notifications</button>
                 </template>
             </EmptyState>
         </Card>
 
         <p class="text-center text-xs text-text-muted">
-            Want some by email too? <Link href="/account/notifications" class="text-primary hover:underline">Choose in notification settings</Link>.
+            Want some by email too? <Link href="/account/notifications" class="text-link hover:underline">Choose in notification settings</Link>.
         </p>
     </div>
 

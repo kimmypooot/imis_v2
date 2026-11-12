@@ -26,7 +26,7 @@ const isNew = computed(() => props.announcement.publish_at && Date.now() - new D
         class="group flex gap-3.5 rounded-lg border p-4 transition-colors duration-200 hover:border-primary/50 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         :class="announcement.featured ? 'border-info-border bg-info-bg/40' : 'border-border bg-surface'"
     >
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :class="announcement.featured ? 'bg-primary text-white' : 'bg-info-bg text-primary'" aria-hidden="true">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :class="announcement.featured ? 'bg-primary text-white' : 'bg-info-bg text-link'" aria-hidden="true">
             <Icon name="megaphone" />
         </span>
         <span class="min-w-0 flex-1">
@@ -35,11 +35,11 @@ const isNew = computed(() => props.announcement.publish_at && Date.now() - new D
                 <Badge v-if="isNew" tone="success">New</Badge>
                 <time :datetime="announcement.publish_at">{{ formatDate(announcement.publish_at) }}</time>
             </span>
-            <span class="mt-1 block font-medium text-text group-hover:text-primary">{{ announcement.title }}</span>
+            <span class="mt-1 block font-medium text-text group-hover:text-link">{{ announcement.title }}</span>
             <span v-if="announcement.summary" class="mt-1 line-clamp-2 block text-sm text-text-muted">
                 {{ announcement.summary }}
             </span>
-            <span class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+            <span class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-link">
                 Read more
                 <Icon name="arrowRight" size="xs" class="transition-transform group-hover:translate-x-0.5" />
             </span>

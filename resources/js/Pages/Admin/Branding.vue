@@ -58,7 +58,7 @@ const reset = async (asset) => {
 
     <p class="mb-4 text-sm text-text-muted">
         The name beside the logo is in
-        <Link href="/admin/settings" class="text-primary hover:underline">System Settings → General</Link>.
+        <Link href="/admin/settings" class="text-link hover:underline">System Settings → General</Link>.
     </p>
 
     <div class="grid gap-6 lg:grid-cols-3">

@@ -38,7 +38,7 @@ const columns = [
     <Card title="Staff in service" icon="users">
         <DataTable :columns="columns" :rows="employees" caption="Pay profiles" export-name="imis-pay-profiles" empty-text="No staff in service.">
             <template #cell-name="{ row }">
-                <Link :href="`/admin/hr/payroll/profiles/${row.id}`" class="font-medium text-text hover:text-primary">{{ row.name }}</Link>
+                <Link :href="`/admin/hr/payroll/profiles/${row.id}`" class="font-medium text-text hover:text-link">{{ row.name }}</Link>
             </template>
             <template #cell-position="{ row }">{{ row.position || '—' }}</template>
             <template #cell-items="{ row }"><span class="tabular-nums">{{ row.items }}</span></template>

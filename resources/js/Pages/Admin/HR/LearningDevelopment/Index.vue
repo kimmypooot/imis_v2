@@ -93,27 +93,27 @@ const columns = [
 
         <p v-if="pendingTotal" class="rounded-md border border-info-border bg-info-bg px-4 py-3 text-sm text-text">
             {{ pendingTotal }} {{ pendingTotal === 1 ? 'training is' : 'trainings are' }} waiting for review.
-            <Link href="/admin/hr/learning-development/reviews" class="font-medium text-primary hover:underline">Open the review queue</Link>
+            <Link href="/admin/hr/learning-development/reviews" class="font-medium text-link hover:underline">Open the review queue</Link>
         </p>
 
         <Card :title="`Employees — ${year}`" icon="users" description="Approved trainings only; pending ones are counted separately.">
             <template v-if="separatedCount" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                     Show separated ({{ separatedCount }})
                 </label>
             </template>
 
             <DataTable :columns="columns" :rows="shown" :caption="`L&D per employee, ${year}`" :export-name="`imis-ld-employees-${year}`">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.id}/learning-development?year=${year}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.id}/learning-development?year=${year}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                     <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
                     <div v-if="row.position" class="text-xs text-text-muted">{{ row.position }}</div>
                 </template>
                 <template #cell-unit="{ row }">{{ row.unit || '—' }}</template>
                 <template #cell-trainings="{ row }"><span class="tabular-nums" :class="row.trainings ? '' : 'text-text-muted'">{{ row.trainings }}</span></template>
                 <template #cell-hours="{ row }"><span class="tabular-nums" :class="row.hours ? '' : 'text-text-muted'">{{ hours(row.hours) }}</span></template>
-                <template #cell-pending="{ row }"><span class="tabular-nums" :class="row.pending ? 'font-medium text-info' : 'text-text-muted'">{{ row.pending }}</span></template>
+                <template #cell-pending="{ row }"><span class="tabular-nums" :class="row.pending ? 'font-medium text-info-fg' : 'text-text-muted'">{{ row.pending }}</span></template>
                 <template #cell-actions="{ row }">
                     <ActionButton icon="eye" tone="neutral" :label="`L&D log of ${row.name}`" :href="`/admin/hr/employees/${row.id}/learning-development?year=${year}`" />
                 </template>

@@ -71,7 +71,7 @@ const peopleError = computed(() => form.errors.employee_ids ?? Object.entries(fo
                         <input
                             type="checkbox"
                             :checked="allVisibleSelected"
-                            class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                            class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                             @change="selectAll($event.target.checked)"
                         />
                         Select all{{ search ? ' shown' : '' }}
@@ -93,7 +93,7 @@ const peopleError = computed(() => form.errors.employee_ids ?? Object.entries(fo
                                 v-model="form.employee_ids"
                                 type="checkbox"
                                 :value="employee.id"
-                                class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                                class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                             />
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-sm font-medium text-text">{{ employee.name }}</span>

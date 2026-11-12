@@ -21,7 +21,7 @@ defineProps({
                 <Link
                     v-if="item.href && index < items.length - 1"
                     :href="item.href"
-                    class="text-primary hover:text-primary-hover"
+                    class="text-link hover:text-primary-hover"
                 >
                     {{ item.label }}
                 </Link>

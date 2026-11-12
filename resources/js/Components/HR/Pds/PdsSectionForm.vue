@@ -56,8 +56,8 @@ const save = () =>
             <PdsFields :fields="section.fields" :values="form" :errors="form.errors" :id-prefix="`${id}-${section.key}`" :disabled="readonly" />
 
             <div v-if="!readonly" class="mt-4 flex items-center justify-end gap-3">
-                <span v-if="form.isDirty" class="text-xs text-warning">Unsaved changes</span>
-                <span v-else-if="form.recentlySuccessful" class="text-xs text-success" role="status">Saved</span>
+                <span v-if="form.isDirty" class="text-xs text-warning-fg">Unsaved changes</span>
+                <span v-else-if="form.recentlySuccessful" class="text-xs text-success-fg" role="status">Saved</span>
                 <Button type="submit" :loading="form.processing" :disabled="!form.isDirty">Save {{ section.label.replace(/^[\d.]+\s*/, '').toLowerCase() }}</Button>
             </div>
         </form>

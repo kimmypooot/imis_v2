@@ -40,10 +40,10 @@ const cancel = async (row) => {
 
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
 const summary = computed(() => [
-    { label: 'Vacation Leave', value: `${days(props.terms.vl)} days`, icon: 'calendar', tile: 'bg-info-bg text-primary' },
-    { label: 'Sick Leave', value: `${days(props.terms.sl)} days`, icon: 'calendar', tile: 'bg-info-bg text-primary' },
-    { label: 'You can monetize up to', value: `${days(props.terms.max_days)} days`, icon: 'check', tile: props.terms.max_days > 0 ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted' },
-    { label: 'Worth about', value: props.terms.daily_rate ? formatPeso(props.terms.daily_rate * props.terms.max_days) : '—', icon: 'database', tile: 'bg-warning-bg text-warning' },
+    { label: 'Vacation Leave', value: `${days(props.terms.vl)} days`, icon: 'calendar', tile: 'bg-info-bg text-link' },
+    { label: 'Sick Leave', value: `${days(props.terms.sl)} days`, icon: 'calendar', tile: 'bg-info-bg text-link' },
+    { label: 'You can monetize up to', value: `${days(props.terms.max_days)} days`, icon: 'check', tile: props.terms.max_days > 0 ? 'bg-success-bg text-success-fg' : 'bg-surface-muted text-text-muted' },
+    { label: 'Worth about', value: props.terms.daily_rate ? formatPeso(props.terms.daily_rate * props.terms.max_days) : '—', icon: 'database', tile: 'bg-warning-bg text-warning-fg' },
 ]);
 const tones = { pending: 'warning', approved: 'active', released: 'info', rejected: 'inactive', cancelled: 'logged_out' };
 
@@ -124,7 +124,7 @@ const columns = [
                 </template>
                 <template #cell-created_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.created_at) }}</span></template>
                 <template #cell-actions="{ row }">
-                    <button v-if="row.status === 'pending' && row.kind === 'partial'" type="button" class="text-sm text-danger hover:underline" @click="cancel(row)">Cancel</button>
+                    <button v-if="row.status === 'pending' && row.kind === 'partial'" type="button" class="text-sm text-danger-fg hover:underline" @click="cancel(row)">Cancel</button>
                 </template>
             </DataTable>
         </Card>

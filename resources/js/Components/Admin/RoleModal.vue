@@ -172,7 +172,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                             <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-text">
                                 <input
                                     type="checkbox"
-                                    class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-focus-ring"
+                                    class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-focus-ring"
                                     :checked="groupState(group) === 'all'"
                                     :indeterminate="groupState(group) === 'some'"
                                     @change="toggleGroup(group)"
@@ -196,10 +196,10 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
             </template>
 
             <template v-if="!isNew" #preview>
-                <p v-if="role.status === 'inactive'" class="mb-3 rounded-md bg-warning-bg px-3 py-2 text-sm text-warning">
+                <p v-if="role.status === 'inactive'" class="mb-3 rounded-md bg-warning-bg px-3 py-2 text-sm text-warning-fg">
                     This role is inactive, so it grants nothing to the people holding it. Below is what it opens once it's active.
                 </p>
-                <p v-if="permissionsForm.isDirty" class="mb-3 text-xs text-warning">Includes permission changes you haven't saved yet.</p>
+                <p v-if="permissionsForm.isDirty" class="mb-3 text-xs text-warning-fg">Includes permission changes you haven't saved yet.</p>
                 <AccessPreview :permissions="selectedNames" :super-admin="isSuperAdmin" :labels="permissionLabels" />
             </template>
         </Tabs>

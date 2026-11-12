@@ -56,6 +56,6 @@ const clear = () => {
             </select>
         </template>
         <Button type="submit" size="sm">Apply</Button>
-        <button v-if="from || to || extra" type="button" class="text-xs text-primary hover:underline" @click="clear">Clear</button>
+        <button v-if="from || to || extra" type="button" class="text-xs text-link hover:underline" @click="clear">Clear</button>
     </form>
 </template>

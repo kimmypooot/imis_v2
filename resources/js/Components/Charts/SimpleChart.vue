@@ -107,7 +107,7 @@ const empty = computed(() => props.values.every((value) => !value));
             <p v-if="empty" class="absolute inset-0 flex items-center justify-center text-sm text-text-muted">No data yet.</p>
         </div>
         <details class="mt-2 text-xs">
-            <summary class="cursor-pointer text-primary hover:underline">View as table</summary>
+            <summary class="cursor-pointer text-link hover:underline">View as table</summary>
             <table :id="`${id}-table`" class="mt-2 w-full">
                 <thead class="text-left text-text-muted">
                     <tr>

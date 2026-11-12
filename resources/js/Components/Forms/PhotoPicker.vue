@@ -87,7 +87,7 @@ defineExpose({ reset: clearPreview });
                 <UserAvatar :name="name || '?'" :photo-url="preview || photoUrl" size="xl" />
                 <span
                     class="absolute inset-0 flex flex-col items-center justify-center gap-0.5 rounded-full text-2xs font-semibold text-white transition-opacity duration-150 ease-standard motion-reduce:transition-none"
-                    :class="dragging ? 'bg-primary/85 opacity-100' : 'bg-text/55 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'"
+                    :class="dragging ? 'bg-primary/85 opacity-100' : 'bg-black/55 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'"
                     aria-hidden="true"
                 >
                     <Icon :name="dragging ? 'download' : 'camera'" size="md" />
@@ -107,7 +107,7 @@ defineExpose({ reset: clearPreview });
             {{ photoUrl || preview ? 'Change photo' : 'Choose photo' }}
         </Button>
         <p class="text-xs text-text-muted">or drag a photo onto the circle · JPG, PNG, or WebP · up to 5 MB</p>
-        <p v-if="error" :id="`${id}-error`" class="flex items-center gap-1 text-xs text-danger"><Icon name="exclamation" size="xs" />{{ error }}</p>
+        <p v-if="error" :id="`${id}-error`" class="flex items-center gap-1 text-xs text-danger-fg"><Icon name="exclamation" size="xs" />{{ error }}</p>
         <slot />
     </div>
 </template>

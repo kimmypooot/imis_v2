@@ -18,11 +18,11 @@ const alertRef = ref(null);
 let returnFocus = null;
 
 const icons = {
-    warning: { name: 'exclamation', ring: 'border-warning-border text-warning bg-warning-bg' },
-    success: { name: 'checkCircle', ring: 'border-success-border text-success bg-success-bg' },
-    error: { name: 'xCircle', ring: 'border-danger-border text-danger bg-danger-bg' },
-    info: { name: 'info', ring: 'border-info-border text-info bg-info-bg' },
-    question: { name: 'info', ring: 'border-info-border text-info bg-info-bg' },
+    warning: { name: 'exclamation', ring: 'border-warning-border text-warning-fg bg-warning-bg' },
+    success: { name: 'checkCircle', ring: 'border-success-border text-success-fg bg-success-bg' },
+    error: { name: 'xCircle', ring: 'border-danger-border text-danger-fg bg-danger-bg' },
+    info: { name: 'info', ring: 'border-info-border text-info-fg bg-info-bg' },
+    question: { name: 'info', ring: 'border-info-border text-info-fg bg-info-bg' },
 };
 
 const confirmTone = { primary: 'bg-primary hover:bg-primary-hover', danger: 'bg-danger hover:bg-accent-hover', success: 'bg-success hover:opacity-90' };
@@ -76,10 +76,10 @@ onBeforeUnmount(() => {
 
 // Each kind: a tinted icon badge and a short heading, so a toast reads at a glance.
 const toastStyles = {
-    success: { icon: 'checkCircle', title: 'Done', chip: 'bg-success-bg text-success' },
-    info: { icon: 'info', title: 'Notice', chip: 'bg-info-bg text-info' },
-    warning: { icon: 'exclamation', title: 'Heads up', chip: 'bg-warning-bg text-warning' },
-    error: { icon: 'xCircle', title: 'Something went wrong', chip: 'bg-danger-bg text-danger' },
+    success: { icon: 'checkCircle', title: 'Done', chip: 'bg-success-bg text-success-fg' },
+    info: { icon: 'info', title: 'Notice', chip: 'bg-info-bg text-info-fg' },
+    warning: { icon: 'exclamation', title: 'Heads up', chip: 'bg-warning-bg text-warning-fg' },
+    error: { icon: 'xCircle', title: 'Something went wrong', chip: 'bg-danger-bg text-danger-fg' },
 };
 </script>
 
@@ -88,7 +88,7 @@ const toastStyles = {
         <!-- Alert / confirm -->
         <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0 scale-95" leave-active-class="transition duration-100" leave-to-class="opacity-0">
             <div v-if="state.dialog" class="fixed inset-0 z-dialog flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-text/50" aria-hidden="true" @click="settle(false)" />
+                <div class="fixed inset-0 bg-black/50" aria-hidden="true" @click="settle(false)" />
                 <div
                     ref="alertRef"
                     role="alertdialog"

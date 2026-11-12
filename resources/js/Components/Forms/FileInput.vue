@@ -110,10 +110,10 @@ const extension = computed(() => (file.value ? (file.value.name.split('.').pop()
 // The icon chip is tinted by kind: spreadsheets green, PDFs red, the rest blue.
 const chipClass = computed(() => {
     const ext = extension.value.toLowerCase();
-    if (['xlsx', 'xls', 'csv'].includes(ext)) return 'bg-success-bg text-success';
-    if (ext === 'pdf') return 'bg-danger-bg text-danger';
+    if (['xlsx', 'xls', 'csv'].includes(ext)) return 'bg-success-bg text-success-fg';
+    if (ext === 'pdf') return 'bg-danger-bg text-danger-fg';
 
-    return 'bg-info-bg text-primary';
+    return 'bg-info-bg text-link';
 });
 
 const clearInput = () => {
@@ -216,14 +216,14 @@ const zoneClass = computed(() => {
         >
             <span
                 class="flex h-12 w-12 items-center justify-center rounded-full transition duration-150 ease-standard motion-reduce:transition-none"
-                :class="dragging ? 'scale-110 bg-primary text-white' : hasError ? 'bg-danger-bg text-danger' : 'bg-info-bg text-primary'"
+                :class="dragging ? 'scale-110 bg-primary text-white' : hasError ? 'bg-danger-bg text-danger-fg' : 'bg-info-bg text-link'"
                 aria-hidden="true"
             >
                 <Icon :name="dragging ? 'download' : 'upload'" size="lg" />
             </span>
             <span class="text-sm text-text">
-                <template v-if="dragging"><span class="font-semibold text-primary">Drop to attach</span></template>
-                <template v-else><span class="font-semibold text-primary">Choose a file</span> or drag and drop it here</template>
+                <template v-if="dragging"><span class="font-semibold text-link">Drop to attach</span></template>
+                <template v-else><span class="font-semibold text-link">Choose a file</span> or drag and drop it here</template>
             </span>
             <span v-if="hintText" :id="describedBy" class="text-xs text-text-muted">{{ hintText }}</span>
             <span v-else :id="describedBy" class="sr-only">No file chosen</span>
@@ -241,7 +241,7 @@ const zoneClass = computed(() => {
                 <p :id="describedBy" class="flex flex-wrap items-center gap-x-1.5 text-xs text-text-muted">
                     <span>{{ formatSize(file.size) }}</span>
                     <span aria-hidden="true">·</span>
-                    <span class="inline-flex items-center gap-1 font-medium text-success"><Icon name="checkCircle" size="xs" />Ready to upload</span>
+                    <span class="inline-flex items-center gap-1 font-medium text-success-fg"><Icon name="checkCircle" size="xs" />Ready to upload</span>
                 </p>
             </div>
 
@@ -256,7 +256,7 @@ const zoneClass = computed(() => {
                 <button
                     v-if="!disabled"
                     type="button"
-                    class="rounded-md p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-sm:min-h-10 max-sm:min-w-10"
+                    class="rounded-md p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-sm:min-h-10 max-sm:min-w-10"
                     :aria-label="`Remove ${file.name}`"
                     @click="remove"
                 >
@@ -265,7 +265,7 @@ const zoneClass = computed(() => {
             </div>
         </div>
 
-        <p v-if="rejection" role="alert" class="mt-2 flex items-start gap-1.5 text-xs text-danger">
+        <p v-if="rejection" role="alert" class="mt-2 flex items-start gap-1.5 text-xs text-danger-fg">
             <Icon name="exclamation" size="xs" class="mt-0.5 shrink-0" />
             {{ rejection }}
         </p>

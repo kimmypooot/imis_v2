@@ -23,7 +23,7 @@ const props = defineProps({
 const waitingSince = () => props.queue.map((row) => row.waiting_since);
 
 // How long something has waited: calm at first, then amber, then red.
-const ageClass = (iso) => (daysSince(iso) >= 7 ? "bg-danger-bg text-danger" : daysSince(iso) >= 3 ? "bg-warning-bg text-warning" : "bg-surface-muted text-text-muted");
+const ageClass = (iso) => (daysSince(iso) >= 7 ? "bg-danger-bg text-danger-fg" : daysSince(iso) >= 3 ? "bg-warning-bg text-warning-fg" : "bg-surface-muted text-text-muted");
 const ageLabel = (iso) => (daysSince(iso) === 0 ? "today" : `${daysSince(iso)} d`);
 
 const queueColumns = [
@@ -56,7 +56,7 @@ const recentColumns = [
         <Card :title="`Waiting for you (${queue.length})`" icon="checkCircle">
             <DataTable :columns="queueColumns" :rows="queue" caption="Leave applications waiting for you" export-name="imis-leave-queue" empty-text="Nothing is waiting for you.">
                 <template #cell-reference_number="{ row }">
-                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
+                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
                 </template>
                 <template #cell-name="{ row }">
                     {{ row.name }}
@@ -73,7 +73,7 @@ const recentColumns = [
         <Card v-if="recent.length" title="Recently acted on" icon="activity">
             <DataTable :columns="recentColumns" :rows="recent" caption="Leave applications you acted on" export-name="imis-leave-acted" :searchable="false">
                 <template #cell-reference_number="{ row }">
-                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-primary hover:underline">{{ row.reference_number }}</Link>
+                    <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
                 </template>
                 <template #cell-acted_at="{ row }"><span class="whitespace-nowrap">{{ row.acted_at ? formatDateTime(row.acted_at) : '—' }}</span></template>
             </DataTable>

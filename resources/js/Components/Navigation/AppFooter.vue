@@ -16,7 +16,7 @@ const signedIn = computed(() => Boolean(page.props.auth?.user));
 const year = new Date().getFullYear();
 
 const linkClass =
-    'rounded-sm text-xs text-text-muted transition-colors hover:text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+    'rounded-sm text-xs text-text-muted transition-colors hover:text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 </script>
 
 <template>

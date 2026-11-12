@@ -147,7 +147,7 @@ watch(selected, async (now, before) => {
                 <nav aria-label="Directory breadcrumb" class="text-sm text-text-muted">
                     <ol class="flex flex-wrap items-center gap-1.5">
                         <li>
-                            <button type="button" class="hover:text-primary" @click="back">Systems Directory</button>
+                            <button type="button" class="hover:text-link" @click="back">Systems Directory</button>
                         </li>
                         <li aria-hidden="true">/</li>
                         <li>{{ selected.category }}</li>
@@ -212,9 +212,9 @@ watch(selected, async (now, before) => {
             <!-- Typing a system's name: the systems themselves first, one click from launch. -->
             <div v-if="systemMatches.length" class="mb-10">
                 <h3 class="mb-4 flex items-center gap-2.5 text-xs font-bold tracking-widest text-text-muted uppercase">
-                    <span class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md bg-success-bg text-success" aria-hidden="true"><Icon name="grid" size="sm" /></span>
+                    <span class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md bg-success-bg text-success-fg" aria-hidden="true"><Icon name="grid" size="sm" /></span>
                     Systems
-                    <span class="shrink-0 rounded-full bg-success-bg px-2 py-px text-xs font-semibold tracking-normal text-success normal-case">{{ systemMatches.length }} found</span>
+                    <span class="shrink-0 rounded-full bg-success-bg px-2 py-px text-xs font-semibold tracking-normal text-success-fg normal-case">{{ systemMatches.length }} found</span>
                     <span class="h-px flex-1 bg-border" aria-hidden="true" />
                 </h3>
                 <ul class="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-6">
@@ -234,7 +234,7 @@ watch(selected, async (now, before) => {
                     <h3 class="mb-4 flex items-center gap-2.5 text-xs font-bold tracking-widest text-text-muted uppercase">
                         <span
                             class="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-md"
-                            :class="category.type === 'committee' ? 'bg-warning-bg text-warning' : 'bg-info-bg text-primary'"
+                            :class="category.type === 'committee' ? 'bg-warning-bg text-warning-fg' : 'bg-info-bg text-link'"
                             aria-hidden="true"
                         >
                             <Icon :name="icons[category.type]" size="sm" />
@@ -242,7 +242,7 @@ watch(selected, async (now, before) => {
                         {{ category.label }}
                         <span
                             v-if="category.type !== 'committee'"
-                            class="shrink-0 rounded-full bg-info-bg px-2 py-px text-xs font-semibold tracking-normal text-primary normal-case"
+                            class="shrink-0 rounded-full bg-info-bg px-2 py-px text-xs font-semibold tracking-normal text-link normal-case"
                         >
                             {{ category.divisions.length }} {{ category.divisions.length === 1 ? 'division' : 'divisions' }}
                             · {{ systemCount(category) }} {{ systemCount(category) === 1 ? 'system' : 'systems' }}
@@ -259,7 +259,7 @@ watch(selected, async (now, before) => {
                                 @click="open(division)"
                             >
                                 <span class="flex w-full gap-3.5 p-5">
-                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-info-bg text-primary" aria-hidden="true">
+                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-info-bg text-link" aria-hidden="true">
                                         <Icon :name="icons[division.type]" />
                                     </span>
                                     <span class="flex min-w-0 flex-1 flex-col gap-1 pt-1.5">

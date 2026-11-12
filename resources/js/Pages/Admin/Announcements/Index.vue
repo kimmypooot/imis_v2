@@ -96,7 +96,7 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
             </template>
             <p v-if="isEditing" class="mb-3 text-sm text-text-muted">
                 Editing <strong class="text-text">{{ current.title }}</strong>.
-                <button type="button" class="text-primary hover:underline" @click="cancelEdit">Cancel and create new instead</button>
+                <button type="button" class="text-link hover:underline" @click="cancelEdit">Cancel and create new instead</button>
             </p>
             <AnnouncementForm
                 :form="form"
@@ -121,7 +121,7 @@ const canWrite = computed(() => (isEditing.value ? can('announcements.update') :
                 <template #cell-title="{ row }">
                     <div class="font-medium text-text">
                         {{ row.title }}
-                        <span v-if="row.featured" class="ml-1 rounded-sm bg-info-bg px-1.5 text-xs text-primary">Featured</span>
+                        <span v-if="row.featured" class="ml-1 rounded-sm bg-info-bg px-1.5 text-xs text-link">Featured</span>
                     </div>
                     <div v-if="row.summary" class="line-clamp-2 max-w-md text-xs text-text-muted">{{ row.summary }}</div>
                     <div class="text-xs text-text-muted">{{ row.author }} · updated {{ formatDateTime(row.updated_at) }}</div>

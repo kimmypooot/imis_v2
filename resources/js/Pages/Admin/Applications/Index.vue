@@ -96,7 +96,7 @@ const toggleStatus = async (system) => {
         <DataTable :columns="columns" :rows="applications" caption="Registered systems" export-name="imis-systems">
             <template #cell-name="{ row }">
                 <div class="flex items-center gap-3">
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                         <Icon name="grid" size="sm" />
                     </span>
                     <div class="min-w-0">

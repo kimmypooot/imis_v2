@@ -17,9 +17,9 @@ defineProps({
 });
 
 const accents = {
-    primary: { chip: 'bg-info-bg text-primary', bar: 'bg-primary' },
-    success: { chip: 'bg-success-bg text-success', bar: 'bg-success' },
-    warning: { chip: 'bg-warning-bg text-warning', bar: 'bg-warning' },
+    primary: { chip: 'bg-info-bg text-link', bar: 'bg-primary' },
+    success: { chip: 'bg-success-bg text-success-fg', bar: 'bg-success' },
+    warning: { chip: 'bg-warning-bg text-warning-fg', bar: 'bg-warning' },
     info: { chip: 'bg-info-bg text-csc-blue-light', bar: 'bg-csc-blue-light' },
 };
 </script>

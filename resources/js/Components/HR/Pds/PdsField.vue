@@ -42,13 +42,13 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
                     type="radio"
                     :name="id"
                     :checked="modelValue === option.value"
-                    class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                    class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                     @change="emit('update:modelValue', option.value)"
                 />
                 {{ option.label }}
             </label>
         </div>
-        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger">{{ error }}</p>
+        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger-fg">{{ error }}</p>
     </fieldset>
 
     <!-- Checkbox -->
@@ -60,18 +60,18 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
                 :checked="!!modelValue"
                 :disabled="disabled"
                 :aria-describedby="describedBy"
-                class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                 @change="emit('update:modelValue', $event.target.checked)"
             />
             {{ field.label }}
         </label>
-        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger">{{ error }}</p>
+        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger-fg">{{ error }}</p>
     </div>
 
     <!-- Labelled input / select / textarea -->
     <div v-else>
         <label :for="id" class="block text-sm font-medium text-text">
-            {{ field.label }}<span v-if="field.required && !field.when" class="text-danger" aria-hidden="true"> *</span>
+            {{ field.label }}<span v-if="field.required && !field.when" class="text-danger-fg" aria-hidden="true"> *</span>
         </label>
 
         <select
@@ -127,6 +127,6 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
         </template>
 
         <p v-if="field.help && !error" :id="helpId" class="mt-1 text-xs text-text-muted">{{ field.help }}</p>
-        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger">{{ error }}</p>
+        <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger-fg">{{ error }}</p>
     </div>
 </template>

@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
     <div class="min-h-screen bg-surface-muted" @keydown="onKeydown">
         <a
             href="#main-content"
-            class="sr-only z-50 rounded-md bg-surface px-4 py-2 text-sm font-medium text-primary shadow-sm print:hidden focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-focus-ring"
+            class="sr-only z-50 rounded-md bg-surface px-4 py-2 text-sm font-medium text-link shadow-sm print:hidden focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-focus-ring"
         >
             Skip to main content
         </a>
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
             >
                 <img :src="brand.logo" alt="CSC" class="h-9 w-auto" />
                 <span class="hidden flex-col sm:flex">
-                    <span class="text-lg leading-tight font-semibold text-primary">{{ brand.header_name }}</span>
+                    <span class="text-lg leading-tight font-semibold text-link">{{ brand.header_name }}</span>
                     <span class="text-2xs leading-tight text-text-muted">Integrated Management Information System</span>
                 </span>
             </Link>
@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
         <!-- Overlay backdrop (below desktop width only) -->
         <div
             v-if="sidebarOpen && !isDesktop"
-            class="fixed inset-0 top-16 z-30 bg-text/50 print:hidden"
+            class="fixed inset-0 top-16 z-30 bg-black/50 print:hidden"
             aria-hidden="true"
             @click="setSidebar(false)"
         />
@@ -257,7 +257,7 @@ onBeforeUnmount(() => {
                 role="status"
                 class="flex items-start gap-2 border-b border-warning-border bg-warning-bg px-4 py-2 text-sm text-text sm:px-6 print:hidden"
             >
-                <Icon name="info" size="sm" class="mt-0.5 shrink-0 text-warning" />
+                <Icon name="info" size="sm" class="mt-0.5 shrink-0 text-warning-fg" />
                 <p class="whitespace-pre-line">{{ portalNotice }}</p>
             </div>
 

@@ -93,7 +93,7 @@ const columns = [
                 <Link
                     v-if="filters.month || filters.office"
                     :href="`/admin/hr/learning-development/report?year=${filters.year}`"
-                    class="pb-2 text-sm text-primary hover:underline"
+                    class="pb-2 text-sm text-link hover:underline"
                 >
                     Clear filters
                 </Link>
@@ -118,7 +118,7 @@ const columns = [
                 empty-text="No approved trainings for this period."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${filters.year}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${filters.year}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-hours="{ row }"><span class="tabular-nums">{{ hours(row.hours) }}</span></template>
                 <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }}</span></template>

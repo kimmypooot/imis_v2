@@ -72,7 +72,7 @@ const pages = computed(() => {
 @reference '../../../css/app.css';
 
 .pager-btn {
-    @apply inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-primary/40 hover:bg-info-bg hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-surface disabled:hover:text-text;
+    @apply inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-primary/40 hover:bg-info-bg hover:text-link focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-surface disabled:hover:text-text;
 }
 
 .pager-btn.is-current {

@@ -56,7 +56,7 @@ const rows = computed(() => (props.preview ? props.preview.rows.filter((row) => 
                 {{ result.created.length }} {{ result.created.length === 1 ? 'account' : 'accounts' }} created.
                 <template v-if="result.skipped.length">{{ result.skipped.length }} skipped because they no longer passed the checks.</template>
             </p>
-            <ul v-if="result.skipped.length" class="mt-2 list-disc pl-5 text-sm text-danger">
+            <ul v-if="result.skipped.length" class="mt-2 list-disc pl-5 text-sm text-danger-fg">
                 <li v-for="row in result.skipped" :key="row.line">Line {{ row.line }}: {{ row.errors.join(' ') }}</li>
             </ul>
             <template #footer>
@@ -126,11 +126,11 @@ const rows = computed(() => (props.preview ? props.preview.rows.filter((row) => 
                         <td>{{ row.office ?? '—' }}</td>
                         <td>{{ row.roles.join(', ') || '—' }}</td>
                         <td>
-                            <span v-if="!row.errors.length" class="inline-flex items-center gap-1 text-success">
+                            <span v-if="!row.errors.length" class="inline-flex items-center gap-1 text-success-fg">
                                 <Icon name="check" size="sm" />
                                 Ready
                             </span>
-                            <ul v-else class="space-y-0.5 text-xs text-danger">
+                            <ul v-else class="space-y-0.5 text-xs text-danger-fg">
                                 <li v-for="error in row.errors" :key="error">{{ error }}</li>
                             </ul>
                         </td>

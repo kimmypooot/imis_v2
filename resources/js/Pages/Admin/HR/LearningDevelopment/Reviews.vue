@@ -51,7 +51,7 @@ const approve = (row) => {
     <Card title="Awaiting Review" icon="checkCircle" description="Trainings employees added to their own logs. Check the certificate when there is one.">
         <DataTable :columns="columns" :rows="pending" caption="L&D entries awaiting review" export-name="imis-ld-reviews">
             <template #cell-employee="{ row }">
-                <Link v-if="canViewLogs" :href="`/admin/hr/employees/${row.employee.id}/learning-development`" class="font-medium text-primary hover:underline">{{ row.employee.name }}</Link>
+                <Link v-if="canViewLogs" :href="`/admin/hr/employees/${row.employee.id}/learning-development`" class="font-medium text-link hover:underline">{{ row.employee.name }}</Link>
                 <span v-else class="font-medium text-text">{{ row.employee.name }}</span>
                 <div class="text-xs text-text-muted">{{ [row.employee.position, row.employee.unit].filter(Boolean).join(' · ') || '—' }}</div>
             </template>
@@ -63,7 +63,7 @@ const approve = (row) => {
                     :href="`/hr/trainings/${row.id}/certificate`"
                     target="_blank"
                     rel="noopener"
-                    class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-link hover:underline"
                 >
                     <Icon name="clipboard" size="sm" />Certificate<span class="sr-only"> (opens in a new tab)</span>
                 </a>

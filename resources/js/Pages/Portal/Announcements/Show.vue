@@ -44,7 +44,7 @@ const readingMinutes = computed(() => {
         </article>
     </Card>
 
-    <Link href="/announcements" class="mt-4 inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+    <Link href="/announcements" class="mt-4 inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
         <Icon name="arrowRight" size="sm" class="rotate-180" />All announcements
     </Link>
 </template>

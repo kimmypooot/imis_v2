@@ -30,7 +30,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
         <!-- Row 1: metric cards -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile v-if="metrics.users" label="Total Users" :value="metrics.users.total" icon="users" tone="primary">
-                <span class="font-semibold text-success">{{ metrics.users.active }}</span> active ·
+                <span class="font-semibold text-success-fg">{{ metrics.users.active }}</span> active ·
                 {{ metrics.users.inactive }} inactive
             </StatTile>
             <StatTile
@@ -41,8 +41,8 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                 tone="success"
                 :progress="percent(metrics.systems.active, metrics.systems.total)"
             >
-                <span class="font-semibold text-success">{{ metrics.systems.active }}</span> active
-                <template v-if="metrics.systems.underMaintenance"> · <span class="text-warning">{{ metrics.systems.underMaintenance }}</span> in maintenance</template>
+                <span class="font-semibold text-success-fg">{{ metrics.systems.active }}</span> active
+                <template v-if="metrics.systems.underMaintenance"> · <span class="text-warning-fg">{{ metrics.systems.underMaintenance }}</span> in maintenance</template>
             </StatTile>
             <StatTile
                 v-if="metrics.access"
@@ -52,13 +52,13 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                 tone="primary"
                 :progress="percent(metrics.access.usersWithAccess, metrics.access.usersWithAccess + metrics.access.usersWithoutAccess)"
             >
-                <span class="font-semibold text-success">{{ metrics.access.usersWithAccess }}</span> people with access ·
+                <span class="font-semibold text-success-fg">{{ metrics.access.usersWithAccess }}</span> people with access ·
                 {{ metrics.access.usersWithoutAccess }} without
             </StatTile>
             <StatTile v-if="metrics.logins" label="Login Activity" :value="metrics.logins.today ?? '—'" icon="activity" tone="info">
                 logins today
                 <template v-if="metrics.logins.activeSessions !== null">
-                    · <Link href="/admin/sessions" class="font-semibold text-primary hover:underline">{{ metrics.logins.activeSessions }} active now</Link>
+                    · <Link href="/admin/sessions" class="font-semibold text-link hover:underline">{{ metrics.logins.activeSessions }} active now</Link>
                 </template>
             </StatTile>
         </div>
@@ -148,7 +148,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                 class="xl:col-span-7"
             >
                 <template v-if="can('applications.manage_access')" #actions>
-                    <Link href="/admin/user-access" class="text-sm font-medium text-primary hover:text-primary-hover">Assign access</Link>
+                    <Link href="/admin/user-access" class="text-sm font-medium text-link hover:text-primary-hover">Assign access</Link>
                 </template>
                 <div class="max-h-80 overflow-auto">
                     <table class="data-table" data-sticky>
@@ -166,7 +166,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                             </tr>
                             <tr v-for="person in dashboard.usersWithoutAccess.users" :key="person.id">
                                 <td>
-                                    <Link :href="`/admin/user-access?user=${person.id}`" class="font-medium text-text hover:text-primary">{{ person.name }}</Link>
+                                    <Link :href="`/admin/user-access?user=${person.id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
                                     <div class="text-xs text-text-muted">{{ person.position || '—' }}</div>
                                 </td>
                                 <td class="text-text-muted">{{ person.office || '—' }}</td>
@@ -182,7 +182,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
         <div class="grid gap-4 xl:grid-cols-12">
             <Card v-if="dashboard.recentActivity" title="Recent Admin Activity" icon="clipboard" class="xl:col-span-8">
                 <template #actions>
-                    <Link href="/admin/audit-logs" class="text-sm font-medium text-primary hover:text-primary-hover">View audit log</Link>
+                    <Link href="/admin/audit-logs" class="text-sm font-medium text-link hover:text-primary-hover">View audit log</Link>
                 </template>
                 <ul class="divide-y divide-border">
                     <li v-if="!dashboard.recentActivity.length" class="py-6 text-center text-sm text-text-muted">No activity yet.</li>
@@ -200,7 +200,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
             <Card title="Needs Attention" description="Inactive records" icon="exclamation" class="xl:col-span-4">
                 <ul v-if="attention.length" class="divide-y divide-border">
                     <li v-for="item in attention" :key="item.href" class="flex items-center justify-between py-2 text-sm">
-                        <Link :href="item.href" class="font-medium text-primary hover:text-primary-hover">{{ item.label }}</Link>
+                        <Link :href="item.href" class="font-medium text-link hover:text-primary-hover">{{ item.label }}</Link>
                         <Badge tone="warning">{{ item.inactiveCount }} inactive</Badge>
                     </li>
                 </ul>

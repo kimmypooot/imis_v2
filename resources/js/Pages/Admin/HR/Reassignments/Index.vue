@@ -100,7 +100,7 @@ const movementColumns = [
         <Card :title="`Stations as of ${formatCalendarDate(filters.as_of)}`" icon="building" description="Office from the reassignment history; details shown separately. Separated employees are left out.">
             <DataTable :columns="stationColumns" :rows="stations" row-key="employee_id" :caption="`Stations as of ${filters.as_of}`" :export-name="`imis-stations-${filters.as_of}`">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-detailed_to="{ row }">{{ row.detailed_to || '—' }}</template>
@@ -121,14 +121,14 @@ const movementColumns = [
             >
                 <template #cell-effective_date="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.effective_date) }}</span></template>
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 </template>
                 <template #cell-kind_label="{ row }"><StatusBadge :status="tones[row.kind]" :label="row.kind_label" /></template>
                 <template #cell-from_unit="{ row }">{{ row.from_unit || '—' }}</template>
                 <template #cell-end_date="{ row }"><span class="whitespace-nowrap">{{ row.end_date ? formatCalendarDate(row.end_date) : '—' }}</span></template>
                 <template #cell-order_number="{ row }">
                     {{ row.order_number || '—' }}
-                    <a v-if="row.scan" :href="row.scan.url" target="_blank" rel="noopener" class="ml-1 text-primary hover:underline">scan</a>
+                    <a v-if="row.scan" :href="row.scan.url" target="_blank" rel="noopener" class="ml-1 text-link hover:underline">scan</a>
                 </template>
                 <template #cell-order_date="{ row }"><span class="whitespace-nowrap">{{ row.order_date ? formatCalendarDate(row.order_date) : '—' }}</span></template>
             </DataTable>

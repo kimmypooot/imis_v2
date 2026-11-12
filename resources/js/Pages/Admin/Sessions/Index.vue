@@ -85,7 +85,7 @@ const forceLogoutAll = async (session) => {
                     <div class="min-w-0">
                         <div class="truncate font-medium text-text">
                             {{ row.user?.name }}
-                            <span v-if="row.is_current" class="ml-1 rounded-full bg-success-bg px-2 py-0.5 text-xs text-success">You</span>
+                            <span v-if="row.is_current" class="ml-1 rounded-full bg-success-bg px-2 py-0.5 text-xs text-success-fg">You</span>
                         </div>
                         <div class="truncate text-xs text-text-muted">@{{ row.user?.username }}</div>
                     </div>
@@ -101,7 +101,7 @@ const forceLogoutAll = async (session) => {
                 <div :title="formatDateTime(row.last_activity)">{{ timeAgo(row.last_activity) }}</div>
                 <span
                     class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="row.is_active ? 'bg-success-bg text-success' : 'bg-surface-muted text-text-muted'"
+                    :class="row.is_active ? 'bg-success-bg text-success-fg' : 'bg-surface-muted text-text-muted'"
                 >{{ row.is_active ? 'Active' : 'Idle' }}</span>
             </template>
             <template #cell-actions="{ row }">
@@ -113,7 +113,7 @@ const forceLogoutAll = async (session) => {
                     <button
                         v-if="multiple(row)"
                         type="button"
-                        class="text-xs text-danger hover:underline"
+                        class="text-xs text-danger-fg hover:underline"
                         @click="forceLogoutAll(row)"
                     >
                         Sign out all ({{ countFor(row) }})

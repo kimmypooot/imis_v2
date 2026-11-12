@@ -124,13 +124,13 @@ const pending = (item) => item.status !== 'approved';
                                 >
                                     {{ date.getDate() }}
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
+                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
                                 <Link
                                     v-for="item in leaveOn(date)"
                                     :key="item.id"
                                     :href="`/leave/applications/${item.id}`"
                                     class="mt-0.5 block truncate rounded-sm px-1 text-2xs"
-                                    :class="pending(item) ? 'border border-warning text-warning' : 'bg-success text-white'"
+                                    :class="pending(item) ? 'border border-warning text-warning-fg' : 'bg-success text-white'"
                                     :title="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`"
                                 >
                                     {{ item.code }}<template v-if="item.is_half_day"> ½ {{ item.half_day_period }}</template>
@@ -139,7 +139,7 @@ const pending = (item) => item.status !== 'approved';
                                     v-for="item in colleaguesOn(date).slice(0, MAX_COLLEAGUES_PER_DAY)"
                                     :key="`c${item.id}`"
                                     class="mt-0.5 truncate rounded-sm px-1 text-2xs"
-                                    :class="pending(item) ? 'border border-primary text-primary' : 'bg-primary text-white'"
+                                    :class="pending(item) ? 'border border-primary text-link' : 'bg-primary text-white'"
                                     :title="`${item.name} (${pending(item) ? 'filed, not yet approved' : 'approved'})`"
                                 >
                                     {{ item.surname }}<template v-if="item.is_half_day"> ½</template>
@@ -147,7 +147,7 @@ const pending = (item) => item.status !== 'approved';
                                 <button
                                     v-if="colleaguesOn(date).length > MAX_COLLEAGUES_PER_DAY"
                                     type="button"
-                                    class="mt-0.5 text-2xs font-medium text-primary hover:underline"
+                                    class="mt-0.5 text-2xs font-medium text-link hover:underline"
                                     @click="selected = iso(date)"
                                 >
                                     +{{ colleaguesOn(date).length - MAX_COLLEAGUES_PER_DAY }} more

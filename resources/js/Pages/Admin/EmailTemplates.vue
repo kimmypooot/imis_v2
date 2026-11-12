@@ -136,7 +136,7 @@ const insert = (placeholder) => {
         >
             <span
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
-                :class="template.key === selectedKey ? 'bg-primary text-white' : 'bg-surface-muted text-text-muted group-hover:text-primary'"
+                :class="template.key === selectedKey ? 'bg-primary text-white' : 'bg-surface-muted text-text-muted group-hover:text-link'"
                 aria-hidden="true"
             >
                 <Icon :name="templateIcons[template.key] ?? 'envelope'" size="sm" />
@@ -200,7 +200,7 @@ const insert = (placeholder) => {
                             v-for="placeholder in selected.placeholders"
                             :key="placeholder"
                             type="button"
-                            class="rounded-sm border border-border bg-surface px-1.5 py-0.5 font-mono text-xs text-text hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-default disabled:hover:border-border disabled:hover:text-text"
+                            class="rounded-sm border border-border bg-surface px-1.5 py-0.5 font-mono text-xs text-text hover:border-primary hover:text-link focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-default disabled:hover:border-border disabled:hover:text-text"
                             :disabled="!canUpdate"
                             :title="sample[placeholder] !== undefined ? `For example: ${sample[placeholder]}` : undefined"
                             @click="insert(placeholder)"
@@ -217,7 +217,7 @@ const insert = (placeholder) => {
                         Send me a test
                     </Button>
                     <Button v-if="selected.current.edited" variant="ghost" @click="restore">Put back default</Button>
-                    <span v-if="form.isDirty" class="ml-auto flex items-center gap-1.5 text-xs text-warning">
+                    <span v-if="form.isDirty" class="ml-auto flex items-center gap-1.5 text-xs text-warning-fg">
                         <span class="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
                         Unsaved changes
                     </span>
@@ -249,7 +249,7 @@ const insert = (placeholder) => {
                 </div>
             </template>
 
-            <p v-if="previewFailed" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger">
+            <p v-if="previewFailed" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-fg">
                 The preview could not be loaded. Check your connection and try again.
             </p>
 

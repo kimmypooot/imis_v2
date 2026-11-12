@@ -28,10 +28,10 @@ defineProps({
 defineEmits(['click']);
 
 const tones = {
-    primary: 'border-primary/30 text-primary hover:bg-primary hover:text-white',
-    danger: 'border-danger/30 text-danger hover:bg-danger hover:text-white',
-    success: 'border-success/30 text-success hover:bg-success hover:text-white',
-    warning: 'border-warning/30 text-warning hover:bg-warning hover:text-white',
+    primary: 'border-primary/30 text-link hover:bg-primary hover:text-white',
+    danger: 'border-danger/30 text-danger-fg hover:bg-danger hover:text-white',
+    success: 'border-success/30 text-success-fg hover:bg-success hover:text-white',
+    warning: 'border-warning/30 text-warning-fg hover:bg-warning hover:text-white',
     neutral: 'border-border text-text-muted hover:bg-surface-muted hover:text-text',
 };
 

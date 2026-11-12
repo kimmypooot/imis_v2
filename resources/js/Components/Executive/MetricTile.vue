@@ -52,7 +52,7 @@ const largest = computed(() => Math.max(...props.metric.breakdown.map((row) => r
         </div>
 
         <div class="flex items-end justify-between gap-3">
-            <p class="text-3xl leading-none font-bold tracking-tight text-primary tabular-nums">{{ formatValue(metric.value, metric.unit) }}</p>
+            <p class="text-3xl leading-none font-bold tracking-tight text-link tabular-nums">{{ formatValue(metric.value, metric.unit) }}</p>
             <svg v-if="path" viewBox="0 0 100 28" preserveAspectRatio="none" class="h-7 w-24 shrink-0" role="img" :aria-label="trendSummary">
                 <polyline :points="path" fill="none" class="stroke-csc-blue-light" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
             </svg>
@@ -67,7 +67,7 @@ const largest = computed(() => Math.max(...props.metric.breakdown.map((row) => r
         </div>
 
         <details v-if="metric.breakdown.length" class="group text-xs">
-            <summary class="cursor-pointer font-medium text-primary hover:text-primary-hover">
+            <summary class="cursor-pointer font-medium text-link hover:text-primary-hover">
                 Breakdown ({{ metric.breakdown.length }})
             </summary>
             <ul class="mt-2 space-y-1.5">
@@ -83,7 +83,7 @@ const largest = computed(() => Math.max(...props.metric.breakdown.map((row) => r
             </ul>
         </details>
 
-        <Link v-if="metric.href" :href="metric.href" class="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-medium text-primary hover:text-primary-hover hover:underline">
+        <Link v-if="metric.href" :href="metric.href" class="mt-auto inline-flex items-center gap-1 pt-1 text-xs font-medium text-link hover:text-primary-hover hover:underline">
             Open details
             <Icon name="chevronRight" size="sm" />
         </Link>

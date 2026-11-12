@@ -28,7 +28,7 @@ const icons = {
             class="flex gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
             <span
-                class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-muted text-primary sm:flex"
+                class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-muted text-link sm:flex"
                 aria-hidden="true"
             >
                 <Icon :name="icons[result.type] ?? 'search'" />

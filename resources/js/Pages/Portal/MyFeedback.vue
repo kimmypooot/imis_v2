@@ -26,10 +26,10 @@ const filter = ref('all');
 
 const count = (predicate) => props.feedback.filter(predicate).length;
 const stats = computed(() => [
-    { key: 'all', label: 'Sent', value: props.feedback.length, icon: 'chat', tile: 'bg-info-bg text-primary' },
-    { key: 'open', label: 'Open', value: count((item) => ['new', 'in_review'].includes(item.status)), icon: 'clock', tile: 'bg-warning-bg text-warning' },
-    { key: 'replied', label: 'Replied', value: count((item) => item.replies.length > 0), icon: 'envelope', tile: 'bg-info-bg text-primary' },
-    { key: 'done', label: 'Resolved', value: count((item) => ['applied', 'resolved', 'closed'].includes(item.status)), icon: 'check', tile: 'bg-success-bg text-success' },
+    { key: 'all', label: 'Sent', value: props.feedback.length, icon: 'chat', tile: 'bg-info-bg text-link' },
+    { key: 'open', label: 'Open', value: count((item) => ['new', 'in_review'].includes(item.status)), icon: 'clock', tile: 'bg-warning-bg text-warning-fg' },
+    { key: 'replied', label: 'Replied', value: count((item) => item.replies.length > 0), icon: 'envelope', tile: 'bg-info-bg text-link' },
+    { key: 'done', label: 'Resolved', value: count((item) => ['applied', 'resolved', 'closed'].includes(item.status)), icon: 'check', tile: 'bg-success-bg text-success-fg' },
 ]);
 
 const matches = {
@@ -125,7 +125,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
         <Card v-else>
             <EmptyState icon="funnel" title="Nothing matches this filter" description="Pick another tile above to see the rest of your feedback.">
                 <template #action>
-                    <button type="button" class="text-sm font-medium text-primary hover:underline" @click="filter = 'all'">Show everything</button>
+                    <button type="button" class="text-sm font-medium text-link hover:underline" @click="filter = 'all'">Show everything</button>
                 </template>
             </EmptyState>
         </Card>

@@ -67,7 +67,7 @@ const hasContactInfo = computed(() =>
                 <div v-if="organizationalUnit.email" class="flex gap-2">
                     <dt class="w-24 shrink-0 text-text-muted">Email</dt>
                     <dd class="text-text">
-                        <a :href="`mailto:${organizationalUnit.email}`" class="text-primary hover:text-primary-hover">
+                        <a :href="`mailto:${organizationalUnit.email}`" class="text-link hover:text-primary-hover">
                             {{ organizationalUnit.email }}
                         </a>
                     </dd>
@@ -87,7 +87,7 @@ const hasContactInfo = computed(() =>
                             :href="organizationalUnit.website_url"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="text-primary hover:text-primary-hover"
+                            class="text-link hover:text-primary-hover"
                         >
                             {{ organizationalUnit.website_url }}
                         </a>

@@ -85,12 +85,12 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                         </p>
                         <p v-if="entry.order_number || entry.order_date" class="mt-1 text-xs text-text-muted">
                             Order {{ entry.order_number ? `No. ${entry.order_number}` : '' }}<template v-if="entry.order_date"> dated {{ date(entry.order_date) }}</template>
-                            <a v-if="entry.scan" :href="entry.scan.url" target="_blank" rel="noopener" class="ml-1 inline-flex items-center gap-1 text-primary hover:underline">
+                            <a v-if="entry.scan" :href="entry.scan.url" target="_blank" rel="noopener" class="ml-1 inline-flex items-center gap-1 text-link hover:underline">
                                 <Icon name="eye" size="sm" />View scan
                             </a>
                         </p>
                         <p v-else-if="entry.scan" class="mt-1 text-xs">
-                            <a :href="entry.scan.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-primary hover:underline"><Icon name="eye" size="sm" />View scanned order</a>
+                            <a :href="entry.scan.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-link hover:underline"><Icon name="eye" size="sm" />View scanned order</a>
                         </p>
                         <p v-if="entry.supervision_handed_at" class="mt-1 text-xs text-text-muted">
                             The office's staff were handed over to them as immediate supervisor<template v-if="entry.supervision_restored_at">, and given back their previous supervisors when it ended</template>.
@@ -98,10 +98,10 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
                         <p v-if="entry.remarks" class="mt-1 whitespace-pre-line text-sm text-text">{{ entry.remarks }}</p>
                     </div>
                     <div v-if="canManage" class="flex shrink-0 gap-3 text-sm">
-                        <button type="button" class="text-primary hover:underline" @click="emit('edit', entry)">
+                        <button type="button" class="text-link hover:underline" @click="emit('edit', entry)">
                             Edit<span class="sr-only"> {{ entry.kind_label }} effective {{ date(entry.effective_date) }}</span>
                         </button>
-                        <button type="button" class="text-danger hover:underline" @click="emit('remove', entry)">
+                        <button type="button" class="text-danger-fg hover:underline" @click="emit('remove', entry)">
                             Remove<span class="sr-only"> {{ entry.kind_label }} effective {{ date(entry.effective_date) }}</span>
                         </button>
                     </div>

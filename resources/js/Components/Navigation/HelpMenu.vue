@@ -43,7 +43,7 @@ const sendFeedback = (close) => {
             <ul class="divide-y divide-border">
                 <li>
                     <Link href="/guide" :class="itemClass" @click="close">
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                             <Icon name="documentText" size="sm" />
                         </span>
                         <span class="min-w-0">
@@ -54,7 +54,7 @@ const sendFeedback = (close) => {
                 </li>
                 <li>
                     <Link href="/whats-new" :class="itemClass" @click="close">
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                             <Icon name="megaphone" size="sm" />
                         </span>
                         <span class="min-w-0">
@@ -65,7 +65,7 @@ const sendFeedback = (close) => {
                 </li>
                 <li>
                     <button type="button" :class="itemClass" @click="sendFeedback(close)">
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                             <Icon name="chat" size="sm" />
                         </span>
                         <span class="min-w-0">

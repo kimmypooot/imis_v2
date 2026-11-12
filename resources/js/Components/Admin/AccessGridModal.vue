@@ -168,7 +168,7 @@ const rowErrors = computed(() => {
             </div>
             <p v-if="hiddenInactive" class="mt-2 text-xs text-text-muted">
                 {{ hiddenInactive }} inactive account{{ hiddenInactive === 1 ? ' is' : 's are' }} not listed.
-                <Link href="/users?status=inactive" class="font-medium text-primary hover:underline">View inactive accounts</Link>
+                <Link href="/users?status=inactive" class="font-medium text-link hover:underline">View inactive accounts</Link>
             </p>
         </template>
 
@@ -199,7 +199,7 @@ const rowErrors = computed(() => {
                         <td>
                             <div class="flex items-center gap-3">
                                 <UserAvatar v-if="row.avatar" :name="row.title" :photo-url="row.photoUrl" size="sm" />
-                                <span v-else class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary" aria-hidden="true">
+                                <span v-else class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
                                     <Icon name="grid" size="sm" />
                                 </span>
                                 <div class="min-w-0">
@@ -219,14 +219,14 @@ const rowErrors = computed(() => {
                             >
                                 <option v-for="role in optionsFor(row)" :key="role.id" :value="role.id">{{ role.name }}</option>
                             </select>
-                            <p v-if="rowErrors[row.key]" class="mt-1 text-left text-xs text-danger">{{ rowErrors[row.key] }}</p>
+                            <p v-if="rowErrors[row.key]" class="mt-1 text-left text-xs text-danger-fg">{{ rowErrors[row.key] }}</p>
                         </td>
                         <td class="text-center text-xs">
                             <span v-if="row.locked && row.locked !== 'inactive'" class="inline-flex items-center gap-1 text-text-muted">
                                 <Icon name="lock" size="sm" /> {{ lockText[row.locked] }}
                             </span>
-                            <span v-else-if="changed(row)" class="font-semibold text-warning">Changed — not saved</span>
-                            <span v-else-if="draft[row.key]" class="font-semibold text-success">Granted</span>
+                            <span v-else-if="changed(row)" class="font-semibold text-warning-fg">Changed — not saved</span>
+                            <span v-else-if="draft[row.key]" class="font-semibold text-success-fg">Granted</span>
                             <span v-else class="text-text-muted">No access</span>
                             <span v-if="row.locked === 'inactive'" class="block text-text-muted">{{ lockText.inactive }}</span>
                         </td>

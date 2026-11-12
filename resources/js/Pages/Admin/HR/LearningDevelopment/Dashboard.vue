@@ -76,11 +76,11 @@ const dateRange = (row) =>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Employees" :value="stats.employees" icon="users" tone="primary" :progress="reached">
-                <span class="font-semibold text-success">{{ stats.trained }}</span> with training this year ({{ reached }}%)
+                <span class="font-semibold text-success-fg">{{ stats.trained }}</span> with training this year ({{ reached }}%)
             </StatTile>
             <StatTile label="Trainings" :value="stats.trainings" icon="clipboard" tone="success">
                 <template v-if="change !== null">
-                    <span class="font-semibold" :class="change >= 0 ? 'text-success' : 'text-danger'">{{ change >= 0 ? '+' : '' }}{{ change }}%</span>
+                    <span class="font-semibold" :class="change >= 0 ? 'text-success-fg' : 'text-danger-fg'">{{ change >= 0 ? '+' : '' }}{{ change }}%</span>
                     vs {{ year - 1 }} ({{ stats.trainings_previous }})
                 </template>
                 <template v-else>None recorded in {{ year - 1 }}</template>
@@ -118,9 +118,9 @@ const dateRange = (row) =>
                 <p v-if="top.length === 0" class="text-sm text-text-muted">No approved trainings in {{ year }}.</p>
                 <ol v-else class="divide-y divide-border">
                     <li v-for="(person, index) in top" :key="person.id" class="flex items-center gap-3 py-2.5">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-bold text-primary">{{ index + 1 }}</span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-bold text-link">{{ index + 1 }}</span>
                         <div class="min-w-0 flex-1">
-                            <Link :href="`/admin/hr/employees/${person.id}/learning-development?year=${year}`" class="font-medium text-primary hover:underline">{{ person.name }}</Link>
+                            <Link :href="`/admin/hr/employees/${person.id}/learning-development?year=${year}`" class="font-medium text-link hover:underline">{{ person.name }}</Link>
                             <div class="text-xs text-text-muted">{{ person.office || '—' }} · {{ person.trainings }} {{ person.trainings === 1 ? 'training' : 'trainings' }}</div>
                         </div>
                         <span class="text-sm font-semibold text-text tabular-nums">{{ hours(person.hours) }} h</span>
@@ -137,7 +137,7 @@ const dateRange = (row) =>
                             <span class="text-xs text-text-muted tabular-nums">{{ hours(row.hours) }} h · {{ dateRange(row) }}</span>
                         </div>
                         <div class="text-xs text-text-muted">
-                            <Link :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${year}`" class="text-primary hover:underline">{{ row.name }}</Link>
+                            <Link :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${year}`" class="text-link hover:underline">{{ row.name }}</Link>
                             · {{ row.office || '—' }} · {{ row.type_label }}<template v-if="row.sponsor"> · {{ row.sponsor }}</template>
                         </div>
                     </li>

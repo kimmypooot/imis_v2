@@ -78,7 +78,7 @@ const breadcrumbs = computed(() => [
 
             <Card title="Photo" icon="camera">
                 <img v-if="submission.photo_url" :src="submission.photo_url" alt="PDS photo as signed" class="h-36 w-28 rounded-sm border border-border object-cover" />
-                <p v-else class="text-sm text-warning">No photo was attached.</p>
+                <p v-else class="text-sm text-warning-fg">No photo was attached.</p>
             </Card>
         </div>
 

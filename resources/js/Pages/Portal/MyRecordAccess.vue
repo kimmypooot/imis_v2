@@ -39,13 +39,13 @@ const latest = computed(() => (props.entries?.current_page === 1 ? props.entries
 const peopleOnPage = computed(() => new Set((props.entries?.data ?? []).map((entry) => entry.who)).size);
 
 const stats = computed(() => [
-    { label: props.year ? `Accesses in ${props.year}` : 'Total accesses', value: total.value, icon: 'eye', tile: 'bg-info-bg text-primary' },
-    { label: 'People on this page', value: peopleOnPage.value, icon: 'users', tile: 'bg-info-bg text-primary' },
+    { label: props.year ? `Accesses in ${props.year}` : 'Total accesses', value: total.value, icon: 'eye', tile: 'bg-info-bg text-link' },
+    { label: 'People on this page', value: peopleOnPage.value, icon: 'users', tile: 'bg-info-bg text-link' },
     {
         label: 'Retention',
         value: props.keptMonths ? `${props.keptMonths} mo` : 'Not set',
         icon: 'calendar',
-        tile: props.keptMonths ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning',
+        tile: props.keptMonths ? 'bg-success-bg text-success-fg' : 'bg-warning-bg text-warning-fg',
     },
 ]);
 
@@ -124,7 +124,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
                         </td>
                         <td>
                             <div class="flex items-center gap-3">
-                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-primary" aria-hidden="true">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-info-bg text-xs font-semibold text-link" aria-hidden="true">
                                     {{ initial(entry.who) }}
                                 </span>
                                 <span class="min-w-0">
@@ -161,7 +161,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
                     <span>
                         {{ keptMonths ? `Entries are kept for ${keptMonths} months.` : 'Entries are kept until the office sets a retention period.' }}
                         Something here you didn't expect? Ask the Human Resource Division or the Data Protection Officer — see the
-                        <Link href="/privacy" class="text-primary hover:underline">privacy notice</Link>.
+                        <Link href="/privacy" class="text-link hover:underline">privacy notice</Link>.
                     </span>
                 </p>
             </template>

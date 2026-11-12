@@ -120,7 +120,7 @@ const columns = [
         </p>
         <p v-if="!schedule" class="mb-4 rounded-md bg-warning-bg px-3 py-2 text-sm text-text">
             No salary schedule is in force yet, so monthly salaries can't be shown. Enter the NBC amounts under
-            <Link href="/admin/hr/salary-schedules" class="font-medium text-primary hover:underline">Salary Schedules</Link>.
+            <Link href="/admin/hr/salary-schedules" class="font-medium text-link hover:underline">Salary Schedules</Link>.
         </p>
         <p v-else class="mb-4 text-xs text-text-muted">Monthly salary is step 1 of the grade under {{ schedule.name }}.</p>
 
@@ -148,13 +148,13 @@ const columns = [
             <template #cell-items="{ row }">
                 <ul v-if="row.items.length" class="space-y-1">
                     <li v-for="item in row.items" :key="item.id" class="text-sm">
-                        <Link :href="`/admin/hr/plantilla/${item.id}`" class="font-medium text-primary hover:underline">{{ item.item_number || 'No item no.' }}</Link>
+                        <Link :href="`/admin/hr/plantilla/${item.id}`" class="font-medium text-link hover:underline">{{ item.item_number || 'No item no.' }}</Link>
                         <span class="text-text-muted"> · </span>
                         <span :title="item.office_name">{{ item.office || 'No office' }}</span>
                         <span v-if="item.abolished" class="text-text-muted"> · abolished</span>
                         <span v-else class="text-text-muted"> · {{ item.holder || 'vacant' }}</span>
-                        <span v-if="item.incomplete" class="text-xs text-warning"> · incomplete</span>
-                        <div v-if="item.serving?.elsewhere" class="text-xs text-info">Serving at {{ item.serving.office }}<template v-if="item.serving.order_number"> ({{ item.serving.order_number }})</template></div>
+                        <span v-if="item.incomplete" class="text-xs text-warning-fg"> · incomplete</span>
+                        <div v-if="item.serving?.elsewhere" class="text-xs text-info-fg">Serving at {{ item.serving.office }}<template v-if="item.serving.order_number"> ({{ item.serving.order_number }})</template></div>
                     </li>
                 </ul>
                 <span v-else class="text-sm text-text-muted">No item yet</span>

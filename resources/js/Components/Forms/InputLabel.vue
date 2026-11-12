@@ -14,6 +14,6 @@ defineProps({
 <template>
     <label :for="$props.for" class="block text-sm font-medium text-text">
         <slot />
-        <span v-if="required" class="text-danger" aria-hidden="true"> *</span>
+        <span v-if="required" class="text-danger-fg" aria-hidden="true"> *</span>
     </label>
 </template>

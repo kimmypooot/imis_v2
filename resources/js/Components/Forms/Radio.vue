@@ -33,7 +33,7 @@ defineEmits(['update:modelValue']);
             :name="name"
             :value="value"
             :checked="modelValue === value"
-            class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+            class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
             @change="$emit('update:modelValue', value)"
         />
         {{ label }}

@@ -93,8 +93,8 @@ const subtitle = computed(() => (props.filters.report === 'on_leave' ? formatCal
     </PageHeader>
 
     <p class="mb-4 text-sm text-text-muted">
-        Also: the balance summary is <Link href="/admin/hr/leave" class="text-primary hover:underline">Leave Credits</Link>,
-        and the applications register is <Link href="/admin/hr/leave/applications" class="text-primary hover:underline">Leave Applications</Link>.
+        Also: the balance summary is <Link href="/admin/hr/leave" class="text-link hover:underline">Leave Credits</Link>,
+        and the applications register is <Link href="/admin/hr/leave/applications" class="text-link hover:underline">Leave Applications</Link>.
     </p>
 
     <Card :title="title" icon="printer" :description="subtitle">

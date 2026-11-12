@@ -115,15 +115,15 @@ const rowError = (index) => Object.keys(form.errors).some((key) => key.startsWit
                 />
             </fieldset>
 
-            <p v-if="form.errors.rows" class="text-xs text-danger">{{ form.errors.rows }}</p>
+            <p v-if="form.errors.rows" class="text-xs text-danger-fg">{{ form.errors.rows }}</p>
 
             <div v-if="!readonly" class="flex flex-wrap items-center justify-between gap-3 pt-1">
                 <Button type="button" variant="secondary" :disabled="full" @click="add">
                     <Icon name="plus" size="sm" />Add {{ section.noun }}
                 </Button>
                 <div class="flex items-center gap-3">
-                    <span v-if="form.isDirty" class="text-xs text-warning">Unsaved changes</span>
-                    <span v-else-if="form.recentlySuccessful" class="text-xs text-success" role="status">Saved</span>
+                    <span v-if="form.isDirty" class="text-xs text-warning-fg">Unsaved changes</span>
+                    <span v-else-if="form.recentlySuccessful" class="text-xs text-success-fg" role="status">Saved</span>
                     <Button type="submit" :loading="form.processing" :disabled="!form.isDirty">Save</Button>
                 </div>
             </div>

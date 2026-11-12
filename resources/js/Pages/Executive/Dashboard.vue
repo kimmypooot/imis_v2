@@ -99,7 +99,7 @@ const systems = computed(() => sections.value.filter((section) => section.kind =
                         <p class="mt-1 text-2xl font-bold text-text">{{ summary.onTrack }}</p>
                         <p class="text-xs text-text-muted">of {{ summary.withTargets }} figures with targets</p>
                     </div>
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg text-success" aria-hidden="true">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg text-success-fg" aria-hidden="true">
                         <Icon name="checkCircle" size="sm" />
                     </span>
                 </div>
@@ -109,7 +109,7 @@ const systems = computed(() => sections.value.filter((section) => section.kind =
                         <p class="mt-1 text-2xl font-bold text-text">{{ summary.atRisk }}</p>
                         <p class="text-xs text-text-muted">short of target, within tolerance</p>
                     </div>
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-bg text-warning" aria-hidden="true">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warning-bg text-warning-fg" aria-hidden="true">
                         <Icon name="exclamation" size="sm" />
                     </span>
                 </div>
@@ -119,7 +119,7 @@ const systems = computed(() => sections.value.filter((section) => section.kind =
                         <p class="mt-1 text-2xl font-bold text-text">{{ summary.behind }}</p>
                         <p class="text-xs text-text-muted">needs action</p>
                     </div>
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger" aria-hidden="true">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger-fg" aria-hidden="true">
                         <Icon name="xCircle" size="sm" />
                     </span>
                 </div>
@@ -169,7 +169,7 @@ const systems = computed(() => sections.value.filter((section) => section.kind =
                     <span v-if="section.collectedAt" class="text-xs text-text-muted">Updated {{ formatAge(section.collectedAt) }}</span>
                 </template>
 
-                <p v-if="section.error" class="mb-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger">
+                <p v-if="section.error" class="mb-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger-fg">
                     The last collection failed: {{ section.error }}<template v-if="section.metrics.length"> Showing the last figures received.</template>
                 </p>
 

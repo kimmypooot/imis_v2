@@ -27,9 +27,9 @@ const currentVersion = computed(() => page.props.app?.version);
 
 // One look per kind of entry, so a list scans by shape and colour, not just by the badge word.
 const kinds = {
-    feature: { label: 'New', icon: 'plus', tile: 'bg-success-bg text-success', tone: 'success' },
-    improvement: { label: 'Improved', icon: 'activity', tile: 'bg-info-bg text-primary', tone: 'info' },
-    fix: { label: 'Fixed', icon: 'check', tile: 'bg-warning-bg text-warning', tone: 'warning' },
+    feature: { label: 'New', icon: 'plus', tile: 'bg-success-bg text-success-fg', tone: 'success' },
+    improvement: { label: 'Improved', icon: 'activity', tile: 'bg-info-bg text-link', tone: 'info' },
+    fix: { label: 'Fixed', icon: 'check', tile: 'bg-warning-bg text-warning-fg', tone: 'warning' },
 };
 const order = ['feature', 'improvement', 'fix'];
 
@@ -139,7 +139,7 @@ const shown = computed(() => (showAll.value ? timeline.value : timeline.value.sl
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 <h2 class="text-base font-semibold text-text">{{ release.title }}</h2>
-                                <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-primary">v{{ release.version }}</span>
+                                <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-link">v{{ release.version }}</span>
                                 <Badge v-if="release.isLatest" tone="success">Latest</Badge>
                                 <Badge v-if="currentVersion && currentVersion === release.version && !release.isLatest" tone="neutral">You're on this</Badge>
                             </div>

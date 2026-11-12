@@ -108,7 +108,7 @@ const columns = [
             </div>
             <div class="flex items-end gap-2 lg:col-span-2">
                 <Button type="submit">Apply filters</Button>
-                <button type="button" class="rounded-md px-3 py-2 text-sm text-primary hover:underline" @click="reset">Reset</button>
+                <button type="button" class="rounded-md px-3 py-2 text-sm text-link hover:underline" @click="reset">Reset</button>
             </div>
         </form>
 

@@ -61,14 +61,14 @@ const metadata = computed(() => (props.log.metadata ? JSON.stringify(props.log.m
                     <Link
                         v-if="log.actor_id"
                         :href="`/admin/audit-logs?actor_id=${log.actor_id}`"
-                        class="font-medium text-primary hover:text-primary-hover"
+                        class="font-medium text-link hover:text-primary-hover"
                     >
                         More by this actor
                     </Link>
                     <Link
                         v-if="log.target_type"
                         :href="`/admin/audit-logs?target_type=${log.target_type}&target_id=${log.target_id}`"
-                        class="font-medium text-primary hover:text-primary-hover"
+                        class="font-medium text-link hover:text-primary-hover"
                     >
                         History of this target
                     </Link>

@@ -171,14 +171,14 @@ const toggleStatus = async (user) => {
                     <template #cell-position="{ row }">
                         {{ row.position || '—' }}
                         <div v-if="row.designation_label">
-                            <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success" :title="`Overall admin of ${row.office_name}'s systems`">
+                            <span class="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success-fg" :title="`Overall admin of ${row.office_name}'s systems`">
                                 {{ row.designation_label }}
                             </span>
                         </div>
                     </template>
                     <template #cell-roles="{ row }">
                         <div class="flex flex-wrap justify-center gap-1">
-                            <span v-for="role in row.roles" :key="role.id" class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">
+                            <span v-for="role in row.roles" :key="role.id" class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-link">
                                 {{ role.display_name }}
                             </span>
                             <span v-if="!row.roles.length" class="text-text-muted">—</span>

@@ -85,7 +85,7 @@ const runYearStart = async () => {
                     </div>
                     <Button type="submit" :loading="accrual.processing">Post accrual</Button>
                 </form>
-                <p v-if="accrual.errors.month || accrual.errors.year" class="mt-2 text-sm text-danger">{{ accrual.errors.month || accrual.errors.year }}</p>
+                <p v-if="accrual.errors.month || accrual.errors.year" class="mt-2 text-sm text-danger-fg">{{ accrual.errors.month || accrual.errors.year }}</p>
             </Card>
 
             <Card title="Start of the year" icon="calendar" description="Lapses last year's unused non-cumulative credits and posts this year's grants (runs automatically in January).">
@@ -96,7 +96,7 @@ const runYearStart = async () => {
                     </div>
                     <Button type="submit" :loading="yearStart.processing">Start year</Button>
                 </form>
-                <p v-if="yearStart.errors.year" class="mt-2 text-sm text-danger">{{ yearStart.errors.year }}</p>
+                <p v-if="yearStart.errors.year" class="mt-2 text-sm text-danger-fg">{{ yearStart.errors.year }}</p>
             </Card>
         </div>
 
@@ -107,14 +107,14 @@ const runYearStart = async () => {
         <Card title="Balances today" icon="users" description="Accrual and grants need an employment status that the leave type allows (set on the employee record).">
             <template v-if="separatedCount" #actions>
                 <label class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                     Show separated ({{ separatedCount }})
                 </label>
             </template>
 
             <DataTable :columns="columns" :rows="shown" caption="Leave balances" export-name="imis-leave-balances">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.id}/leave`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/hr/employees/${row.id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                     <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
@@ -128,7 +128,7 @@ const runYearStart = async () => {
                             {{ row.supervisor_position }}<template v-if="row.supervisor_source === 'set'"> · set by HR</template>
                         </span>
                     </template>
-                    <span v-else class="text-warning">Not set</span>
+                    <span v-else class="text-warning-fg">Not set</span>
                 </template>
             </DataTable>
         </Card>

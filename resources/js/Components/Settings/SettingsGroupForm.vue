@@ -90,7 +90,7 @@ const inputClass =
                             type="checkbox"
                             :disabled="!canUpdate"
                             :aria-describedby="describedBy(setting)"
-                            class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring"
+                            class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring"
                         />
                         {{ setting.label }}
                     </label>
@@ -152,10 +152,10 @@ const inputClass =
 
             <div v-if="canUpdate && Object.keys(form.settings).length" class="flex items-center gap-3 border-t border-border pt-4">
                 <Button type="submit" :loading="form.processing" :disabled="!form.isDirty">Save {{ group.label }}</Button>
-                <p role="status" aria-live="polite" class="text-sm text-success">
+                <p role="status" aria-live="polite" class="text-sm text-success-fg">
                     <template v-if="form.recentlySuccessful">Saved.</template>
                 </p>
-                <p v-if="form.hasErrors && !form.processing" class="text-sm text-danger">
+                <p v-if="form.hasErrors && !form.processing" class="text-sm text-danger-fg">
                     Not saved — fix the highlighted fields.
                 </p>
             </div>

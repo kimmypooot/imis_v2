@@ -22,7 +22,7 @@ defineProps({
     <div class="mb-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h1 class="text-xl font-semibold text-primary sm:text-2xl">{{ title }}</h1>
+                <h1 class="text-xl font-semibold text-link sm:text-2xl">{{ title }}</h1>
                 <Breadcrumbs v-if="breadcrumbs.length" :items="breadcrumbs" class="mt-1" />
                 <p v-if="description" class="mt-2 max-w-3xl text-sm text-text-muted">{{ description }}</p>
             </div>

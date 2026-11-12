@@ -121,7 +121,7 @@ const changeStatus = (status) =>
                     <div v-if="feedback.page_path">
                         <dt class="text-xs text-text-muted">Page they were on</dt>
                         <dd class="break-all text-text">
-                            <a v-if="isInternalPath(feedback.page_path)" :href="feedback.page_path" class="text-primary hover:underline">{{ feedback.page_path }}</a>
+                            <a v-if="isInternalPath(feedback.page_path)" :href="feedback.page_path" class="text-link hover:underline">{{ feedback.page_path }}</a>
                             <template v-else>{{ feedback.page_path }}</template>
                         </dd>
                     </div>

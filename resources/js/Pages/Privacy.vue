@@ -92,10 +92,10 @@ const sections = computed(() =>
                         <li v-for="section in sections" :key="section.id">
                             <a
                                 :href="`#${section.id}`"
-                                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface-muted hover:text-primary"
+                                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text transition-colors hover:bg-surface-muted hover:text-link"
                             >
                                 <span
-                                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-info-bg text-2xs font-semibold text-primary"
+                                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-info-bg text-2xs font-semibold text-link"
                                 >
                                     {{ section.number }}
                                 </span>
@@ -113,7 +113,7 @@ const sections = computed(() =>
                         class="scroll-mt-6 rounded-xl border border-border bg-surface p-5 shadow-sm sm:p-6"
                     >
                         <div class="flex items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info-bg text-primary">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info-bg text-link">
                                 <Icon :name="section.icon" size="sm" />
                             </span>
                             <h2 class="text-base font-semibold text-text">{{ section.title }}</h2>
@@ -127,7 +127,7 @@ const sections = computed(() =>
                         <p v-if="signedIn && section.title === 'How it is protected'" class="mt-4 text-sm">
                             <Link
                                 href="/my/record-access"
-                                class="inline-flex items-center gap-1.5 rounded-md bg-info-bg px-3 py-1.5 font-medium text-primary hover:underline"
+                                class="inline-flex items-center gap-1.5 rounded-md bg-info-bg px-3 py-1.5 font-medium text-link hover:underline"
                             >
                                 <Icon name="eye" size="sm" />
                                 See who accessed your record
@@ -140,7 +140,7 @@ const sections = computed(() =>
                         class="rounded-xl border border-warning-border bg-warning-bg p-5 shadow-sm sm:p-6"
                     >
                         <div class="flex items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70 text-warning">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70 text-warning-fg">
                                 <Icon name="info" size="sm" />
                             </span>
                             <h2 class="text-base font-semibold text-text">From the office</h2>
@@ -159,12 +159,12 @@ const sections = computed(() =>
                         <p class="mt-3 text-sm leading-relaxed text-text">
                             <template v-if="notice.contact.name">Contact {{ notice.contact.name }}, the Data Protection Officer</template>
                             <template v-else>Contact the Human Resource Division</template><template v-if="notice.contact.email">
-                                at <a :href="`mailto:${notice.contact.email}`" class="font-medium text-primary hover:underline">{{ notice.contact.email }}</a></template>.
+                                at <a :href="`mailto:${notice.contact.email}`" class="font-medium text-link hover:underline">{{ notice.contact.email }}</a></template>.
                         </p>
                     </section>
 
                     <p v-if="!signedIn" class="text-sm">
-                        <Link href="/login" class="inline-flex items-center gap-1.5 font-medium text-primary hover:underline">
+                        <Link href="/login" class="inline-flex items-center gap-1.5 font-medium text-link hover:underline">
                             <Icon name="chevronLeft" size="sm" />
                             Back to sign in
                         </Link>

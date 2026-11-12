@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
     <Teleport to="body">
         <Transition enter-active-class="transition-opacity duration-150" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-100" leave-to-class="opacity-0">
         <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-text/50" aria-hidden="true" @click="close" />
+            <div class="fixed inset-0 bg-black/50" aria-hidden="true" @click="close" />
 
             <div
                 ref="dialogRef"

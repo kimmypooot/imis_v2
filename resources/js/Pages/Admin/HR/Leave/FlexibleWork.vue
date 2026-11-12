@@ -65,8 +65,8 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                         <p v-if="row.remarks" class="mt-1 text-text">{{ row.remarks }}</p>
                     </div>
                     <div v-if="canManage && !row.own" class="flex gap-3">
-                        <button type="button" class="text-success hover:underline" @click="open('decide', row, 'approved')">Approve</button>
-                        <button type="button" class="text-danger hover:underline" @click="open('decide', row, 'rejected')">Reject</button>
+                        <button type="button" class="text-success-fg hover:underline" @click="open('decide', row, 'approved')">Approve</button>
+                        <button type="button" class="text-danger-fg hover:underline" @click="open('decide', row, 'rejected')">Reject</button>
                     </div>
                     <span v-else-if="row.own" class="text-xs text-text-muted">Your own</span>
                 </li>
@@ -84,7 +84,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                         <p class="mt-1 text-xs font-semibold text-text-muted">Accomplishments</p>
                         <p class="whitespace-pre-line text-text">{{ row.accomplishments }}</p>
                     </div>
-                    <button v-if="canManage && !row.own" type="button" class="text-success hover:underline" @click="open('acknowledge', row)">Acknowledge</button>
+                    <button v-if="canManage && !row.own" type="button" class="text-success-fg hover:underline" @click="open('acknowledge', row)">Acknowledge</button>
                 </li>
             </ul>
         </Card>
@@ -97,7 +97,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
                         <p class="font-medium text-text">{{ row.name }} — {{ row.type_label }}</p>
                         <p class="text-text-muted">{{ period(row) }}</p>
                     </div>
-                    <button v-if="canManage && !row.own" type="button" class="text-danger hover:underline" @click="open('terminate', row)">End early</button>
+                    <button v-if="canManage && !row.own" type="button" class="text-danger-fg hover:underline" @click="open('terminate', row)">End early</button>
                 </li>
             </ul>
         </Card>

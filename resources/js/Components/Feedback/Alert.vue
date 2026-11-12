@@ -34,10 +34,10 @@ const dismiss = () => {
 
 // `chip` tints the icon badge, `panel` the surface. Matches the toasts in DialogHost.
 const toneMeta = {
-    success: { icon: 'checkCircle', chip: 'bg-success/15 text-success', panel: 'bg-success-bg border-success-border' },
-    warning: { icon: 'exclamation', chip: 'bg-warning/15 text-warning', panel: 'bg-warning-bg border-warning-border' },
-    danger: { icon: 'xCircle', chip: 'bg-danger/15 text-danger', panel: 'bg-danger-bg border-danger-border' },
-    info: { icon: 'info', chip: 'bg-info/15 text-info', panel: 'bg-info-bg border-info-border' },
+    success: { icon: 'checkCircle', chip: 'bg-success/15 text-success-fg', panel: 'bg-success-bg border-success-border' },
+    warning: { icon: 'exclamation', chip: 'bg-warning/15 text-warning-fg', panel: 'bg-warning-bg border-warning-border' },
+    danger: { icon: 'xCircle', chip: 'bg-danger/15 text-danger-fg', panel: 'bg-danger-bg border-danger-border' },
+    info: { icon: 'info', chip: 'bg-info/15 text-info-fg', panel: 'bg-info-bg border-info-border' },
 };
 
 const meta = computed(() => toneMeta[props.tone]);

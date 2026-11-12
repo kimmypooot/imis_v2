@@ -142,15 +142,15 @@ const field = 'mt-1 block w-full';
                 <div>
                     <dt class="text-text-muted">Incumbent</dt>
                     <dd class="mt-0.5 font-medium text-text">
-                        <Link v-if="item.holder" :href="`/admin/hr/employees/${item.holder.employee_id}`" class="text-primary hover:underline">{{ item.holder.name }}</Link>
+                        <Link v-if="item.holder" :href="`/admin/hr/employees/${item.holder.employee_id}`" class="text-link hover:underline">{{ item.holder.name }}</Link>
                         <template v-else>—</template>
                         <div v-if="item.holder && !item.holder.missing.length" class="text-xs font-normal text-text-muted">
                             Step {{ item.holder.step }} · {{ item.holder.status_label }} since {{ formatCalendarDate(item.holder.since) }}
                         </div>
-                        <div v-else-if="item.holder" class="text-xs font-normal text-warning">
+                        <div v-else-if="item.holder" class="text-xs font-normal text-warning-fg">
                             Incomplete link: missing {{ item.holder.missing.join(', ') }}. Use Correct below to complete it.
                         </div>
-                        <div v-if="item.serving?.elsewhere" class="text-xs font-normal text-info">
+                        <div v-if="item.serving?.elsewhere" class="text-xs font-normal text-info-fg">
                             Serving at {{ item.serving.office }}<template v-if="item.serving.since"> since {{ formatCalendarDate(item.serving.since) }}</template>
                             <template v-if="item.serving.kind"> ({{ item.serving.kind }}<template v-if="item.serving.order_number"> {{ item.serving.order_number }}</template>)</template>
                         </div>
@@ -188,9 +188,9 @@ const field = 'mt-1 block w-full';
                     <tbody>
                         <tr v-for="row in history" :key="row.id">
                             <td class="align-top">
-                                <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-primary hover:underline">{{ row.name }}</Link>
+                                <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                                 <StatusBadge v-if="row.current" status="active" label="Current" class="ml-2" />
-                                <div v-if="row.missing.length" class="text-xs text-warning">Incomplete: missing {{ row.missing.join(', ') }}</div>
+                                <div v-if="row.missing.length" class="text-xs text-warning-fg">Incomplete: missing {{ row.missing.join(', ') }}</div>
                             </td>
                             <td class="align-top tabular-nums">{{ row.step ?? '—' }}</td>
                             <td class="align-top">{{ row.status_label ?? '—' }}<div class="text-xs text-text-muted">{{ row.nature_label }}</div></td>
@@ -201,14 +201,14 @@ const field = 'mt-1 block w-full';
                             <td class="text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}<span v-if="row.salary_override !== null" class="block text-xs text-text-muted">Override</span></td>
                             <td v-if="canManage" class="align-top">
                                 <div v-if="row.can_manage" class="flex flex-wrap justify-end gap-3 whitespace-nowrap">
-                                    <button v-if="row.current && !row.missing.length && row.step < 8" type="button" class="text-success hover:underline" @click="open('step', row)">Step increment</button>
-                                    <button v-if="row.current" type="button" class="text-warning hover:underline" @click="open('vacate', row)">Vacate</button>
-                                    <button type="button" class="text-primary hover:underline" @click="open('correct', row)">Correct</button>
-                                    <button type="button" class="text-danger hover:underline" @click="remove(row)">Remove</button>
+                                    <button v-if="row.current && !row.missing.length && row.step < 8" type="button" class="text-success-fg hover:underline" @click="open('step', row)">Step increment</button>
+                                    <button v-if="row.current" type="button" class="text-warning-fg hover:underline" @click="open('vacate', row)">Vacate</button>
+                                    <button type="button" class="text-link hover:underline" @click="open('correct', row)">Correct</button>
+                                    <button type="button" class="text-danger-fg hover:underline" @click="remove(row)">Remove</button>
                                 </div>
                                 <div v-else-if="row.can_correct" class="flex flex-wrap items-center justify-end gap-3 whitespace-nowrap">
                                     <span class="text-xs text-text-muted">Your own</span>
-                                    <button type="button" class="text-primary hover:underline" @click="open('correct', row)">Correct</button>
+                                    <button type="button" class="text-link hover:underline" @click="open('correct', row)">Correct</button>
                                 </div>
                                 <span v-else class="text-xs text-text-muted">Your own</span>
                             </td>

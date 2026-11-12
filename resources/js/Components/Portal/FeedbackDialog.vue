@@ -56,7 +56,7 @@ const submit = () => {
         <form id="feedback-form" class="space-y-4" @submit.prevent="submit">
             <p class="text-sm text-text-muted">
                 Tell us what to improve in IMIS. Administrators read every message and may reply — you will see replies under
-                <Link href="/my/feedback" class="text-primary underline" @click="emit('close')">My feedback</Link>.
+                <Link href="/my/feedback" class="text-link underline" @click="emit('close')">My feedback</Link>.
             </p>
 
             <fieldset>

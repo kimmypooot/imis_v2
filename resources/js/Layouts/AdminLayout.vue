@@ -35,7 +35,7 @@ const areas = computed(() =>
                     :key="area.href"
                     :href="area.href"
                     class="flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
-                    :class="area.current ? 'bg-white text-primary shadow-xs' : 'text-white/80 hover:text-white'"
+                    :class="area.current ? 'bg-white text-csc-blue shadow-xs' : 'text-white/80 hover:text-white'"
                     :aria-current="area.current ? 'true' : undefined"
                     :aria-label="area.label"
                     :title="area.label"

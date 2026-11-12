@@ -30,7 +30,7 @@ const plural = computed(() => (count.value === 1 ? props.noun : `${props.noun}s`
     >
         <span
             class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface"
-            :class="count ? (late ? 'text-warning' : 'text-primary') : 'text-success'"
+            :class="count ? (late ? 'text-warning-fg' : 'text-link') : 'text-success-fg'"
             aria-hidden="true"
         >
             <Icon :name="count ? 'clock' : 'check'" size="lg" />
@@ -47,7 +47,7 @@ const plural = computed(() => (count.value === 1 ? props.noun : `${props.noun}s`
                 <template v-else>Nothing is waiting for your action.</template>
             </p>
         </div>
-        <p v-if="late" class="flex items-center gap-2 rounded-full bg-surface px-3.5 py-1.5 text-sm font-medium text-warning" role="status">
+        <p v-if="late" class="flex items-center gap-2 rounded-full bg-surface px-3.5 py-1.5 text-sm font-medium text-warning-fg" role="status">
             <Icon name="exclamation" size="sm" />{{ late }} waiting {{ lateAfter }}+ days
         </p>
     </div>

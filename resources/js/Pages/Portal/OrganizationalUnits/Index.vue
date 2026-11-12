@@ -84,7 +84,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
             <button
                 v-if="!term"
                 type="button"
-                class="inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-primary shadow-xs transition-colors hover:border-primary hover:bg-info-bg sm:self-auto"
+                class="inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-link shadow-xs transition-colors hover:border-primary hover:bg-info-bg sm:self-auto"
                 @click="toggleAll"
             >
                 <Icon :name="allOpen ? 'chevronUp' : 'chevronDown'" size="sm" />
@@ -108,7 +108,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
                     <Icon name="building" />
                 </span>
                 <span class="min-w-0 flex-1">
-                    <span class="block text-base font-semibold text-primary">{{ group.label }}</span>
+                    <span class="block text-base font-semibold text-link">{{ group.label }}</span>
                     <span class="block text-xs text-text-muted">
                         {{ plural(group.units.length, 'office') }} · {{ plural(total(group), 'employee') }}
                     </span>
@@ -133,7 +133,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
                             <span class="block truncate text-sm font-semibold text-text">{{ unit.name }}</span>
                             <span v-if="unit.short_name" class="block truncate text-xs text-text-muted">{{ unit.short_name }}</span>
                         </span>
-                        <span class="shrink-0 rounded-full bg-info-bg px-2.5 py-1 text-xs font-medium text-primary">
+                        <span class="shrink-0 rounded-full bg-info-bg px-2.5 py-1 text-xs font-medium text-link">
                             {{ plural(unit.employee_count, 'employee') }}
                         </span>
                         <Icon
@@ -176,7 +176,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
                         <Link
                             :href="`/organizational-units/${unit.id}`"
-                            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover hover:underline"
+                            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-link hover:text-primary-hover hover:underline"
                         >
                             View systems &amp; services
                             <Icon name="chevronRight" size="sm" />

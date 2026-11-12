@@ -93,7 +93,7 @@ const clear = () => {
                 />
             </div>
         </div>
-        <button v-if="filtering" type="button" class="rounded-sm pb-2 text-sm font-medium text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="clear">Clear filters</button>
+        <button v-if="filtering" type="button" class="rounded-sm pb-2 text-sm font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" @click="clear">Clear filters</button>
         <p class="pb-2 text-sm text-text-muted sm:ml-auto" role="status">{{ services.length }} service{{ services.length === 1 ? '' : 's' }}</p>
     </form>
 

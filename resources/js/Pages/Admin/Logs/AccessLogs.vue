@@ -73,7 +73,7 @@ const columns = [
                 <div class="text-xs text-text-muted">{{ timeAgo(row.accessed_at) }}</div>
             </template>
             <template #cell-role_name="{ row }">
-                <span v-if="row.role_name" class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">{{ row.role_name }}</span>
+                <span v-if="row.role_name" class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-link">{{ row.role_name }}</span>
                 <span v-else class="text-text-muted">Guest</span>
             </template>
             <template #cell-browser="{ row }">

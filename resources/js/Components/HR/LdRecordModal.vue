@@ -58,7 +58,7 @@ const submit = () => {
     <Modal :open="open" :title="editing ? 'Edit training' : 'Add training'" :icon="editing ? 'pencil' : 'plus'" :tone="editing ? 'primary' : 'success'" size="lg" @close="emit('close')">
         <form id="ld-record-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
             <p v-if="record?.approval_status === 'rejected'" class="rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-sm text-text sm:col-span-2">
-                <strong class="text-danger">Rejected by HRD:</strong> {{ record.rejection_reason }}<br />
+                <strong class="text-danger-fg">Rejected by HRD:</strong> {{ record.rejection_reason }}<br />
                 <template v-if="onBehalf">Saving keeps it rejected — approve it from the log if it's now in order.</template>
                 <template v-else>Saving your changes sends it back to HRD for review.</template>
             </p>
@@ -69,8 +69,8 @@ const submit = () => {
                 <InputLabel for="ld-certificate">Certificate (optional)</InputLabel>
                 <p v-if="record?.certificate && !form.remove_certificate" class="mt-1 text-sm text-text">
                     Current: {{ record.certificate.name }}
-                    <label class="ml-3 inline-flex items-center gap-1.5 text-danger">
-                        <input v-model="form.remove_certificate" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-danger focus:ring-2 focus:ring-focus-ring" />
+                    <label class="ml-3 inline-flex items-center gap-1.5 text-danger-fg">
+                        <input v-model="form.remove_certificate" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-danger-fg focus:ring-2 focus:ring-focus-ring" />
                         Remove
                     </label>
                 </p>

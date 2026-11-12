@@ -117,17 +117,17 @@ const field = 'mt-1 block w-full';
                 <div class="sm:col-span-2">
                     <InputLabel for="apply-type" required>6.A Type of leave</InputLabel>
                     <Select id="apply-type" v-model="form.leave_type_id" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!(form.errors.leave_type_id || issues.leave_type_id)" />
-                    <p v-if="type?.ineligible.length" class="mt-1 text-sm text-danger">{{ type.ineligible.join(' ') }}</p>
+                    <p v-if="type?.ineligible.length" class="mt-1 text-sm text-danger-fg">{{ type.ineligible.join(' ') }}</p>
                     <InputError :message="form.errors.leave_type_id || issues.leave_type_id" />
                     <p v-if="type?.description" class="mt-1 text-xs text-text-muted">{{ type.description }}</p>
                     <p v-if="type?.supporting_documents" class="mt-1 text-xs text-text-muted">Attach: {{ type.supporting_documents }}</p>
                 </div>
 
                 <fieldset v-if="details.length" class="sm:col-span-2">
-                    <legend class="block text-sm font-medium text-text">6.B Details of leave <span class="text-danger" aria-hidden="true">*</span></legend>
+                    <legend class="block text-sm font-medium text-text">6.B Details of leave <span class="text-danger-fg" aria-hidden="true">*</span></legend>
                     <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1">
                         <label v-for="option in details" :key="option.value" class="inline-flex items-center gap-2 text-sm text-text">
-                            <input v-model="form.detail" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                            <input v-model="form.detail" type="radio" :value="option.value" class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                             {{ option.label }}
                         </label>
                     </div>
@@ -146,19 +146,19 @@ const field = 'mt-1 block w-full';
 
                 <div v-if="type?.allows_emergency_filing" class="sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form.is_emergency" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.is_emergency" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                         Emergency: I'm filing on my return instead of {{ type.advance_filing_days }} days ahead
                     </label>
                 </div>
 
                 <div v-if="type?.allows_half_day" class="flex flex-wrap items-center gap-4 sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                        <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                         Half day
                     </label>
                     <template v-if="form.is_half_day">
                         <label v-for="period in ['AM', 'PM']" :key="period" class="inline-flex items-center gap-1.5 text-sm text-text">
-                            <input v-model="form.half_day_period" type="radio" :value="period" class="h-4 w-4 border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />{{ period }}
+                            <input v-model="form.half_day_period" type="radio" :value="period" class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />{{ period }}
                         </label>
                     </template>
                     <InputError :message="form.errors.is_half_day || issues.is_half_day || form.errors.half_day_period" />
@@ -167,8 +167,8 @@ const field = 'mt-1 block w-full';
                 <fieldset class="sm:col-span-2">
                     <legend class="block text-sm font-medium text-text">6.D Commutation</legend>
                     <div class="mt-1 flex gap-5">
-                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="false" class="h-4 w-4 border-border-strong text-primary" />Not requested</label>
-                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="true" class="h-4 w-4 border-border-strong text-primary" />Requested</label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="false" class="h-4 w-4 border-border-strong text-link" />Not requested</label>
+                        <label class="inline-flex items-center gap-2 text-sm text-text"><input v-model="form.commutation_requested" type="radio" :value="true" class="h-4 w-4 border-border-strong text-link" />Requested</label>
                     </div>
                 </fieldset>
 
@@ -231,7 +231,7 @@ const field = 'mt-1 block w-full';
                         <dd class="mt-0.5 text-text">{{ supervisor || 'Not set — ask HR' }}</dd>
                     </div>
                 </dl>
-                <p v-if="preview && Object.keys(issues).length === 0 && preview.days > 0" class="mt-4 rounded-md bg-success-bg px-3 py-2 text-sm text-success">Ready to submit.</p>
+                <p v-if="preview && Object.keys(issues).length === 0 && preview.days > 0" class="mt-4 rounded-md bg-success-bg px-3 py-2 text-sm text-success-fg">Ready to submit.</p>
             </Card>
 
             <Card title="Your credits" icon="chartBar">

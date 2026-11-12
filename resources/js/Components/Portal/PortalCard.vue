@@ -47,7 +47,7 @@ defineProps({
         class="group flex gap-3 rounded-lg border border-border bg-surface p-4 transition duration-200 hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:hover:-translate-y-0.5"
     >
         <span
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-white"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-link transition-colors duration-200 group-hover:bg-primary group-hover:text-white"
             aria-hidden="true"
         >
             <Icon :name="icon" />

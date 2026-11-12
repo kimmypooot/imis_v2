@@ -191,7 +191,7 @@ const toggleFeatured = () => {
                         <dd class="mt-0.5">
                             <Link
                                 :href="`/announcements/${announcement.slug}`"
-                                class="font-medium text-primary hover:text-primary-hover"
+                                class="font-medium text-link hover:text-primary-hover"
                             >
                                 /announcements/{{ announcement.slug }}
                             </Link>

@@ -30,7 +30,7 @@ const props = defineProps({
 const waitingSince = () => props.requests.map((row) => row.requested_at);
 
 // How long something has waited: calm at first, then amber, then red.
-const ageClass = (iso) => (daysSince(iso) >= 7 ? 'bg-danger-bg text-danger' : daysSince(iso) >= 3 ? 'bg-warning-bg text-warning' : 'bg-surface-muted text-text-muted');
+const ageClass = (iso) => (daysSince(iso) >= 7 ? 'bg-danger-bg text-danger-fg' : daysSince(iso) >= 3 ? 'bg-warning-bg text-warning-fg' : 'bg-surface-muted text-text-muted');
 const ageLabel = (iso) => (daysSince(iso) === 0 ? 'today' : `${daysSince(iso)} d`);
 
 // Oldest first, with a filter to focus on the ones that have waited.
@@ -107,7 +107,7 @@ const submit = () => form.post(`/payslips/approvals/${deciding.value.id}`, { pre
                     <div class="min-w-0 flex-1 basis-64">
                         <p class="flex flex-wrap items-center gap-2">
                             <span class="font-medium text-text">{{ row.employee }}</span>
-                            <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-primary">{{ row.period }}</span>
+                            <span class="rounded-full bg-info-bg px-2 py-0.5 text-xs font-medium text-link">{{ row.period }}</span>
                         </p>
                         <p class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></p>
                         <p v-if="row.purpose" class="mt-1.5 flex items-start gap-1.5 text-sm text-text">

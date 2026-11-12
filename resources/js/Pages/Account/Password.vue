@@ -58,10 +58,10 @@ const strength = computed(() => {
 
     return [
         null,
-        { score, label: 'Weak', bar: 'bg-danger', text: 'text-danger' },
-        { score, label: 'Fair', bar: 'bg-warning', text: 'text-warning' },
-        { score, label: 'Good', bar: 'bg-info', text: 'text-info' },
-        { score, label: 'Strong', bar: 'bg-success', text: 'text-success' },
+        { score, label: 'Weak', bar: 'bg-danger', text: 'text-danger-fg' },
+        { score, label: 'Fair', bar: 'bg-warning', text: 'text-warning-fg' },
+        { score, label: 'Good', bar: 'bg-info', text: 'text-info-fg' },
+        { score, label: 'Strong', bar: 'bg-success', text: 'text-success-fg' },
     ][score];
 });
 
@@ -153,7 +153,7 @@ const tips = [
                             required
                             :invalid="confirmState === 'mismatch'"
                         />
-                        <p v-if="confirmState" class="mt-2 flex items-center gap-1.5 text-xs" :class="confirmState === 'match' ? 'text-success' : 'text-danger'" role="status">
+                        <p v-if="confirmState" class="mt-2 flex items-center gap-1.5 text-xs" :class="confirmState === 'match' ? 'text-success-fg' : 'text-danger-fg'" role="status">
                             <Icon :name="confirmState === 'match' ? 'check' : 'exclamation'" size="xs" />
                             {{ confirmState === 'match' ? 'Passwords match' : 'Passwords do not match yet' }}
                         </p>
@@ -163,7 +163,7 @@ const tips = [
                         <Button type="submit" :loading="form.processing" :disabled="!form.current_password || !form.password || confirmState === 'mismatch'">
                             Update password
                         </Button>
-                        <p v-if="form.recentlySuccessful" class="flex items-center gap-1.5 text-xs text-success" role="status">
+                        <p v-if="form.recentlySuccessful" class="flex items-center gap-1.5 text-xs text-success-fg" role="status">
                             <Icon name="check" size="xs" />
                             Password updated
                         </p>
@@ -173,13 +173,13 @@ const tips = [
 
             <!-- Side guidance: the brand-tinted tips panel. -->
             <aside class="self-start rounded-lg border border-info-border bg-info-bg p-6" aria-label="Password tips">
-                <h2 class="flex items-center gap-2 text-sm font-semibold text-primary">
+                <h2 class="flex items-center gap-2 text-sm font-semibold text-link">
                     <Icon name="shield" size="sm" />
                     Staying secure
                 </h2>
                 <ul class="mt-4 space-y-4">
                     <li v-for="tip in tips" :key="tip.text" class="flex gap-3 text-sm leading-relaxed text-text-muted">
-                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-primary" aria-hidden="true">
+                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-link" aria-hidden="true">
                             <Icon :name="tip.icon" size="xs" />
                         </span>
                         {{ tip.text }}

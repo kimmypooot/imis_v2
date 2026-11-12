@@ -107,7 +107,7 @@ const toggleStatus = async (service) => {
         <DataTable :columns="columns" :rows="services" caption="Services" export-name="imis-services">
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
-                <div v-if="row.featured" class="text-xs text-primary">Featured</div>
+                <div v-if="row.featured" class="text-xs text-link">Featured</div>
             </template>
             <template #cell-visibility="{ row }"><span class="capitalize">{{ row.visibility }}</span></template>
             <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>

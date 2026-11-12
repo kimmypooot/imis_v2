@@ -53,7 +53,7 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
         <Card title="1. Download, fill in, upload" icon="download">
             <ol class="list-decimal space-y-1 pl-5 text-sm text-text">
                 <li>
-                    <a href="/admin/hr/plantilla-sheet/template" class="font-medium text-primary hover:underline">Download the template</a>: every active item, with what's on
+                    <a href="/admin/hr/plantilla-sheet/template" class="font-medium text-link hover:underline">Download the template</a>: every active item, with what's on
                     record now.
                 </li>
                 <li>
@@ -93,7 +93,7 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
 
             <p class="text-sm text-text">
                 {{ summary.rows }} rows: <strong>{{ summary.ready }}</strong> ready to apply,
-                <strong :class="summary.errors ? 'text-danger' : ''">{{ summary.errors }}</strong> with errors (skipped), {{ summary.unchanged }} unchanged.
+                <strong :class="summary.errors ? 'text-danger-fg' : ''">{{ summary.errors }}</strong> with errors (skipped), {{ summary.unchanged }} unchanged.
             </p>
 
             <div class="table-card mt-4">
@@ -111,13 +111,13 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
                         <tr v-for="row in shown" :key="row.line">
                             <td class="align-top tabular-nums text-text-muted">{{ row.line }}</td>
                             <td class="align-top">
-                                <a v-if="row.item_id" :href="`/admin/hr/plantilla/${row.item_id}`" class="font-medium text-primary hover:underline">{{ row.item }}</a>
+                                <a v-if="row.item_id" :href="`/admin/hr/plantilla/${row.item_id}`" class="font-medium text-link hover:underline">{{ row.item }}</a>
                                 <span v-else>{{ row.item }}</span>
                                 <div v-if="row.position_title" class="text-xs text-text-muted">{{ row.position_title }}</div>
                             </td>
                             <td class="align-top">{{ row.holder || 'Vacant' }}</td>
                             <td class="align-top">
-                                <ul v-if="row.errors.length" class="space-y-0.5 text-danger">
+                                <ul v-if="row.errors.length" class="space-y-0.5 text-danger-fg">
                                     <li v-for="error in row.errors" :key="error">{{ error }}</li>
                                 </ul>
                                 <ul v-else-if="row.changes.length" class="space-y-0.5">

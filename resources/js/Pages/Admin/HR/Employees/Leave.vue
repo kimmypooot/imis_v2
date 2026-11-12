@@ -112,7 +112,7 @@ const field = 'mt-1 block w-full';
                         <p v-if="settings.supervisor_position" class="text-xs font-normal text-text-muted">
                             {{ settings.supervisor_position }} · {{ settings.supervisor_source === 'set' ? 'set by HR' : 'by position and office' }}
                         </p>
-                        <p v-if="!settings.supervisor" class="text-xs font-normal text-warning">Needed before they can file leave (supervisor's recommendation).</p>
+                        <p v-if="!settings.supervisor" class="text-xs font-normal text-warning-fg">Needed before they can file leave (supervisor's recommendation).</p>
                     </dd>
                 </div>
                 <div>
@@ -200,7 +200,7 @@ const field = 'mt-1 block w-full';
             </div>
             <div class="sm:col-span-2">
                 <label class="inline-flex items-center gap-2 text-sm text-text">
-                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-primary focus:ring-2 focus:ring-focus-ring" />
+                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                     Solo parent (for Solo Parent Leave)
                 </label>
             </div>

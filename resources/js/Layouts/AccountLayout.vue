@@ -31,7 +31,7 @@ const isCurrent = (href) => path.value === href || path.value.startsWith(`${href
                             class="group relative flex items-center gap-3 rounded-md px-3.5 py-2.5 text-compact transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring max-lg:border max-lg:whitespace-nowrap"
                             :class="
                                 isCurrent(section.href)
-                                    ? 'bg-info-bg font-semibold text-primary max-lg:border-info-border'
+                                    ? 'bg-info-bg font-semibold text-link max-lg:border-info-border'
                                     : 'text-text-muted hover:bg-surface-muted hover:text-text max-lg:border-border max-lg:bg-surface'
                             "
                             :aria-current="isCurrent(section.href) ? 'page' : undefined"
@@ -43,7 +43,7 @@ const isCurrent = (href) => path.value === href || path.value.startsWith(`${href
                             />
                             <span
                                 class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors max-lg:hidden"
-                                :class="isCurrent(section.href) ? 'bg-surface text-primary' : 'bg-surface-muted text-text-muted group-hover:bg-surface group-hover:text-primary'"
+                                :class="isCurrent(section.href) ? 'bg-surface text-link' : 'bg-surface-muted text-text-muted group-hover:bg-surface group-hover:text-link'"
                                 aria-hidden="true"
                             >
                                 <Icon :name="section.icon" size="sm" />
