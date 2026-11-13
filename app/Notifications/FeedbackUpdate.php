@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Notifications\Concerns\EmailsWhenWanted;
 use App\Support\Notifications\NotificationPreferences;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -11,9 +13,9 @@ use Illuminate\Notifications\Notification;
  * `feedback`), or new feedback arriving for those who manage it (kind
  * `feedback_received`). Shown under the bell; `url` is an in-app path.
  */
-class FeedbackUpdate extends Notification
+class FeedbackUpdate extends Notification implements ShouldQueueAfterCommit
 {
-    use EmailsWhenWanted;
+    use EmailsWhenWanted, Queueable;
 
     public const KIND = 'feedback';
 

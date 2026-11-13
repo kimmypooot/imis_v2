@@ -46,6 +46,12 @@ Schedule::command('imis:account-lifecycle')->dailyAt('00:30')->timezone('Asia/Ma
 // HR-8: employees hear when a recurring deduction is nearly completed.
 Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/Manila')->withoutOverlapping();
 
+// Queued work (bell and email notifications, so a page never waits on the
+// mail server). Needs only `schedule:run` in cron, like every task here: the
+// worker handles what is waiting, then stops after at most 50 seconds, so the
+// next minute's run never overlaps it. Failed jobs show in System Health.
+Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3 --backoff=30')->everyMinute()->withoutOverlapping();
+
 // Admin-3: a task paused on Admin → Scheduled Tasks is skipped until it
 // is resumed. Keep this last, so it covers every task above.
 foreach (Schedule::events() as $task) {

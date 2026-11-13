@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Notifications\Concerns\EmailsWhenWanted;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -10,9 +12,9 @@ use Illuminate\Notifications\Notification;
  * attention — a figure fell behind its target, or a system's figures
  * stopped arriving (or came back). Shown under the bell; totals only.
  */
-class ExecutiveAlert extends Notification
+class ExecutiveAlert extends Notification implements ShouldQueueAfterCommit
 {
-    use EmailsWhenWanted;
+    use EmailsWhenWanted, Queueable;
 
     public const KIND = 'executive';
 

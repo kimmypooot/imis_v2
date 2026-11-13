@@ -6,6 +6,8 @@ use App\Notifications\Concerns\EmailsWhenWanted;
 use App\Support\Executive\MetricFormat;
 use App\Support\Executive\TargetStatus;
 use App\Support\Mail\EmailTemplates;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -14,9 +16,9 @@ use Illuminate\Notifications\Notification;
  * bell. Built from the dashboard's own data (ExecutiveDashboard::build)
  * for the recipient; totals only.
  */
-class ExecutiveDigest extends Notification
+class ExecutiveDigest extends Notification implements ShouldQueueAfterCommit
 {
-    use EmailsWhenWanted;
+    use EmailsWhenWanted, Queueable;
 
     public const KIND = 'executive_digest';
 

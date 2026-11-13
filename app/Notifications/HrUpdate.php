@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Notifications\Concerns\EmailsWhenWanted;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -10,9 +12,9 @@ use Illuminate\Notifications\Notification;
  * a flexible work arrangement, a weekly report). Shown under the bell;
  * `url` is always an in-app path.
  */
-class HrUpdate extends Notification
+class HrUpdate extends Notification implements ShouldQueueAfterCommit
 {
-    use EmailsWhenWanted;
+    use EmailsWhenWanted, Queueable;
 
     public const KIND = 'hr';
 
