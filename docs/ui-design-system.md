@@ -74,12 +74,20 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   ghost, link; sizes sm/md/lg), `ActionButton` (icon + tooltip), `Badge`
   (`pill` for counts), `StatusBadge`, `Card`, `PageHeader`, `Tabs`, `Table`,
   `DataTable`, `Pagination`, `EmptyState`, `Skeleton`, `Spinner`, `Icon`,
-  `UserAvatar`, `StatTile`, `Dropdown`, `Tooltip`.
+  `UserAvatar`, `StatTile` (counts up, bar fills on arrival), `Dropdown`,
+  `Tooltip`, `ProgressBar` (determinate or indeterminate), `LoadingState`
+  (in-panel spinner + line), `ErrorPage` (403/404/419/429/500/503).
 - **Forms:** `TextInput`, `PasswordInput`, `Select`, `Textarea`, `Checkbox`,
   `CheckboxGroup`, `Radio`, `Switch`, `FileInput`, `FormGroup`, `InputError`.
   For a compact field in a filter bar use `class="filter-control"`; for a
   one-off raw field use `class="form-control block w-full px-3 py-2"`.
-- **Feedback:** `Modal`, `ConfirmDialog`, `Alert`, and the toast/confirm
+- **Effects (in `app.css`):** `stagger` (children rise in turn, once per
+  page), `card-interactive`, `ripple` (Button), the red page-load bar,
+  `animate-pop`/`animate-ping-soft`. `Button` takes `icon`/`iconRight`;
+  `Badge` takes `pulse`; `Card` takes `interactive`. All are flat: no
+  gradients; every motion has a reduced-motion fallback.
+- **Feedback:** `Modal` (solid brand-navy header by default; green for "Add", red for
+  destructive), `ConfirmDialog`, `Alert`, and the toast/confirm
   host (`DialogHost`, `useDialog`).
 - **Shell:** `AppShell` with `AdminLayout`, `PortalLayout`, `AccountLayout`
   and `AuthLayout`; `SidebarNav`, `UserMenu`, `HelpMenu`, `NotificationMenu`.
@@ -89,6 +97,15 @@ is a status with a dot; `Switch` applies immediately, `Checkbox` is saved
 with a form; `Table` is for small static tables, `DataTable` for searchable,
 sortable, paged lists. Tables that mirror a paper form keep their own
 form-like header.
+
+## Reusing this in other hub systems
+
+Copy, in this order, so the look stays identical: the `@theme` block, `@utility`
+blocks and keyframes in `resources/css/app.css`; `Components/UI/` (Button,
+Spinner, ProgressBar, LoadingState, Skeleton, Collapse, Badge, Card, tables,
+ErrorPage); `Components/Feedback/` (Modal, Alert, DialogHost);
+`Composables/useCountUp.js`. Error pages render `ErrorPage` from a thin page per
+status (see `Pages/Errors`). Keep it flat: no gradients, no container shadows.
 
 ## Rules for new code
 

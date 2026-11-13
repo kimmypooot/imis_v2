@@ -36,7 +36,7 @@ const tones = {
 };
 
 const base =
-    'inline-flex h-7 w-7 items-center justify-center rounded-md border bg-surface transition-colors pointer-coarse:h-10 pointer-coarse:w-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-40';
+    'inline-flex h-7 w-7 items-center justify-center rounded-md border bg-surface transition duration-150 ease-standard hover:-translate-y-px active:translate-y-0 active:scale-95 motion-reduce:transition-none motion-reduce:hover:translate-y-0 pointer-coarse:h-10 pointer-coarse:w-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-40';
 </script>
 
 <template>

@@ -23,6 +23,11 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    /** With `dot`: a halo radiates from the dot, for something live or in progress (Processing, Online). */
+    pulse: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const classes = computed(() => toneClasses[props.tone]);
@@ -33,7 +38,10 @@ const classes = computed(() => toneClasses[props.tone]);
         class="inline-flex items-center py-0.5 text-xs"
         :class="[pill ? 'rounded-full font-semibold' : 'rounded-md font-medium', dot ? 'gap-1.5 px-2.5' : 'gap-1 px-2', classes]"
     >
-        <span v-if="dot" class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+        <span v-if="dot" class="relative flex h-1.5 w-1.5" aria-hidden="true">
+            <span v-if="pulse" class="absolute inline-flex h-full w-full animate-ping-soft rounded-full bg-current motion-reduce:animate-none" />
+            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+        </span>
         <slot />
     </span>
 </template>

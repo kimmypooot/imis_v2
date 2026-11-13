@@ -88,14 +88,14 @@ const toastStyles = {
         <!-- Alert / confirm -->
         <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0 scale-95" leave-active-class="transition duration-100" leave-to-class="opacity-0">
             <div v-if="state.dialog" class="fixed inset-0 z-dialog flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-black/50" aria-hidden="true" @click="settle(false)" />
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-[2px]" aria-hidden="true" @click="settle(false)" />
                 <div
                     ref="alertRef"
                     role="alertdialog"
                     aria-modal="true"
                     aria-labelledby="dialog-title"
                     :aria-describedby="state.dialog.text ? 'dialog-text' : undefined"
-                    class="relative w-full max-w-sm rounded-lg bg-surface p-6 text-center shadow-xl"
+                    class="relative w-full max-w-sm animate-pop rounded-lg bg-surface p-6 text-center shadow-modal motion-reduce:animate-none"
                 >
                     <span
                         class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-4"
@@ -144,7 +144,7 @@ const toastStyles = {
                 <div
                     v-for="item in state.toasts"
                     :key="item.id"
-                    class="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-surface p-3.5 pr-3 text-sm shadow-lg"
+                    class="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-surface p-3.5 pr-3 text-sm shadow-menu"
                     @mouseenter="holdToast(item.id)"
                     @mouseleave="releaseToast(item.id)"
                     @focusin="holdToast(item.id)"

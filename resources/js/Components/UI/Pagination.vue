@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import Icon from './Icon.vue';
 
 /**
  * The one pager. Two modes, one look:
@@ -35,18 +36,18 @@ const pages = computed(() => {
 <template>
     <nav v-if="lastPage > 1" :aria-label="label" :class="numbered ? '' : 'mt-4 flex items-center justify-between gap-3 text-sm'">
         <template v-if="!numbered">
-            <Link v-if="prevUrl" :href="prevUrl" class="pager-btn" preserve-scroll>Previous</Link>
+            <Link v-if="prevUrl" :href="prevUrl" class="pager-btn gap-1" preserve-scroll><Icon name="chevronLeft" size="sm" />Previous</Link>
             <span v-else />
 
             <span class="text-text-muted">Page {{ currentPage }} of {{ lastPage }}</span>
 
-            <Link v-if="nextUrl" :href="nextUrl" class="pager-btn" preserve-scroll>Next</Link>
+            <Link v-if="nextUrl" :href="nextUrl" class="pager-btn gap-1" preserve-scroll>Next<Icon name="chevronRight" size="sm" /></Link>
             <span v-else />
         </template>
 
         <ul v-else class="flex flex-wrap items-center gap-1">
             <li>
-                <button type="button" class="pager-btn" :disabled="currentPage === 1" @click="$emit('change', currentPage - 1)">Previous</button>
+                <button type="button" class="pager-btn gap-1" :disabled="currentPage === 1" @click="$emit('change', currentPage - 1)"><Icon name="chevronLeft" size="sm" />Previous</button>
             </li>
             <li v-for="(item, index) in pages" :key="`${item}-${index}`">
                 <span v-if="item === '…'" class="px-2 text-text-muted" aria-hidden="true">…</span>
@@ -62,7 +63,7 @@ const pages = computed(() => {
                 </button>
             </li>
             <li>
-                <button type="button" class="pager-btn" :disabled="currentPage === lastPage" @click="$emit('change', currentPage + 1)">Next</button>
+                <button type="button" class="pager-btn gap-1" :disabled="currentPage === lastPage" @click="$emit('change', currentPage + 1)">Next<Icon name="chevronRight" size="sm" /></button>
             </li>
         </ul>
     </nav>
@@ -72,7 +73,7 @@ const pages = computed(() => {
 @reference '../../../css/app.css';
 
 .pager-btn {
-    @apply inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-primary/40 hover:bg-info-bg hover:text-link focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-surface disabled:hover:text-text;
+    @apply inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition duration-150 active:scale-95 hover:border-primary/40 hover:bg-info-bg hover:text-link focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-surface disabled:hover:text-text;
 }
 
 .pager-btn.is-current {

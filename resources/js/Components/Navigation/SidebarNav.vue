@@ -2,6 +2,7 @@
 import { computed, reactive } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import Icon from '../UI/Icon.vue';
+import Collapse from '../UI/Collapse.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 
 /**
@@ -154,7 +155,7 @@ const sectionId = (section) => `nav-section-${section.key.toLowerCase().replace(
 const linkClass = (href) => {
     return [
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark',
-        isActive(href) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
+        isActive(href) ? 'bg-white/15 text-white ring-1 ring-inset ring-white/15' : 'text-white/80 hover:bg-white/10 hover:text-white hover:ring-1 hover:ring-inset hover:ring-white/5',
     ];
 };
 </script>
@@ -188,7 +189,7 @@ const linkClass = (href) => {
                     <span v-if="!isExpanded(entry) && badgeCount(entry)" :class="badgeClass">{{ badgeText(badgeCount(entry)) }}<span class="sr-only"> new inside</span></span>
                     <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(entry) }" />
                 </button>
-                <ul v-show="isExpanded(entry)" class="mt-0.5 space-y-0.5">
+                <Collapse :open="isExpanded(entry)" class="mt-0.5 space-y-0.5">
                     <li v-for="item in entry.items" :key="item.type === 'section' ? item.key : item.href">
                         <Link
                             v-if="item.type === 'link'"
@@ -221,7 +222,7 @@ const linkClass = (href) => {
                                 <span class="flex-1">{{ item.label }}</span>
                                 <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(item) }" />
                             </button>
-                            <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
+                            <Collapse :open="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
                                 <li v-for="link in item.items" :key="link.href">
                                     <Link
                                         :href="link.href"
@@ -238,10 +239,10 @@ const linkClass = (href) => {
                                         {{ link.label }}
                                     </Link>
                                 </li>
-                            </ul>
+                            </Collapse>
                         </template>
                     </li>
-                </ul>
+                </Collapse>
             </div>
 
             <!-- Portal: group as a heading; only its sections collapse -->
@@ -277,7 +278,7 @@ const linkClass = (href) => {
                             <span v-if="!isExpanded(item) && badgeCount(item)" :class="badgeClass">{{ badgeText(badgeCount(item)) }}<span class="sr-only"> new inside</span></span>
                             <Icon name="chevronDown" size="sm" class="transition-transform duration-150 ease-standard motion-reduce:transition-none" :class="{ 'rotate-180': isExpanded(item) }" />
                         </button>
-                        <ul v-show="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
+                        <Collapse :open="isExpanded(item)" :id="sectionId(item)" class="mt-0.5 mb-1 space-y-0.5">
                             <li v-for="link in item.items" :key="link.href">
                                 <Link
                                     :href="link.href"
@@ -291,7 +292,7 @@ const linkClass = (href) => {
                                     <span v-if="badgeCount(link)" :class="badgeClass">{{ badgeText(badgeCount(link)) }}<span class="sr-only"> new</span></span>
                                 </Link>
                             </li>
-                        </ul>
+                        </Collapse>
                     </div>
                 </template>
             </div>

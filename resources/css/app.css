@@ -13,8 +13,65 @@
     --animate-shake: shake 0.4s ease-in-out;
     --animate-fade-in: fade-in 0.35s ease-out both;
     --animate-rise: rise 0.3s ease-out both;
-    --animate-shimmer: shimmer 1.5s ease-in-out infinite;
     --animate-breathe: breathe 3.2s ease-in-out infinite;
+    --animate-ping-soft: ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+    --animate-indeterminate: indeterminate 1.5s cubic-bezier(0.2, 0, 0, 1) infinite;
+    --animate-pop: pop 0.22s cubic-bezier(0.2, 0, 0, 1) both;
+    --animate-dash: spinner-dash 1.4s ease-in-out infinite;
+
+    /* A status dot's halo swelling outward and fading: "live". */
+    @keyframes ping-soft {
+        0% {
+            transform: scale(1);
+            opacity: 0.55;
+        }
+        75%,
+        100% {
+            transform: scale(2.4);
+            opacity: 0;
+        }
+    }
+
+    /* An unknown-length progress bar: a segment sweeping across the track. */
+    @keyframes indeterminate {
+        0% {
+            transform: translateX(-100%) scaleX(0.4);
+        }
+        50% {
+            transform: translateX(60%) scaleX(0.7);
+        }
+        100% {
+            transform: translateX(260%) scaleX(0.4);
+        }
+    }
+
+    /* A small confirmation bounce for things that just appeared or changed. */
+    @keyframes pop {
+        0% {
+            opacity: 0;
+            transform: scale(0.92);
+        }
+        100% {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    /* The arc of the spinner stretches and shrinks as it turns. */
+    @keyframes spinner-dash {
+        0% {
+            stroke-dasharray: 1 150;
+            stroke-dashoffset: 0;
+        }
+        50% {
+            stroke-dasharray: 90 150;
+            stroke-dashoffset: -35;
+        }
+        100% {
+            stroke-dasharray: 90 150;
+            stroke-dashoffset: -124;
+        }
+    }
 
     /* A slow, soft glow that swells and settles. */
     @keyframes breathe {
@@ -47,15 +104,6 @@
         }
         to {
             opacity: 1;
-        }
-    }
-
-    @keyframes shimmer {
-        0% {
-            background-position: 200% 0;
-        }
-        100% {
-            background-position: -200% 0;
         }
     }
 
@@ -162,6 +210,10 @@
     --shadow-menu: 0 10px 15px -3px rgb(28 30 42 / 0.12), 0 4px 6px -4px rgb(28 30 42 / 0.1);
     --shadow-modal: 0 20px 25px -5px rgb(28 30 42 / 0.18), 0 8px 10px -6px rgb(28 30 42 / 0.12);
 
+    /* Primary/danger/success fills catch a little light from above: a 1px
+       inner highlight on the top edge, so buttons read as pressable. */
+    --shadow-sheen: inset 0 1px 0 rgb(255 255 255 / 0.18);
+
     /* Type scale. Tailwind's own sizes cover xs (12px) to 4xl; these fill the
        two gaps that pages kept patching with arbitrary `text-[…]` values:
        `2xs` for dense captions/badges, `compact` for dense table and
@@ -262,22 +314,25 @@
 
 
 /*
- * A placeholder block for content that is still loading: a soft light
- * band sweeping over a tinted base. Pair it with `motion-reduce:animate-none`
+ * A placeholder block for content that is still loading: a flat tinted
+ * block that gently fades in and out. Pair it with `motion-reduce:animate-none`
  * (the Skeleton component does) so it holds still for people who ask for
  * less motion.
  */
 @utility skeleton {
     background-color: var(--color-border);
-    background-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        color-mix(in srgb, var(--color-surface) 75%, transparent) 50%,
-        transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: var(--animate-shimmer);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
     border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
 }
 
 /*
@@ -527,6 +582,137 @@
     &::-webkit-scrollbar-thumb:hover {
         background-color: rgb(255 255 255 / 0.4);
     }
+}
+
+/*
+ * Page-load progress bar (Inertia's NProgress): a slim flat bar in the brand
+ * red with a soft glow on its leading edge. The
+ * spinner is switched off; the bar alone says "working". Selectors carry an
+ * `html` prefix so they outrank the style Inertia injects at runtime.
+ */
+html #nprogress .bar {
+    height: 3px;
+    background: var(--color-accent) !important;
+    z-index: 100;
+}
+
+html #nprogress .peg {
+    box-shadow:
+        0 0 12px var(--color-accent),
+        0 0 5px var(--color-accent);
+}
+
+html #nprogress .spinner {
+    display: none;
+}
+
+/* Selected text takes the brand tint rather than the browser's default blue. */
+::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+/*
+ * Staggered entrance for a group of siblings (stat tiles, a card grid): each
+ * child rises in a beat after the one before. Use once per page, on the
+ * first thing people look at, not on everything.
+ */
+@utility stagger {
+    & > * {
+        animation: var(--animate-rise);
+        animation-delay: calc(45ms * var(--i, 0));
+    }
+
+    & > :nth-child(1) {
+        --i: 0;
+    }
+    & > :nth-child(2) {
+        --i: 1;
+    }
+    & > :nth-child(3) {
+        --i: 2;
+    }
+    & > :nth-child(4) {
+        --i: 3;
+    }
+    & > :nth-child(5) {
+        --i: 4;
+    }
+    & > :nth-child(6) {
+        --i: 5;
+    }
+    & > :nth-child(7) {
+        --i: 6;
+    }
+    & > :nth-child(n + 8) {
+        --i: 7;
+    }
+}
+
+/*
+ * A card that can be opened or followed: the border warms to the brand and
+ * the card rises 1px on hover; pressing settles it back. Border and motion
+ * only: containers stay flat (no shadow).
+ */
+@utility card-interactive {
+    transition:
+        border-color 150ms var(--ease-standard),
+        transform 150ms var(--ease-standard);
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: none;
+    }
+}
+
+/* A table row the person has ticked: a brand tint that outranks the hover. */
+.data-table tbody tr[data-selected] {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* Press feedback on filled buttons: a soft light spreading from the pointer. */
+@utility ripple {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: var(--ripple-x, 50%);
+        top: var(--ripple-y, 50%);
+        width: 12rem;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: rgb(255 255 255 / 0.22);
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    &[data-rippling]::after {
+        animation: ripple 520ms var(--ease-standard);
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.6);
+        opacity: 0;
+    }
+}
+
+/* Slim scrollbars inside scrolling panels (tables, menus, dialogs). */
+.table-card {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-border-strong) 55%, transparent) transparent;
 }
 
 /* Honor the system "reduce motion" setting everywhere: transitions and

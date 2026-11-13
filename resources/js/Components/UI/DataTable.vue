@@ -344,14 +344,15 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                             <button
                                 v-if="column.sortable !== false && column.label"
                                 type="button"
-                                class="inline-flex items-center gap-1 uppercase hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                                class="group/sort inline-flex items-center gap-1 uppercase transition-colors hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                                 @click="toggleSort(column)"
                             >
                                 {{ column.label }}
                                 <Icon
                                     :name="sortKey === column.key ? (sortDirection === 'asc' ? 'chevronUp' : 'chevronDown') : 'sort'"
                                     size="sm"
-                                    :class="sortKey === column.key ? 'text-link' : 'opacity-40'"
+                                    class="transition duration-150"
+                                    :class="sortKey === column.key ? 'text-link' : 'opacity-40 group-hover/sort:opacity-80'"
                                 />
                             </button>
                             <span v-else-if="column.label">{{ column.label }}</span>
@@ -362,7 +363,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                 <tbody>
                     <template v-if="showSkeleton">
                         <tr v-for="row in Math.min(perPage, 5)" :key="`skeleton-${row}`" aria-hidden="true">
-                            <td v-for="cell in columns.length + (numbered ? 1 : 0) + (selectable ? 1 : 0)" :key="cell"><Skeleton class="h-4 w-full max-w-40" /></td>
+                            <td v-for="cell in columns.length + (numbered ? 1 : 0) + (selectable ? 1 : 0)" :key="cell"><Skeleton class="h-4 w-full" :style="{ maxWidth: `${[10, 7, 9, 6, 8][(row + cell) % 5]}rem` }" /></td>
                         </tr>
                     </template>
                     <tr v-else-if="visibleRows.length === 0" class="hover:!bg-transparent">
@@ -383,7 +384,7 @@ const alignClass = (column) => ({ center: 'text-center', right: 'text-right' })[
                         </td>
                     </tr>
                     <template v-else>
-                        <tr v-for="(row, index) in visibleRows" :key="row[rowKey] ?? index" :class="rowClass ? rowClass(row) : undefined">
+                        <tr v-for="(row, index) in visibleRows" :key="row[rowKey] ?? index" :class="rowClass ? rowClass(row) : undefined" :data-selected="selectable && isSelected(row, index) ? '' : undefined">
                             <td v-if="selectable">
                                 <input
                                     type="checkbox"

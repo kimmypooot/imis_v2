@@ -49,14 +49,14 @@ const onKeydown = (event, index) => {
                 :aria-selected="tab.key === modelValue"
                 :aria-controls="`${id}-panel-${tab.key}`"
                 :tabindex="tab.key === modelValue ? 0 : -1"
-                class="-mb-px flex shrink-0 items-center gap-1.5 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="tab.key === modelValue ? 'border-primary text-link' : 'border-transparent text-text-muted hover:border-border-strong/40 hover:text-text'"
+                class="relative -mb-px flex shrink-0 items-center gap-1.5 rounded-t-md px-3 py-2 text-sm font-medium transition-colors duration-150 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-center after:rounded-full after:transition-transform after:duration-200 after:ease-standard hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-reduce:after:transition-none"
+                :class="tab.key === modelValue ? 'text-link after:scale-x-100 after:bg-primary' : 'text-text-muted after:scale-x-0 after:bg-border-strong/50 hover:text-text hover:after:scale-x-100'"
                 @click="select(tab.key)"
                 @keydown="onKeydown($event, index)"
             >
                 <Icon v-if="tab.icon" :name="tab.icon" size="sm" />
                 {{ tab.label }}
-                <span v-if="tab.badge" class="rounded-full bg-danger px-1.5 text-2xs font-semibold leading-4 text-white">{{ tab.badge }}</span>
+                <span v-if="tab.badge" class="animate-pop rounded-full bg-danger px-1.5 text-2xs font-semibold leading-4 text-white">{{ tab.badge }}</span>
             </button>
         </div>
 

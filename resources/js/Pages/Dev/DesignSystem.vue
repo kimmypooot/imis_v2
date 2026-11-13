@@ -14,6 +14,8 @@ import UserAvatar from '../../Components/UI/UserAvatar.vue';
 import StatusBadge from '../../Components/UI/StatusBadge.vue';
 import Skeleton from '../../Components/UI/Skeleton.vue';
 import Spinner from '../../Components/UI/Spinner.vue';
+import ProgressBar from '../../Components/UI/ProgressBar.vue';
+import LoadingState from '../../Components/UI/LoadingState.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import Icon from '../../Components/UI/Icon.vue';
 import Dropdown from '../../Components/UI/Dropdown.vue';
@@ -368,6 +370,16 @@ const demoRows = [
                 <Spinner size="md" />
                 <Spinner size="lg" />
             </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <ProgressBar :value="64" label="Determinate" show-value />
+                <ProgressBar label="Indeterminate (length unknown)" />
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <Button icon="download">With a leading icon</Button>
+                <Button variant="secondary" icon-right="chevronDown">With a trailing icon</Button>
+                <Badge tone="success" dot pulse>Live</Badge>
+            </div>
+            <LoadingState class="mt-2" compact label="Loading the latest figures…" />
             <div class="mt-4 space-y-2" role="status" aria-label="Loading example">
                 <Skeleton class="h-4 w-48" />
                 <Skeleton class="h-4 w-72" />

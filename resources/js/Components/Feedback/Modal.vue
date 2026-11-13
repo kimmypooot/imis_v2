@@ -5,8 +5,8 @@ import { trapTabKey } from '../../Utils/focusTrap';
 
 /**
  * Generic accessible dialog, styled after the legacy IMIS Bootstrap
- * modals: optional colored header (`tone`: success for "Add …", primary
- * for "Edit …", danger for destructive flows), a scrolling body, and a
+ * modals: a solid header (brand navy by default and for "Edit …", `success` for
+ * "Add …", `danger` for destructive flows), a scrolling body, and a
  * footer pinned to the bottom. Covers confirmation/form/information use
  * cases via slots — it does not know what content it holds.
  *
@@ -46,8 +46,9 @@ let triggerElement = null;
 
 const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-5xl' };
 const headerClasses = {
-    neutral: 'border-b border-border text-text',
-    primary: 'bg-primary text-white',
+    // `brand` is the navy for big brand surfaces (deeper than `primary` in the dark theme).
+    neutral: 'bg-brand text-white',
+    primary: 'bg-brand text-white',
     success: 'bg-success text-white',
     danger: 'bg-danger text-white',
 };
@@ -90,7 +91,7 @@ onBeforeUnmount(() => {
     <Teleport to="body">
         <Transition enter-active-class="transition-opacity duration-150" enter-from-class="opacity-0" leave-active-class="transition-opacity duration-100" leave-to-class="opacity-0">
         <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/50" aria-hidden="true" @click="close" />
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-[2px]" aria-hidden="true" @click="close" />
 
             <div
                 ref="dialogRef"
@@ -98,7 +99,7 @@ onBeforeUnmount(() => {
                 aria-modal="true"
                 :aria-labelledby="titleId"
                 tabindex="-1"
-                class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-lg bg-surface shadow-xl focus:outline-none"
+                class="relative flex max-h-[92dvh] w-full animate-pop flex-col overflow-hidden rounded-lg bg-surface shadow-modal focus:outline-none motion-reduce:animate-none"
                 :class="sizeClasses[size]"
             >
                 <div class="flex shrink-0 items-center justify-between gap-4 px-5 py-3" :class="headerClasses[tone]">
@@ -108,8 +109,7 @@ onBeforeUnmount(() => {
                     </h2>
                     <button
                         type="button"
-                        class="shrink-0 rounded-md p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                        :class="tone === 'neutral' ? 'text-text-muted hover:bg-surface-muted hover:text-text' : 'text-white/85 hover:bg-white/15 hover:text-white'"
+                        class="shrink-0 rounded-md p-1 text-white/85 hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring-on-dark"
                         aria-label="Close dialog"
                         @click="close"
                     >

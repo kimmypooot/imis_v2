@@ -13,16 +13,18 @@ defineProps({
     title: { type: String, default: null },
     icon: { type: String, default: null },
     description: { type: String, default: null },
+    /** The card opens or links somewhere: it warms and rises a pixel on hover. */
+    interactive: { type: Boolean, default: false },
 });
 </script>
 
 <template>
-    <section class="rounded-lg border border-border bg-surface p-5">
+    <section class="rounded-lg border border-border bg-surface p-5" :class="{ 'card-interactive': interactive }">
         <header v-if="title || description || $slots.header || $slots.actions" class="mb-4 flex flex-wrap items-start justify-between gap-3">
             <slot name="header">
                 <div class="min-w-0">
                     <h2 v-if="title" class="flex items-center gap-2.5 text-base font-semibold text-text">
-                        <span v-if="icon" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
+                        <span v-if="icon" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-info-bg text-link ring-1 ring-inset ring-info-border" aria-hidden="true">
                             <Icon :name="icon" size="sm" />
                         </span>
                         {{ title }}
