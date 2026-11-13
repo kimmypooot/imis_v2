@@ -20,14 +20,15 @@
         {{-- The legacy IMIS icons (old-imis assets/img). --}}
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.png" type="image/png">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
         {{-- Lets phones install IMIS to the home screen. No service worker on
              purpose: pages carry personal data and must never be served stale. --}}
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#2a338f">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-title" content="IMIS">
+        <meta name="apple-mobile-web-app-title" content="CSC RO VIII - IMIS">
+        <meta name="application-name" content="CSC RO VIII - IMIS">
 
         {{-- The boot screens' styles (resources/css/boot.css, which app.css also
              imports for the Vue splash) are inlined, so a screen paints at once

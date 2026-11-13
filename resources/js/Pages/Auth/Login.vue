@@ -24,6 +24,8 @@ const props = defineProps({
     turnstileSiteKey: { type: String, default: null },
     // System Settings → Security: whether saved-account cards are offered.
     rememberAccounts: { type: Boolean, default: false },
+    // System Settings → Security: whether fingerprint / face sign-in is offered.
+    passkeysEnabled: { type: Boolean, default: true },
 });
 
 const form = useForm({
@@ -420,7 +422,7 @@ const submit = () => {
         </form>
     </div>
 
-    <div v-if="passkeysSupported" class="mt-5">
+    <div v-if="passkeysEnabled && passkeysSupported" class="mt-5">
         <div class="relative mb-4 text-center" aria-hidden="true">
             <span class="absolute inset-x-0 top-1/2 border-t border-border" />
             <span class="relative bg-surface px-3 text-xs text-muted">or</span>

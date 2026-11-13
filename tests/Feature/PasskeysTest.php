@@ -6,9 +6,12 @@ use App\Enums\AuditEvent;
 use App\Enums\UserStatus;
 use App\Models\AuditLog;
 use App\Models\LoginHistory;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\Security\PasskeySignIn;
 use App\Support\Security\SessionLimits;
+use App\Support\Settings\Settings;
+use Database\Seeders\SettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -119,6 +122,50 @@ class PasskeysTest extends TestCase
         $this->assertSame('portal', $request->session()->get('signed_in'));
         $this->assertTrue(LoginHistory::query()->where('user_id', $user->id)->where('ip_address', '10.0.0.9')->exists());
         $this->assertNotNull($user->fresh()->last_login_at);
+    }
+
+    public function test_administrators_can_switch_passkeys_off_and_back_on(): void
+    {
+        $this->seed(SettingSeeder::class);
+        $user = User::factory()->create(['password' => 'a-Good-passw0rd!']);
+
+        $this->get('/login')->assertInertia(fn (Assert $page) => $page->where('passkeysEnabled', true));
+
+        Setting::query()->where('key', 'security_passkeys')->update(['value' => '0']);
+        Settings::flush();
+
+        $this->get('/login')->assertInertia(fn (Assert $page) => $page->where('passkeysEnabled', false));
+        $this->getJson('/passkeys/login/options')->assertForbidden()->assertJsonPath('message', 'Fingerprint and face sign-in is turned off. Please use your password.');
+
+        $this->actingAs($user)->post('/account/passkeys/confirm', ['current_password' => 'a-Good-passw0rd!']);
+        $this->getJson('/user/passkeys/options')->assertForbidden();
+        $this->get('/account/passkeys')->assertInertia(fn (Assert $page) => $page->where('enabled', false));
+
+        Setting::query()->where('key', 'security_passkeys')->update(['value' => '1']);
+        Settings::flush();
+
+        $this->getJson('/user/passkeys/options')->assertOk();
+    }
+
+    public function test_a_device_can_still_be_removed_while_passkeys_are_off(): void
+    {
+        $this->seed(SettingSeeder::class);
+        $user = User::factory()->create(['password' => 'a-Good-passw0rd!']);
+        $own = $this->passkeyFor($user);
+        Setting::query()->where('key', 'security_passkeys')->update(['value' => '0']);
+        Settings::flush();
+
+        $this->actingAs($user)->post('/account/passkeys/confirm', ['current_password' => 'a-Good-passw0rd!']);
+        $this->delete("/user/passkeys/{$own->id}")->assertRedirect();
+
+        $this->assertModelMissing($own);
+    }
+
+    public function test_the_guide_explains_fingerprint_sign_in(): void
+    {
+        $slugs = collect(config('user-guide.categories'))->flatMap(fn (array $category) => array_column($category['articles'], 'slug'));
+
+        $this->assertContains('fingerprint-sign-in', $slugs->all());
     }
 
     public function test_the_login_page_still_loads_and_password_sign_in_is_unchanged(): void

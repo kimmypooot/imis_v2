@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsurePasskeysEnabled;
+
 return [
 
     /*
@@ -40,7 +42,7 @@ return [
     |
     */
 
-    'user_handle_secret' => env('PASSKEYS_USER_HANDLE_SECRET', config('app.key')),
+    'user_handle_secret' => env('PASSKEYS_USER_HANDLE_SECRET') ?: config('app.key'),
 
     /*
     |--------------------------------------------------------------------------
@@ -77,7 +79,7 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['web', EnsurePasskeysEnabled::class],
 
     /*
     |--------------------------------------------------------------------------

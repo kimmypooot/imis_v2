@@ -66,6 +66,25 @@ return [
                     'link' => ['label' => 'Change my password', 'href' => '/account/password'],
                 ],
                 [
+                    'slug' => 'fingerprint-sign-in',
+                    'title' => 'Signing in with your fingerprint or face',
+                    'summary' => 'Use your own phone or laptop to sign in without typing your password.',
+                    'steps' => [
+                        'Sign in with your password on your own phone or laptop.',
+                        'Open Account settings, then Fingerprint sign-in, and confirm your password.',
+                        'Name the device (for example "My Samsung") and choose "Add this device".',
+                        'Your device asks for your fingerprint, face or screen-lock PIN. Approve it.',
+                        'Next time, choose "Sign in with fingerprint or face" on the login page.',
+                    ],
+                    'tips' => [
+                        'Only add your own phone or laptop. Never add a shared office computer: anyone who can unlock it could sign in as you.',
+                        'Your fingerprint never leaves your phone. IMIS only receives a signature that proves your device unlocked it.',
+                        'Lost your phone? Remove it under Account settings, Fingerprint sign-in, or ask the system administrator to remove it for you. Your password still works.',
+                        'Your password always works too, whether or not you add a device.',
+                    ],
+                    'link' => ['label' => 'Set up fingerprint sign-in', 'href' => '/account/passkeys'],
+                ],
+                [
                     'slug' => 'email-notifications',
                     'title' => 'Choosing which notifications are also emailed',
                     'summary' => 'The bell always shows everything; pick what you also want in your inbox.',

@@ -31,6 +31,7 @@ class AuthenticatedSessionController extends Controller
             // never leaves the server.
             'turnstileSiteKey' => Turnstile::enabled() ? config('services.turnstile.site_key') : null,
             'rememberAccounts' => SecurityPolicy::rememberAccountsEnabled(),
+            'passkeysEnabled' => SecurityPolicy::passkeysEnabled(),
         ]);
     }
 

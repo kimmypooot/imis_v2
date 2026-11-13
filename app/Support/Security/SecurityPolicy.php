@@ -44,6 +44,12 @@ class SecurityPolicy
         return (bool) Settings::get('security_remember_accounts');
     }
 
+    /** Whether people may sign in with, and add, fingerprint / face (passkey) devices. */
+    public static function passkeysEnabled(): bool
+    {
+        return (bool) Settings::get('security_passkeys');
+    }
+
     public static function maxLoginAttempts(): int
     {
         return (int) Settings::get('security_login_max_attempts');

@@ -28,6 +28,8 @@ defineOptions({ layout: [PortalLayout, AccountLayout] });
 const props = defineProps({
     passkeys: { type: Array, default: () => [] },
     passwordConfirmed: { type: Boolean, default: false },
+    // System Settings → Security: when off, devices can be removed but not added.
+    enabled: { type: Boolean, default: true },
 });
 
 const confirmForm = useForm({ current_password: '' });
@@ -98,7 +100,10 @@ const steps = [
     />
 
     <div class="max-w-5xl space-y-6">
-        <Alert v-if="!isSupported" tone="warning">
+        <Alert v-if="!enabled" tone="warning">
+            Fingerprint and face sign-in is turned off by the administrator for now. Your password works as usual, and devices you added are kept for when it is turned back on.
+        </Alert>
+        <Alert v-else-if="!isSupported" tone="warning">
             This browser or device cannot create passkeys. Try your phone, or a recent version of Chrome, Edge, Safari or Firefox. Your password still works everywhere.
         </Alert>
 
@@ -121,8 +126,9 @@ const steps = [
                 </Card>
 
                 <!-- Step 2: add this device. -->
-                <Card v-else title="Add this device" icon="shield" description="Your device will ask for your fingerprint, face or screen-lock PIN.">
+                <Card v-else-if="enabled" title="Add this device" icon="shield" description="Your device will ask for your fingerprint, face or screen-lock PIN.">
                     <form class="space-y-4" @submit.prevent="add">
+                        <Alert tone="info" icon="info">Only add your own phone or laptop. Never add a shared office computer: anyone who can unlock it could sign in as you.</Alert>
                         <TextInput id="device_name" v-model="deviceName" label="Name this device" icon="desktop" maxlength="60" required />
                         <Alert v-if="addError" tone="danger" icon="xCircle" role="alert">{{ addError }}</Alert>
                         <Button type="submit" :loading="adding" :disabled="adding || !isSupported || !deviceName.trim()">

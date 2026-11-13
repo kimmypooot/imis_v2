@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
+use App\Support\Security\SecurityPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +31,7 @@ class PasskeyController extends Controller
                 'last_used_at' => $passkey->last_used_at?->toIso8601String(),
             ])->values(),
             'passwordConfirmed' => $this->passwordConfirmed($request),
+            'enabled' => SecurityPolicy::passkeysEnabled(),
         ]);
     }
 

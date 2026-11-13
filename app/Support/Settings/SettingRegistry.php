@@ -243,6 +243,13 @@ final class SettingRegistry
                 'description' => 'After someone signs in, their name, username and photo link are saved automatically on that browser, so the login page can show a card to pick instead of typing the username. People can remove a card themselves. Passwords are never saved. Turn off if staff share computers.',
                 'default' => true,
             ],
+            'security_passkeys' => [
+                'type' => SettingType::Boolean,
+                'group' => SettingGroup::Security,
+                'label' => 'Allow fingerprint / face sign-in',
+                'description' => 'People can add their phone or laptop (passkey) in Account settings and sign in with a fingerprint, face or screen-lock PIN instead of a password. The password always still works. Turn off to stop passkey sign-in and adding devices at once; devices already added are kept and work again when you turn it back on.',
+                'default' => true,
+            ],
             'account_inactive_days' => [
                 'type' => SettingType::Integer,
                 'group' => SettingGroup::Security,
