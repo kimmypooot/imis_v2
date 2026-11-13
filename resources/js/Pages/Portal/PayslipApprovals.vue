@@ -143,7 +143,7 @@ const submit = () => form.post(`/payslips/approvals/${deciding.value.id}`, { pre
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="deciding = null">Cancel</Button>
+            <Button variant="secondary" @click="deciding = null" icon="close">Cancel</Button>
             <Button type="submit" form="payslip-decision-form" :variant="form.decision === 'approved' ? 'success' : 'danger'" :loading="form.processing">
                 {{ form.decision === 'approved' ? 'Approve' : 'Reject' }}
             </Button>

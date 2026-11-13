@@ -190,8 +190,8 @@ const remove = async (contract) => {
                         <div v-if="contract.remarks" class="text-xs text-text-muted">{{ contract.remarks }}</div>
                     </div>
                     <div v-if="history.can_manage" class="flex gap-1">
-                        <Button variant="secondary" size="sm" @click="openEdit(contract)">Edit</Button>
-                        <Button variant="outline" size="sm" @click="remove(contract)">Remove</Button>
+                        <Button variant="secondary" size="sm" @click="openEdit(contract)" icon="pencil">Edit</Button>
+                        <Button variant="outline" size="sm" @click="remove(contract)" icon="trash">Remove</Button>
                     </div>
                 </li>
             </ul>

@@ -92,7 +92,7 @@ const confirmStatusChange = () => {
         ]"
     >
         <template v-if="can('committees.update')" #actions>
-            <Button variant="secondary" @click="editingCommittee = true">Edit committee</Button>
+            <Button variant="secondary" @click="editingCommittee = true" icon="pencil">Edit committee</Button>
         </template>
     </PageHeader>
 
@@ -160,8 +160,8 @@ const confirmStatusChange = () => {
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <Button :loading="editForm.processing" @click="saveEdit(member)">Save</Button>
-                        <Button variant="secondary" @click="cancelEdit">Cancel</Button>
+                        <Button :loading="editForm.processing" @click="saveEdit(member)" icon="check">Save</Button>
+                        <Button variant="secondary" @click="cancelEdit" icon="close">Cancel</Button>
                     </div>
                 </div>
 
@@ -179,7 +179,7 @@ const confirmStatusChange = () => {
                     </div>
 
                     <div v-if="can('committees.update')" class="flex shrink-0 gap-2">
-                        <Button variant="secondary" @click="startEdit(member)">Edit</Button>
+                        <Button variant="secondary" @click="startEdit(member)" icon="pencil">Edit</Button>
                         <Button
                             :variant="member.status === 'active' ? 'danger' : 'primary'"
                             @click="requestEndMembership(member)"
@@ -233,7 +233,7 @@ const confirmStatusChange = () => {
                     />
                 </div>
 
-                <Button type="submit" :loading="addForm.processing">Add member</Button>
+                <Button type="submit" :loading="addForm.processing" icon="plus">Add member</Button>
             </form>
         </Card>
     </div>

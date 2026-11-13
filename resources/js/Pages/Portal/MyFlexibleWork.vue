@@ -179,7 +179,7 @@ const submitReport = () => report.post('/my/flexible-work/reports', { preserveSc
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="applyOpen = false">Cancel</Button>
+            <Button variant="secondary" @click="applyOpen = false" icon="close">Cancel</Button>
             <Button type="submit" form="fwa-form" variant="success" :loading="arrangement.processing">Send to HR</Button>
         </template>
     </Modal>

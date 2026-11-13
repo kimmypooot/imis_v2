@@ -160,7 +160,7 @@ const tips = [
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4 border-t border-border pt-6">
-                        <Button type="submit" :loading="form.processing" :disabled="!form.current_password || !form.password || confirmState === 'mismatch'">
+                        <Button type="submit" :loading="form.processing" :disabled="!form.current_password || !form.password || confirmState === 'mismatch'" icon="check">
                             Update password
                         </Button>
                         <p v-if="form.recentlySuccessful" class="flex items-center gap-1.5 text-xs text-success-fg" role="status">

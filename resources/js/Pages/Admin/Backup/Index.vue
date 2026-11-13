@@ -243,8 +243,8 @@ const columns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="pending = null">Cancel</Button>
-            <Button type="submit" form="stored-download" variant="success" :loading="storedDownloading" :disabled="!storedPassword">Download</Button>
+            <Button variant="secondary" @click="pending = null" icon="close">Cancel</Button>
+            <Button type="submit" form="stored-download" variant="success" :loading="storedDownloading" :disabled="!storedPassword" icon="download">Download</Button>
         </template>
     </Modal>
 </template>

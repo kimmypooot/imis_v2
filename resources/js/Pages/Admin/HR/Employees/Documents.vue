@@ -122,7 +122,7 @@ const breadcrumbs = computed(() => [
             <InputError :message="archiveForm.errors.reason" />
         </div>
         <template #footer>
-            <Button variant="secondary" @click="archiving = null">Cancel</Button>
+            <Button variant="secondary" @click="archiving = null" icon="close">Cancel</Button>
             <Button variant="danger" :loading="archiveForm.processing" :disabled="!archiveForm.reason.trim()" @click="archive">Archive</Button>
         </template>
     </Modal>

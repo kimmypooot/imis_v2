@@ -74,7 +74,7 @@ const dateRange = (row) =>
     <div class="space-y-6">
         <p class="text-sm text-text-muted">Approved trainings that started in {{ year }}. Pending and rejected entries aren't counted.</p>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Employees" :value="stats.employees" icon="users" tone="primary" :progress="reached">
                 <span class="font-semibold text-success-fg">{{ stats.trained }}</span> with training this year ({{ reached }}%)
             </StatTile>

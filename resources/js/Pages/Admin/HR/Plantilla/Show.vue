@@ -301,7 +301,7 @@ const field = 'mt-1 block w-full';
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Cancel</Button>
+            <Button variant="secondary" @click="close" icon="close">Cancel</Button>
             <Button type="submit" form="plantilla-action-form" :variant="mode === 'abolish' ? 'danger' : 'primary'" :loading="form.processing">
                 {{ { appoint: 'Appoint', step: 'Record increment', vacate: 'Vacate', correct: 'Save', abolish: 'Abolish' }[mode] ?? 'Save' }}
             </Button>

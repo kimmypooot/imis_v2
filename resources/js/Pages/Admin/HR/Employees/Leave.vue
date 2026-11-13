@@ -169,7 +169,7 @@ const field = 'mt-1 block w-full';
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="entryOpen = false">Cancel</Button>
+            <Button variant="secondary" @click="entryOpen = false" icon="close">Cancel</Button>
             <Button type="submit" form="leave-entry-form" variant="success" :loading="entry.processing">Post</Button>
         </template>
     </Modal>
@@ -183,7 +183,7 @@ const field = 'mt-1 block w-full';
             <TextInput id="reverse-reason" v-model="reversal.reason" label="Reason" required :error="reversal.errors.reason" />
         </form>
         <template #footer>
-            <Button variant="secondary" @click="reversing = null">Cancel</Button>
+            <Button variant="secondary" @click="reversing = null" icon="close">Cancel</Button>
             <Button type="submit" form="leave-reverse-form" variant="danger" :loading="reversal.processing">Reverse</Button>
         </template>
     </Modal>
@@ -214,8 +214,8 @@ const field = 'mt-1 block w-full';
             </template>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="settingsOpen = false">Cancel</Button>
-            <Button type="submit" form="leave-settings-form" :loading="settingsForm.processing">Save</Button>
+            <Button variant="secondary" @click="settingsOpen = false" icon="close">Cancel</Button>
+            <Button type="submit" form="leave-settings-form" :loading="settingsForm.processing" icon="check">Save</Button>
         </template>
     </Modal>
 </template>

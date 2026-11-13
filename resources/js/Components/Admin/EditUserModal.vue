@@ -247,7 +247,7 @@ const close = () => emit('close');
                                 <Alert v-if="grantingSuperAdmin" tone="warning">
                                     Granting Super Administrator gives unrestricted control over IMIS.
                                 </Alert>
-                                <Button type="submit" :loading="rolesForm.processing" :disabled="!rolesForm.isDirty">Save roles</Button>
+                                <Button type="submit" :loading="rolesForm.processing" :disabled="!rolesForm.isDirty" icon="check">Save roles</Button>
                             </fieldset>
                         </form>
 
@@ -330,14 +330,14 @@ const close = () => emit('close');
         </template>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Close</Button>
+            <Button variant="secondary" @click="close" icon="close">Close</Button>
             <Button
                 v-if="tab !== 'security'"
                 type="submit"
                 form="edit-user-form"
                 :loading="form.processing"
                 :disabled="!canEdit || !form.isDirty"
-            >
+             icon="check">
                 Save changes
             </Button>
         </template>

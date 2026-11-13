@@ -142,7 +142,7 @@ const onKeydown = (event) => {
                     <Icon name="close" size="sm" />
                 </button>
             </div>
-            <Button type="submit" :loading="loading">Search</Button>
+            <Button type="submit" :loading="loading" icon="search">Search</Button>
         </div>
         <p id="search-page-hint" class="mt-1 text-xs text-text-muted">
             Press <kbd class="rounded-sm border border-border bg-surface px-1 font-sans">/</kbd> anywhere to jump here.

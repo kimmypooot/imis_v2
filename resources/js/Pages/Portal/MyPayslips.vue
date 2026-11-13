@@ -102,7 +102,7 @@ const columns = [
             <p class="font-semibold text-text">Your {{ latestReady.period }} payslip is ready</p>
             <p class="text-sm text-text-muted">Approved<template v-if="latestReady.decided_by"> by {{ latestReady.decided_by }}</template>. Open it to view, print or save as PDF.</p>
         </div>
-        <Button variant="success" :href="`/payslips/${latestReady.entry_id}`" external>View payslip</Button>
+        <Button variant="success" :href="`/payslips/${latestReady.entry_id}`" external icon="eye">View payslip</Button>
     </div>
 
     <Card v-if="monthTiles.length" title="Your months" icon="calendar" class="mb-6">
@@ -114,7 +114,7 @@ const columns = [
                         <p class="truncate text-sm font-medium text-text">{{ month.period }}</p>
                         <p class="text-xs">{{ monthState[month.request_status].label }}</p>
                     </div>
-                    <Button v-if="month.request_status === 'approved'" size="sm" variant="success" :href="`/payslips/${month.entry_id}`" external>View</Button>
+                    <Button v-if="month.request_status === 'approved'" size="sm" variant="success" :href="`/payslips/${month.entry_id}`" external icon="eye">View</Button>
                 </div>
                 <button
                     v-else
@@ -175,7 +175,7 @@ const columns = [
                 <template #cell-requested_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span></template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end gap-3 text-sm whitespace-nowrap">
-                        <Button v-if="row.status === 'approved'" size="sm" :href="`/payslips/${row.entry_id}`" external>View payslip</Button>
+                        <Button v-if="row.status === 'approved'" size="sm" :href="`/payslips/${row.entry_id}`" external icon="eye">View payslip</Button>
                         <button v-if="row.status === 'pending'" type="button" class="text-danger-fg hover:underline" @click="cancel(row)">Cancel</button>
                     </div>
                 </template>

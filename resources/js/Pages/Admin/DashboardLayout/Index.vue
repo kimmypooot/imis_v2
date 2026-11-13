@@ -155,8 +155,8 @@ const save = () => {
         <p v-if="form.errors.application_ids" class="mt-2 text-sm text-danger-fg">{{ form.errors.application_ids }}</p>
 
         <template #footer>
-            <Button variant="secondary" @click="editing = null">Cancel</Button>
-            <Button variant="success" :loading="form.processing" :disabled="!form.isDirty" @click="save">Save</Button>
+            <Button variant="secondary" @click="editing = null" icon="close">Cancel</Button>
+            <Button variant="success" :loading="form.processing" :disabled="!form.isDirty" @click="save" icon="check">Save</Button>
         </template>
     </Modal>
 </template>

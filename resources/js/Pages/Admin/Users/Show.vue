@@ -83,7 +83,7 @@ const isGrantingSuperAdmin = computed(() => {
     >
         <template #actions>
             <Link href="/users">
-                <Button variant="secondary">Back to Users</Button>
+                <Button variant="secondary" icon="arrowLeft">Back to Users</Button>
             </Link>
         </template>
     </PageHeader>
@@ -112,7 +112,7 @@ const isGrantingSuperAdmin = computed(() => {
                 </Alert>
 
                 <InputError :message="form.errors.role_ids" />
-                <Button type="submit" :loading="form.processing">Save roles</Button>
+                <Button type="submit" :loading="form.processing" icon="check">Save roles</Button>
             </form>
         </Card>
 
@@ -149,7 +149,7 @@ const isGrantingSuperAdmin = computed(() => {
                 />
             </FormGroup>
             <InputError :message="accessForm.errors.access" />
-            <Button type="submit" :loading="accessForm.processing">Save system access</Button>
+            <Button type="submit" :loading="accessForm.processing" icon="check">Save system access</Button>
         </form>
 
         <ul v-else class="divide-y divide-border text-sm">

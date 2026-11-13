@@ -113,8 +113,8 @@ const reset = () => form.reset();
                 </p>
 
                 <div class="mt-6 flex flex-wrap items-center gap-4 border-t border-border pt-5">
-                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty || !email">Save changes</Button>
-                    <Button v-if="form.isDirty" type="button" variant="secondary" @click="reset">Discard</Button>
+                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty || !email" icon="check">Save changes</Button>
+                    <Button v-if="form.isDirty" type="button" variant="secondary" @click="reset" icon="close">Discard</Button>
                     <p v-if="form.isDirty" class="flex items-center gap-1.5 text-xs text-warning-fg" role="status">
                         <span class="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
                         Unsaved changes

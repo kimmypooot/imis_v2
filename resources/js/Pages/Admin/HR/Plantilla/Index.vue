@@ -76,7 +76,7 @@ const columns = [
     </PageHeader>
 
     <div class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Items" :value="counts.total" icon="grid" tone="primary">not abolished</StatTile>
             <StatTile label="Filled" :value="counts.filled" icon="users" tone="success" :progress="counts.total ? Math.round((counts.filled / counts.total) * 100) : 0">
                 {{ counts.total ? Math.round((counts.filled / counts.total) * 100) : 0 }}% of items

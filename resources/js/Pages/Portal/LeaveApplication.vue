@@ -59,7 +59,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
             <Button v-if="canUpdate && application.status === 'returned'" :href="`/my/leave/apply?resubmit=${application.id}`">
                 <Icon name="pencil" size="sm" />Correct and resubmit
             </Button>
-            <Button v-if="canUpdate" variant="danger" @click="cancel">Cancel application</Button>
+            <Button v-if="canUpdate" variant="danger" @click="cancel" icon="close">Cancel application</Button>
         </template>
     </PageHeader>
 

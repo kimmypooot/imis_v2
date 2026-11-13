@@ -124,7 +124,7 @@ const columns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="deciding = null">Cancel</Button>
+            <Button variant="secondary" @click="deciding = null" icon="close">Cancel</Button>
             <Button type="submit" form="mon-decision-form" :variant="decision.decision === 'approved' ? 'success' : 'danger'" :loading="decision.processing">{{ decision.decision === 'approved' ? 'Approve' : 'Reject' }}</Button>
         </template>
     </Modal>
@@ -143,7 +143,7 @@ const columns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="terminalOpen = false">Cancel</Button>
+            <Button variant="secondary" @click="terminalOpen = false" icon="close">Cancel</Button>
             <Button type="submit" form="terminal-form" variant="success" :loading="terminal.processing">File</Button>
         </template>
     </Modal>

@@ -133,7 +133,7 @@ const columns = [
         <template v-if="canManage" #actions>
             <template v-if="isDraft">
                 <Button variant="secondary" @click="regenerate"><Icon name="refresh" size="sm" />Regenerate</Button>
-                <Button variant="secondary" @click="destroy">Delete draft</Button>
+                <Button variant="secondary" @click="destroy" icon="trash">Delete draft</Button>
                 <Button variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
             </template>
             <Button v-else variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
@@ -253,7 +253,7 @@ const columns = [
                                     />
                                     <label :for="`reason-${line.id}`" class="sr-only">Reason for changing {{ line.label }}</label>
                                     <input :id="`reason-${line.id}`" v-model="lineForm.reason" type="text" maxlength="500" placeholder="Reason (optional)" class="w-44 filter-control py-1 px-2" />
-                                    <Button type="submit" size="sm" :loading="lineForm.processing">Save</Button>
+                                    <Button type="submit" size="sm" :loading="lineForm.processing" icon="check">Save</Button>
                                 </form>
                                 <template v-else>{{ formatPeso(line.amount) }}</template>
                                 <InputError v-if="editingLine === line.id" :message="lineForm.errors.amount || lineForm.errors.run" />
@@ -309,10 +309,10 @@ const columns = [
 
         <template #footer>
             <Button v-if="canAdjust" variant="ghost" @click="rebuild"><Icon name="refresh" size="sm" />Rebuild from profile</Button>
-            <Button v-if="canCancel" variant="ghost" class="mr-auto" @click="askReason('cancel')">Cancel payslip</Button>
+            <Button v-if="canCancel" variant="ghost" class="mr-auto" @click="askReason('cancel')" icon="close">Cancel payslip</Button>
             <Button v-if="entry && !isDraft" variant="secondary" :href="`/payslips/${entry.id}`" external><Icon name="printer" size="sm" />Payslip</Button>
             <Button v-if="entry" variant="secondary" :href="`/admin/hr/payroll/profiles/${entry.employee_id}`">Pay profile</Button>
-            <Button @click="openId = null">Close</Button>
+            <Button @click="openId = null" icon="close">Close</Button>
         </template>
     </Modal>
 
@@ -327,7 +327,7 @@ const columns = [
             <InputError :message="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry" />
         </form>
         <template #footer>
-            <Button variant="ghost" @click="reasonDialog = null">Back</Button>
+            <Button variant="ghost" @click="reasonDialog = null" icon="arrowLeft">Back</Button>
             <Button type="submit" form="reason-form" variant="danger" :loading="reasonForm.processing">{{ reasonDialog === 'reopen' ? 'Reopen' : 'Cancel payslip' }}</Button>
         </template>
     </Modal>

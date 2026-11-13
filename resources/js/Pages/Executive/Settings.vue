@@ -163,7 +163,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
                                     />
                                     <InputError :message="feedErrors[feed.id]" />
                                 </div>
-                                <Button type="submit" size="sm" variant="secondary" :disabled="(urls[feed.id] || '') === (feed.feed_url || '')">Save</Button>
+                                <Button type="submit" size="sm" variant="secondary" :disabled="(urls[feed.id] || '') === (feed.feed_url || '')" icon="check">Save</Button>
                             </form>
                         </td>
                         <td>
@@ -253,8 +253,8 @@ const feedTones = { ok: 'success', failed: 'danger' };
                                         <InputError :message="form.errors.note || form.errors.metric" />
                                     </div>
                                     <div class="flex gap-2">
-                                        <Button type="submit" size="sm" :loading="form.processing">Save</Button>
-                                        <Button size="sm" variant="secondary" @click="editing = null">Cancel</Button>
+                                        <Button type="submit" size="sm" :loading="form.processing" icon="check">Save</Button>
+                                        <Button size="sm" variant="secondary" @click="editing = null" icon="close">Cancel</Button>
                                     </div>
                                 </form>
                             </td>
@@ -271,7 +271,7 @@ const feedTones = { ok: 'success', failed: 'danger' };
                 <ul class="mt-2 space-y-1 text-sm">
                     <li v-for="target in orphanTargets" :key="target.id" class="flex items-center justify-between gap-2">
                         <code class="text-xs">{{ target.metric }}</code>
-                        <Button size="sm" variant="ghost" @click="removeTarget(target, target.metric)">Remove</Button>
+                        <Button size="sm" variant="ghost" @click="removeTarget(target, target.metric)" icon="trash">Remove</Button>
                     </li>
                 </ul>
             </div>

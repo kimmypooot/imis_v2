@@ -66,7 +66,7 @@ const submit = () =>
             <InputError :message="form.errors.file" />
         </div>
         <div class="flex justify-end sm:col-span-2">
-            <Button type="submit" variant="success" :loading="form.processing" :disabled="!form.file || !form.document_type">Add to 201 file</Button>
+            <Button type="submit" variant="success" :loading="form.processing" :disabled="!form.file || !form.document_type" icon="plus">Add to 201 file</Button>
         </div>
     </form>
 </template>

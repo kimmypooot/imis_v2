@@ -210,7 +210,7 @@ const field = 'mt-1 block w-full';
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
             <Button type="submit" form="assignment-form" :variant="editing ? 'primary' : 'success'" :loading="form.processing">
                 {{ editing ? 'Save changes' : 'Record movement' }}
             </Button>

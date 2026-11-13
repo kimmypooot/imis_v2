@@ -136,7 +136,7 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
             </div>
 
             <div class="mt-4 flex flex-wrap justify-end gap-2">
-                <Button variant="secondary" @click="discard">Discard</Button>
+                <Button variant="secondary" @click="discard" icon="close">Discard</Button>
                 <Button variant="success" :disabled="!summary.ready" :loading="applying" @click="apply">
                     Apply {{ summary.ready }} {{ summary.ready === 1 ? 'row' : 'rows' }}
                 </Button>

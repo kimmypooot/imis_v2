@@ -193,7 +193,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
                 <p class="text-sm text-text-muted">{{ selected.length }} selected</p>
                 <div class="flex flex-wrap gap-2">
-                    <Button variant="secondary" @click="discard">Discard</Button>
+                    <Button variant="secondary" @click="discard" icon="close">Discard</Button>
                     <Button variant="success" :disabled="!selected.length" :loading="applying" @click="apply">
                         Sync {{ selected.length }} {{ selected.length === 1 ? 'person' : 'people' }}
                     </Button>

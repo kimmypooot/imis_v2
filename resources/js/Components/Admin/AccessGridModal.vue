@@ -163,7 +163,7 @@ const rowErrors = computed(() => {
                         <option value="">No access</option>
                         <option v-for="role in bulkOptions" :key="role.id" :value="role.id">{{ role.name }}</option>
                     </select>
-                    <Button variant="secondary" @click="applyBulk">Apply to visible</Button>
+                    <Button variant="secondary" @click="applyBulk" icon="funnel">Apply to visible</Button>
                 </div>
             </div>
             <p v-if="hiddenInactive" class="mt-2 text-xs text-text-muted">
@@ -241,8 +241,8 @@ const rowErrors = computed(() => {
                 {{ pending.length }} unsaved {{ pending.length === 1 ? 'change' : 'changes' }}
             </Badge>
             <Button v-if="pending.length" variant="ghost" @click="undo">Undo</Button>
-            <Button variant="secondary" @click="close">Close</Button>
-            <Button variant="success" :loading="saving" :disabled="!pending.length" @click="save">Save changes</Button>
+            <Button variant="secondary" @click="close" icon="close">Close</Button>
+            <Button variant="success" :loading="saving" :disabled="!pending.length" @click="save" icon="check">Save changes</Button>
         </template>
     </Modal>
 </template>

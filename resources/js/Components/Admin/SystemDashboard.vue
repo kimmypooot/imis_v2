@@ -28,7 +28,7 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
 <template>
     <div class="space-y-4">
         <!-- Row 1: metric cards -->
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile v-if="metrics.users" label="Total Users" :value="metrics.users.total" icon="users" tone="primary">
                 <span class="font-semibold text-success-fg">{{ metrics.users.active }}</span> active ·
                 {{ metrics.users.inactive }} inactive

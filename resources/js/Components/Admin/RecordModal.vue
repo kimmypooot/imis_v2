@@ -72,7 +72,7 @@ const submit = () => {
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Cancel</Button>
+            <Button variant="secondary" @click="close" icon="close">Cancel</Button>
             <Button
                 v-if="canSave"
                 type="submit"

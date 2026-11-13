@@ -124,7 +124,7 @@ const rowError = (index) => Object.keys(form.errors).some((key) => key.startsWit
                 <div class="flex items-center gap-3">
                     <span v-if="form.isDirty" class="text-xs text-warning-fg">Unsaved changes</span>
                     <span v-else-if="form.recentlySuccessful" class="text-xs text-success-fg" role="status">Saved</span>
-                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty">Save</Button>
+                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty" icon="check">Save</Button>
                 </div>
             </div>
         </form>

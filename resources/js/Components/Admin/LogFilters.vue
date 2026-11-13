@@ -55,7 +55,7 @@ const clear = () => {
                 <option v-for="option in select.options" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
         </template>
-        <Button type="submit" size="sm">Apply</Button>
+        <Button type="submit" size="sm" icon="funnel">Apply</Button>
         <button v-if="from || to || extra" type="button" class="text-xs text-link hover:underline" @click="clear">Clear</button>
     </form>
 </template>

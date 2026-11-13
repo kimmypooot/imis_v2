@@ -211,7 +211,7 @@ const insert = (placeholder) => {
                 </div>
 
                 <div v-if="canUpdate" class="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty">Save changes</Button>
+                    <Button type="submit" :loading="form.processing" :disabled="!form.isDirty" icon="check">Save changes</Button>
                     <Button variant="outline" @click="sendTest">
                         <Icon name="envelope" size="sm" />
                         Send me a test

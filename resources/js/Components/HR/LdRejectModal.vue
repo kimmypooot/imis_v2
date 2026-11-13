@@ -48,8 +48,8 @@ const submit = () =>
             <InputError :message="form.errors.reason" />
         </div>
         <template #footer>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
-            <Button variant="danger" :loading="form.processing" :disabled="!form.reason.trim()" @click="submit">Reject</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
+            <Button variant="danger" :loading="form.processing" :disabled="!form.reason.trim()" @click="submit" icon="xCircle">Reject</Button>
         </template>
     </Modal>
 </template>

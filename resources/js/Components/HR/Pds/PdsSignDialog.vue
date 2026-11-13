@@ -63,7 +63,7 @@ const sign = () =>
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
             <Button type="submit" form="pds-sign-form" :loading="form.processing" :disabled="!form.declaration || !form.password">Sign and submit</Button>
         </template>
     </Modal>

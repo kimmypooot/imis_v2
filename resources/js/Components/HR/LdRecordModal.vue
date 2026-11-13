@@ -88,7 +88,7 @@ const submit = () => {
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
             <Button type="submit" form="ld-record-form" :variant="editing ? 'primary' : 'success'" :loading="form.processing">
                 {{ editing ? 'Save changes' : 'Add training' }}
             </Button>

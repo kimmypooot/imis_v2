@@ -93,7 +93,7 @@ const movementColumns = [
                         <option v-for="office in officeOptions" :key="office.value" :value="office.value">{{ office.label }}</option>
                     </select>
                 </div>
-                <Button type="submit">Apply</Button>
+                <Button type="submit" icon="funnel">Apply</Button>
             </form>
         </Card>
 

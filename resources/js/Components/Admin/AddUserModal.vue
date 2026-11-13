@@ -132,8 +132,8 @@ const submit = () => {
         </form>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Cancel</Button>
-            <Button type="submit" form="add-user-form" variant="success" :loading="form.processing">Add User</Button>
+            <Button variant="secondary" @click="close" icon="close">Cancel</Button>
+            <Button type="submit" form="add-user-form" variant="success" :loading="form.processing" icon="plus">Add User</Button>
         </template>
     </Modal>
 </template>

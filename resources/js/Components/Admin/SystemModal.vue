@@ -323,7 +323,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                         </div>
                         <div class="mt-3 flex gap-2">
                             <Button type="submit" variant="success" :loading="roleForm.processing">{{ editingRoleId ? 'Save role' : 'Add role' }}</Button>
-                            <Button v-if="editingRoleId" variant="secondary" @click="cancelRoleEdit">Cancel</Button>
+                            <Button v-if="editingRoleId" variant="secondary" @click="cancelRoleEdit" icon="close">Cancel</Button>
                         </div>
                     </form>
                 </div>
@@ -354,7 +354,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
         </Tabs>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Close</Button>
+            <Button variant="secondary" @click="close" icon="close">Close</Button>
             <Button
                 v-if="(tab === 'details' || tab === 'listing') && canSaveDetails"
                 type="submit"

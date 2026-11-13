@@ -110,7 +110,7 @@ const peopleError = computed(() => form.errors.employee_ids ?? Object.entries(fo
 
         <template #footer>
             <span class="mr-auto text-sm text-text-muted" role="status">{{ form.employee_ids.length }} of {{ employees.length }} selected</span>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
             <Button type="submit" form="ld-bulk-form" variant="success" :loading="form.processing" :disabled="form.employee_ids.length === 0">
                 Add to {{ form.employee_ids.length }} {{ form.employee_ids.length === 1 ? 'employee' : 'employees' }}
             </Button>

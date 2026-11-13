@@ -65,7 +65,7 @@ const runYearStart = async () => {
 
     <PageHeader title="Leave Credits" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Credits' }]">
         <template v-if="canManage" #actions>
-            <Button variant="secondary" href="/admin/hr/leave/sync">Sync with the leave card file</Button>
+            <Button variant="secondary" href="/admin/hr/leave/sync" icon="refresh">Sync with the leave card file</Button>
         </template>
     </PageHeader>
 

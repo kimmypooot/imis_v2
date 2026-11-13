@@ -72,7 +72,7 @@ const columns = [
         </template>
     </PageHeader>
 
-    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stagger mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label="Latest payroll" :value="latest ? latest.period : '—'" icon="calendar" tone="primary">
             <template v-if="latest">{{ latest.status_label }} · {{ latest.totals.people }} people</template>
             <template v-else>none yet</template>
@@ -164,7 +164,7 @@ const columns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="creating = false">Cancel</Button>
+            <Button variant="secondary" @click="creating = false" icon="close">Cancel</Button>
             <Button type="submit" form="payroll-create-form" variant="success" :loading="form.processing">Draft payroll</Button>
         </template>
     </Modal>

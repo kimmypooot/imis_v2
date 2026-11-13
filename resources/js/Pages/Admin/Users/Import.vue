@@ -60,7 +60,7 @@ const rows = computed(() => (props.preview ? props.preview.rows.filter((row) => 
                 <li v-for="row in result.skipped" :key="row.line">Line {{ row.line }}: {{ row.errors.join(' ') }}</li>
             </ul>
             <template #footer>
-                <Button size="sm" variant="secondary" href="/users">Back to Manage Users</Button>
+                <Button size="sm" variant="secondary" href="/users" icon="arrowLeft">Back to Manage Users</Button>
             </template>
         </Card>
 

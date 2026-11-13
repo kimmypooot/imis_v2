@@ -85,7 +85,7 @@ const changeClasses = { success: 'text-success-fg', danger: 'text-danger-fg', ne
                 Open in the module
                 <Icon name="chevronRight" size="sm" />
             </Link>
-            <Button variant="secondary" @click="$emit('close')">Close</Button>
+            <Button variant="secondary" @click="$emit('close')" icon="close">Close</Button>
         </template>
     </Modal>
 </template>

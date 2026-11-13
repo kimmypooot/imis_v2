@@ -266,7 +266,7 @@ const recentColumns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="stopping = null">Cancel</Button>
+            <Button variant="secondary" @click="stopping = null" icon="close">Cancel</Button>
             <Button type="submit" form="loan-stop-form" variant="danger" :loading="stopForm.processing">Suspend deductions</Button>
         </template>
     </Modal>
@@ -283,8 +283,8 @@ const recentColumns = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="cancelling = null">Back</Button>
-            <Button type="submit" form="loan-cancel-form" variant="danger" :loading="cancelForm.processing">Cancel loan</Button>
+            <Button variant="secondary" @click="cancelling = null" icon="arrowLeft">Back</Button>
+            <Button type="submit" form="loan-cancel-form" variant="danger" :loading="cancelForm.processing" icon="close">Cancel loan</Button>
         </template>
     </Modal>
 
@@ -318,6 +318,6 @@ const recentColumns = [
             <p v-if="!scheduled.schedule.rows.length" class="py-2 text-sm text-text-muted">Nothing is scheduled: the loan is complete, suspended or cancelled.</p>
             <p v-if="scheduled.schedule.expected_end" class="mt-3 text-sm text-text">Expected last deduction: <strong>{{ scheduled.schedule.expected_end }}</strong>. Balance {{ formatPeso(scheduled.balance) }}.</p>
         </template>
-        <template #footer><Button @click="scheduleId = null">Close</Button></template>
+        <template #footer><Button @click="scheduleId = null" icon="close">Close</Button></template>
     </Modal>
 </template>

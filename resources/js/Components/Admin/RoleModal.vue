@@ -205,7 +205,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
         </Tabs>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Close</Button>
+            <Button variant="secondary" @click="close" icon="close">Close</Button>
             <Button
                 v-if="tab === 'details' && canSaveDetails"
                 type="submit"
@@ -222,7 +222,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                 form="permissions-form"
                 :loading="permissionsForm.processing"
                 :disabled="!permissionsForm.isDirty"
-            >
+             icon="check">
                 Save permissions
             </Button>
         </template>

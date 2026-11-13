@@ -116,7 +116,7 @@ const toggleFeatured = () => {
         <template #actions>
             <div class="flex flex-wrap gap-2">
                 <Link v-if="can('announcements.update')" :href="`/admin/announcements?edit=${announcement.id}`">
-                    <Button variant="secondary">Edit</Button>
+                    <Button variant="secondary" icon="pencil">Edit</Button>
                 </Link>
                 <Button
                     v-if="can('announcements.update')"

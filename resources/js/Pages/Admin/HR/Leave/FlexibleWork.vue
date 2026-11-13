@@ -116,7 +116,7 @@ const titles = { decide: 'Decide the request', terminate: 'End the arrangement e
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="mode = null">Cancel</Button>
+            <Button variant="secondary" @click="mode = null" icon="close">Cancel</Button>
             <Button type="submit" form="fwa-admin-form" :variant="mode === 'terminate' || form.decision === 'rejected' ? 'danger' : 'success'" :loading="form.processing">
                 {{ mode === 'decide' ? (form.decision === 'approved' ? 'Approve' : 'Reject') : mode === 'terminate' ? 'End' : 'Acknowledge' }}
             </Button>

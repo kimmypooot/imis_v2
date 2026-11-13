@@ -101,7 +101,7 @@ const breadcrumbs = computed(() => [
                     <InputError :message="form.errors.remarks" />
                 </div>
                 <div class="flex flex-wrap justify-end gap-2">
-                    <Button variant="danger" :loading="form.processing && decision === 'return'" :disabled="form.processing" @click="(decision = 'return'), decide('return')">
+                    <Button variant="danger" :loading="form.processing && decision === 'return'" :disabled="form.processing" @click="(decision = 'return'), decide('return')" icon="xCircle">
                         Return to employee
                     </Button>
                     <Button variant="success" :loading="form.processing && decision === 'verify'" :disabled="form.processing" @click="(decision = 'verify'), decide('verify')">

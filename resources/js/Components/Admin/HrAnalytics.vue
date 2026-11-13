@@ -45,7 +45,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
 <template>
     <div class="space-y-4">
         <!-- Headline numbers -->
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Personnel in service" :value="hr.headcount" icon="users" tone="primary">
                 {{ hr.sex.female }} female · {{ hr.sex.male }} male<template v-if="hr.age.average !== null"> · average age {{ hr.age.average }}</template>
             </StatTile>

@@ -89,7 +89,7 @@ const greeting = computed(() => {
                 </div>
             </template>
 
-            <section v-if="glance?.length" aria-label="At a glance" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <section v-if="glance?.length" aria-label="At a glance" class="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <Link
                     v-for="tile in glance"
                     :key="tile.key"

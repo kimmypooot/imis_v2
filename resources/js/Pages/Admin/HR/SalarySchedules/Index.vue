@@ -169,12 +169,12 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
             <template v-if="canManage" #actions>
                 <template v-if="editing">
                     <Button variant="secondary" @click="pasteOpen = true">Paste table</Button>
-                    <Button variant="secondary" @click="editing = false">Cancel</Button>
-                    <Button :loading="table.processing" @click="saveTable">Save</Button>
+                    <Button variant="secondary" @click="editing = false" icon="close">Cancel</Button>
+                    <Button :loading="table.processing" @click="saveTable" icon="check">Save</Button>
                 </template>
                 <template v-else>
                     <Button variant="secondary" @click="startEditing"><Icon name="pencil" size="sm" />Edit</Button>
-                    <Button variant="danger" @click="destroy">Delete</Button>
+                    <Button variant="danger" @click="destroy" icon="trash">Delete</Button>
                 </template>
             </template>
 
@@ -240,7 +240,7 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
         />
         <InputError :message="pasteError" />
         <template #footer>
-            <Button variant="secondary" @click="pasteOpen = false">Cancel</Button>
+            <Button variant="secondary" @click="pasteOpen = false" icon="close">Cancel</Button>
             <Button @click="applyPaste">Fill the table</Button>
         </template>
     </Modal>
@@ -263,8 +263,8 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="createOpen = false">Cancel</Button>
-            <Button type="submit" form="schedule-create-form" variant="success" :loading="create.processing">Create</Button>
+            <Button variant="secondary" @click="createOpen = false" icon="close">Cancel</Button>
+            <Button type="submit" form="schedule-create-form" variant="success" :loading="create.processing" icon="plus">Create</Button>
         </template>
     </Modal>
 </template>

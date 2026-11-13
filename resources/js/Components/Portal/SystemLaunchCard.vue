@@ -39,7 +39,7 @@ const button =
 
 <template>
     <!-- Not itself clickable (the button below is), so only a faint hover tint. -->
-    <article class="flex h-full rounded-lg border border-border bg-surface transition duration-200 hover:border-success/50 hover:shadow-sm">
+    <article class="flex h-full rounded-lg border border-border bg-surface card-interactive hover:border-success/50">
         <div class="flex w-full gap-3.5 p-5">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-success-bg text-success-fg" aria-hidden="true">
                 <Icon :name="system.icon || 'grid'" />

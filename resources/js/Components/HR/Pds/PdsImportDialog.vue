@@ -136,7 +136,7 @@ const replaced = computed(() => (preview.value?.sections ?? []).filter((section)
         </div>
 
         <template #footer>
-            <Button variant="secondary" @click="close">Cancel</Button>
+            <Button variant="secondary" @click="close" icon="close">Cancel</Button>
             <Button v-if="!preview" :disabled="!form.file || form.processing" @click="upload">
                 <Icon name="documentText" size="sm" />
                 {{ form.processing ? 'Reading…' : 'Read file' }}

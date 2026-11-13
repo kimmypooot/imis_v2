@@ -186,8 +186,8 @@ const checks = [
             </div>
         </form>
         <template #footer>
-            <Button variant="secondary" @click="open = false">Cancel</Button>
-            <Button type="submit" form="leave-type-form" :variant="editing ? 'primary' : 'success'" :loading="form.processing">Save</Button>
+            <Button variant="secondary" @click="open = false" icon="close">Cancel</Button>
+            <Button type="submit" form="leave-type-form" :variant="editing ? 'primary' : 'success'" :loading="form.processing" icon="check">Save</Button>
         </template>
     </Modal>
 </template>

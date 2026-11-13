@@ -78,7 +78,7 @@ const reset = async (asset) => {
                 <FileInput :id="`brand-${asset.key}`" v-model="files[asset.key]" accept="image/png,image/jpeg,image/webp" :invalid="!!errors[asset.key]" />
                 <InputError :message="errors[asset.key]" />
                 <div class="flex flex-wrap gap-2">
-                    <Button type="submit" size="sm" :loading="busy[asset.key]" :disabled="!files[asset.key]">Upload</Button>
+                    <Button type="submit" size="sm" :loading="busy[asset.key]" :disabled="!files[asset.key]" icon="upload">Upload</Button>
                     <Button v-if="asset.custom" size="sm" variant="ghost" @click="reset(asset)">Put back built-in</Button>
                 </div>
             </form>

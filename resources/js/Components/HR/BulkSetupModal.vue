@@ -98,7 +98,7 @@ const firstError = computed(() => form.errors.user_ids ?? Object.entries(form.er
 
         <template #footer>
             <span class="mr-auto text-sm text-text-muted" role="status">{{ form.user_ids.length }} of {{ candidates.length }} selected</span>
-            <Button variant="secondary" @click="emit('close')">Cancel</Button>
+            <Button variant="secondary" @click="emit('close')" icon="close">Cancel</Button>
             <Button variant="success" :loading="form.processing" :disabled="form.user_ids.length === 0" @click="submit">
                 Set up {{ form.user_ids.length }} {{ form.user_ids.length === 1 ? 'record' : 'records' }}
             </Button>

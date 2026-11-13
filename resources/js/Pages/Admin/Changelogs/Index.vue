@@ -175,12 +175,12 @@ const columns = [
                         </li>
                     </ol>
                     <InputError :message="form.errors.items" />
-                    <Button variant="secondary" class="mt-2" @click="addItem">Add entry</Button>
+                    <Button variant="secondary" class="mt-2" @click="addItem" icon="plus">Add entry</Button>
                 </fieldset>
 
                 <div class="flex flex-wrap items-center gap-2">
                     <Button type="submit" :variant="isEditing ? 'primary' : 'success'" :loading="form.processing">{{ isEditing ? 'Save changes' : 'Save draft' }}</Button>
-                    <Button v-if="isEditing" variant="secondary" @click="cancelEdit">Cancel</Button>
+                    <Button v-if="isEditing" variant="secondary" @click="cancelEdit" icon="close">Cancel</Button>
                     <button type="button" class="ml-auto text-sm text-link hover:underline" :aria-expanded="showPreview" @click="showPreview = !showPreview">
                         {{ showPreview ? 'Hide preview' : 'Preview' }}
                     </button>
@@ -231,7 +231,7 @@ const columns = [
             <ReleaseNotes :release="viewed" heading-level="h3" />
         </template>
         <template #footer>
-            <Button variant="secondary" @click="viewing = null">Close</Button>
+            <Button variant="secondary" @click="viewing = null" icon="close">Close</Button>
             <Button v-if="can('changelogs.manage')" @click="editFromView">
                 <Icon name="pencil" size="sm" />
                 Edit
