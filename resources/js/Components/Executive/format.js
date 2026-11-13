@@ -84,3 +84,58 @@ export function formatTarget(target, unit) {
 
     return `Target: ${target.direction === 'lower' ? 'at most' : 'at least'} ${formatValue(target.value, unit)}`;
 }
+
+/**
+ * How far a figure is toward its target, 0–100, for a progress bar. For
+ * "higher is better" it is value ÷ target; for "lower is better" it is 100
+ * while at or under the target, then target ÷ value as it overshoots.
+ * Null when the figure has no target or no value.
+ */
+export function targetProgress(metric) {
+    const { target, value } = metric;
+    if (!target || value === null || value === undefined || !Number(target.value)) return null;
+
+    const ratio = target.direction === 'lower' ? (value <= target.value ? 1 : target.value / value) : value / target.value;
+
+    return Math.round(Math.min(1, Math.max(0, ratio)) * 100);
+}
+
+/**
+ * Whether a change is good, bad or just a change. Only known once the figure
+ * has a target (it says which direction is better); otherwise neutral.
+ */
+export function changeTone(metric) {
+    const value = metric.change?.value;
+    if (!value || !metric.target) return 'neutral';
+
+    const better = metric.target.direction === 'lower' ? value < 0 : value > 0;
+
+    return better ? 'success' : 'danger';
+}
+
+/** One plain sentence about a figure for people who do not read tile jargon. */
+export function plainStatus(metric) {
+    const now = formatValue(metric.value, metric.unit);
+    if (!metric.target) return `Currently ${now}. No target has been set for this figure yet.`;
+
+    const goal = `${metric.target.direction === 'lower' ? 'at most' : 'at least'} ${formatValue(metric.target.value, metric.unit)}`;
+    const word = { on_track: 'on track', at_risk: 'slightly short of its target', behind: 'behind its target' }[metric.status] ?? 'being tracked';
+
+    return `Currently ${now}, ${word} (goal: ${goal}).`;
+}
+
+/** The overall verdict sentence and tone for the headline band. */
+export function headline(summary, notUpdating) {
+    const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+    const problems = [];
+    if (summary.behind) problems.push(`${plural(summary.behind, 'figure is', 'figures are')} behind target`);
+    if (summary.atRisk) problems.push(`${plural(summary.atRisk, 'figure is', 'figures are')} at risk`);
+    if (summary.systemsNeedingAttention) problems.push(`${plural(summary.systemsNeedingAttention, 'system needs', 'systems need')} attention`);
+    if (notUpdating) problems.push(`${plural(notUpdating, 'source is', 'sources are')} not updating`);
+
+    if (!problems.length) {
+        return { tone: 'success', text: summary.withTargets ? 'Everything is on track.' : 'Every system is running.' };
+    }
+
+    return { tone: summary.behind || summary.systemsNeedingAttention ? 'danger' : 'warning', text: `${problems.join('; ')}.` };
+}

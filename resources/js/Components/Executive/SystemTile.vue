@@ -1,12 +1,13 @@
 <script setup>
 import { computed } from 'vue';
-import Badge from '../UI/Badge.vue';
 import Icon from '../UI/Icon.vue';
 import { formatAge, systemStates } from './format';
 
 /**
- * One system on the Executive Dashboard: its name, a status word with its
- * tone, what that means, and when its figures last arrived.
+ * One system on the status board: an icon chip tinted by its state, its
+ * name, a status word (color is never the only signal) and a one-line
+ * meaning with when its figures last arrived. Compact so all systems fit
+ * on one screen.
  */
 const props = defineProps({
     system: { type: Object, required: true },
@@ -19,20 +20,25 @@ const chip = {
     danger: 'bg-danger-bg text-danger-fg',
     neutral: 'bg-surface-muted text-text-muted',
 };
+const word = {
+    success: 'text-success-fg',
+    warning: 'text-warning-fg',
+    danger: 'text-danger-fg',
+    neutral: 'text-text-muted',
+};
 </script>
 
 <template>
-    <article class="flex h-full flex-col gap-2 rounded-lg border border-border bg-surface p-3 transition duration-200 hover:shadow-sm">
-        <div class="flex items-start justify-between gap-2">
-            <h3 class="flex min-w-0 items-center gap-2 text-sm font-semibold text-text" :title="system.fullName">
-                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" :class="chip[state.tone] ?? chip.neutral" aria-hidden="true">
-                    <Icon :name="system.icon" size="sm" />
-                </span>
-                <span class="break-words">{{ system.name }}</span>
-            </h3>
-            <Badge :tone="state.tone" class="shrink-0">{{ state.label }}</Badge>
+    <article class="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 transition duration-200 hover:shadow-sm" :title="`${system.fullName}: ${system.detail}`">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" :class="chip[state.tone] ?? chip.neutral" aria-hidden="true">
+            <Icon :name="system.icon" size="sm" />
+        </span>
+        <div class="min-w-0">
+            <h3 class="truncate text-sm font-semibold text-text">{{ system.name }}</h3>
+            <p class="truncate text-xs">
+                <span class="font-semibold" :class="word[state.tone] ?? word.neutral">{{ state.label }}</span>
+                <span v-if="system.updatedAt" class="text-text-muted"> · {{ formatAge(system.updatedAt) }}</span>
+            </p>
         </div>
-        <p class="text-xs text-text-muted">{{ system.detail }}</p>
-        <p v-if="system.updatedAt" class="mt-auto text-xs text-text-muted">Updated {{ formatAge(system.updatedAt) }}</p>
     </article>
 </template>
