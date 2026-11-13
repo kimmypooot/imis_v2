@@ -158,6 +158,17 @@ const sendReset = async () => {
     if (confirmed) router.post(`/users/${props.user.id}/send-password-reset`, {}, { preserveScroll: true });
 };
 
+const resetPasskeys = async () => {
+    const confirmed = await confirm({
+        title: 'Remove fingerprint sign-in devices?',
+        text: `Every phone or computer ${props.user.name} added for fingerprint or face sign-in is removed. They can still sign in with their password, and can add a device again.`,
+        confirmText: 'Remove devices',
+        tone: 'danger',
+    });
+
+    if (confirmed) router.delete(`/users/${props.user.id}/passkeys`, { preserveScroll: true });
+};
+
 const setPassword = () => {
     passwordForm.put(`/users/${props.user.id}/password`, {
         preserveScroll: true,
@@ -271,6 +282,13 @@ const close = () => emit('close');
                                 Send the user a secure link to choose a new password. Their current one keeps working until they use it.
                             </p>
                             <Button class="mt-3" variant="secondary" :disabled="!canEdit" @click="sendReset">Send password reset link</Button>
+                        </div>
+                        <div class="rounded-md border border-border p-4">
+                            <p class="text-sm font-medium text-text">Fingerprint sign-in</p>
+                            <p class="mt-1 text-xs text-text-muted">
+                                For a lost or stolen phone: removes every device this person added for fingerprint or face sign-in. Their password still works.
+                            </p>
+                            <Button class="mt-3" variant="secondary" :disabled="!canEdit" @click="resetPasskeys">Remove sign-in devices</Button>
                         </div>
                         <form v-if="user.can.set_password" class="space-y-3 rounded-md border border-warning-border p-4" @submit.prevent="setPassword">
                             <div>

@@ -43,6 +43,7 @@ use App\Policies\PdsSubmissionPolicy;
 use App\Support\Audit\AuthenticationAuditSubscriber;
 use App\Support\Legacy\LegacyBridge;
 use App\Support\Mail\EmailTemplates;
+use App\Support\Security\PasskeySignIn;
 use App\Support\Security\SecurityPolicy;
 use App\Support\System\ScheduleMonitor;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -125,6 +126,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureAuthorization();
         $this->configureAuditing();
+        PasskeySignIn::register();
 
         // Admin-3, Admin → Email Templates: the office's wording for the
         // password email. Someone who has never signed in is setting up a

@@ -345,6 +345,22 @@ class UserController extends Controller
     }
 
     /**
+     * A lost or stolen phone: removes every fingerprint / face sign-in device
+     * the person added, so only their password (or a new device they add)
+     * signs them in. Logged under the administrator, with how many were removed.
+     */
+    public function resetPasskeys(User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $removed = $user->passkeys()->delete();
+
+        $this->audit()->record(AuditEvent::AuthPasskeyRemoved, "Removed {$removed} passkey(s) of {$user->name}", $user, ['removed' => $removed]);
+
+        return back()->with('status', $removed ? "Removed {$removed} sign-in device(s)." : 'This person has no fingerprint sign-in devices.');
+    }
+
+    /**
      * The Super Administrator override: sets the password directly, for
      * when a reset link can't be used (no working email, locked out). By
      * default the user must choose their own at the next sign-in. Their

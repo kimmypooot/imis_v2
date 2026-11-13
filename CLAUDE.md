@@ -39,6 +39,12 @@ particular:
   IMIS convention), not email; password resets still go by email. Don't
   re-scaffold login, password reset, or email verification — extend the
   existing controllers (`routes/auth.php`, `LoginRequest`).
+- Fingerprint / face sign-in uses passkeys (WebAuthn) through the
+  first-party `laravel/passkeys` package and `@laravel/passkeys`. The
+  password stays as the fallback; IMIS never sees a fingerprint. The
+  package owns the `/passkeys/*` and `/user/passkeys*` routes; IMIS hooks
+  into it in `App\Support\Security\PasskeySignIn`. Details in
+  `docs/architecture.md` (Passkeys).
 - Authorization is roles → permissions on Laravel Gates/Policies (no
   Spatie). Every route is guarded by `permission:` middleware *and* a
   policy check; new permissions go in `App\Enums\PermissionName`.

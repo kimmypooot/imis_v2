@@ -20,16 +20,27 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 
 #[Fillable([
     'name', 'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id',
     'office_designation', 'username', 'email', 'password', 'status',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, PasskeyAuthenticatable;
+
+    /**
+     * What the phone's passkey prompt shows under the name: the IMIS username
+     * (people sign in by username, and the email may be shared or absent).
+     */
+    public function getPasskeyUsername(): string
+    {
+        return $this->username ?: (string) $this->getAuthIdentifier();
+    }
 
     /**
      * Titles shown in front of a name (honorific), never part of it.

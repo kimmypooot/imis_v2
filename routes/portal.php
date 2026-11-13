@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\NotificationSettingsController;
+use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
@@ -66,6 +67,15 @@ Route::middleware('auth')->group(function () {
     Route::put('account/password', [PasswordController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('account.password.update');
+
+    // Fingerprint / face sign-in (passkeys). Adding and removing a device are
+    // the package's own routes (/user/passkeys), behind `password.confirm`;
+    // the named route below is only where a non-JSON request is sent to confirm.
+    Route::get('account/passkeys', [PasskeyController::class, 'edit'])->name('account.passkeys.edit');
+    Route::post('account/passkeys/confirm', [PasskeyController::class, 'confirm'])
+        ->middleware('throttle:6,1')
+        ->name('account.passkeys.confirm');
+    Route::get('confirm-password', fn () => redirect()->route('account.passkeys.edit'))->name('password.confirm');
 
     // HR-1 self-service: your own employee record (no permission needed).
     Route::get('my/employee-record', [MyEmployeeRecordController::class, 'show'])->name('my.employee-record');

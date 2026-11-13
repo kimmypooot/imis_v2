@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { usePasskeyVerify } from '@laravel/passkeys/vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import PasswordInput from '../../Components/Forms/PasswordInput.vue';
@@ -210,6 +211,27 @@ watch(
     },
 );
 
+// ── Fingerprint / face sign-in (a passkey on this phone or laptop) ──
+// The device checks the fingerprint itself and sends IMIS only a signature.
+// Hidden where the browser has no passkey support; the password always works.
+const {
+    verify: signInWithPasskey,
+    isLoading: passkeyLoading,
+    error: passkeyError,
+    isSupported: passkeysSupported,
+} = usePasskeyVerify({
+    remember: () => form.remember,
+    onSuccess: (response) =>
+        router.visit(response.redirect ?? '/', {
+            onSuccess: (page) => {
+                const user = page.props.auth?.user;
+                if (props.rememberAccounts && user) {
+                    rememberAccount({ name: user.name, username: user.username, photoUrl: user.profile_photo_url });
+                }
+            },
+        }),
+});
+
 const submit = () => {
     form.transform((data) => ({
         ...data,
@@ -396,5 +418,22 @@ const submit = () => {
                 {{ form.processing ? 'Logging in…' : 'Login' }}
             </Button>
         </form>
+    </div>
+
+    <div v-if="passkeysSupported" class="mt-5">
+        <div class="relative mb-4 text-center" aria-hidden="true">
+            <span class="absolute inset-x-0 top-1/2 border-t border-border" />
+            <span class="relative bg-surface px-3 text-xs text-muted">or</span>
+        </div>
+        <Button type="button" variant="outline" class="w-full" :loading="passkeyLoading" :disabled="passkeyLoading || isLockedOut" @click="signInWithPasskey">
+            <Icon v-if="!passkeyLoading" name="shield" size="sm" class="mr-2" />
+            {{ passkeyLoading ? 'Waiting for your device…' : 'Sign in with fingerprint or face' }}
+        </Button>
+        <Alert v-if="passkeyError" tone="danger" icon="xCircle" class="mt-3" role="alert">
+            {{ passkeyError }}
+        </Alert>
+        <p class="mt-2 text-center text-xs text-muted">
+            No password needed once you turn this on in Account settings.
+        </p>
     </div>
 </template>

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Laravel\Passkeys\Passkey;
 use Tests\TestCase;
 
 class UsersTest extends TestCase
@@ -334,6 +335,23 @@ class UsersTest extends TestCase
             ->assertRedirect();
 
         Notification::assertSentTo($target, ResetPassword::class);
+    }
+
+    public function test_an_administrator_can_remove_a_users_fingerprint_devices_after_a_lost_phone(): void
+    {
+        $target = User::factory()->create();
+        foreach (['Phone', 'Laptop'] as $name) {
+            Passkey::query()->forceCreate(['user_id' => $target->id, 'name' => $name, 'credential_id' => bin2hex(random_bytes(8)), 'credential' => ['id' => 'x']]);
+        }
+
+        $this->actingAs(User::factory()->create())->delete("/users/{$target->id}/passkeys")->assertForbidden();
+        $this->assertSame(2, $target->passkeys()->count());
+
+        $actor = $this->userWithPermission('users.update');
+        $this->actingAs($actor)->delete("/users/{$target->id}/passkeys")->assertRedirect();
+
+        $this->assertSame(0, $target->passkeys()->count());
+        $this->assertDatabaseHas('audit_logs', ['event' => 'auth.passkey_removed', 'actor_id' => $actor->id]);
     }
 
     public function test_invalid_user_returns_404_for_show(): void

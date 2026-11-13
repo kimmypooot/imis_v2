@@ -7,6 +7,7 @@ import Icon from '../Components/UI/Icon.vue';
 
 const sections = [
     { label: 'Password', hint: 'Keep your account secure', href: '/account/password', icon: 'lock' },
+    { label: 'Fingerprint sign-in', hint: 'Sign in without a password', href: '/account/passkeys', icon: 'shield' },
     { label: 'Notifications', hint: 'Choose what is emailed', href: '/account/notifications', icon: 'bell' },
     { label: 'Record access', hint: 'Who opened your HR record', href: '/my/record-access', icon: 'eye' },
     { label: 'My feedback', hint: 'Your messages and replies', href: '/my/feedback', icon: 'envelope' },

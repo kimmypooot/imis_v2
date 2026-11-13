@@ -18,6 +18,9 @@ enum AuditEvent: string
     case AuthLoginBlocked = 'auth.login_blocked';
     case AuthLockout = 'auth.lockout';
     case AuthPasswordReset = 'auth.password_reset';
+    case AuthPasskeyLogin = 'auth.passkey_login';
+    case AuthPasskeyRegistered = 'auth.passkey_registered';
+    case AuthPasskeyRemoved = 'auth.passkey_removed';
     case SessionEnded = 'auth.session_ended';
     case DatabaseBackupDownloaded = 'system.backup_downloaded';
     case DatabaseBackupCreated = 'system.backup_created';

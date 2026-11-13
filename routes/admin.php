@@ -147,6 +147,8 @@ Route::middleware('auth')->group(function () {
         Route::put('users/{user}/roles', [UserController::class, 'assignRoles'])->name('users.assign-roles');
         Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordReset'])
             ->name('users.send-password-reset');
+        // A lost or stolen phone: removes every fingerprint / face sign-in device.
+        Route::delete('users/{user}/passkeys', [UserController::class, 'resetPasskeys'])->name('users.reset-passkeys');
         // Super Administrators only (UserPolicy::setPassword).
         Route::put('users/{user}/password', [UserController::class, 'setPassword'])->name('users.set-password');
     });

@@ -4639,6 +4639,44 @@ Everything that enforces these rules reads them through `SecurityPolicy`.
 `tests/Feature/Admin/SecurityPolicyTest.php`, `BackupStoreTest.php`,
 `LogRetentionTest.php`.
 
+## Passkeys: fingerprint / face sign-in — IMPLEMENTED
+
+People can sign in with a phone's or laptop's fingerprint, face or
+screen-lock PIN instead of typing a password. The password still works
+everywhere and is the way to set it up.
+
+- **Package.** `laravel/passkeys` (first-party, 0.x) with
+  `@laravel/passkeys` on the front end. It owns the cryptography and the
+  routes: `GET /passkeys/login/options`, `POST /passkeys/login`,
+  `GET /user/passkeys/options`, `POST /user/passkeys`,
+  `DELETE /user/passkeys/{passkey}`. The `passkeys` table holds each
+  device's public key; IMIS never sees a fingerprint.
+- **Relying party.** The passkey is tied to the host of `APP_URL`
+  (`config/passkeys.php`), so production must be HTTPS and changing the
+  domain means everyone re-enrolls. `PASSKEYS_USER_HANDLE_SECRET` defaults
+  to `APP_KEY`; set it explicitly so a key change cannot orphan passkeys.
+  User verification is required (a tap alone is not enough) and the
+  credential is discoverable, so sign-in needs no username.
+- **Sign-in follows the password path** (`Support/Security/PasskeySignIn`):
+  an inactive account is refused and audited (`auth.login_blocked`);
+  after the package logs the person in, session limits, login history and
+  the sign-in splash start exactly as for a password. Password expiry still
+  applies on the next page. `auth.login` is audited by the usual listener;
+  `auth.passkey_login`, `auth.passkey_registered` and
+  `auth.passkey_removed` add the method and device name.
+- **Account → Fingerprint sign-in** (`/account/passkeys`,
+  `Account/PasskeyController`): lists a person's devices, adds this device,
+  removes one. Adding or removing needs the account password confirmed
+  (`POST /account/passkeys/confirm` sets Laravel's `password.confirm`
+  window, `auth.password_timeout`); the package routes sit behind that
+  middleware.
+- **Lost phone.** Manage Users → Security → *Remove sign-in devices*
+  (`DELETE /users/{user}/passkeys`, `users.update`) removes every device and
+  is audited under the administrator.
+- **Login page.** "Sign in with fingerprint or face" appears when the
+  browser supports passkeys. "Keep me signed in" applies to it too.
+- **Not done.** No requirement to use a passkey for privileged roles, and
+  no System Settings switch to turn passkeys off; both are easy additions.
 ## Executive Dashboard — IMPLEMENTED (Exec-1 to Exec-3; Exec-4 pending)
 
 Top management's (Director IV and III) view of every IMIS module and
