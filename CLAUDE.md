@@ -83,11 +83,10 @@ particular:
   yet: the built-in figures are starters and targets are data. JPortal
   (`../jportal`, a separate app under the hub) serves a feed; no other
   system does yet. Exec-4 (legacy PHP systems, CTS) is next.
-- Released versions are tracked in What's New notes (latest 3.7.0, 2026-11-14;
-  3.7.0 refreshed the look: error pages, solid-blue dialog headers, button
-  icons, a flat progress bar/spinner and stagger/count-up on dashboards;
-  3.6.0 added a dark theme, phone install and the Executive dashboard
-  revamp; 3.5.x added ETTS and CARES hub APIs, richer branded emails with a live
+- Released versions are tracked in What's New notes (latest 3.6.0, 2026-11-14;
+  3.6.0 added a dark theme, phone install, the Executive dashboard revamp and
+  a refreshed look (error pages, solid-blue dialog headers, button icons, a
+  flat progress bar/spinner, count-up figures); 3.5.x added ETTS and CARES hub APIs, richer branded emails with a live
   Email Templates preview, payslip approvals / my payslips / my earnings
   pages, PDS import from the CSC Excel form, monthly leave cards imported
   from HR's workbook, and the security hardening below).

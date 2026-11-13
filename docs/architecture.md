@@ -1980,14 +1980,11 @@ Carries over `imis_changelog` / `imis_changelog_items` as `changelogs` /
 - **v3.5.2** (redesigned emails, richer wording, live preview in Email
   Templates) is inserted the same way, already **published**, by migration
   `2027_02_02_090000_add_v3_5_2_release_note`.
-- **v3.6.0** (dark theme, installable on phones, the Executive dashboard
+- **v3.6.0** (dark theme, refreshed look with redesigned error pages and
+  dialog headers, installable on phones, the Executive dashboard
   revamp, bulk activate/deactivate on Manage Users, background sending of
   emails and notifications) is inserted the same way, already **published**,
   by migration `2027_03_02_090000_add_v3_6_release_note`.
-- **v3.7.0** (refreshed look: redesigned error pages, solid-blue dialog headers,
-  button icons, a flat progress bar and spinner, count-up figures) is inserted
-  the same way, already **published**, by migration
-  `2027_03_03_090000_add_v3_7_release_note`.
 
 ### User Guide (`/guide`)
 - Any signed-in user. The articles are plain data in `config/user-guide.php`
