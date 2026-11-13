@@ -4712,6 +4712,24 @@ only, so viewing the dashboard isn't audited.
 - `/executive/print`: the same figures as a report to print or save as
   PDF, with no app layout.
 
+### Presentation (revamp, front end only)
+The page reads the same `ExecutiveDashboard` data; only the layout changed.
+- A navy headline band: one sentence on whether anything is wrong
+  (`headline()` in `Components/Executive/format.js`), a `StatusRing` of
+  on track / at risk / behind, and the actions (Refresh, Copy summary,
+  Meeting mode = browser full screen, Print, Settings).
+- *Needs your attention*: only figures behind or at risk, sources not
+  updating, and systems with a problem, worst first.
+- *My watch list*: figures a viewer stars, kept in that browser's
+  `localStorage` (a convenience, not shared or audited).
+- Tabs: Overview (system status board and each module's first three
+  figures), one tab per module, and Connected systems. A tab's badge counts
+  what needs attention in it.
+- `MetricTile` shows the value, a 30-day change chip (green or red only
+  when a target says which way is better), a sparkline and progress toward
+  the target; clicking it opens `MetricDetail` (trend, plain-language
+  status, breakdown, link into the module).
+
 ### Permissions, policy and audit
 - `executive.view` (the dashboard and its report) and `executive.manage`
   (Settings: feeds, keys, targets, *Collect now*), checked by the

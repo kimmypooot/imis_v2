@@ -13,6 +13,19 @@ Key conventions:
   under `@theme` — don't hard-code brand values in components.
 - Keep dependencies minimal; prefer what Laravel/Vue/Tailwind already
   provide before adding a package.
+- UI follows the shared design system (`docs/ui-design-system.md`, live
+  page at `/design-system`). Reuse its components in
+  `resources/js/Components/` (Dropdown, Tooltip, Switch, StatTile,
+  InputLabel, rich file upload, alerts, tables, pager, badges, form
+  errors) instead of hand-writing markup, and change tokens in
+  `app.css` first. Any new color token needs a dark value too.
+- There is a dark theme: `data-theme="dark"` on `<html>`, set by
+  `useTheme` and an inline script in `app.blade.php`, switched from
+  "Appearance" in the user menu. Only tokens change, so components
+  follow; use tokens (including the `-fg` text tokens), never fixed
+  colors. Printing stays light.
+- Flash messages show as toasts, once each. Row actions use the icon
+  row-action buttons; no colored left-edge bars on toasts, cards or tiles.
 
 Phases 1–19 are implemented — `docs/architecture.md` has one section per
 phase and is the source of truth for what exists. Admin-1 (security
@@ -70,6 +83,24 @@ particular:
   yet: the built-in figures are starters and targets are data. JPortal
   (`../jportal`, a separate app under the hub) serves a feed; no other
   system does yet. Exec-4 (legacy PHP systems, CTS) is next.
+- Released versions are tracked in What's New notes (latest 3.5.2, 2026-11-11;
+  3.5.x added ETTS and CARES hub APIs, richer branded emails with a live
+  Email Templates preview, payslip approvals / my payslips / my earnings
+  pages, PDS import from the CSC Excel form, monthly leave cards imported
+  from HR's workbook, and the security hardening below).
+- Hub systems: ETTS (ESD Transactions Tracking System), TIMS (signs out
+  with IMIS, see `docs/sso-logout.md`), CARES (directory API and roles) and
+  HUMANS are registered alongside JPortal, GAD Corner, IPCRS and ICT SRTS.
+  Feeds to other systems (Recruitment, PROCTAD, ETTS, CARES, ICT SRTS) are
+  bearer-token APIs; Recruitment API reads are audited. Details per system
+  are in `docs/architecture.md`.
+- Security hardening is in place: security headers, account-wide login
+  limit, trusted hosts, capped decompressed XLSX parts with libxml network
+  access disabled. Keep these when touching uploads, imports or middleware.
+- Manage Users supports bulk activate/deactivate; inactive accounts are
+  hidden from access screens and plantilla staffing. The sidebar is split
+  into smaller groups (blue sidebar for admin/HR, HR Leave split into daily
+  work and setup) and remembers open groups.
 
 The legacy PHP IMIS this replaces lives at `../old-imis` (reference only —
 never edit it). Match its behavior when carrying a feature over.
