@@ -32,6 +32,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Refuse a forged Host header (see config/app.php, trusted_hosts).
         $middleware->trustHosts(at: fn () => config('app.trusted_hosts'));
 
+        // Behind an HTTPS proxy or tunnel, believe its X-Forwarded-* headers so
+        // the app sees https (links, secure cookies, HSTS). Off unless
+        // TRUSTED_PROXIES is set: '*' trusts any proxy, so use it only when the
+        // app can be reached through the proxy alone.
+        $middleware->trustProxies(
+            at: ($proxies = env('TRUSTED_PROXIES')) === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', (string) $proxies)))),
+        );
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'permission' => EnsureUserHasPermission::class,
