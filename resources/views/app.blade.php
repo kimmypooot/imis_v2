@@ -22,6 +22,13 @@
         <link rel="icon" href="/favicon.png" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- Lets phones install IMIS to the home screen. No service worker on
+             purpose: pages carry personal data and must never be served stale. --}}
+        <link rel="manifest" href="/manifest.webmanifest">
+        <meta name="theme-color" content="#2a338f">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="IMIS">
+
         {{-- The boot screens' styles (resources/css/boot.css, which app.css also
              imports for the Vue splash) are inlined, so a screen paints at once
              instead of waiting for app.css, and looks the same under the Vite
