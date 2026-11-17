@@ -16,6 +16,7 @@ use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\LeaveDelegationController;
 use App\Http\Controllers\My201FileController;
 use App\Http\Controllers\MyDataCorrectionController;
+use App\Http\Controllers\MyDataExportController;
 use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyEmployeeRecordController;
 use App\Http\Controllers\MyFlexibleWorkController;
@@ -84,6 +85,11 @@ Route::middleware('auth')->group(function () {
     Route::get('my/corrections', [MyDataCorrectionController::class, 'index'])->name('my.corrections');
     Route::post('my/corrections', [MyDataCorrectionController::class, 'store'])->middleware('throttle:10,1')->name('my.corrections.store');
     Route::post('my/corrections/{correction}/cancel', [MyDataCorrectionController::class, 'cancel'])->name('my.corrections.cancel');
+
+    // RA 10173: download a copy of your own data. The password is asked again; the file comes from a 2-minute signed link.
+    Route::get('my/data-export', [MyDataExportController::class, 'show'])->name('my.data-export');
+    Route::post('my/data-export', [MyDataExportController::class, 'prepare'])->middleware('throttle:3,60')->name('my.data-export.prepare');
+    Route::get('my/data-export/download', [MyDataExportController::class, 'download'])->middleware(['signed', 'throttle:6,60'])->name('my.data-export.download');
 
     // Admin-2: who else opened or printed your HR records (no permission needed).
     Route::get('my/record-access', [MyRecordAccessController::class, 'index'])->name('my.record-access');

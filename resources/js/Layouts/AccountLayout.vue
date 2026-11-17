@@ -10,6 +10,7 @@ const sections = [
     { label: 'Fingerprint sign-in', hint: 'Sign in without a password', href: '/account/passkeys', icon: 'shield' },
     { label: 'Notifications', hint: 'Choose what is emailed', href: '/account/notifications', icon: 'bell' },
     { label: 'Record access', hint: 'Who opened your HR record', href: '/my/record-access', icon: 'eye' },
+    { label: 'Download my data', hint: 'A copy of what IMIS holds about you', href: '/my/data-export', icon: 'database' },
     { label: 'My feedback', hint: 'Your messages and replies', href: '/my/feedback', icon: 'envelope' },
 ];
 
