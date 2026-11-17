@@ -1,3 +1,4 @@
+import { networkInterfaces } from 'node:os';
 import { defineConfig, loadEnv } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
@@ -6,9 +7,15 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig(({ mode }) => {
     // Set VITE_DEV_HOST in .env to this PC's LAN address (e.g. 192.168.1.38)
-    // to use `npm run dev` from a phone on the same network. Unset, the dev
-    // server stays on localhost only.
-    const devHost = loadEnv(mode, process.cwd(), 'VITE_').VITE_DEV_HOST;
+    // to use `npm run dev` from a phone on the same network, or to `auto` to
+    // detect the current LAN address each time the server starts (the router
+    // may hand this PC a new one). Unset, the dev server stays on localhost.
+    const configuredHost = loadEnv(mode, process.cwd(), 'VITE_').VITE_DEV_HOST;
+    const devHost = configuredHost === 'auto'
+        ? Object.values(networkInterfaces()).flat()
+            .find((nic) => nic && nic.family === 'IPv4' && !nic.internal
+                && /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(nic.address))?.address
+        : configuredHost;
 
     return {
         plugins: [
