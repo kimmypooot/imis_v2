@@ -88,6 +88,9 @@ enum PermissionName: string
     case SessionsView = 'sessions.view';
     case SessionsRevoke = 'sessions.revoke';
 
+    // Issuing and revoking the bearer tokens connected systems use to call IMIS's APIs.
+    case ApiTokensManage = 'api_tokens.manage';
+
     // Database backup download. Additionally limited to Super
     // Administrators and a password re-check — see BackupController.
     case BackupsCreate = 'backups.create';

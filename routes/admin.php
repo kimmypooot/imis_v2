@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
+use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\ApplicationAccessController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\ApplicationRoleController;
@@ -596,6 +597,12 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/access-logs/export', [ActivityLogController::class, 'exportAccess'])->name('admin.access-logs.export');
         Route::get('admin/security-logs', [ActivityLogController::class, 'security'])->name('admin.security-logs.index');
         Route::get('admin/security-logs/export', [ActivityLogController::class, 'exportSecurity'])->name('admin.security-logs.export');
+    });
+
+    Route::middleware('permission:api_tokens.manage')->group(function () {
+        Route::get('admin/api-tokens', [ApiTokenController::class, 'index'])->name('admin.api-tokens.index');
+        Route::post('admin/api-tokens', [ApiTokenController::class, 'store'])->name('admin.api-tokens.store');
+        Route::delete('admin/api-tokens/{apiToken}', [ApiTokenController::class, 'destroy'])->name('admin.api-tokens.destroy');
     });
 
     Route::middleware('permission:sessions.view')->group(function () {

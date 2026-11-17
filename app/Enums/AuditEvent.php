@@ -59,6 +59,8 @@ enum AuditEvent: string
     case ApplicationUpdated = 'application.updated';
     case ApplicationStatusChanged = 'application.status_changed';
     case ApplicationDeleted = 'application.deleted';
+    case ApiTokenCreated = 'api_token.created';
+    case ApiTokenRevoked = 'api_token.revoked';
     case ApplicationListingsChanged = 'application.listings_changed';
     case ApplicationMaintenanceStarted = 'application.maintenance_started';
     case ApplicationMaintenanceUpdated = 'application.maintenance_updated';

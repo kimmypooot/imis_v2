@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BmisController;
 use App\Http\Controllers\Api\CaresController;
 use App\Http\Controllers\Api\EttsController;
 use App\Http\Controllers\Api\IctSrtsController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\ProctadController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\RecruitmentEmployeeController;
 use App\Http\Controllers\Api\SsoValidateController;
+use App\Http\Middleware\AuthenticateBmis;
 use App\Http\Middleware\AuthenticateCares;
 use App\Http\Middleware\AuthenticateEtts;
 use App\Http\Middleware\AuthenticateIctSrts;
@@ -59,6 +61,11 @@ Route::middleware([AuthenticateEtts::class, 'throttle:60,1'])->prefix('api/v1/et
 // IPCRS: the current employees, to name on a form and cascade rows to.
 Route::middleware([AuthenticateIpcrs::class, 'throttle:60,1'])->prefix('api/v1/ipcrs')->group(function () {
     Route::get('employees', [IpcrsController::class, 'employees'])->name('ipcrs.employees');
+});
+
+// BMIS: the current employees, for its Employee manager and organization chart.
+Route::middleware([AuthenticateBmis::class, 'throttle:60,1'])->prefix('api/v1/bmis')->group(function () {
+    Route::get('employees', [BmisController::class, 'employees'])->name('bmis.employees');
 });
 
 // PROCTAD: the staff who hold a PROCTAD role, for its Users page.

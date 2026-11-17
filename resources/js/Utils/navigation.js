@@ -35,6 +35,7 @@ export const adminAccessPermissions = [
     'applications.manage_access',
     'sessions.view',
     'backups.create',
+    'api_tokens.manage',
 ];
 
 // Any one of these permissions is enough to see the Human Resources area
@@ -190,6 +191,7 @@ export const adminModuleGroups = [
             { label: 'System Settings', href: '/admin/settings', icon: 'cog', permission: 'settings.view' },
             { label: 'System Health', href: '/admin/system-health', icon: 'activity', permission: 'settings.view' },
             { label: 'Scheduled Tasks', href: '/admin/scheduled-tasks', icon: 'clock', permission: 'settings.view' },
+            { label: 'Integration Tokens', href: '/admin/api-tokens', icon: 'key', permission: 'api_tokens.manage' },
             { label: 'Email Templates', href: '/admin/email-templates', icon: 'envelope', permission: 'settings.view' },
             { label: 'Branding', href: '/admin/branding', icon: 'palette', permission: 'settings.view' },
             { label: 'Backup Database', href: '/admin/backup', icon: 'database', permission: 'backups.create' },

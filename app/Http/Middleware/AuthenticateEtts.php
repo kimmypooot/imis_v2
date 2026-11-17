@@ -2,21 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\ApiIntegration;
+use App\Support\Integrations\ApiTokens;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Server-to-server guard for ETTS's people directory: the bearer token must
- * equal ETTS_API_TOKEN. With no token configured the endpoint is off.
+ * be a live token from the Integration Tokens page or the legacy ETTS_API_TOKEN.
  */
 class AuthenticateEtts
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $expected = (string) config('etts.api_token');
-
-        if ($expected === '' || ! hash_equals($expected, (string) $request->bearerToken())) {
+        if (! app(ApiTokens::class)->authorize(ApiIntegration::Etts, $request->bearerToken(), $request->ip())) {
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 

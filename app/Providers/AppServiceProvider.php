@@ -80,7 +80,7 @@ class AppServiceProvider extends ServiceProvider
         'roles.view', 'permissions.view', 'users.view', 'organizational_units.view', 'services.view',
         'applications.view', 'committees.view', 'announcements.view',
         'audit_logs.view', 'settings.view', 'changelogs.view',
-        'applications.manage_access', 'sessions.view', 'backups.create',
+        'applications.manage_access', 'sessions.view', 'backups.create', 'api_tokens.manage',
     ];
 
     /**

@@ -2,23 +2,22 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\ApiIntegration;
+use App\Support\Integrations\ApiTokens;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Server-to-server guard for the Recruitment Portal's endpoints: the bearer
- * token must equal RECRUITMENT_API_TOKEN. With no token configured the
- * endpoints are off.
+ * token must be a live token from the Integration Tokens page or the legacy
+ * RECRUITMENT_API_TOKEN.
  */
 class AuthenticateRecruitmentPortal
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $expected = (string) config('recruitment.api_token');
-        $given = (string) $request->bearerToken();
-
-        if ($expected === '' || ! hash_equals($expected, $given)) {
+        if (! app(ApiTokens::class)->authorize(ApiIntegration::Recruitment, $request->bearerToken(), $request->ip())) {
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 

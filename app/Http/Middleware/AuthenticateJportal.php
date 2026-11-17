@@ -2,23 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\ApiIntegration;
+use App\Support\Integrations\ApiTokens;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Server-to-server guard for JPortal's directory feed: the bearer token
- * must equal JPORTAL_API_TOKEN. With no token configured the endpoint is
- * off.
+ * Server-to-server guard for JPortal's directory feed: the bearer token must
+ * be a live token from the Integration Tokens page or the legacy JPORTAL_API_TOKEN.
  */
 class AuthenticateJportal
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $expected = (string) config('jportal.api_token');
-        $given = (string) $request->bearerToken();
-
-        if ($expected === '' || ! hash_equals($expected, $given)) {
+        if (! app(ApiTokens::class)->authorize(ApiIntegration::Jportal, $request->bearerToken(), $request->ip())) {
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
