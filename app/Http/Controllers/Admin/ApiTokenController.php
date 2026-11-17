@@ -37,6 +37,7 @@ class ApiTokenController extends Controller
                     'created_by' => $token->creator?->name,
                     'created_at' => $token->created_at->toIso8601String(),
                     'expires_at' => $token->expires_at?->toIso8601String(),
+                    'expires_soon' => $token->expiresSoon(),
                     'last_used_at' => $token->last_used_at?->toIso8601String(),
                     'last_used_ip' => $token->last_used_ip,
                 ]),

@@ -49,6 +49,16 @@ class ApiToken extends Model
         return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
+    /**
+     * A live token that expires within the next $days days, so it can be
+     * rotated before the connected system starts getting refused.
+     */
+    public function expiresSoon(int $days = 14): bool
+    {
+        return ! $this->isRevoked() && ! $this->isExpired()
+            && $this->expires_at !== null && $this->expires_at->lte(now()->addDays($days));
+    }
+
     public function statusLabel(): string
     {
         return match (true) {

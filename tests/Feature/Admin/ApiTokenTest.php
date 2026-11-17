@@ -90,6 +90,21 @@ class ApiTokenTest extends TestCase
         $this->assertSame(1, AuditLog::query()->where('event', 'api_token.revoked')->count());
     }
 
+    public function test_tokens_close_to_expiry_are_flagged_for_rotation(): void
+    {
+        $tokens = app(ApiTokens::class);
+        [$soon] = $tokens->issue(ApiIntegration::Bmis, 'Soon', null, now()->addDays(5));
+        [$later] = $tokens->issue(ApiIntegration::Bmis, 'Later', null, now()->addDays(90));
+        [$never] = $tokens->issue(ApiIntegration::Bmis, 'Never', null, null);
+        [$revoked] = $tokens->issue(ApiIntegration::Bmis, 'Revoked', null, now()->addDays(2));
+        $tokens->revoke($revoked, null);
+
+        $this->assertTrue($soon->expiresSoon());
+        $this->assertFalse($later->expiresSoon());
+        $this->assertFalse($never->expiresSoon());
+        $this->assertFalse($revoked->fresh()->expiresSoon());
+    }
+
     public function test_the_page_needs_the_permission(): void
     {
         $this->actingAs($this->userWithPermission('applications.view'))->get('/admin/api-tokens')->assertForbidden();

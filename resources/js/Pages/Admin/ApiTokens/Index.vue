@@ -35,6 +35,10 @@ const openIssue = (integration = '') => {
     form.reset();
     form.clearErrors();
     form.integration = integration;
+    // A year by default; clear the date for a token that never expires.
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    form.expires_at = nextYear.toISOString().slice(0, 10);
     modalOpen.value = true;
 };
 
@@ -125,7 +129,10 @@ const copy = async () => {
                             <td class="py-2 pr-4 font-medium text-text">{{ token.name }}</td>
                             <td class="py-2 pr-4 font-mono text-xs">{{ token.hint }}…</td>
                             <td class="py-2 pr-4"><StatusBadge :status="token.status" /></td>
-                            <td class="py-2 pr-4">{{ token.expires_at ? formatDate(token.expires_at) : 'Never' }}</td>
+                            <td class="py-2 pr-4">
+                                {{ token.expires_at ? formatDate(token.expires_at) : 'Never' }}
+                                <p v-if="token.expires_soon" class="text-xs font-medium text-warning-fg">Expires soon: issue a new token and revoke this one</p>
+                            </td>
                             <td class="py-2 pr-4">
                                 <span v-if="token.last_used_at" :title="`${formatDateTime(token.last_used_at)} from ${token.last_used_ip ?? 'unknown'}`">{{ timeAgo(token.last_used_at) }}</span>
                                 <span v-else class="text-text-muted">Never</span>
@@ -151,7 +158,7 @@ const copy = async () => {
                 />
             </FormGroup>
             <TextInput id="token-name" v-model="form.name" label="Name" required helper-text="What this token is for, e.g. Production server." :error="form.errors.name" />
-            <TextInput id="token-expires" v-model="form.expires_at" type="date" label="Expires on" helper-text="Leave empty for a token that does not expire." :error="form.errors.expires_at" />
+            <TextInput id="token-expires" v-model="form.expires_at" type="date" label="Expires on" helper-text="Defaults to one year, so tokens get rotated. Clear the date for a token that does not expire." :error="form.errors.expires_at" />
         </form>
         <template #footer>
             <Button variant="secondary" @click="modalOpen = false">Cancel</Button>
