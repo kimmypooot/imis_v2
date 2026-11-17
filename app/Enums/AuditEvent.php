@@ -136,6 +136,8 @@ enum AuditEvent: string
     case LeaveApplicationViewed = 'leave_application.viewed';
     case LeaveAttachmentViewed = 'leave_application.attachment_viewed';
     case LeaveDesignationSaved = 'leave_designation.saved';
+    case ApprovalDelegationCreated = 'approval_delegation.created';
+    case ApprovalDelegationEnded = 'approval_delegation.ended';
     case LeaveDesignationDeleted = 'leave_designation.deleted';
     // HR-6c: monetization / terminal leave, flexible work and weekly reports.
     case LeaveMonetizationRequested = 'leave_monetization.requested';

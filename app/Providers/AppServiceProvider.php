@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Enums\RoleName;
 use App\Models\Announcement;
 use App\Models\Application;
+use App\Models\ApprovalDelegation;
 use App\Models\Changelog;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
@@ -187,6 +188,7 @@ class AppServiceProvider extends ServiceProvider
             'leave_ledger_entry' => LeaveLedgerEntry::class,
             'leave_application' => LeaveApplication::class,
             'leave_designation' => LeaveDesignation::class,
+            'approval_delegation' => ApprovalDelegation::class,
             'leave_monetization' => LeaveMonetization::class,
             'fwa_arrangement' => FwaArrangement::class,
             'fwa_report' => FwaReport::class,

@@ -1,6 +1,12 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
+import Alert from '../../Components/Feedback/Alert.vue';
+import Button from '../../Components/UI/Button.vue';
+import FormGroup from '../../Components/Forms/FormGroup.vue';
+import Select from '../../Components/Forms/Select.vue';
+import TextInput from '../../Components/Forms/TextInput.vue';
+import { confirm } from '../../Composables/useDialog';
 import PageHeader from '../../Components/UI/PageHeader.vue';
 import Card from '../../Components/UI/Card.vue';
 import DataTable from '../../Components/UI/DataTable.vue';
@@ -18,7 +24,25 @@ defineOptions({ layout: PortalLayout });
 const props = defineProps({
     queue: { type: Array, required: true },
     recent: { type: Array, required: true },
+    delegations: { type: Array, required: true },
+    delegatedToMe: { type: Array, required: true },
+    userOptions: { type: Array, required: true },
 });
+
+const form = useForm({ delegate_id: '', date_from: '', date_to: '', reason: '' });
+
+const delegate = () => form.post('/leave/delegations', { preserveScroll: true, onSuccess: () => form.reset() });
+
+const endDelegation = async (delegation) => {
+    const confirmed = await confirm({
+        title: `End delegation to ${delegation.delegate}?`,
+        text: 'They can no longer act on your approvals.',
+        tone: 'danger',
+        confirmText: 'End delegation',
+    });
+
+    if (confirmed) router.delete(`/leave/delegations/${delegation.id}`, { preserveScroll: true });
+};
 
 const waitingSince = () => props.queue.map((row) => row.waiting_since);
 
@@ -51,6 +75,10 @@ const recentColumns = [
     <PageHeader title="Leave Approvals" description="Applications waiting for your recommendation, certification or approval." :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'Leave Approvals' }]" />
 
     <div class="space-y-6">
+        <Alert v-for="item in delegatedToMe" :key="item.delegator" tone="info">
+            You can act on {{ item.delegator }}'s supervisor approvals until {{ formatCalendarDate(item.date_to) }}.
+        </Alert>
+
         <QueueSummary :since="waitingSince()" noun="leave application" />
 
         <Card :title="`Waiting for you (${queue.length})`" icon="checkCircle">
@@ -68,6 +96,36 @@ const recentColumns = [
                     <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.waiting_since)">{{ ageLabel(row.waiting_since) }}</span>
                 </template>
             </DataTable>
+        </Card>
+
+        <Card title="Going out of office?" icon="calendar">
+            <p class="mb-3 text-sm text-text-muted">
+                Hand the applications waiting for you as a supervisor to a colleague for a period. They see them here and can act on them; the form shows they acted for you. HR and Head steps are not included.
+            </p>
+
+            <ul v-if="delegations.length" class="mb-4 divide-y divide-border rounded-md border border-border">
+                <li v-for="delegation in delegations" :key="delegation.id" class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <span>
+                        <span class="font-medium text-text">{{ delegation.delegate }}</span>
+                        · {{ formatCalendarDate(delegation.date_from) }} – {{ formatCalendarDate(delegation.date_to) }}
+                        <span v-if="delegation.active" class="ml-1 rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success-fg">In effect</span>
+                        <span v-if="delegation.reason" class="text-text-muted"> · {{ delegation.reason }}</span>
+                    </span>
+                    <Button variant="secondary" size="sm" @click="endDelegation(delegation)">End</Button>
+                </li>
+            </ul>
+
+            <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" @submit.prevent="delegate">
+                <FormGroup id="delegate-person" label="Colleague" required :error="form.errors.delegate_id">
+                    <Select id="delegate-person" v-model="form.delegate_id" :options="[{ value: '', label: 'Choose…' }, ...userOptions]" />
+                </FormGroup>
+                <TextInput id="delegate-from" v-model="form.date_from" type="date" label="From" required :error="form.errors.date_from" />
+                <TextInput id="delegate-to" v-model="form.date_to" type="date" label="Until" required :error="form.errors.date_to" />
+                <TextInput id="delegate-reason" v-model="form.reason" label="Reason" :error="form.errors.reason" />
+                <div class="sm:col-span-2 lg:col-span-4">
+                    <Button type="submit" :disabled="form.processing">Delegate my approvals</Button>
+                </div>
+            </form>
         </Card>
 
         <Card v-if="recent.length" title="Recently acted on" icon="activity">

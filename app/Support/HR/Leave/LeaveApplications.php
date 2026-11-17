@@ -6,6 +6,7 @@ use App\Enums\LeaveApplicationStatus;
 use App\Enums\LeaveDetail;
 use App\Enums\LeaveStepAction;
 use App\Enums\PermissionName;
+use App\Models\ApprovalDelegation;
 use App\Models\Employee;
 use App\Models\LeaveApplication;
 use App\Models\LeaveApplicationStep;
@@ -217,7 +218,12 @@ class LeaveApplications
         }
 
         return match ($step->role) {
-            'supervisor' => ['can' => $step->assigned_to === $user->id, 'acting_for' => null],
+            'supervisor' => match (true) {
+                $step->assigned_to === $user->id => ['can' => true, 'acting_for' => null],
+                $step->assigned_to !== null && ApprovalDelegation::query()->activeOn()
+                    ->where('delegator_id', $step->assigned_to)->where('delegate_id', $user->id)->exists() => ['can' => true, 'acting_for' => $step->assigned_to],
+                default => $no,
+            },
             'hr' => ['can' => $user->hasPermission(PermissionName::LeaveCertify->value), 'acting_for' => null],
             'head' => $user->hasPermission(PermissionName::LeaveApprove->value)
                 ? ['can' => true, 'acting_for' => null]
@@ -308,7 +314,8 @@ class LeaveApplications
         return $user->hasAnyPermission([PermissionName::LeaveCertify->value, PermissionName::LeaveApprove->value])
             || Employee::query()->where('immediate_supervisor_id', $user->id)->exists()
             || $this->supervisors->supervisesByRule($user)
-            || LeaveDesignation::query()->activeOn()->where('designee_id', $user->id)->exists();
+            || LeaveDesignation::query()->activeOn()->where('designee_id', $user->id)->exists()
+            || ApprovalDelegation::query()->activeOn()->where('delegate_id', $user->id)->exists();
     }
 
     // ── Reading ──────────────────────────────────────────────────────
@@ -617,7 +624,8 @@ class LeaveApplications
         }
 
         $recipients = match ($step->role) {
-            'supervisor' => User::query()->whereKey($step->assigned_to)->get(),
+            'supervisor' => User::query()->whereKey($step->assigned_to)
+                ->orWhereIn('id', ApprovalDelegation::query()->activeOn()->where('delegator_id', $step->assigned_to)->select('delegate_id'))->get(),
             'hr' => $this->withPermission(PermissionName::LeaveCertify),
             'head' => $this->withPermission(PermissionName::LeaveApprove)->merge(
                 User::query()->whereIn('id', LeaveDesignation::query()->activeOn()->select('designee_id'))->get()),

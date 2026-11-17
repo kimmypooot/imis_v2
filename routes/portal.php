@@ -13,6 +13,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
+use App\Http\Controllers\LeaveDelegationController;
 use App\Http\Controllers\My201FileController;
 use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyEmployeeRecordController;
@@ -126,6 +127,10 @@ Route::middleware('auth')->group(function () {
     Route::get('leave/applications/{application}/attachment', [LeaveApplicationController::class, 'attachment'])->name('leave.applications.attachment');
     Route::get('leave/approvals', [LeaveApprovalController::class, 'index'])->name('leave.approvals');
     Route::post('leave/approvals/steps/{step}', [LeaveApprovalController::class, 'act'])->middleware('throttle:60,1')->name('leave.approvals.act');
+
+    // Out-of-office: hand your supervisor step on leave approvals to a colleague for a period.
+    Route::post('leave/delegations', [LeaveDelegationController::class, 'store'])->middleware('throttle:20,1')->name('leave.delegations.store');
+    Route::delete('leave/delegations/{delegation}', [LeaveDelegationController::class, 'destroy'])->name('leave.delegations.destroy');
 
     // HR-6c: monetization, flexible work and weekly reports, the calendar.
     Route::get('my/leave/calendar', [MyLeaveController::class, 'calendar'])->name('my.leave.calendar');

@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\PermissionName;
+use App\Models\ApprovalDelegation;
 use App\Models\LeaveApplication;
 use App\Models\LeaveDesignation;
 use App\Models\User;
@@ -28,6 +29,12 @@ class LeaveApplicationPolicy
         }
 
         if ($application->steps()->where(fn ($query) => $query->where('assigned_to', $user->id)->orWhere('acted_by', $user->id))->exists()) {
+            return true;
+        }
+
+        $delegatedFrom = ApprovalDelegation::query()->activeOn()->where('delegate_id', $user->id)->pluck('delegator_id');
+
+        if ($delegatedFrom->isNotEmpty() && $application->steps()->whereIn('assigned_to', $delegatedFrom)->exists()) {
             return true;
         }
 

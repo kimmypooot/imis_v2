@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
+use App\Models\ApprovalDelegation;
 use App\Models\LeaveApplicationStep;
+use App\Models\User;
 use App\Support\HR\Leave\LeaveApplications;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,20 @@ class LeaveApprovalController extends Controller
                 'step_label' => $step->roleLabel(),
                 'waiting_since' => $step->created_at->toIso8601String(),
             ]),
+            // Out-of-office: who I handed my supervisor step to, and who handed theirs to me.
+            'delegations' => ApprovalDelegation::query()->currentOrUpcoming()->where('delegator_id', $user->id)->with('delegate:id,name')
+                ->orderBy('date_from')->get()->map(fn (ApprovalDelegation $delegation) => [
+                    'id' => $delegation->id,
+                    'delegate' => $delegation->delegate->name,
+                    'date_from' => $delegation->date_from->toDateString(),
+                    'date_to' => $delegation->date_to->toDateString(),
+                    'reason' => $delegation->reason,
+                    'active' => $delegation->date_from->lte(today()),
+                ]),
+            'delegatedToMe' => ApprovalDelegation::query()->activeOn()->where('delegate_id', $user->id)->with('delegator:id,name')->get()
+                ->map(fn (ApprovalDelegation $delegation) => ['delegator' => $delegation->delegator->name, 'date_to' => $delegation->date_to->toDateString()]),
+            'userOptions' => User::query()->where('status', 'active')->whereKeyNot($user->id)->orderBy('name')->get(['id', 'name'])
+                ->map(fn (User $person) => ['value' => $person->id, 'label' => $person->name]),
             'recent' => LeaveApplicationStep::query()->where('acted_by', $user->id)->with('application.leaveType', 'application.employee.user')
                 ->latest('acted_at')->limit(15)->get()
                 ->map(fn (LeaveApplicationStep $step) => [
