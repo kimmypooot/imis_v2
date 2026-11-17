@@ -15,6 +15,7 @@ use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\LeaveApprovalController;
 use App\Http\Controllers\LeaveDelegationController;
 use App\Http\Controllers\My201FileController;
+use App\Http\Controllers\MyDataCorrectionController;
 use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyEmployeeRecordController;
 use App\Http\Controllers\MyFlexibleWorkController;
@@ -80,6 +81,9 @@ Route::middleware('auth')->group(function () {
 
     // HR-1 self-service: your own employee record (no permission needed).
     Route::get('my/employee-record', [MyEmployeeRecordController::class, 'show'])->name('my.employee-record');
+    Route::get('my/corrections', [MyDataCorrectionController::class, 'index'])->name('my.corrections');
+    Route::post('my/corrections', [MyDataCorrectionController::class, 'store'])->middleware('throttle:10,1')->name('my.corrections.store');
+    Route::post('my/corrections/{correction}/cancel', [MyDataCorrectionController::class, 'cancel'])->name('my.corrections.cancel');
 
     // Admin-2: who else opened or printed your HR records (no permission needed).
     Route::get('my/record-access', [MyRecordAccessController::class, 'index'])->name('my.record-access');

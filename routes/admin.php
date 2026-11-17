@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ChangelogController;
 use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\DashboardLayoutController;
+use App\Http\Controllers\Admin\DataCorrectionController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\EmployeeAssignmentController;
 use App\Http\Controllers\Admin\EmployeeController;
@@ -503,6 +504,11 @@ Route::middleware('auth')->group(function () {
     // pds.verify — see PdsSubmissionPolicy) and the verification queue.
     Route::middleware('permission:pds.view,pds.verify')->group(function () {
         Route::get('admin/hr/pds-verifications/{submission}', [PdsVerificationController::class, 'show'])->name('admin.hr.pds-verifications.show');
+    });
+
+    Route::middleware('permission:data_corrections.review')->group(function () {
+        Route::get('admin/hr/corrections', [DataCorrectionController::class, 'index'])->name('admin.hr.corrections.index');
+        Route::post('admin/hr/corrections/{correction}', [DataCorrectionController::class, 'decide'])->middleware('throttle:60,1')->name('admin.hr.corrections.decide');
     });
 
     Route::middleware('permission:pds.verify')->group(function () {

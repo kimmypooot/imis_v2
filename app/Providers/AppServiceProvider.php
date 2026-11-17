@@ -9,6 +9,7 @@ use App\Models\ApprovalDelegation;
 use App\Models\Changelog;
 use App\Models\Committee;
 use App\Models\CommitteeMember;
+use App\Models\DataCorrectionRequest;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\EmployeeDocument;
@@ -93,7 +94,7 @@ class AppServiceProvider extends ServiceProvider
     public const HR_ACCESS_PERMISSIONS = [
         'employees.view', 'employees.view_unit', 'pds.view', 'pds.verify', 'employee_documents.view',
         'ld.view', 'ld.manage', 'ld.approve', 'plantilla.view', 'plantilla.manage',
-        'service_records.view', 'leave.view', 'leave.manage', 'payroll.view', 'payroll.manage',
+        'service_records.view', 'leave.view', 'leave.manage', 'payroll.view', 'payroll.manage', 'data_corrections.review',
     ];
 
     /**
@@ -200,6 +201,7 @@ class AppServiceProvider extends ServiceProvider
             'payroll_run' => PayrollRun::class,
             'payroll_entry' => PayrollEntry::class,
             'payslip_request' => PayslipRequest::class,
+            'data_correction_request' => DataCorrectionRequest::class,
         ]);
 
         Event::subscribe(AuthenticationAuditSubscriber::class);

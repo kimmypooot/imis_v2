@@ -172,6 +172,10 @@ enum PermissionName: string
     // decided by the head of HRD, which needs no permission
     // (App\Support\HR\Payroll\PayslipApprovers); everyone requests their
     // own payslips with no permission.
+    // Deciding staff requests to correct their own employee record
+    // (never one's own). Everyone files requests with no permission.
+    case DataCorrectionsReview = 'data_corrections.review';
+
     case PayrollView = 'payroll.view';
     case PayrollManage = 'payroll.manage';
 

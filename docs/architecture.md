@@ -4935,3 +4935,34 @@ exist for uploaded branding.
 `tests/Feature/Admin/ScheduledTasksTest.php`, `PermissionPreviewTest.php`,
 `AccountLifecycleTest.php`, `UserImportTest.php`, `EmailTemplatesTest.php`,
 `BrandingTest.php`, and `tests/Feature/NotificationSettingsTest.php`.
+
+## Record corrections — IMPLEMENTED
+
+Staff ask HR to correct a field of their own employee record.
+
+- **Filing** (`/my/corrections`, no permission): pick a field, enter the
+  corrected value and a reason. Correctable fields are listed in
+  `Support/HR/DataCorrections::fields()`: name parts, sex, birthday, email,
+  employee number, date of original appointment, date of entry to CSC.
+  Where someone works and their position change through reassignments and
+  plantilla appointments, so they are not offered. One pending request per
+  field; the value must differ from the record's.
+- **Review** (`/admin/hr/corrections`, `data_corrections.review`, given to
+  the HR Officer role by `HrRoleSeeder`): Pending and Decided tabs.
+  Approving applies the change in the same transaction (a name change
+  recomposes the display name); rejecting needs a reason. Nobody decides
+  their own request. A count shows beside the menu entry
+  (`HrQueues::dataCorrections`).
+- Both sides are told under the bell (`HrUpdate`); filing, cancelling and
+  deciding are audited (`data_correction_request.*`).
+- Not built: evidence attachments, and corrections to the PDS, leave
+  credits or the L&D log (those have their own screens).
+- Tests: `tests/Feature/HR/DataCorrectionTest.php`.
+
+## BMIS feed and token hardening
+
+`GET /api/v1/bmis/employees` serves the directory of current employees to
+BMIS; the contract is in `docs/bmis-feed.md`. Integration Tokens
+(`/admin/api-tokens`) default to a one-year expiry and flag tokens that
+expire within 14 days (`ApiToken::expiresSoon()`); last use (time and IP)
+is shown per token.

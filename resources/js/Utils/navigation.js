@@ -46,6 +46,7 @@ export const hrAccessPermissions = [
     'employees.view_unit',
     'pds.view',
     'pds.verify',
+    'data_corrections.review',
     'employee_documents.view',
     'ld.view',
     'ld.manage',
@@ -86,6 +87,7 @@ export const portalNavItems = [
                 icon: 'user',
                 items: [
                     { label: 'My Employee Record', href: '/my/employee-record', icon: 'user' },
+                    { label: 'My Corrections', href: '/my/corrections', icon: 'clipboard' },
                     { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText' },
                     { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
                     { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
@@ -227,6 +229,7 @@ export const hrNavItems = [
             { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
             { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
             { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify', badge: 'pdsVerifications' },
+            { label: 'Record Corrections', href: '/admin/hr/corrections', icon: 'clipboard', permission: 'data_corrections.review', badge: 'dataCorrections' },
         ],
     },
     {

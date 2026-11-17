@@ -2,11 +2,13 @@
 
 namespace App\Support\HR;
 
+use App\Enums\DataCorrectionStatus;
 use App\Enums\LdApprovalStatus;
 use App\Enums\LeaveApplicationStatus;
 use App\Enums\PayslipRequestStatus;
 use App\Enums\PdsSubmissionStatus;
 use App\Enums\PermissionName;
+use App\Models\DataCorrectionRequest;
 use App\Models\LeaveApplication;
 use App\Models\PayslipRequest;
 use App\Models\Pds\PdsLearningDevelopment;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\Cache;
 final class HrQueues
 {
     /**
-     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, payslipRequests: int}
+     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, dataCorrections: int, payslipRequests: int}
      */
     public static function countsFor(User $user): array
     {
@@ -31,6 +33,7 @@ final class HrQueues
             'pdsVerifications' => self::when($user, PermissionName::PdsVerify, fn () => PdsSubmission::query()->where('status', PdsSubmissionStatus::Submitted)->count()),
             'ldReviews' => self::when($user, PermissionName::LdApprove, fn () => PdsLearningDevelopment::query()->where('approval_status', LdApprovalStatus::Pending)->count()),
             'leaveApplications' => self::when($user, PermissionName::LeaveManage, fn () => LeaveApplication::query()->where('status', LeaveApplicationStatus::ForReview)->count()),
+            'dataCorrections' => self::when($user, PermissionName::DataCorrectionsReview, fn () => DataCorrectionRequest::query()->where('status', DataCorrectionStatus::Pending)->count()),
             'payslipRequests' => self::when($user, PermissionName::PayrollManage, fn () => PayslipRequest::query()->where('status', PayslipRequestStatus::Pending)->count()),
         ]);
     }

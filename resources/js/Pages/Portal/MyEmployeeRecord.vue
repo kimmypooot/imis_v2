@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '../../Components/UI/PageHeader.vue';
+import Button from '../../Components/UI/Button.vue';
 import EmptyState from '../../Components/UI/EmptyState.vue';
 import RecordSummary from '../../Components/HR/RecordSummary.vue';
 import Card from '../../Components/UI/Card.vue';
@@ -13,8 +14,8 @@ import PlantillaHistory from '../../Components/HR/PlantillaHistory.vue';
 defineOptions({ layout: PortalLayout });
 
 /**
- * HR-1 self-service: your own employee record, read-only. Corrections go
- * through HR (later phases add update requests).
+ * HR-1 self-service: your own employee record, read-only. Corrections are
+ * requested on My Corrections and decided by HR.
  */
 const props = defineProps({
     employee: { type: Object, default: null },
@@ -37,9 +38,13 @@ const summary = computed(() => (props.employee ? [
 
     <PageHeader
         title="My Employee Record"
-        description="Your employment details as kept by HR. If something is wrong, contact the HR office."
+        description="Your employment details as kept by HR. If something is wrong, ask HR to correct it."
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My Employee Record' }]"
-    />
+    >
+        <template #actions>
+            <Button href="/my/corrections" variant="outline" icon="clipboard">Request a correction</Button>
+        </template>
+    </PageHeader>
 
     <div v-if="employee" class="space-y-6">
         <RecordSummary :items="summary" />

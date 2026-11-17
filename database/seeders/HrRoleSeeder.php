@@ -40,7 +40,7 @@ class HrRoleSeeder extends Seeder
                     P::PlantillaView, P::PlantillaManage, P::PlantillaCorrect,
                     P::ServiceRecordsView, P::ServiceRecordsManage,
                     P::LeaveView, P::LeaveManage, P::LeaveCertify,
-                    P::PayrollView, P::PayrollManage,
+                    P::PayrollView, P::PayrollManage, P::DataCorrectionsReview,
                 ],
             ],
             // Director IV and III: read-only oversight for management

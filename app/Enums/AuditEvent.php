@@ -136,6 +136,7 @@ enum AuditEvent: string
     case LeaveApplicationViewed = 'leave_application.viewed';
     case LeaveAttachmentViewed = 'leave_application.attachment_viewed';
     case LeaveDesignationSaved = 'leave_designation.saved';
+    case PersonalDataExported = 'personal_data.exported';
     case ApprovalDelegationCreated = 'approval_delegation.created';
     case ApprovalDelegationEnded = 'approval_delegation.ended';
     case LeaveDesignationDeleted = 'leave_designation.deleted';
@@ -175,6 +176,9 @@ enum AuditEvent: string
     case PayrollReopened = 'payroll_run.reopened';
     case PayrollDeleted = 'payroll_run.deleted';
     case PayslipCancelled = 'payroll_entry.cancelled';
+    case DataCorrectionRequested = 'data_correction_request.requested';
+    case DataCorrectionCancelled = 'data_correction_request.cancelled';
+    case DataCorrectionDecided = 'data_correction_request.decided';
     case PayslipRequested = 'payslip_request.requested';
     case PayslipRequestCancelled = 'payslip_request.cancelled';
     case PayslipRequestDecided = 'payslip_request.decided';
