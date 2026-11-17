@@ -65,6 +65,7 @@ class ApplicationController extends Controller
                 'maintenance_started_at' => $application->maintenance_started_at?->toIso8601String(),
                 'office' => $application->organizationalUnit?->short_name ?: $application->organizationalUnit?->name,
                 'users_count' => $application->access_grants_count,
+                'deletable' => $application->status === Status::Inactive || $application->access_grants_count === 0,
                 'listed_unit_ids' => $application->listedUnits->pluck('id'),
                 'listed_committee_ids' => $application->listedCommittees->pluck('id'),
                 'roles' => $application->roles->map(fn ($role) => [
@@ -110,6 +111,27 @@ class ApplicationController extends Controller
         $this->audit()->recordChanges(AuditEvent::ApplicationStatusChanged, "{$verb} system {$application->name}", $application);
 
         return back()->with('status', "System {$application->name} was ".strtolower($verb).'.');
+    }
+
+    public function destroy(Application $application): RedirectResponse
+    {
+        $this->authorize('delete', $application);
+
+        if (! $application->isDeletable()) {
+            return back()->with('error', "{$application->name} still has users with access. Deactivate it first, then delete it.");
+        }
+
+        $name = $application->name;
+
+        $this->audit()->record(AuditEvent::ApplicationDeleted, "Deleted system {$name}", $application, [
+            'short_name' => $application->short_name,
+            'status' => $application->status->value,
+            'roles' => $application->roles()->count(),
+            'access_grants' => $application->accessGrants()->count(),
+        ]);
+        $application->delete();
+
+        return back()->with('status', "System {$name} was deleted.");
     }
 
     /**

@@ -39,6 +39,15 @@ class ApplicationPolicy
     }
 
     /**
+     * Permanently removing a system. Whether it is eligible (retired or
+     * never used) is checked by Application::isDeletable().
+     */
+    public function delete(User $user, Application $application): bool
+    {
+        return $user->hasPermission(PermissionName::ApplicationsDelete->value);
+    }
+
+    /**
      * Starting/ending maintenance for this system (its own permission, like
      * archive). The same permission lets a user launch it meanwhile — see
      * Application::maintenanceBypassedBy().

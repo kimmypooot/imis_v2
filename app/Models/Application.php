@@ -88,6 +88,16 @@ class Application extends Model
         return $user?->hasPermission(PermissionName::ApplicationsMaintenance->value) ?? false;
     }
 
+    /**
+     * A system can be removed once it is retired (inactive) or if nobody has
+     * been given access to it. An active system with users must be
+     * deactivated first, so removal is always deliberate.
+     */
+    public function isDeletable(): bool
+    {
+        return $this->status === Status::Inactive || ! $this->accessGrants()->exists();
+    }
+
     public function organizationalUnit(): BelongsTo
     {
         return $this->belongsTo(OrganizationalUnit::class);

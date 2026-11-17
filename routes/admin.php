@@ -217,6 +217,11 @@ Route::middleware('auth')->group(function () {
             ->name('admin.applications.update-status');
     });
 
+    Route::middleware('permission:applications.delete')->group(function () {
+        Route::delete('admin/applications/{application}', [AdminApplicationController::class, 'destroy'])
+            ->name('admin.applications.destroy');
+    });
+
     Route::middleware('permission:applications.maintenance')->group(function () {
         Route::patch('admin/applications/{application}/maintenance', [AdminApplicationController::class, 'updateMaintenance'])
             ->name('admin.applications.update-maintenance');

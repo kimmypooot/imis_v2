@@ -38,6 +38,8 @@ enum PermissionName: string
     case ApplicationsCreate = 'applications.create';
     case ApplicationsUpdate = 'applications.update';
     case ApplicationsArchive = 'applications.archive';
+    // Permanently removing a retired or never-used system from the directory.
+    case ApplicationsDelete = 'applications.delete';
     // Granting/changing/revoking a user's role inside a system. Defining a
     // system's roles is part of editing the system (`applications.update`).
     case ApplicationsManageAccess = 'applications.manage_access';

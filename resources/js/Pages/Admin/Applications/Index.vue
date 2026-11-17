@@ -85,6 +85,17 @@ const toggleStatus = async (system) => {
 
     if (confirmed) router.patch(`/admin/applications/${system.id}/status`, { status: deactivating ? 'inactive' : 'active' }, { preserveScroll: true });
 };
+
+const deleteSystem = async (system) => {
+    const confirmed = await confirm({
+        title: `Delete ${system.name}?`,
+        text: `This permanently removes it, its ${system.roles.length} role(s) and ${system.users_count} access grant(s). Past sign-in history is kept. This cannot be undone.`,
+        tone: 'danger',
+        confirmText: 'Delete',
+    });
+
+    if (confirmed) router.delete(`/admin/applications/${system.id}`, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -154,6 +165,13 @@ const toggleStatus = async (system) => {
                         :tone="row.status === 'active' ? 'danger' : 'success'"
                         :label="`${row.status === 'active' ? 'Deactivate' : 'Activate'} ${row.name}`"
                         @click="toggleStatus(row)"
+                    />
+                    <ActionButton
+                        v-if="can('applications.delete') && row.deletable"
+                        icon="trash"
+                        tone="danger"
+                        :label="`Delete ${row.name}`"
+                        @click="deleteSystem(row)"
                     />
                 </div>
             </template>
