@@ -3,13 +3,14 @@ import { onBeforeUnmount, ref, useId, watch } from 'vue';
 import Icon from '../UI/Icon.vue';
 import UserAvatar from '../UI/UserAvatar.vue';
 import Button from '../UI/Button.vue';
+import PhotoCropper from './PhotoCropper.vue';
 import { toast } from '../../Composables/useDialog';
 
 /**
  * The legacy profile-picture upload: a round photo with a camera button.
- * Picking a file shows it immediately (a local preview) and emits it; the
- * server re-encodes it as a centered square (ProfilePhotos), so what you
- * see here is what gets saved.
+ * Picking a file opens a cropper to position it; the cropped square is
+ * previewed immediately and emitted. The server re-encodes it as a square
+ * (ProfilePhotos), so what you see here is what gets saved.
  */
 const props = defineProps({
     name: { type: String, required: true },
@@ -30,6 +31,7 @@ const clearPreview = () => {
 };
 
 const dragging = ref(false);
+const pending = ref(null);
 
 const accept = (file) => {
     if (!file) return;
@@ -45,6 +47,11 @@ const accept = (file) => {
         return;
     }
 
+    pending.value = file;
+};
+
+const applyCrop = (file) => {
+    pending.value = null;
     clearPreview();
     preview.value = URL.createObjectURL(file);
     emit('select', file);
@@ -109,5 +116,6 @@ defineExpose({ reset: clearPreview });
         <p class="text-xs text-text-muted">or drag a photo onto the circle · JPG, PNG, or WebP · up to 5 MB</p>
         <p v-if="error" :id="`${id}-error`" class="flex items-center gap-1 text-xs text-danger-fg"><Icon name="exclamation" size="xs" />{{ error }}</p>
         <slot />
+        <PhotoCropper :open="!!pending" :file="pending" @cancel="pending = null" @crop="applyCrop" />
     </div>
 </template>

@@ -9,6 +9,7 @@ import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import Icon from '../../../Components/UI/Icon.vue';
+import Tabs from '../../../Components/UI/Tabs.vue';
 import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { confirm } from '../../../Composables/useDialog';
@@ -29,6 +30,16 @@ const props = defineProps({
 });
 
 const { can } = useAuthorization();
+
+const statusTab = ref(props.filters?.status === 'inactive' ? 'inactive' : 'active');
+const statusTabs = computed(() =>
+    props.statusOptions.map((option) => ({
+        key: option.value,
+        label: `${option.label} (${props.services.filter((item) => item.status === option.value).length})`,
+        icon: option.value === 'active' ? 'check' : 'power',
+    })),
+);
+const rows = computed(() => props.services.filter((item) => item.status === statusTab.value));
 
 const columns = [
     { key: 'name', label: 'Name' },
@@ -104,7 +115,15 @@ const toggleStatus = async (service) => {
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Service</Button>
         </template>
 
-        <DataTable :columns="columns" :rows="services" caption="Services" export-name="imis-services">
+        <Tabs v-model="statusTab" :tabs="statusTabs">
+            <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
+        <DataTable
+            v-if="tab.key === statusTab"
+            :columns="columns"
+            :rows="rows"
+            :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} services`"
+            :export-name="`imis-services-${tab.key}`"
+        >
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
                 <div v-if="row.featured" class="text-xs text-link">Featured</div>
@@ -124,6 +143,8 @@ const toggleStatus = async (service) => {
                 </div>
             </template>
         </DataTable>
+            </template>
+        </Tabs>
     </Card>
 
     <RecordModal

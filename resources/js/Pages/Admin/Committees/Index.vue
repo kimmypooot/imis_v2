@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '../../../Components/UI/PageHeader.vue';
@@ -9,6 +9,7 @@ import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import Icon from '../../../Components/UI/Icon.vue';
+import Tabs from '../../../Components/UI/Tabs.vue';
 import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { committeeDefaults, committeeFields, committeeNullable } from '../../../Components/Admin/committeeFields';
 import { useAuthorization } from '../../../Composables/useAuthorization';
@@ -27,6 +28,16 @@ const props = defineProps({
 });
 
 const { can } = useAuthorization();
+
+const statusTab = ref(props.filters?.status === 'inactive' ? 'inactive' : 'active');
+const statusTabs = computed(() =>
+    props.statusOptions.map((option) => ({
+        key: option.value,
+        label: `${option.label} (${props.committees.filter((item) => item.status === option.value).length})`,
+        icon: option.value === 'active' ? 'check' : 'power',
+    })),
+);
+const rows = computed(() => props.committees.filter((item) => item.status === statusTab.value));
 
 const columns = [
     { key: 'name', label: 'Name' },
@@ -72,7 +83,15 @@ const toggleStatus = async (committee) => {
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Committee</Button>
         </template>
 
-        <DataTable :columns="columns" :rows="committees" caption="Committees" export-name="imis-committees">
+        <Tabs v-model="statusTab" :tabs="statusTabs">
+            <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
+        <DataTable
+            v-if="tab.key === statusTab"
+            :columns="columns"
+            :rows="rows"
+            :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} committees`"
+            :export-name="`imis-committees-${tab.key}`"
+        >
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
                 <div v-if="row.short_name" class="text-xs text-text-muted">{{ row.short_name }}</div>
@@ -92,6 +111,8 @@ const toggleStatus = async (committee) => {
                 </div>
             </template>
         </DataTable>
+            </template>
+        </Tabs>
     </Card>
 
     <RecordModal

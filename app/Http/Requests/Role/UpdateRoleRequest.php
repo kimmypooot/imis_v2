@@ -30,7 +30,8 @@ class UpdateRoleRequest extends FormRequest
     }
 
     /**
-     * The `super-admin` role's `name` is the only thing `Gate::before`
+     * The baseline `user` role is what every account falls back to, so it
+     * stays named and active too. The `super-admin` role's `name` is the only thing `Gate::before`
      * checks to grant the system-wide authorization bypass — renaming or
      * deactivating it would permanently lock everyone out, including an
      * actual Super Administrator making the change. This is therefore
@@ -41,6 +42,18 @@ class UpdateRoleRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $role = $this->route('role');
+
+            if ($role->name === RoleName::User->value) {
+                if ($this->input('name') !== RoleName::User->value) {
+                    $validator->errors()->add('name', 'The baseline User role cannot be renamed.');
+                }
+
+                if ($this->input('status') !== RoleStatus::Active->value) {
+                    $validator->errors()->add('status', 'The baseline User role cannot be deactivated.');
+                }
+
+                return;
+            }
 
             if ($role->name !== RoleName::SuperAdmin->value) {
                 return;

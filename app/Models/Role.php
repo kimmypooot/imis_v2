@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RoleName;
 use App\Enums\RoleStatus;
 use Database\Factories\RoleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -42,6 +43,22 @@ class Role extends Model
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class, 'permission_role');
+    }
+
+    /**
+     * The baseline "User" role: every account holds at least one role, and
+     * this is what an account gets when none is chosen. Created on first use.
+     */
+    public static function baseline(): self
+    {
+        return static::query()->firstOrCreate(
+            ['name' => RoleName::User->value],
+            [
+                'display_name' => 'User',
+                'description' => 'Standard staff account: the portal, own profile, PDS, leave and payslips. No administrative permissions.',
+                'status' => RoleStatus::Active,
+            ],
+        );
     }
 
     public function scopeActive(Builder $query): Builder

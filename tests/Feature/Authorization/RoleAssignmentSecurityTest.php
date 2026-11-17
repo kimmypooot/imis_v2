@@ -110,7 +110,7 @@ class RoleAssignmentSecurityTest extends TestCase
         $otherSuperAdmin = User::factory()->create();
         $otherSuperAdmin->roles()->attach($superAdminRole);
 
-        $response = $this->actingAs($actor)->put("/users/{$otherSuperAdmin->id}/roles", ['role_ids' => []]);
+        $response = $this->actingAs($actor)->put("/users/{$otherSuperAdmin->id}/roles", ['role_ids' => [Role::baseline()->id]]);
 
         $response->assertRedirect();
         $this->assertFalse($otherSuperAdmin->fresh()->hasRole(RoleName::SuperAdmin));

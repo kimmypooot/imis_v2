@@ -42,7 +42,7 @@ const blank = () => ({
     birthday: '',
     organizational_unit_id: '',
     username: '',
-    role_ids: [],
+    role_ids: props.roleOptions.filter((role) => role.name === 'user').map((role) => role.id),
     profile_photo: null,
 });
 

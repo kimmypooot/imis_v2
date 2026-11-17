@@ -9,6 +9,7 @@ import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import Icon from '../../../Components/UI/Icon.vue';
+import Tabs from '../../../Components/UI/Tabs.vue';
 import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { confirm } from '../../../Composables/useDialog';
@@ -31,6 +32,16 @@ const props = defineProps({
 const { can } = useAuthorization();
 
 const typeLabel = (value) => props.unitTypeOptions.find((option) => option.value === value)?.label ?? value;
+
+const statusTab = ref(props.filters?.status === 'inactive' ? 'inactive' : 'active');
+const statusTabs = computed(() =>
+    props.statusOptions.map((option) => ({
+        key: option.value,
+        label: `${option.label} (${props.organizationalUnits.filter((item) => item.status === option.value).length})`,
+        icon: option.value === 'active' ? 'check' : 'power',
+    })),
+);
+const rows = computed(() => props.organizationalUnits.filter((item) => item.status === statusTab.value));
 
 const columns = [
     { key: 'name', label: 'Name' },
@@ -111,7 +122,15 @@ const toggleStatus = async (unit) => {
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Office</Button>
         </template>
 
-        <DataTable :columns="columns" :rows="organizationalUnits" caption="Organizational units" export-name="imis-offices">
+        <Tabs v-model="statusTab" :tabs="statusTabs">
+            <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
+        <DataTable
+            v-if="tab.key === statusTab"
+            :columns="columns"
+            :rows="rows"
+            :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} offices`"
+            :export-name="`imis-offices-${tab.key}`"
+        >
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
                 <div v-if="row.short_name && row.short_name !== row.code" class="text-xs text-text-muted">{{ row.short_name }}</div>
@@ -143,6 +162,8 @@ const toggleStatus = async (unit) => {
                 </div>
             </template>
         </DataTable>
+            </template>
+        </Tabs>
     </Card>
 
     <RecordModal

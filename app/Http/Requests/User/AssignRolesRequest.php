@@ -25,9 +25,17 @@ class AssignRolesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role_ids' => ['present', 'array'],
+            'role_ids' => ['present', 'array', 'min:1'],
             'role_ids.*' => ['integer', 'distinct', 'exists:roles,id'],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return ['role_ids.min' => 'Every account needs at least one IMIS role. Keep "User" as the default.'];
     }
 
     /**

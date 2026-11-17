@@ -12,4 +12,7 @@ namespace App\Enums;
 enum RoleName: string
 {
     case SuperAdmin = 'super-admin';
+
+    /** The baseline role every account holds when no other role is given. */
+    case User = 'user';
 }

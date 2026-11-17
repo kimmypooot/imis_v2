@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\FeedbackStatus;
 use App\Enums\PermissionName;
+use App\Enums\RoleName;
 use App\Models\Changelog;
 use App\Models\Feedback;
 use App\Support\Branding\Branding;
@@ -66,8 +67,13 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $user
                     ? $user->activeRoles->pluck('name')->values()
                     : [],
+                // A Super Administrator passes every server check, so the client
+                // lists every permission too: a newly added one shows its buttons
+                // before the seeder has attached it to the role.
                 'permissions' => $user
-                    ? $user->permissions()->pluck('name')->values()
+                    ? ($user->hasRole(RoleName::SuperAdmin)
+                        ? collect(PermissionName::cases())->pluck('value')
+                        : $user->permissions()->pluck('name'))->values()
                     : [],
             ],
             'app' => [

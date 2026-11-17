@@ -59,6 +59,9 @@ const startTimer = (id) => {
 };
 
 const push = (type, message, timeout) => {
+    // The same message already on screen (a flash and an explicit toast for one save) shows once.
+    if (state.toasts.some((item) => item.type === type && item.message === message)) return;
+
     const id = nextToastId++;
     // A burst of toasts never stacks past the screen: the oldest makes room.
     while (state.toasts.length >= MAX_TOASTS) dismissToast(state.toasts[0].id);

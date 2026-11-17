@@ -294,6 +294,7 @@ class LegacyImporter
                 // Legacy bcrypt hashes verify as-is; set raw so the hashed cast never re-hashes them.
                 $user->setRawAttributes(['password' => $legacyUser->password] + $user->getAttributes());
                 $user->save();
+                $user->roles()->syncWithoutDetaching([Role::baseline()->id]);
                 $this->count('users_created');
 
                 if ($email === null) {

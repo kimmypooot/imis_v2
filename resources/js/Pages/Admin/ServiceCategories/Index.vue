@@ -9,6 +9,7 @@ import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import Icon from '../../../Components/UI/Icon.vue';
+import Tabs from '../../../Components/UI/Tabs.vue';
 import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { confirm } from '../../../Composables/useDialog';
@@ -25,6 +26,16 @@ const props = defineProps({
 });
 
 const { can } = useAuthorization();
+
+const statusTab = ref(props.filters?.status === 'inactive' ? 'inactive' : 'active');
+const statusTabs = computed(() =>
+    props.statusOptions.map((option) => ({
+        key: option.value,
+        label: `${option.label} (${props.categories.filter((item) => item.status === option.value).length})`,
+        icon: option.value === 'active' ? 'check' : 'power',
+    })),
+);
+const rows = computed(() => props.categories.filter((item) => item.status === statusTab.value));
 
 const columns = [
     { key: 'name', label: 'Name' },
@@ -88,7 +99,15 @@ const toggleStatus = async (category) => {
             <Button variant="success" class="rounded-full" @click="openAdd"><Icon name="plus" size="sm" />Add Category</Button>
         </template>
 
-        <DataTable :columns="columns" :rows="categories" caption="Service categories" export-name="imis-service-categories">
+        <Tabs v-model="statusTab" :tabs="statusTabs">
+            <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
+        <DataTable
+            v-if="tab.key === statusTab"
+            :columns="columns"
+            :rows="rows"
+            :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} categories`"
+            :export-name="`imis-service-categories-${tab.key}`"
+        >
             <template #cell-name="{ row }"><span class="font-medium text-text">{{ row.name }}</span></template>
             <template #cell-description="{ row }"><span class="text-text-muted">{{ row.description }}</span></template>
             <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
@@ -105,6 +124,8 @@ const toggleStatus = async (category) => {
                 </div>
             </template>
         </DataTable>
+            </template>
+        </Tabs>
     </Card>
 
     <RecordModal

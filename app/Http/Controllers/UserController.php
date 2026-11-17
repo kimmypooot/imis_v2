@@ -396,6 +396,8 @@ class UserController extends Controller
      */
     private function assignableRoles(Request $request, bool $onlyActive = false): Collection
     {
+        Role::baseline();
+
         return Role::query()
             ->when($onlyActive, fn ($query) => $query->active())
             ->when(

@@ -163,6 +163,51 @@ class UserProfileTest extends TestCase
             ->where('users', fn ($users) => collect($users)->firstWhere('name', 'Protected Admin')['can']['update'] === false));
     }
 
+    public function test_baseline_user_role_cannot_be_renamed_or_deactivated(): void
+    {
+        $role = Role::baseline();
+
+        $this->actingAs($this->userWith('roles.update'))->put("/roles/{$role->id}", [
+            'name' => 'staff', 'display_name' => 'User', 'status' => 'inactive',
+        ])->assertSessionHasErrors(['name', 'status']);
+
+        $this->assertSame('user', $role->fresh()->name);
+    }
+
+    public function test_super_administrator_is_shown_every_permission_to_the_client(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::factory()->create(['name' => RoleName::SuperAdmin->value]));
+
+        $this->actingAs($admin)->get('/users')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.permissions', fn ($permissions) => collect($permissions)->contains('api_tokens.manage')
+                && collect($permissions)->contains('applications.delete')));
+    }
+
+    public function test_new_account_without_chosen_roles_gets_the_user_role(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->userWith('users.create'))->post('/users', [
+            'first_name' => 'Ana', 'last_name' => 'Reyes', 'email' => 'ana@example.test',
+        ])->assertSessionHasNoErrors();
+
+        $created = User::query()->where('email', 'ana@example.test')->firstOrFail();
+        $this->assertSame([RoleName::User->value], $created->roles()->pluck('name')->all());
+    }
+
+    public function test_roles_cannot_be_cleared_to_nothing(): void
+    {
+        $target = User::factory()->create();
+        $target->roles()->attach(Role::baseline());
+
+        $this->actingAs($this->userWith('users.update'))
+            ->put("/users/{$target->id}/roles", ['role_ids' => []])
+            ->assertSessionHasErrors('role_ids');
+
+        $this->assertSame(1, $target->roles()->count());
+    }
+
     private function userWith(string ...$permissions): User
     {
         $role = Role::factory()->create();

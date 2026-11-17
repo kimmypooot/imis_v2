@@ -32,6 +32,7 @@ const emit = defineEmits(['close']);
 const { can } = useAuthorization();
 const isNew = computed(() => props.role === null);
 const isSuperAdmin = computed(() => props.role?.name === 'super-admin');
+const isBaseline = computed(() => props.role?.name === 'user');
 
 const tab = ref('details');
 const tabs = computed(() => [
@@ -141,7 +142,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                 <form id="role-form" @submit.prevent="saveDetails">
                     <fieldset :disabled="!canSaveDetails" class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <TextInput id="role-name" v-model="form.name" label="Machine name" required :disabled="isSuperAdmin" :invalid="!!form.errors.name" />
+                            <TextInput id="role-name" v-model="form.name" label="Machine name" required :disabled="isSuperAdmin || isBaseline" :invalid="!!form.errors.name" />
                             <p class="mt-1 text-xs text-text-muted">Lowercase letters, numbers, dashes — e.g. <code>hr-officer</code>.</p>
                             <InputError :message="form.errors.name" />
                         </div>
@@ -149,7 +150,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('roles.create') : can('
                             <TextInput id="role-display" v-model="form.display_name" label="Display name" required :error="form.errors.display_name" />
                         </div>
                         <FormGroup id="role-status" label="Status" required :error="form.errors.status">
-                            <Select id="role-status" v-model="form.status" :options="statusOptions" :disabled="isSuperAdmin" />
+                            <Select id="role-status" v-model="form.status" :options="statusOptions" :disabled="isSuperAdmin || isBaseline" />
                         </FormGroup>
                         <FormGroup id="role-description" label="Description" :error="form.errors.description" class="sm:col-span-2">
                             <Textarea id="role-description" v-model="form.description" :invalid="!!form.errors.description" />

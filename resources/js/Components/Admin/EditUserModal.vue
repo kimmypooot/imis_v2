@@ -15,7 +15,7 @@ import PasswordInput from '../Forms/PasswordInput.vue';
 import PasswordRequirements from '../Forms/PasswordRequirements.vue';
 import Checkbox from '../Forms/Checkbox.vue';
 import UserProfileFields from './UserProfileFields.vue';
-import { confirm } from '../../Composables/useDialog';
+import { confirm, toast } from '../../Composables/useDialog';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
@@ -121,13 +121,14 @@ const uploadPhoto = (file) => {
     router.post(`/users/${props.user.id}/photo`, { profile_photo: file }, {
         forceFormData: true,
         preserveScroll: true,
+        onSuccess: () => toast.success('Profile photo updated.'),
         onError: (errors) => (photoError.value = errors.profile_photo),
     });
 };
 
 const removePhoto = async () => {
     if (await confirm({ title: 'Remove profile photo?', text: `${props.user.name} will show their initials instead.`, tone: 'danger', confirmText: 'Remove' })) {
-        router.delete(`/users/${props.user.id}/photo`, { preserveScroll: true });
+        router.delete(`/users/${props.user.id}/photo`, { preserveScroll: true, onSuccess: () => toast.success('Profile photo removed.') });
     }
 };
 

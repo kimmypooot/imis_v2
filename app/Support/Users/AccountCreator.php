@@ -4,6 +4,7 @@ namespace App\Support\Users;
 
 use App\Enums\AuditEvent;
 use App\Enums\UserStatus;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\Audit\AuditLogger;
 use App\Support\HR\EmployeeRecords;
@@ -47,9 +48,7 @@ class AccountCreator
                 'status' => UserStatus::Active,
             ]);
 
-            if ($roleIds) {
-                $user->roles()->sync($roleIds);
-            }
+            $user->roles()->sync($roleIds ?: [Role::baseline()->id]);
 
             // Every new account is a staff member: their employee record
             // (HR-1) comes with it, employment status "Not set" for HR, so
