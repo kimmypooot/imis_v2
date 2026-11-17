@@ -9,6 +9,7 @@ import Button from '../../../Components/UI/Button.vue';
 import ActionButton from '../../../Components/UI/ActionButton.vue';
 import StatusBadge from '../../../Components/UI/StatusBadge.vue';
 import Icon from '../../../Components/UI/Icon.vue';
+import Tabs from '../../../Components/UI/Tabs.vue';
 import SystemModal from '../../../Components/Admin/SystemModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { confirm } from '../../../Composables/useDialog';
@@ -37,6 +38,16 @@ const options = computed(() => ({
     organizationalUnitOptions: props.organizationalUnitOptions,
     committeeOptions: props.committeeOptions,
 }));
+
+const statusTab = ref(props.filters.status === 'inactive' ? 'inactive' : 'active');
+const statusTabs = computed(() =>
+    props.statusOptions.map((option) => ({
+        key: option.value,
+        label: `${option.label} (${props.applications.filter((system) => system.status === option.value).length})`,
+        icon: option.value === 'active' ? 'grid' : 'power',
+    })),
+);
+const rows = computed(() => props.applications.filter((system) => system.status === statusTab.value));
 
 const columns = [
     { key: 'name', label: 'System name', value: (system) => `${system.name} ${system.short_name ?? ''}` },
@@ -93,7 +104,15 @@ const toggleStatus = async (system) => {
             </Button>
         </template>
 
-        <DataTable :columns="columns" :rows="applications" caption="Registered systems" export-name="imis-systems">
+        <Tabs v-model="statusTab" :tabs="statusTabs">
+            <template v-for="tab in statusTabs" :key="tab.key" #[tab.key]>
+        <DataTable
+            v-if="tab.key === statusTab"
+            :columns="columns"
+            :rows="rows"
+            :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} systems`"
+            :export-name="`imis-systems-${tab.key}`"
+        >
             <template #cell-name="{ row }">
                 <div class="flex items-center gap-3">
                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true">
@@ -139,6 +158,8 @@ const toggleStatus = async (system) => {
                 </div>
             </template>
         </DataTable>
+            </template>
+        </Tabs>
     </Card>
 
     <SystemModal :open="modalOpen" :system="editing" :options="options" @close="modalOpen = false" />
