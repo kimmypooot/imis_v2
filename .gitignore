@@ -35,3 +35,4 @@ Thumbs.db
 # error log, not app code.
 default.php
 error_log
+.playwright-mcp/
