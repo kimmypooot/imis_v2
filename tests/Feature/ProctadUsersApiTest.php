@@ -7,7 +7,9 @@ use App\Enums\UserStatus;
 use App\Models\Application;
 use App\Models\ApplicationAccess;
 use App\Models\ApplicationRole;
+use App\Models\Employee;
 use App\Models\OrganizationalUnit;
+use App\Models\Pds\PdsProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -64,6 +66,39 @@ class ProctadUsersApiTest extends TestCase
         $this->assertSame('field_office', $data[0]['office_type']);
         $this->assertSame('Leyte Field Office', $data[0]['office_name']);
         $this->assertSame('AO II', $data[0]['position']);
+    }
+
+    /**
+     * PROCTAD fills a test administrator's record from IMIS: the list's facts,
+     * plus the birthday and the PDS mobile number, for one person at a time.
+     */
+    public function test_one_person_comes_with_their_birthday_and_pds_mobile(): void
+    {
+        $proctad = Application::factory()->create(['short_name' => 'PROCTAD']);
+        $member = ApplicationRole::factory()->for($proctad)->create(['name' => 'regional', 'code' => 'member']);
+
+        $ana = ApplicationAccess::factory()->forRole($member)->create()->user;
+        $ana->forceFill(['birthday' => '1990-04-01', 'position' => 'Attorney V', 'sex' => 'female'])->save();
+        $employee = Employee::factory()->create(['user_id' => $ana->id]);
+        PdsProfile::query()->forceCreate(['employee_id' => $employee->id, 'mobile_no' => '09171234567']);
+
+        $data = $this->withToken('secret-token')->getJson("/api/v1/proctad/users/{$ana->id}")->assertOk()->json('data');
+
+        $this->assertSame($ana->id, $data['id']);
+        $this->assertSame('member', $data['role_code']);
+        $this->assertSame('Attorney V', $data['position']);
+        $this->assertSame('1990-04-01', $data['birthday']);
+        $this->assertSame('09171234567', $data['mobile']);
+    }
+
+    /** Not a lookup into IMIS at large: only people holding a PROCTAD role. */
+    public function test_a_person_without_a_proctad_role_is_not_found(): void
+    {
+        Application::factory()->create(['short_name' => 'PROCTAD']);
+        $outsider = User::factory()->create();
+
+        $this->withToken('secret-token')->getJson("/api/v1/proctad/users/{$outsider->id}")->assertNotFound();
+        $this->flushHeaders()->getJson("/api/v1/proctad/users/{$outsider->id}")->assertUnauthorized();
     }
 
     public function test_it_is_empty_when_proctad_is_not_in_the_directory(): void

@@ -68,9 +68,11 @@ Route::middleware([AuthenticateBmis::class, 'throttle:60,1'])->prefix('api/v1/bm
     Route::get('employees', [BmisController::class, 'employees'])->name('bmis.employees');
 });
 
-// PROCTAD: the staff who hold a PROCTAD role, for its Users page.
+// PROCTAD: the staff who hold a PROCTAD role, for its Users page; and one of
+// them in full, to fill a test administrator's record.
 Route::middleware([AuthenticateProctad::class, 'throttle:60,1'])->prefix('api/v1/proctad')->group(function () {
     Route::get('users', [ProctadController::class, 'users'])->name('proctad.users');
+    Route::get('users/{user}', [ProctadController::class, 'user'])->whereNumber('user')->name('proctad.user');
 });
 
 // CARES: the people directory, to pick an action officer and to name who prepares and approves its reports.
