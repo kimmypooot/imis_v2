@@ -1,9 +1,9 @@
 <script setup>
-import Badge from '../UI/Badge.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import Card from '../UI/Card.vue';
-import StatTile from '../UI/StatTile.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import SimpleChart from '../Charts/SimpleChart.vue';
 import SplitBar from '../Charts/SplitBar.vue';
 import { formatCalendarDate } from '../../Utils/datetime';

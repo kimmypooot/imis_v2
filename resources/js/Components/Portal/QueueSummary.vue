@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import Icon from '../UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { daysSince } from '../../Utils/datetime';
 
 /**

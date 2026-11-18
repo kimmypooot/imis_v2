@@ -1,10 +1,10 @@
 <script setup>
-import TextInput from '../Forms/TextInput.vue';
-import InputError from '../Forms/InputError.vue';
-import FormGroup from '../Forms/FormGroup.vue';
-import Textarea from '../Forms/Textarea.vue';
-import Checkbox from '../Forms/Checkbox.vue';
-import Button from '../UI/Button.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 
 /**
  * Shared create/edit fields. `form` is the parent's Inertia useForm()

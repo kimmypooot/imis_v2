@@ -2,15 +2,15 @@
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Alert from '../../../../Components/Feedback/Alert.vue';
-import Button from '../../../../Components/UI/Button.vue';
-import ActionButton from '../../../../Components/UI/ActionButton.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import LdLog from '../../../../Components/HR/LdLog.vue';
 import LdRecordModal from '../../../../Components/HR/LdRecordModal.vue';
 import LdRejectModal from '../../../../Components/HR/LdRejectModal.vue';
-import { confirm } from '../../../../Composables/useDialog';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
 

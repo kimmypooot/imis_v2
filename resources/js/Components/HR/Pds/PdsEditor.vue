@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import Card from '../../UI/Card.vue';
-import Tabs from '../../UI/Tabs.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
 import PdsSectionForm from './PdsSectionForm.vue';
 import PdsRowsForm from './PdsRowsForm.vue';
 import PdsManagedList from './PdsManagedList.vue';

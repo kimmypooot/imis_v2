@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import Dropdown from '../UI/Dropdown.vue';
-import Icon from '../UI/Icon.vue';
+import Dropdown from '@cscro8/ui/Components/UI/Dropdown.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * The top-bar help button, beside the bell: a small dropdown to the User

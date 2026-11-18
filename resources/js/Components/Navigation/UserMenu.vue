@@ -1,11 +1,11 @@
 <script setup>
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import Dropdown from '../UI/Dropdown.vue';
-import Icon from '../UI/Icon.vue';
-import UserAvatar from '../UI/UserAvatar.vue';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
+import Dropdown from '@cscro8/ui/Components/UI/Dropdown.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { useTheme } from '../../Composables/useTheme';
 import { firstName, useSplash } from '../../Composables/useSplash';
 import { formatDateTime } from '../../Utils/datetime';

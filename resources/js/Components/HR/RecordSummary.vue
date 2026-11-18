@@ -1,5 +1,5 @@
 <script setup>
-import Icon from '../UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * A strip of key facts at the top of a self-service HR page (position,

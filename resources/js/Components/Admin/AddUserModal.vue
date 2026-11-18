@@ -1,13 +1,13 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Alert from '../Feedback/Alert.vue';
-import Button from '../UI/Button.vue';
-import TextInput from '../Forms/TextInput.vue';
-import InputError from '../Forms/InputError.vue';
-import CheckboxGroup from '../Forms/CheckboxGroup.vue';
-import PhotoPicker from '../Forms/PhotoPicker.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import CheckboxGroup from '@cscro8/ui/Components/Forms/CheckboxGroup.vue';
+import PhotoPicker from '@cscro8/ui/Components/Forms/PhotoPicker.vue';
 import UserProfileFields from './UserProfileFields.vue';
 
 /**

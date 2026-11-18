@@ -1,12 +1,12 @@
 <script setup>
-import FileInput from '../../Forms/FileInput.vue';
+import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
 import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import Modal from '../../Feedback/Modal.vue';
-import Alert from '../../Feedback/Alert.vue';
-import Button from '../../UI/Button.vue';
-import Icon from '../../UI/Icon.vue';
-import InputError from '../../Forms/InputError.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * Fills a PDS from the CSC's Excel form (CS Form No. 212, Revised 2026).

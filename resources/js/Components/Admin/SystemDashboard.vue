@@ -1,10 +1,10 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import Card from '../UI/Card.vue';
-import Badge from '../UI/Badge.vue';
-import StatusBadge from '../UI/StatusBadge.vue';
-import StatTile from '../UI/StatTile.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import SimpleChart from '../Charts/SimpleChart.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { formatDateTime } from '../../Utils/datetime';

@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
-import Icon from '../UI/Icon.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useBranding } from '../../Composables/useBranding';
 
 /**

@@ -1,13 +1,13 @@
 <script setup>
 import { Head, router, usePoll } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import DataTable from '../../../Components/UI/DataTable.vue';
-import Button from '../../../Components/UI/Button.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import UserAvatar from '../../../Components/UI/UserAvatar.vue';
-import { confirm } from '../../../Composables/useDialog';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime, timeAgo } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });

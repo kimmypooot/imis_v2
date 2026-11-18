@@ -18,6 +18,7 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "@cscro8/ui": "file:../csc-ui",
         "@inertiajs/vue3": "^3.7.1",
         "@laravel/passkeys": "^0.4.1",
         "chart.js": "^4.5.1",

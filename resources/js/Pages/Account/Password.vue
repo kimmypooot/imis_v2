@@ -3,14 +3,14 @@ import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import Button from '../../Components/UI/Button.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import PasswordInput from '../../Components/Forms/PasswordInput.vue';
-import InputError from '../../Components/Forms/InputError.vue';
-import PasswordRequirements from '../../Components/Forms/PasswordRequirements.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import PasswordRequirements from '@cscro8/ui/Components/Forms/PasswordRequirements.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 
 defineOptions({ layout: [PortalLayout, AccountLayout] });
 

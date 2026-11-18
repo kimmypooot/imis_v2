@@ -1,13 +1,13 @@
 <script setup>
-import Badge from '../UI/Badge.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { computed, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
-import Icon from '../UI/Icon.vue';
-import Spinner from '../UI/Spinner.vue';
-import UserAvatar from '../UI/UserAvatar.vue';
-import { confirm } from '../../Composables/useDialog';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Spinner from '@cscro8/ui/Components/UI/Spinner.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 /**
  * The legacy access-assignment modal, shared by System Access (rows are

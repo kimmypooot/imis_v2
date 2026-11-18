@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });

@@ -1,15 +1,15 @@
 <script setup>
-import InputLabel from '../../../Components/Forms/InputLabel.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import BusyRegion from '../../../Components/UI/BusyRegion.vue';
+import BusyRegion from '@cscro8/ui/Components/UI/BusyRegion.vue';
 import { useBusy } from '../../../Composables/useBusy';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import PortalCard from '../../../Components/Portal/PortalCard.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import Select from '../../../Components/Forms/Select.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
 
 defineOptions({ layout: PortalLayout });
 

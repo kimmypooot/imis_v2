@@ -1,8 +1,8 @@
 <script setup>
 import { computed, reactive } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
-import Collapse from '../UI/Collapse.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Collapse from '@cscro8/ui/Components/UI/Collapse.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 
 /**

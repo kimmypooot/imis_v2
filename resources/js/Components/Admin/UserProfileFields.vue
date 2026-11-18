@@ -1,8 +1,8 @@
 <script setup>
-import TextInput from '../Forms/TextInput.vue';
-import InputError from '../Forms/InputError.vue';
-import FormGroup from '../Forms/FormGroup.vue';
-import Select from '../Forms/Select.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import { computed, watch } from 'vue';
 
 /**

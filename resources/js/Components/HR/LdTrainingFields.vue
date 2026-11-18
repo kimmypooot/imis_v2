@@ -1,8 +1,8 @@
 <script setup>
-import InputLabel from '../Forms/InputLabel.vue';
-import Select from '../Forms/Select.vue';
-import TextInput from '../Forms/TextInput.vue';
-import InputError from '../Forms/InputError.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * The training fields of an L&D entry (ldms's "Add Training"), bound to

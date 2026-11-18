@@ -2,19 +2,19 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import Card from '../../Components/UI/Card.vue';
-import Badge from '../../Components/UI/Badge.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import OrbitCircles from '../../Components/UI/OrbitCircles.vue';
-import Tabs from '../../Components/UI/Tabs.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
 import MetricDetail from '../../Components/Executive/MetricDetail.vue';
 import MetricTile from '../../Components/Executive/MetricTile.vue';
 import StatusRing from '../../Components/Executive/StatusRing.vue';
 import SystemTile from '../../Components/Executive/SystemTile.vue';
 import { formatAge, formatValue, headline, sectionStates, systemStates, targetStatuses } from '../../Components/Executive/format';
 import { firstName } from '../../Composables/useSplash';
-import { toast } from '../../Composables/useDialog';
+import { toast } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../Utils/datetime';
 
 defineOptions({ layout: PortalLayout });

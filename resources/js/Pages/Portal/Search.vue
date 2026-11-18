@@ -1,14 +1,14 @@
 <script setup>
-import InputLabel from '../../Components/Forms/InputLabel.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
-import Button from '../../Components/UI/Button.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import Spinner from '../../Components/UI/Spinner.vue';
-import Pagination from '../../Components/UI/Pagination.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Spinner from '@cscro8/ui/Components/UI/Spinner.vue';
+import Pagination from '@cscro8/ui/Components/UI/Pagination.vue';
 import SearchResultItem from '../../Components/Search/SearchResultItem.vue';
 
 defineOptions({ layout: PortalLayout });

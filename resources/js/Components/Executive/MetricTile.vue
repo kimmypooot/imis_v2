@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import Badge from '../UI/Badge.vue';
-import Icon from '../UI/Icon.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Sparkline from './Sparkline.vue';
 import { changeTone, formatChange, formatValue, targetProgress, targetStatuses } from './format';
 

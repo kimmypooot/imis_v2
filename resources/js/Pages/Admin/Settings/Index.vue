@@ -1,9 +1,9 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Alert from '../../../Components/Feedback/Alert.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import SettingsGroupForm from '../../../Components/Settings/SettingsGroupForm.vue';
 
 defineOptions({ layout: AdminLayout });

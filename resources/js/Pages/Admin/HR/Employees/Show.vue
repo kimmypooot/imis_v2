@@ -2,16 +2,16 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Button from '../../../../Components/UI/Button.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import EmployeeDetails from '../../../../Components/HR/EmployeeDetails.vue';
 import AssignmentTimeline from '../../../../Components/HR/AssignmentTimeline.vue';
 import AssignmentModal from '../../../../Components/HR/AssignmentModal.vue';
 import PlantillaHistory from '../../../../Components/HR/PlantillaHistory.vue';
 import { employeeDefaults, employeeFields, employeeNullable } from '../../../../Components/HR/employeeFields';
-import { confirm } from '../../../../Composables/useDialog';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
 

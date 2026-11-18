@@ -1,11 +1,11 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import Icon from '../../../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import Badge from '../../../Components/UI/Badge.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import AnnouncementBody from '../../../Components/Announcements/AnnouncementBody.vue';
 import { formatDate } from '../../../Utils/datetime';
 

@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import Button from './Button.vue';
-import Icon from './Icon.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useBranding } from '../../Composables/useBranding';
 
 /**

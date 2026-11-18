@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import Icon from '../../../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import PortalCard from '../../../Components/Portal/PortalCard.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 
 defineOptions({ layout: PortalLayout });
 

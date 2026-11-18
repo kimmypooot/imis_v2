@@ -38,7 +38,17 @@ export default defineConfig(({ mode }) => {
             }),
             tailwindcss(),
         ],
+        resolve: {
+            // The shared UI kit (@cscro8/ui, linked from ../csc-ui) imports Vue
+            // and Inertia but carries no copy of its own: resolve them from this
+            // app, so the page has exactly one Vue.
+            dedupe: ['vue', '@inertiajs/vue3'],
+        },
         server: {
+            fs: {
+                // Serve the linked kit's files in development.
+                allow: ['.', '../csc-ui'],
+            },
             // The page (port 8000) loads its modules from this server (port
             // 5173): a cross-origin request, so the LAN address must be allowed.
             ...(devHost

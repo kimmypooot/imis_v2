@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import Card from '../../UI/Card.vue';
-import Icon from '../../UI/Icon.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * How far along the PDS is: each part of the form (a tab of the editor) is

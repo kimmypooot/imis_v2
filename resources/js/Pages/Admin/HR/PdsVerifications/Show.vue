@@ -2,14 +2,14 @@
 import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Card from '../../../../Components/UI/Card.vue';
-import Alert from '../../../../Components/Feedback/Alert.vue';
-import Button from '../../../../Components/UI/Button.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
-import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
-import Textarea from '../../../../Components/Forms/Textarea.vue';
-import InputError from '../../../../Components/Forms/InputError.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import PdsEditor from '../../../../Components/HR/Pds/PdsEditor.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 

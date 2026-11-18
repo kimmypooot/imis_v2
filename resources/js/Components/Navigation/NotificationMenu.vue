@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
-import Skeleton from '../UI/Skeleton.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Skeleton from '@cscro8/ui/Components/UI/Skeleton.vue';
 import { dayGroup, formatDateTime, timeAgo } from '../../Utils/datetime';
 
 /**

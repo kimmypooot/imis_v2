@@ -3,11 +3,11 @@ import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import Badge from '../../Components/UI/Badge.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
 defineOptions({ layout: [PortalLayout, AccountLayout] });

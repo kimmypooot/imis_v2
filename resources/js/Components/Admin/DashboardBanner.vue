@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
-import OrbitCircles from '../UI/OrbitCircles.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**

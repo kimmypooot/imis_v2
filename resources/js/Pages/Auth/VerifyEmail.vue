@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
-import Button from '../../Components/UI/Button.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 
 defineOptions({ layout: AuthLayout });
 

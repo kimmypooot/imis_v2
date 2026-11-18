@@ -5,7 +5,7 @@
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppShell from './AppShell.vue';
-import Icon from '../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useAuthorization } from '../Composables/useAuthorization';
 import { adminAccessPermissions, adminNavItems, hrAccessPermissions, hrNavItems } from '../Utils/navigation';
 

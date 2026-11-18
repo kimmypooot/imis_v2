@@ -1,5 +1,5 @@
 <script setup>
-import Icon from '../UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * Small inline marker for a link that leaves the portal for a separate

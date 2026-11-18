@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * The compact search box in the application header. Submitting goes to

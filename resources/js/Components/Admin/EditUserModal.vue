@@ -1,21 +1,21 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Alert from '../Feedback/Alert.vue';
-import Button from '../UI/Button.vue';
-import Tabs from '../UI/Tabs.vue';
-import StatusBadge from '../UI/StatusBadge.vue';
-import UserAvatar from '../UI/UserAvatar.vue';
-import TextInput from '../Forms/TextInput.vue';
-import InputError from '../Forms/InputError.vue';
-import CheckboxGroup from '../Forms/CheckboxGroup.vue';
-import PhotoPicker from '../Forms/PhotoPicker.vue';
-import PasswordInput from '../Forms/PasswordInput.vue';
-import PasswordRequirements from '../Forms/PasswordRequirements.vue';
-import Checkbox from '../Forms/Checkbox.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import CheckboxGroup from '@cscro8/ui/Components/Forms/CheckboxGroup.vue';
+import PhotoPicker from '@cscro8/ui/Components/Forms/PhotoPicker.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import PasswordRequirements from '@cscro8/ui/Components/Forms/PasswordRequirements.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import UserProfileFields from './UserProfileFields.vue';
-import { confirm, toast } from '../../Composables/useDialog';
+import { confirm, toast } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**

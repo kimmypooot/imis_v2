@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import Card from '../../UI/Card.vue';
-import StatusBadge from '../../UI/StatusBadge.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 
 /**

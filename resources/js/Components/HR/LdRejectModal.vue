@@ -1,11 +1,11 @@
 <script setup>
-import InputLabel from '../Forms/InputLabel.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
-import Textarea from '../Forms/Textarea.vue';
-import InputError from '../Forms/InputError.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * HR-3b: reject an L&D entry with a reason the employee sees on their log

@@ -2,14 +2,14 @@
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import DataTable from '../../Components/UI/DataTable.vue';
-import StatusBadge from '../../Components/UI/StatusBadge.vue';
-import Badge from '../../Components/UI/Badge.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import OrbitCircles from '../../Components/UI/OrbitCircles.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 import { formatPeso } from '../../Utils/money';
 

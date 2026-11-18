@@ -1,8 +1,8 @@
 <script setup>
 import { computed, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import SchemaForm from './SchemaForm.vue';
 
 /**

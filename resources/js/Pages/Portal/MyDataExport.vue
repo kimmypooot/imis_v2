@@ -3,10 +3,10 @@ import { onMounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import Button from '../../Components/UI/Button.vue';
-import PasswordInput from '../../Components/Forms/PasswordInput.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 
 defineOptions({ layout: [PortalLayout, AccountLayout] });
 

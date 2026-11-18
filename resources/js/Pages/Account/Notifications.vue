@@ -3,11 +3,11 @@ import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import Button from '../../Components/UI/Button.vue';
-import Badge from '../../Components/UI/Badge.vue';
-import Icon from '../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 defineOptions({ layout: [PortalLayout, AccountLayout] });
 

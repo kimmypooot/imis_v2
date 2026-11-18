@@ -1,8 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
-import Icon from '../UI/Icon.vue';
-import EmptyState from '../UI/EmptyState.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import SystemLaunchCard from './SystemLaunchCard.vue';
 
 /**

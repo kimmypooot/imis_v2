@@ -1,10 +1,10 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import StatusBadge from '../../Components/UI/StatusBadge.vue';
-import Icon from '../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PdsEditor from '../../Components/HR/Pds/PdsEditor.vue';
 import { formatDateTime } from '../../Utils/datetime';
 

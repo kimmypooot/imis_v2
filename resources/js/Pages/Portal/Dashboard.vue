@@ -1,12 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/vue3';
-import Icon from '../../Components/UI/Icon.vue';
-import Skeleton from '../../Components/UI/Skeleton.vue';
-import Modal from '../../Components/Feedback/Modal.vue';
-import Button from '../../Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Skeleton from '@cscro8/ui/Components/UI/Skeleton.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import { formatDateTime } from '../../Utils/datetime';
 import { firstName } from '../../Composables/useSplash';
 import PortalLayout from '../../Layouts/PortalLayout.vue';

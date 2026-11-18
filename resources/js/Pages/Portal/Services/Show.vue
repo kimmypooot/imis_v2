@@ -1,12 +1,12 @@
 <script setup>
-import Button from '../../../Components/UI/Button.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import OrbitCircles from '../../../Components/UI/OrbitCircles.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
 import ExternalLinkIndicator from '../../../Components/Portal/ExternalLinkIndicator.vue';
 
 defineOptions({ layout: PortalLayout });

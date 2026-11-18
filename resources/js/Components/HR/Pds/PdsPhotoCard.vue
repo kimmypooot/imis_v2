@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import Card from '../../UI/Card.vue';
-import Button from '../../UI/Button.vue';
-import Icon from '../../UI/Icon.vue';
-import Spinner from '../../UI/Spinner.vue';
-import InputError from '../../Forms/InputError.vue';
-import { confirm } from '../../../Composables/useDialog';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Spinner from '@cscro8/ui/Components/UI/Spinner.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 /**
  * The PDS photo (passport size). Uploads are cropped to 3.5 × 4.5 cm on

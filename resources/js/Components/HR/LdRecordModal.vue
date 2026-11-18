@@ -1,12 +1,12 @@
 <script setup>
-import FileInput from '../Forms/FileInput.vue';
-import InputLabel from '../Forms/InputLabel.vue';
+import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import LdTrainingFields from './LdTrainingFields.vue';
-import InputError from '../Forms/InputError.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * Add or edit one L&D training (ldms's "Add Training" modal), with an

@@ -1,16 +1,16 @@
 <script setup>
-import InputLabel from '../../Components/Forms/InputLabel.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import StatusBadge from '../../Components/UI/StatusBadge.vue';
-import Button from '../../Components/UI/Button.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import Textarea from '../../Components/Forms/Textarea.vue';
-import InputError from '../../Components/Forms/InputError.vue';
-import { confirm } from '../../Composables/useDialog';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveActionTones, leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
 

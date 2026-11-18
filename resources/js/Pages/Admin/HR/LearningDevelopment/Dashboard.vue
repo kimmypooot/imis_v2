@@ -2,11 +2,11 @@
 import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Card from '../../../../Components/UI/Card.vue';
-import StatTile from '../../../../Components/UI/StatTile.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import SimpleChart from '../../../../Components/Charts/SimpleChart.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });

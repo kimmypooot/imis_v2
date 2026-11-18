@@ -2,12 +2,12 @@
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import Badge from '../../../Components/UI/Badge.vue';
-import Button from '../../../Components/UI/Button.vue';
-import Alert from '../../../Components/Feedback/Alert.vue';
-import ConfirmDialog from '../../../Components/Feedback/ConfirmDialog.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import ConfirmDialog from '@cscro8/ui/Components/Feedback/ConfirmDialog.vue';
 import AnnouncementBody from '../../../Components/Announcements/AnnouncementBody.vue';
 import VisibilityBadge from '../../../Components/Announcements/VisibilityBadge.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';

@@ -1,14 +1,14 @@
 <script setup>
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import Badge from '../../../Components/UI/Badge.vue';
-import Button from '../../../Components/UI/Button.vue';
-import Select from '../../../Components/Forms/Select.vue';
-import Textarea from '../../../Components/Forms/Textarea.vue';
-import Checkbox from '../../../Components/Forms/Checkbox.vue';
-import FormGroup from '../../../Components/Forms/FormGroup.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
 import { formatDateTime } from '../../../Utils/datetime';
 

@@ -1,10 +1,10 @@
 <script setup>
-import TextInput from '../Forms/TextInput.vue';
-import Textarea from '../Forms/Textarea.vue';
-import InputError from '../Forms/InputError.vue';
-import FormGroup from '../Forms/FormGroup.vue';
-import Select from '../Forms/Select.vue';
-import Checkbox from '../Forms/Checkbox.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 
 /**
  * Renders a form's fields from a declarative list, bound to an Inertia

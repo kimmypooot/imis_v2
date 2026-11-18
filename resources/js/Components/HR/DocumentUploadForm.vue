@@ -1,13 +1,13 @@
 <script setup>
-import FileInput from '../Forms/FileInput.vue';
-import InputLabel from '../Forms/InputLabel.vue';
+import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Button from '../UI/Button.vue';
-import Select from '../Forms/Select.vue';
-import TextInput from '../Forms/TextInput.vue';
-import Textarea from '../Forms/Textarea.vue';
-import InputError from '../Forms/InputError.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * HR adds a document to an employee's 201 file: what it is, its date,

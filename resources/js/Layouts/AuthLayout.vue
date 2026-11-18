@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useBranding } from '../Composables/useBranding';
-import Icon from '../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * Split-screen guest layout carried over from the legacy IMIS login:

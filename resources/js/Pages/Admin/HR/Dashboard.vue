@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import Card from '../../../Components/UI/Card.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import DashboardBanner from '../../../Components/Admin/DashboardBanner.vue';
 import HrAnalytics from '../../../Components/Admin/HrAnalytics.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';

@@ -1,6 +1,6 @@
 <script setup>
-import Icon from '../UI/Icon.vue';
-import StatusBadge from '../UI/StatusBadge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 
 /**

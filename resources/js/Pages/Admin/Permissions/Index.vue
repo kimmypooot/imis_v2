@@ -1,9 +1,9 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import DataTable from '../../../Components/UI/DataTable.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 
 defineOptions({ layout: AdminLayout });
 

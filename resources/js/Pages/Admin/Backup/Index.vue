@@ -2,16 +2,16 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import DataTable from '../../../Components/UI/DataTable.vue';
-import Button from '../../../Components/UI/Button.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import Alert from '../../../Components/Feedback/Alert.vue';
-import Modal from '../../../Components/Feedback/Modal.vue';
-import PasswordInput from '../../../Components/Forms/PasswordInput.vue';
-import InputError from '../../../Components/Forms/InputError.vue';
-import { confirm, toast } from '../../../Composables/useDialog';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import { confirm, toast } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });

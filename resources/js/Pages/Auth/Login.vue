@@ -3,14 +3,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { usePasskeyVerify } from '@laravel/passkeys/vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
-import TextInput from '../../Components/Forms/TextInput.vue';
-import PasswordInput from '../../Components/Forms/PasswordInput.vue';
-import Checkbox from '../../Components/Forms/Checkbox.vue';
-import InputError from '../../Components/Forms/InputError.vue';
-import Button from '../../Components/UI/Button.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import UserAvatar from '../../Components/UI/UserAvatar.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import { firstName } from '../../Composables/useSplash';
 import { useRememberedAccounts } from '../../Composables/useRememberedAccounts';
 

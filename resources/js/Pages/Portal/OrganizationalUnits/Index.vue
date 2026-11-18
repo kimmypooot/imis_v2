@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import UserAvatar from '../../../Components/UI/UserAvatar.vue';
-import TextInput from '../../../Components/Forms/TextInput.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 
 defineOptions({ layout: PortalLayout });
 

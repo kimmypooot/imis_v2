@@ -1,5 +1,5 @@
 <script setup>
-import Button from '../UI/Button.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { ref, useId } from 'vue';
 import { router } from '@inertiajs/vue3';
 

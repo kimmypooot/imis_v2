@@ -1,16 +1,16 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Alert from '../Feedback/Alert.vue';
-import Button from '../UI/Button.vue';
-import Tabs from '../UI/Tabs.vue';
-import TextInput from '../Forms/TextInput.vue';
-import Textarea from '../Forms/Textarea.vue';
-import InputError from '../Forms/InputError.vue';
-import FormGroup from '../Forms/FormGroup.vue';
-import Select from '../Forms/Select.vue';
-import Checkbox from '../Forms/Checkbox.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import AccessPreview from './AccessPreview.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { groupPermissionsByResource } from '../../Utils/permissions';

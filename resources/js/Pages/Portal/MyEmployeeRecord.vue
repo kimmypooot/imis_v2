@@ -2,11 +2,11 @@
 import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Button from '../../Components/UI/Button.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import RecordSummary from '../../Components/HR/RecordSummary.vue';
-import Card from '../../Components/UI/Card.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
 import EmployeeDetails from '../../Components/HR/EmployeeDetails.vue';
 import AssignmentTimeline from '../../Components/HR/AssignmentTimeline.vue';
 import PlantillaHistory from '../../Components/HR/PlantillaHistory.vue';

@@ -2,11 +2,11 @@
 import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../../Layouts/PortalLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import Badge from '../../../Components/UI/Badge.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import PortalCard from '../../../Components/Portal/PortalCard.vue';
-import EmptyState from '../../../Components/UI/EmptyState.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 
 defineOptions({ layout: PortalLayout });
 

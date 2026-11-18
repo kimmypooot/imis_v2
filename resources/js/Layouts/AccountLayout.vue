@@ -3,7 +3,7 @@
 // shared navigation for the self-service account pages.
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import Icon from '../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 const sections = [
     { label: 'Password', hint: 'Keep your account secure', href: '/account/password', icon: 'lock' },

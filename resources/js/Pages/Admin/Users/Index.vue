@@ -2,19 +2,19 @@
 import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../Components/UI/PageHeader.vue';
-import Card from '../../../Components/UI/Card.vue';
-import DataTable from '../../../Components/UI/DataTable.vue';
-import Button from '../../../Components/UI/Button.vue';
-import ActionButton from '../../../Components/UI/ActionButton.vue';
-import UserAvatar from '../../../Components/UI/UserAvatar.vue';
-import Icon from '../../../Components/UI/Icon.vue';
-import Tabs from '../../../Components/UI/Tabs.vue';
-import Select from '../../../Components/Forms/Select.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import AddUserModal from '../../../Components/Admin/AddUserModal.vue';
 import EditUserModal from '../../../Components/Admin/EditUserModal.vue';
 import { useAuthorization } from '../../../Composables/useAuthorization';
-import { confirm } from '../../../Composables/useDialog';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
 

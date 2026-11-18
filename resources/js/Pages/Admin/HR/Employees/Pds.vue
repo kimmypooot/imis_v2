@@ -2,9 +2,9 @@
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Alert from '../../../../Components/Feedback/Alert.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PdsEditor from '../../../../Components/HR/Pds/PdsEditor.vue';
 import PdsStatusCard from '../../../../Components/HR/Pds/PdsStatusCard.vue';
 import PdsPhotoCard from '../../../../Components/HR/Pds/PdsPhotoCard.vue';

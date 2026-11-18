@@ -2,15 +2,15 @@
 import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Card from '../../../../Components/UI/Card.vue';
-import DataTable from '../../../../Components/UI/DataTable.vue';
-import Tabs from '../../../../Components/UI/Tabs.vue';
-import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
-import Button from '../../../../Components/UI/Button.vue';
-import Modal from '../../../../Components/Feedback/Modal.vue';
-import Textarea from '../../../../Components/Forms/Textarea.vue';
-import InputError from '../../../../Components/Forms/InputError.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });

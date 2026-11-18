@@ -1,7 +1,7 @@
 <script setup>
 import { useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Button from '../../UI/Button.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import PdsFields from './PdsFields.vue';
 
 /**

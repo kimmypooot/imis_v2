@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import Badge from '../UI/Badge.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { formatDate } from '../../Utils/datetime';
 
 /**

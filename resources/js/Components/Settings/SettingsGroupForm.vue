@@ -1,13 +1,13 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import Card from '../UI/Card.vue';
-import Badge from '../UI/Badge.vue';
-import Button from '../UI/Button.vue';
-import Icon from '../UI/Icon.vue';
-import InputLabel from '../Forms/InputLabel.vue';
-import HelperText from '../Forms/HelperText.vue';
-import InputError from '../Forms/InputError.vue';
-import Select from '../Forms/Select.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
 
 /**
  * One settings group, saved as a single form. Only editable settings are

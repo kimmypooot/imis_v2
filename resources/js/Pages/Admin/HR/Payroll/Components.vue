@@ -2,16 +2,16 @@
 import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import ActionButton from '../../../../Components/UI/ActionButton.vue';
-import Card from '../../../../Components/UI/Card.vue';
-import DataTable from '../../../../Components/UI/DataTable.vue';
-import StatusBadge from '../../../../Components/UI/StatusBadge.vue';
-import Badge from '../../../../Components/UI/Badge.vue';
-import Button from '../../../../Components/UI/Button.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
-import { confirm } from '../../../../Composables/useDialog';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
 

@@ -1,15 +1,15 @@
 <script setup>
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import Alert from '../../Components/Feedback/Alert.vue';
-import Button from '../../Components/UI/Button.vue';
-import FormGroup from '../../Components/Forms/FormGroup.vue';
-import Select from '../../Components/Forms/Select.vue';
-import TextInput from '../../Components/Forms/TextInput.vue';
-import { confirm } from '../../Composables/useDialog';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Card from '../../Components/UI/Card.vue';
-import DataTable from '../../Components/UI/DataTable.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import QueueSummary from '../../Components/Portal/QueueSummary.vue';
 import { daysSince, formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveDates } from '../../Components/HR/leaveStatus';

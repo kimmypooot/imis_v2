@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import Badge from '../UI/Badge.vue';
-import Icon from '../UI/Icon.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { formatDate } from '../../Utils/datetime';
 
 /**

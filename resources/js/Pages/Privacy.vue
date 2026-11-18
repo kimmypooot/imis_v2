@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import PortalLayout from '../Layouts/PortalLayout.vue';
-import Icon from '../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { formatCalendarDate } from '../Utils/datetime';
 import { useBranding } from '../Composables/useBranding';
 

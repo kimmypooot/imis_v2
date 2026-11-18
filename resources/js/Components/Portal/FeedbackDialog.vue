@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
-import FormGroup from '../Forms/FormGroup.vue';
-import TextInput from '../Forms/TextInput.vue';
-import Textarea from '../Forms/Textarea.vue';
-import InputError from '../Forms/InputError.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * "Send feedback" — opened from the account menu on every page. The shell

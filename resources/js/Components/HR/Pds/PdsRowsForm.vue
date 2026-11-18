@@ -1,9 +1,9 @@
 <script setup>
 import { computed, nextTick, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Button from '../../UI/Button.vue';
-import ActionButton from '../../UI/ActionButton.vue';
-import Icon from '../../UI/Icon.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PdsFields from './PdsFields.vue';
 
 /**

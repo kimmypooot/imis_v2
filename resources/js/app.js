@@ -4,7 +4,7 @@ import { createApp, h } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import TransitionSplash from './Components/Feedback/TransitionSplash.vue';
-import DialogHost from './Components/Feedback/DialogHost.vue';
+import DialogHost from '@cscro8/ui/Components/Feedback/DialogHost.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'CSC RO VIII IMIS';
 

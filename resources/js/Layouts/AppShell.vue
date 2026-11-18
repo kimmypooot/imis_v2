@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import Icon from '../Components/UI/Icon.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import SidebarNav from '../Components/Navigation/SidebarNav.vue';
 import UserMenu from '../Components/Navigation/UserMenu.vue';
 import NotificationMenu from '../Components/Navigation/NotificationMenu.vue';

@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import Modal from '../Feedback/Modal.vue';
-import Button from '../UI/Button.vue';
-import InputError from '../Forms/InputError.vue';
+import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 /**
  * Set up employee records for many existing accounts at once. Everyone

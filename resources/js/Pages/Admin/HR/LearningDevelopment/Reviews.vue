@@ -2,11 +2,11 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
-import PageHeader from '../../../../Components/UI/PageHeader.vue';
-import Card from '../../../../Components/UI/Card.vue';
-import DataTable from '../../../../Components/UI/DataTable.vue';
-import ActionButton from '../../../../Components/UI/ActionButton.vue';
-import Icon from '../../../../Components/UI/Icon.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import LdRejectModal from '../../../../Components/HR/LdRejectModal.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 

@@ -1,13 +1,13 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
-import BusyRegion from '../../Components/UI/BusyRegion.vue';
+import BusyRegion from '@cscro8/ui/Components/UI/BusyRegion.vue';
 import { useBusy } from '../../Composables/useBusy';
-import PageHeader from '../../Components/UI/PageHeader.vue';
-import Button from '../../Components/UI/Button.vue';
-import Icon from '../../Components/UI/Icon.vue';
-import Card from '../../Components/UI/Card.vue';
-import EmptyState from '../../Components/UI/EmptyState.vue';
+import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
+import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import LeaveCard from '../../Components/HR/LeaveCard.vue';
 
 defineOptions({ layout: PortalLayout });

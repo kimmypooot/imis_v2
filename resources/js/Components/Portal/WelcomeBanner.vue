@@ -1,5 +1,5 @@
 <script setup>
-import OrbitCircles from '../UI/OrbitCircles.vue';
+import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
 import { useBranding } from '../../Composables/useBranding';
 
 /**
