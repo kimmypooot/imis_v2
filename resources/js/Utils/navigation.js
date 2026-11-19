@@ -1,7 +1,7 @@
 /**
  * Navigation item shape: { label, href, icon, permission?, description?, create? }.
  * `permission` is a single permission name (must have it) or an array of
- * names (must have at least one) — see SidebarNav.vue. Omit it for items
+ * names (must have at least one) — see the shared SidebarNav (@cscro8/ui). Omit it for items
  * every authenticated user should see. `description` and `create` are only
  * used by the admin dashboard (Admin/Index.vue), ignored elsewhere.
  * `create`, when present, is { permission, href, label } for that module's
