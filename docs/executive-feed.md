@@ -85,94 +85,19 @@ Route::get('/api/imis/summary', ImisSummaryController::class)->middleware('throt
 
 ### PROCTAD
 
-Starter figures: upcoming examinations, the share of assignments
-confirmed for them, active test administrators by field office, and
-certificates awaiting approval. They are placeholders until management
+Served at `/api/imis/summary` (`App\Http\Controllers\Api\ImisSummaryController`
+in `../proctad`; it is the model for the others: key check, then totals).
+Starter figures: upcoming examinations (`examinations.upcoming`, with the
+next one), the share of assignments confirmed for them
+(`assignments.confirmed_rate`, broken down by status), active test
+administrators (`members.active`, broken down by **testing center**, since
+most test administrators have no field office) and certificates awaiting
+approval (`certificates.pending`). They are placeholders until management
 agrees which figures to track.
 
-```php
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Enums\AssignmentStatus;
-use App\Enums\CertificateStatus;
-use App\Enums\MemberStatus;
-use App\Models\Certificate;
-use App\Models\ExamAssignment;
-use App\Models\Examination;
-use App\Models\Member;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-/**
- * PROCTAD's summary for the IMIS Executive Dashboard: totals only, in the
- * IMIS summary feed format (version 1). IMIS calls it every 30 minutes
- * with the key generated in IMIS as a bearer token (IMIS_FEED_KEY).
- */
-class ImisSummaryController extends Controller
-{
-    public function __invoke(Request $request): JsonResponse
-    {
-        $key = (string) config('services.imis.feed_key');
-        abort_if($key === '', 404);
-        abort_unless(hash_equals($key, (string) $request->bearerToken()), 401);
-
-        $today = today();
-        $upcoming = Examination::query()->where('is_active', true)->whereDate('exam_date', '>=', $today);
-        $next = (clone $upcoming)->orderBy('exam_date')->first();
-        $byStatus = ExamAssignment::query()
-            ->whereHas('examination', fn ($query) => $query->where('is_active', true)->whereDate('exam_date', '>=', $today))
-            ->where('status', '!=', AssignmentStatus::Cancelled)
-            ->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-        $assigned = (int) $byStatus->sum();
-        $confirmed = (int) ($byStatus[AssignmentStatus::Confirmed->value] ?? 0);
-
-        return response()->json([
-            'version' => 1,
-            'generated_at' => now()->toIso8601String(),
-            'metrics' => [
-                [
-                    'key' => 'examinations.upcoming',
-                    'label' => 'Upcoming examinations',
-                    'value' => (clone $upcoming)->count(),
-                    'unit' => 'count',
-                    'note' => $next ? "Next: {$next->title}, {$next->exam_date->format('M j, Y')}" : null,
-                ],
-                [
-                    'key' => 'assignments.confirmed_rate',
-                    'label' => 'Assignments confirmed for upcoming examinations',
-                    'value' => $assigned ? round($confirmed / $assigned * 100, 1) : null,
-                    'unit' => 'percent',
-                    'note' => "{$confirmed} of {$assigned} assignments",
-                    'breakdown' => $byStatus->map(fn ($total, $status) => [
-                        'label' => AssignmentStatus::tryFrom($status)?->label() ?? $status,
-                        'value' => (int) $total,
-                    ])->values()->all(),
-                ],
-                [
-                    'key' => 'members.active',
-                    'label' => 'Active test administrators',
-                    'value' => Member::query()->where('status', MemberStatus::Active)->count(),
-                    'unit' => 'count',
-                    'breakdown' => Member::query()->where('status', MemberStatus::Active)
-                        ->with('fieldOffice:id,name')->get(['id', 'field_office_id'])
-                        ->countBy(fn (Member $member) => $member->fieldOffice?->name ?? 'No field office')
-                        ->sortDesc()->take(50)
-                        ->map(fn (int $total, string $office) => ['label' => $office, 'value' => $total])
-                        ->values()->all(),
-                ],
-                [
-                    'key' => 'certificates.pending',
-                    'label' => 'Certificates awaiting approval',
-                    'value' => Certificate::query()->where('status', CertificateStatus::Pending)->count(),
-                    'unit' => 'count',
-                ],
-            ],
-        ]);
-    }
-}
-```
+PROCTAD's database uses a table prefix (`proctad_`), so its controller
+avoids raw table names in `selectRaw`; do the same in any system that has
+one.
 
 ### JPortal
 
@@ -182,6 +107,18 @@ SUC, Water District): open vacancy bulletins (`bulletins.open`, with how
 many close within 7 days), bulletins posted this month
 (`bulletins.posted_month`), and agencies that posted this year
 (`agencies.posting_year`, no breakdown). Archived bulletins are left out.
+
+### TIMS
+
+Served at `/api/imis/summary` (`App\Http\Controllers\Api\ImisSummaryController`
+in `../csc-tims`). Starter figures: published trainings scheduled or under
+way (`trainings.scheduled`, with the next one), registrations received this
+month by status (`registrations.month`), participants registered this month
+by field office (`participants.month_by_office`), certificates issued this
+year (`certificates.issued_year`), payments awaiting verification
+(`payments.pending`), fees verified this month (`payments.verified_month`,
+in pesos) and agency training requests awaiting HRD
+(`agency_requests.awaiting`).
 
 ### Online Recruitment System
 

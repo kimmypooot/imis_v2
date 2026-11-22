@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ProctadController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\RecruitmentEmployeeController;
 use App\Http\Controllers\Api\SsoValidateController;
+use App\Http\Controllers\Api\TimsController;
 use App\Http\Middleware\AuthenticateBmis;
 use App\Http\Middleware\AuthenticateCares;
 use App\Http\Middleware\AuthenticateEtts;
@@ -18,6 +19,7 @@ use App\Http\Middleware\AuthenticateIpcrs;
 use App\Http\Middleware\AuthenticateJportal;
 use App\Http\Middleware\AuthenticateProctad;
 use App\Http\Middleware\AuthenticateRecruitmentPortal;
+use App\Http\Middleware\AuthenticateTims;
 use Illuminate\Support\Facades\Route;
 
 // Server-to-server endpoints (stateless `api` middleware group: no
@@ -78,4 +80,9 @@ Route::middleware([AuthenticateProctad::class, 'throttle:60,1'])->prefix('api/v1
 // CARES: the people directory, to pick an action officer and to name who prepares and approves its reports.
 Route::middleware([AuthenticateCares::class, 'throttle:60,1'])->prefix('api/v1/cares')->group(function () {
     Route::get('employees', [CaresController::class, 'employees'])->name('cares.employees');
+});
+
+// TIMS: the employees it may add as staff (field and satellite offices, ORD, HRD).
+Route::middleware([AuthenticateTims::class, 'throttle:60,1'])->prefix('api/v1/tims')->group(function () {
+    Route::get('employees', [TimsController::class, 'employees'])->name('tims.employees');
 });

@@ -4784,10 +4784,11 @@ only, so viewing the dashboard isn't audited.
 - `SystemFeedSource` GETs the address with the key as a bearer token
   (10 s timeout, no redirects, 256 KB limit) and validates the response
   with `MetricFeed::fromFeed`; a feed can't add links into IMIS.
-- The contract and a copy-ready Laravel controller (PROCTAD) are in
+- The contract and each system's starter figures are in
   [`executive-feed.md`](executive-feed.md). The endpoints belong in each
-  system's own repository. **JPortal** serves one (`/api/imis/summary`,
-  tested locally, not yet connected in production); the others don't yet.
+  system's own repository. **PROCTAD**, **JPortal**, **GAD Corner** and
+  **TIMS** serve one (`/api/imis/summary`, tested locally, not yet connected in
+  production); the others don't yet.
 - System tiles: *Running*, *Maintenance* (IMIS maintenance mode),
   *Not answering*, *Not current*, *Waiting*, *Not connected*. The IMIS
   tile follows the health checks.

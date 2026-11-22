@@ -18,6 +18,7 @@ enum ApiIntegration: string
     case Bmis = 'bmis';
     case Proctad = 'proctad';
     case Cares = 'cares';
+    case Tims = 'tims';
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum ApiIntegration: string
             self::Bmis => 'BMIS',
             self::Proctad => 'PROCTAD',
             self::Cares => 'CARES',
+            self::Tims => 'TIMS',
         };
     }
 
