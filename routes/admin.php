@@ -372,6 +372,8 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/hr/leave/flexible-work/reports/{report}/acknowledge', [FlexibleWorkController::class, 'acknowledge'])->name('admin.hr.leave.fwa.acknowledge');
         Route::post('admin/hr/employees/{employee}/leave/entries', [EmployeeLeaveController::class, 'store'])->name('admin.hr.employees.leave.store');
         Route::post('admin/hr/employees/{employee}/leave/entries/{entry}/reverse', [EmployeeLeaveController::class, 'reverse'])->name('admin.hr.employees.leave.reverse');
+        Route::post('admin/hr/employees/{employee}/leave/entries/{entry}/correct', [EmployeeLeaveController::class, 'correct'])->name('admin.hr.employees.leave.correct');
+        Route::put('admin/hr/employees/{employee}/leave/card-months/{cardMonth}', [EmployeeLeaveController::class, 'correctMonth'])->name('admin.hr.employees.leave.card-months.correct');
         Route::put('admin/hr/employees/{employee}/leave/settings', [EmployeeLeaveController::class, 'updateSettings'])->name('admin.hr.employees.leave.settings');
     });
 

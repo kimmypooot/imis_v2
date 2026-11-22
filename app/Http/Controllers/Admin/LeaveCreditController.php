@@ -26,7 +26,9 @@ class LeaveCreditController extends Controller
         $this->authorize('viewAny', LeaveType::class);
 
         $types = $credits->creditTypes();
-        $employees = Employee::query()->with(['user.organizationalUnit', 'immediateSupervisor:id,name,position'])->get()
+        $canManage = $request->user()->can('manage', LeaveType::class);
+        // The PDS solo-parent prompt is for those who maintain leave settings only.
+        $employees = Employee::query()->with(['user.organizationalUnit', 'immediateSupervisor:id,name,position', ...($canManage ? ['pdsProfile'] : [])])->get()
             ->sortBy(fn (Employee $employee) => $employee->user->name, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
         $lastMonth = today()->subMonthNoOverflow();
@@ -43,9 +45,10 @@ class LeaveCreditController extends Controller
                 'supervisor_position' => $supervisor['position'],
                 'supervisor_source' => $supervisor['source'],
                 'balances' => $credits->balances($employee)->pluck('balance', 'type_id'),
+                'pds_solo_parent' => $canManage && $credits->pdsSaysSoloParent($employee),
             ]),
             'defaults' => ['year' => $lastMonth->year, 'month' => $lastMonth->month, 'start_year' => (int) today()->year],
-            'canManage' => $request->user()->can('manage', LeaveType::class),
+            'canManage' => $canManage,
         ]);
     }
 

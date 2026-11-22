@@ -249,7 +249,7 @@ export const hrNavItems = [
         items: [
             { label: 'Applications', href: '/admin/hr/leave/applications', icon: 'clipboard', permission: ['leave.view', 'leave.manage'], badge: 'leaveApplications' },
             { label: 'Calendar', href: '/admin/hr/leave/calendar', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
-            { label: 'Credits', href: '/admin/hr/leave', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Leave Cards', href: '/admin/hr/leave', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
             { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
             { label: 'Monetization', href: '/admin/hr/leave/monetization', icon: 'database', permission: ['leave.view', 'leave.manage'] },
             { label: 'Reports', href: '/admin/hr/leave/reports', icon: 'printer', permission: ['leave.view', 'leave.manage'] },

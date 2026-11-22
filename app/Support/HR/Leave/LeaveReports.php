@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 
 /**
  * HR-6c: the legacy LMS reports (api/admin/reports.php) that aren't
- * already a page of their own — the balance summary is Leave Credits and
+ * already a page of their own — the balance summary is Leave Cards and
  * the applications register is Leave Applications.
  */
 class LeaveReports

@@ -28,6 +28,9 @@ class LeaveCardSync
     /** A difference bigger than this many days is flagged for a second look. */
     public const LARGE = 5.0;
 
+    /** How a sync's entries begin, so the monthly card can tell them from HR's own adjustments. */
+    public const PARTICULARS_PREFIX = 'Synced with the leave card file';
+
     public function __construct(private LeaveCardWorkbook $workbook, private LeaveCredits $credits) {}
 
     /**
@@ -115,7 +118,7 @@ class LeaveCardSync
                         'entry_date' => $row['sync']['date'],
                         'kind' => LedgerEntryKind::from($line['kind']),
                         'amount' => $line['diff'],
-                        'particulars' => mb_substr(sprintf('Synced with the leave card file (%s): card %s, system had %s', basename($file), $line['card'], $line['system']), 0, 500),
+                        'particulars' => mb_substr(sprintf(self::PARTICULARS_PREFIX.' (%s): card %s, system had %s', basename($file), $line['card'], $line['system']), 0, 500),
                         'recorded_by' => $actor->id,
                     ])->save();
                     $counts[$line['kind'] === LedgerEntryKind::Opening->value ? 'openings' : 'adjustments']++;

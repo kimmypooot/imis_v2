@@ -3936,6 +3936,16 @@ import.
   - `postManual()` posts opening balances and adjustments; opening
     balances can't be negative, and the type must hold credits.
   - `reverse()` cancels an entry; a reversal can't be reversed.
+  - `correct()` reverses an entry and posts the right amount as an
+    adjustment in one step (both dated today; audited as
+    `leave_credit.corrected`).
+  - `correctMonth()` corrects a month imported from the leave card file
+    (`leave_card_months`): the figures as first imported stay in
+    `imported_values`, with who, when and why; a later import of the file
+    skips a corrected month. History only, so no balance changes
+    (`leave_card.month_corrected`). Imported months also show HR's own
+    adjustments posted in that month (not the carry-over opening or the
+    file sync's entries), noted as "adjusted in IMIS".
   - `ineligibilityReasons()` checks sex, employment status, service and
     the Solo Parent ID. HR-6b's filing reuses it.
   - `card()` gives a year's lines with running balances per type, from
@@ -3953,12 +3963,23 @@ in HR-6b), `is_solo_parent`, `solo_parent_id_number` (**encrypted**) and
 `solo_parent_id_expiry`. The ID number only reaches those who can edit
 it. The audit records field names only.
 
+**Who sees Solo Parent Leave** (`LeaveCredits::shownTypeIds()` /
+`visibleBalances()`): a type with `requires_solo_parent_id` shows on My
+Leave, the leave card and the filing form only to people marked a solo
+parent (even with an expired ID; the filing form then asks them to give HR
+the renewed ID) or with entries of it already. Filing still needs a valid
+ID. HR's Leave Cards list keeps every column. When the PDS answers "yes" to
+item 40c but the person isn't marked one, HR (`leave.manage`) sees a prompt
+on Leave Cards and in their leave settings; the PDS answer alone never makes
+anyone eligible.
+
 ### Pages
 - **Admin → Human Resources:**
-  - **Leave Credits** (`/admin/hr/leave`): everyone's balances per type
-    (DataTable with CSV and print), a warning for people with no
-    supervisor, and the **monthly accrual** and **start of the year**
-    runs.
+  - **Leave Cards** (`/admin/hr/leave`, "Leave Cards" in the sidebar):
+    everyone's balances per type (DataTable with CSV and print, an office
+    filter), each row opening the person's leave card, a warning for
+    people with no supervisor, and, folded away below, the **monthly
+    accrual** and **start of the year** runs.
   - **Leave Types** (`/admin/hr/leave/types`): the policy table and its
     editor.
   - **Holidays** (`/admin/hr/leave/holidays`), by year.
@@ -3966,7 +3987,8 @@ it. The audit records field names only.
   as "Leave" from the employee record):
   - balances, and the year's card (`Components/HR/LeaveCard.vue`, with a
     type filter)
-  - opening balances and adjustments, reversals, and leave settings
+  - opening balances and adjustments, corrections and reversals of
+    ledger lines, corrections of imported card months, and leave settings
 - **Portal → My Leave** (`/my/leave`): your balances and card,
   read-only.
 
@@ -3977,7 +3999,8 @@ it. The audit records field names only.
 - Audit events:
   - `leave_type.saved`, `holiday.saved`/`deleted`,
     `leave_settings.updated`
-  - `leave_credit.posted`/`reversed`/`accrual_run`/`year_start_run`
+  - `leave_credit.posted`/`reversed`/`corrected`/`accrual_run`/`year_start_run`
+  - `leave_card.month_corrected`
   - `leave_card.viewed` (HR opening someone's card)
 
 ### Tests
@@ -4230,7 +4253,7 @@ the current year.
 The legacy report types that aren't already a page: on leave on a day,
 utilization by type, **forced-leave compliance** (VL of 10 days or more,
 and fewer than 5 days of VL/FL taken this year), leave without pay, and
-manual credit entries (audit). The balance summary is Leave Credits; the
+manual credit entries (audit). The balance summary is Leave Cards; the
 register is Leave Applications. Each is a DataTable with print and CSV.
 
 ### Calendar (Portal → Leave Calendar)

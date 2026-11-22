@@ -125,6 +125,8 @@ enum AuditEvent: string
     case LeaveSettingsUpdated = 'leave_settings.updated';
     case LeaveCreditPosted = 'leave_credit.posted';
     case LeaveCreditReversed = 'leave_credit.reversed';
+    case LeaveCreditCorrected = 'leave_credit.corrected';
+    case LeaveCardMonthCorrected = 'leave_card.month_corrected';
     case LeaveAccrualRun = 'leave_credit.accrual_run';
     case LeaveYearStartRun = 'leave_credit.year_start_run';
     case LeaveCardViewed = 'leave_card.viewed';

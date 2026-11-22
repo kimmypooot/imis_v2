@@ -60,6 +60,44 @@ const openReverse = (line) => {
 };
 const submitReverse = () => reversal.post(`${base.value}/entries/${reversing.value.id}/reverse`, { preserveScroll: true, onSuccess: () => (reversing.value = null) });
 
+// ── Correcting a ledger entry (reverse + post the right amount) ───────
+const correcting = ref(null);
+const correction = useForm({ amount: '', reason: '' });
+const openCorrect = (line) => {
+    correction.defaults({ amount: line.amount, reason: '' });
+    correction.reset();
+    correction.clearErrors();
+    correcting.value = line;
+};
+const submitCorrect = () => correction.post(`${base.value}/entries/${correcting.value.id}/correct`, { preserveScroll: true, onSuccess: () => (correcting.value = null) });
+
+// ── Correcting a month imported from the leave card file ──────────────
+const monthFields = [
+    { key: 'earned', label: 'Earned' },
+    { key: 'used', label: 'Used' },
+    { key: 'balance', label: 'Balance' },
+];
+const fixingMonth = ref(null);
+const monthForm = useForm({});
+const isForward = computed(() => fixingMonth.value?.month === 0);
+const openCorrectMonth = (row) => {
+    // The brought-forward row carries balances only; a month row has all three figures and particulars.
+    const values = row.month === 0
+        ? { vl_balance: row.vl ?? '', sl_balance: row.sl ?? '' }
+        : {
+              ...Object.fromEntries(['vl', 'sl'].flatMap((group) => monthFields.map(({ key }) => [`${group}_${key}`, row[group]?.[key] ?? '']))),
+              particulars: row.particulars ?? '',
+          };
+    monthForm.defaults({ ...values, reason: '' });
+    monthForm.reset();
+    monthForm.clearErrors();
+    fixingMonth.value = row;
+};
+const submitCorrectMonth = () =>
+    monthForm
+        .transform((data) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value === '' ? null : value])))
+        .put(`${base.value}/card-months/${fixingMonth.value.id}`, { preserveScroll: true, onSuccess: () => (fixingMonth.value = null) });
+
 // ── Leave settings ────────────────────────────────────────────────────
 const settingsOpen = ref(false);
 const settingsForm = useForm({ immediate_supervisor_id: '', is_solo_parent: false, solo_parent_id_number: '', solo_parent_id_expiry: '' });
@@ -89,7 +127,7 @@ const field = 'mt-1 block w-full';
         :title="`Leave — ${employee.name}`"
         :breadcrumbs="[
             { label: 'Human Resources', href: '/admin/hr' },
-            { label: 'Leave Credits', href: '/admin/hr/leave' },
+            { label: 'Leave Cards', href: '/admin/hr/leave' },
             { label: employee.name, href: `/admin/hr/employees/${employee.id}` },
             { label: 'Leave' },
         ]"
@@ -127,12 +165,15 @@ const field = 'mt-1 block w-full';
                             <span v-if="settings.solo_parent_id_expiry" class="ml-2 text-xs text-text-muted">until {{ formatCalendarDate(settings.solo_parent_id_expiry) }}</span>
                         </template>
                         <template v-else>No</template>
+                        <p v-if="settings.pds_solo_parent" class="text-xs text-warning-fg">
+                            Answered "yes" to "Are you a solo parent?" on the PDS (item 40c). Check their Solo Parent ID, then mark them here.
+                        </p>
                     </dd>
                 </div>
             </dl>
         </Card>
 
-        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :monthly="monthly" :can-reverse="canManage" @year="changeYear" @reverse="openReverse" />
+        <LeaveCard :year="year" :years="years" :balances="balances" :card="card" :monthly="monthly" :can-reverse="canManage" @year="changeYear" @reverse="openReverse" @correct="openCorrect" @correct-month="openCorrectMonth" />
     </div>
 
     <Modal :open="entryOpen" title="Opening balance or adjustment" icon="plus" tone="success" size="lg" @close="entryOpen = false">
@@ -185,6 +226,66 @@ const field = 'mt-1 block w-full';
         <template #footer>
             <Button variant="secondary" @click="reversing = null" icon="close">Cancel</Button>
             <Button type="submit" form="leave-reverse-form" variant="danger" :loading="reversal.processing">Reverse</Button>
+        </template>
+    </Modal>
+
+    <Modal :open="correcting !== null" title="Correct this entry" icon="pencil" tone="primary" @close="correcting = null">
+        <form id="leave-correct-form" class="space-y-3" @submit.prevent="submitCorrect">
+            <p v-if="correcting" class="text-sm text-text">
+                {{ correcting.code }} {{ correcting.amount > 0 ? '+' : '' }}{{ correcting.amount }} on {{ formatCalendarDate(correcting.date) }} — {{ correcting.particulars }}.
+                The entry is reversed and the right amount posted, both dated today; the original stays on the card.
+            </p>
+            <div>
+                <InputLabel for="correct-amount" required>Right amount (days)</InputLabel>
+                <input
+                    id="correct-amount"
+                    v-model="correction.amount"
+                    type="number"
+                    step="0.001"
+                    required
+                    :aria-invalid="!!correction.errors.amount"
+                    class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                />
+                <p class="mt-1 text-xs text-text-muted">Negative for a deduction, as on the card.</p>
+                <InputError :message="correction.errors.amount" />
+            </div>
+            <TextInput id="correct-reason" v-model="correction.reason" label="Reason" required :error="correction.errors.reason" />
+        </form>
+        <template #footer>
+            <Button variant="secondary" @click="correcting = null" icon="close">Cancel</Button>
+            <Button type="submit" form="leave-correct-form" :loading="correction.processing" icon="check">Correct</Button>
+        </template>
+    </Modal>
+
+    <Modal :open="fixingMonth !== null" :title="fixingMonth ? `Correct ${isForward ? fixingMonth.label : `${fixingMonth.label} ${year}`}` : ''" icon="pencil" tone="primary" size="lg" @close="fixingMonth = null">
+        <form id="leave-month-form" class="space-y-4" @submit.prevent="submitCorrectMonth">
+            <p class="text-sm text-text-muted">
+                This fixes the month as it was imported from the leave card file; the imported figures are kept, and a later import of the file leaves
+                this month alone. It does not change anyone's balance: if the balance is wrong too, post an adjustment.
+            </p>
+            <div v-for="group in [{ key: 'vl', label: 'Vacation leave' }, { key: 'sl', label: 'Sick leave' }]" :key="group.key">
+                <p class="text-sm font-medium text-text">{{ group.label }}</p>
+                <div class="mt-1 grid gap-3" :class="isForward ? 'sm:grid-cols-1' : 'sm:grid-cols-3'">
+                    <div v-for="figureField in isForward ? monthFields.filter((item) => item.key === 'balance') : monthFields" :key="figureField.key">
+                        <InputLabel :for="`month-${group.key}-${figureField.key}`">{{ figureField.label }}</InputLabel>
+                        <input
+                            :id="`month-${group.key}-${figureField.key}`"
+                            v-model="monthForm[`${group.key}_${figureField.key}`]"
+                            type="number"
+                            step="0.001"
+                            :aria-invalid="!!monthForm.errors[`${group.key}_${figureField.key}`]"
+                            class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                        />
+                        <InputError :message="monthForm.errors[`${group.key}_${figureField.key}`]" />
+                    </div>
+                </div>
+            </div>
+            <TextInput v-if="!isForward" id="month-particulars" v-model="monthForm.particulars" label="Particulars" :error="monthForm.errors.particulars" />
+            <TextInput id="month-reason" v-model="monthForm.reason" label="Reason for the correction" required :error="monthForm.errors.reason" />
+        </form>
+        <template #footer>
+            <Button variant="secondary" @click="fixingMonth = null" icon="close">Cancel</Button>
+            <Button type="submit" form="leave-month-form" :loading="monthForm.processing" icon="check">Save correction</Button>
         </template>
     </Modal>
 

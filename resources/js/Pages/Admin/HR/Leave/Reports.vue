@@ -11,7 +11,7 @@ defineOptions({ layout: AdminLayout });
 
 /**
  * HR-6c: leave reports (legacy hrd/reports.php). The balance summary is
- * Leave Credits and the applications register is Leave Applications.
+ * Leave Cards and the applications register is Leave Applications.
  */
 const props = defineProps({
     reports: { type: Array, required: true },
@@ -93,7 +93,7 @@ const subtitle = computed(() => (props.filters.report === 'on_leave' ? formatCal
     </PageHeader>
 
     <p class="mb-4 text-sm text-text-muted">
-        Also: the balance summary is <Link href="/admin/hr/leave" class="text-link hover:underline">Leave Credits</Link>,
+        Also: the balance summary is <Link href="/admin/hr/leave" class="text-link hover:underline">Leave Cards</Link>,
         and the applications register is <Link href="/admin/hr/leave/applications" class="text-link hover:underline">Leave Applications</Link>.
     </p>
 

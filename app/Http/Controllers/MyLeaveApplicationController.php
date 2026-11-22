@@ -43,8 +43,13 @@ class MyLeaveApplicationController extends Controller
 
         abort_if($returned && $request->user()->cannot('update', $returned), 403);
 
+        // Types that don't concern this person (Solo Parent Leave for non-solo parents) aren't offered;
+        // the type of an application being resubmitted always is.
+        $types = LeaveType::query()->active()->ordered()->get();
+        $shown = $credits->shownTypeIds($employee, $types);
+
         return Inertia::render('Portal/LeaveApply', [
-            'types' => LeaveType::query()->active()->ordered()->get()->map(fn (LeaveType $type) => [
+            'types' => $types->filter(fn (LeaveType $type) => in_array($type->id, $shown, true) || $type->id === $returned?->leave_type_id)->values()->map(fn (LeaveType $type) => [
                 'id' => $type->id,
                 'code' => $type->code,
                 'name' => $type->name,
@@ -62,7 +67,7 @@ class MyLeaveApplicationController extends Controller
             ]),
             'detailOptions' => LeaveDetail::optionsByCode(),
             'maxChosenDates' => LeaveApplications::MAX_CHOSEN_DATES,
-            'balances' => $credits->balances($employee),
+            'balances' => $credits->visibleBalances($employee),
             'supervisor' => app(Supervisors::class)->for($employee)['name'],
             'resubmitting' => $returned ? [
                 ...$applications->present($returned),

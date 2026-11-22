@@ -116,6 +116,15 @@ class Employee extends Model
         return $this->leaveLedger();
     }
 
+    /**
+     * The imported card months, named for the `{cardMonth}` route
+     * parameter so admin routes can scope a month to its employee.
+     */
+    public function cardMonths(): HasMany
+    {
+        return $this->leaveCardMonths();
+    }
+
     /** A solo parent with an ID that hasn't expired (Solo Parent Leave). */
     public function hasValidSoloParentId(?Carbon $on = null): bool
     {

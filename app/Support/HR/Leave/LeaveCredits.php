@@ -6,6 +6,7 @@ use App\Enums\LeaveApplicationStatus;
 use App\Enums\LedgerEntryKind;
 use App\Models\Employee;
 use App\Models\LeaveApplication;
+use App\Models\LeaveCardMonth;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
 use App\Models\User;
@@ -59,6 +60,53 @@ class LeaveCredits
             'name' => $type->name,
             'balance' => round((float) ($sums[$type->id] ?? 0), 3),
         ])->values();
+    }
+
+    /**
+     * The balances worth showing this person: a type only some people can
+     * have (Solo Parent Leave) is left out for anyone it doesn't concern.
+     *
+     * @return BaseCollection<int, array{type_id: int, code: string, name: string, balance: float}>
+     */
+    public function visibleBalances(Employee $employee, ?Carbon $asOf = null): BaseCollection
+    {
+        $shown = $this->shownTypeIds($employee, $this->creditTypes());
+
+        return $this->balances($employee, $asOf)->filter(fn (array $balance) => in_array($balance['type_id'], $shown, true))->values();
+    }
+
+    /**
+     * Whether a leave type concerns this person at all. Solo Parent Leave
+     * does when they're marked a solo parent — even with an expired ID, so
+     * they're told to renew it — or when they have entries of it already
+     * (history never disappears). Everything else concerns everyone; a type
+     * they can't file yet still shows, with the reason.
+     *
+     * @param  BaseCollection<int, LeaveType>|Collection<int, LeaveType>  $types
+     * @return array<int, int> the ids of the types to show
+     */
+    public function shownTypeIds(Employee $employee, BaseCollection $types): array
+    {
+        $withEntries = null;
+
+        return $types->filter(function (LeaveType $type) use ($employee, &$withEntries) {
+            if (! $type->requires_solo_parent_id || $employee->is_solo_parent) {
+                return true;
+            }
+            $withEntries ??= $employee->leaveLedger()->distinct()->pluck('leave_type_id')->all();
+
+            return in_array($type->creditType()->id, $withEntries, true);
+        })->pluck('id')->values()->all();
+    }
+
+    /**
+     * Answered "yes" to "Are you a solo parent?" (PDS item 40c) but not yet
+     * marked one by HR: a prompt for HR to check the Solo Parent ID, never
+     * eligibility by itself.
+     */
+    public function pdsSaysSoloParent(Employee $employee): bool
+    {
+        return ! $employee->is_solo_parent && ($employee->pdsProfile?->questions['q40c'] ?? null) === true;
     }
 
     /**
@@ -129,7 +177,7 @@ class LeaveCredits
         return [
             'year' => $year,
             'years' => $years,
-            'balances' => $this->balances($employee),
+            'balances' => $this->visibleBalances($employee),
             'card' => $this->card($employee, $year),
             'monthly' => $this->monthlyCard($employee, $year),
         ];
@@ -149,7 +197,7 @@ class LeaveCredits
     public function monthlyCard(Employee $employee, int $year): array
     {
         $ids = LeaveType::query()->whereIn('code', ['VL', 'SL'])->pluck('id', 'code');
-        $history = $employee->leaveCardMonths()->where('year', $year)->get()->keyBy('month');
+        $history = $employee->leaveCardMonths()->with('corrector:id,name')->where('year', $year)->get()->keyBy('month');
         $entries = $employee->leaveLedger()->with('leaveType')->whereIn('leave_type_id', $ids->values())->orderBy('entry_date')->orderBy('id')->get();
 
         $inYear = $entries->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->year === $year);
@@ -166,7 +214,7 @@ class LeaveCredits
         $forward = $history->get(0);
         $before = Carbon::create($year, 1, 1)->subDay();
         $forwardRow = $forward
-            ? ['vl' => $forward->vl_balance, 'sl' => $forward->sl_balance, 'source' => 'card']
+            ? ['id' => $forward->id, 'vl' => $forward->vl_balance, 'sl' => $forward->sl_balance, 'source' => 'card', 'correction' => $this->correctionOf($forward)]
             : ($entries->contains(fn (LeaveLedgerEntry $entry) => $entry->entry_date->lte($before))
                 ? ['vl' => $balanceAt('VL', $before), 'sl' => $balanceAt('SL', $before), 'source' => 'ledger']
                 : null);
@@ -177,18 +225,30 @@ class LeaveCredits
             $card = $history->get($month);
             $row = ['month' => $month, 'label' => $end->format('F'), 'source' => $card ? 'card' : 'ledger'];
 
+            $monthEntries = $inYear->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->month === $month);
+
             if ($card) {
-                foreach (['vl', 'sl'] as $key) {
-                    $row[$key] = ['earned' => $card["{$key}_earned"], 'used' => $card["{$key}_used"], 'balance' => $card["{$key}_balance"]];
+                // The card's own figures, plus what HR adjusted in IMIS that month (not
+                // the carry-over or the file sync, which only bring the ledger to the card).
+                $adjustments = $monthEntries->filter(fn (LeaveLedgerEntry $entry) => $entry->kind === LedgerEntryKind::Adjustment
+                    && $entry->legacy_id === null && ! str_starts_with((string) $entry->particulars, LeaveCardSync::PARTICULARS_PREFIX));
+                foreach (['VL', 'SL'] as $code) {
+                    $key = strtolower($code);
+                    $row[$key] = [
+                        'earned' => $card["{$key}_earned"], 'used' => $card["{$key}_used"], 'balance' => $card["{$key}_balance"],
+                        'adjusted' => round((float) $adjustments->where('leave_type_id', $ids[$code])->sum('amount'), 3),
+                    ];
                 }
+                $row['id'] = $card->id;
                 $row['particulars'] = $card->particulars;
-                $row['applications'] = $card->applications;
+                $notes = $adjustments->map(fn (LeaveLedgerEntry $entry) => $entry->leaveType->code.': '.$entry->particulars)->unique()->implode('; ');
+                $row['applications'] = collect([$card->applications, $notes])->filter()->implode('; ') ?: null;
+                $row['correction'] = $this->correctionOf($card);
                 $months[] = $row;
 
                 continue;
             }
 
-            $monthEntries = $inYear->filter(fn (LeaveLedgerEntry $entry) => $entry->entry_date->month === $month);
             foreach (['VL', 'SL'] as $code) {
                 $mine = $monthEntries->where('leave_type_id', $ids[$code]);
                 $row[strtolower($code)] = [
@@ -258,6 +318,101 @@ class LeaveCredits
 
         return $this->post($entry->employee, $entry->leaveType, LedgerEntryKind::Adjustment, -(float) $entry->amount, today(),
             "Reversal of the {$entry->entry_date->toDateString()} entry ({$entry->particulars}): {$reason}", $actor, reverses: $entry);
+    }
+
+    /**
+     * Corrects an entry's amount: reverses it and posts the right amount as
+     * an adjustment, both dated today, in one step. The original stays on
+     * the card, struck through.
+     *
+     * @return array{reversal: LeaveLedgerEntry, corrected: LeaveLedgerEntry}
+     */
+    public function correct(LeaveLedgerEntry $entry, float $amount, string $reason, User $actor): array
+    {
+        $amount = round($amount, 3);
+        if ($entry->reverses_id !== null) {
+            throw ValidationException::withMessages(['reason' => 'A reversal can\'t be corrected; post an adjustment instead.']);
+        }
+        if (abs($amount - (float) $entry->amount) < 0.0005) {
+            throw ValidationException::withMessages(['amount' => 'That is already the entry\'s amount.']);
+        }
+        if (abs($amount) < 0.0005) {
+            throw ValidationException::withMessages(['amount' => 'To cancel the entry altogether, reverse it instead.']);
+        }
+
+        return DB::transaction(function () use ($entry, $amount, $reason, $actor) {
+            $reversal = $this->reverse($entry, $reason, $actor);
+            $corrected = $this->post($entry->employee, $entry->leaveType, LedgerEntryKind::Adjustment, $amount, today(),
+                "Correction of the {$entry->entry_date->toDateString()} entry ({$entry->particulars}): {$reason}", $actor);
+
+            return ['reversal' => $reversal, 'corrected' => $corrected];
+        });
+    }
+
+    // ── Imported leave card months ───────────────────────────────────
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public function monthCorrectionRules(): array
+    {
+        $figure = ['nullable', 'numeric', 'between:-9999,9999'];
+
+        return [
+            'vl_earned' => $figure, 'vl_used' => $figure, 'vl_balance' => $figure,
+            'sl_earned' => $figure, 'sl_used' => $figure, 'sl_balance' => $figure,
+            'particulars' => ['nullable', 'string', 'max:500'],
+            'reason' => ['required', 'string', 'max:300'],
+        ];
+    }
+
+    /**
+     * Corrects a month imported from the leave card file. The figures as
+     * first imported are kept; a later import leaves the month alone. Like
+     * all card history, this never changes a balance: post an adjustment
+     * for that.
+     *
+     * @param  array<string, mixed>  $data  validated
+     * @return array<int, string> the fields that changed
+     */
+    public function correctMonth(LeaveCardMonth $month, array $data, User $actor): array
+    {
+        $fields = ['vl_earned', 'vl_used', 'vl_balance', 'sl_earned', 'sl_used', 'sl_balance', 'particulars'];
+        // Only the fields sent change (the brought-forward row has balances only).
+        $new = collect($fields)->filter(fn (string $field) => array_key_exists($field, $data))
+            ->mapWithKeys(fn (string $field) => [$field => match (true) {
+                $data[$field] === null || $data[$field] === '' => null,
+                $field === 'particulars' => $data[$field],
+                default => round((float) $data[$field], 3),
+            }]);
+
+        $changed = $new->filter(fn ($value, string $field) => $value !== $month->{$field})->keys()->all();
+        if ($changed === []) {
+            throw ValidationException::withMessages(['reason' => 'Nothing was changed.']);
+        }
+
+        $month->forceFill([
+            ...$new->all(),
+            'imported_values' => $month->imported_values ?? collect($fields)->mapWithKeys(fn (string $field) => [$field => $month->{$field}])->all(),
+            'correction_reason' => $data['reason'],
+            'corrected_by' => $actor->id,
+            'corrected_at' => now(),
+        ])->save();
+
+        return $changed;
+    }
+
+    /**
+     * @return array{reason: ?string, by: ?string, at: string, imported: array<string, mixed>}|null
+     */
+    private function correctionOf(LeaveCardMonth $month): ?array
+    {
+        return $month->corrected_at === null ? null : [
+            'reason' => $month->correction_reason,
+            'by' => $month->corrector?->name,
+            'at' => $month->corrected_at->toIso8601String(),
+            'imported' => $month->imported_values ?? [],
+        ];
     }
 
     /**
@@ -454,7 +609,9 @@ class LeaveCredits
             }
         }
         if ($type->requires_solo_parent_id && ! $employee->hasValidSoloParentId($on)) {
-            $reasons[] = "{$type->name} needs a valid Solo Parent ID on file with HR.";
+            $reasons[] = $employee->is_solo_parent && $employee->solo_parent_id_expiry?->lt($on->copy()->startOfDay())
+                ? "Your Solo Parent ID expired on {$employee->solo_parent_id_expiry->format('F j, Y')}; give HR your renewed ID to file {$type->name}."
+                : "{$type->name} needs a valid Solo Parent ID on file with HR.";
         }
 
         return $reasons;

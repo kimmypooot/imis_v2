@@ -2,13 +2,15 @@
 import { computed, ref } from 'vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
-import { formatCalendarDate } from '../../Utils/datetime';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 
 /**
  * HR-6: a leave card — today's balances, then the year's ledger, oldest
  * first, each line with the running balance of its type (balances brought
  * forward from the year before). Shared by HR's page and "My Leave". With
- * `canReverse`, lines offer a reverse action (HR).
+ * `canReverse` (HR), ledger lines offer correct and reverse actions, and
+ * months imported from the leave card file can be corrected.
  */
 const props = defineProps({
     year: { type: Number, required: true },
@@ -20,7 +22,17 @@ const props = defineProps({
     canReverse: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['year', 'reverse']);
+const emit = defineEmits(['year', 'reverse', 'correct', 'correct-month']);
+
+// A corrected imported month: what it read before, for the tooltip.
+const figureNames = { vl_earned: 'VL earned', vl_used: 'VL used', vl_balance: 'VL balance', sl_earned: 'SL earned', sl_used: 'SL used', sl_balance: 'SL balance', particulars: 'Particulars' };
+const correctionNote = (correction) => {
+    const imported = Object.entries(correction.imported ?? {})
+        .filter(([, value]) => value !== null && value !== '')
+        .map(([key, value]) => `${figureNames[key] ?? key} ${typeof value === 'number' ? days(value) : value}`)
+        .join(', ');
+    return `Corrected${correction.by ? ` by ${correction.by}` : ''} on ${formatDateTime(correction.at)}: ${correction.reason}.${imported ? ` As imported: ${imported}.` : ''}`;
+};
 
 const days = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const signed = (value) => (value > 0 ? '+' : '') + days(value);
@@ -102,6 +114,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                 <th scope="colgroup" colspan="3" class="border-l border-border px-3 py-2 text-center font-medium">Vacation leave</th>
                                 <th scope="colgroup" colspan="3" class="border-l border-border px-3 py-2 text-center font-medium">Sick leave</th>
                                 <th scope="col" rowspan="2" class="border-l border-border py-2 pl-3 text-left font-medium" title="Listed where HR noted them on the card, which is not always the month the leave was taken">Applications noted</th>
+                                <th v-if="canReverse" scope="col" rowspan="2" class="py-2 pl-3 font-medium"><span class="sr-only">Actions</span></th>
                             </tr>
                             <tr class="border-b border-border">
                                 <template v-for="group in ['vl', 'sl']" :key="group">
@@ -113,17 +126,28 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                         </thead>
                         <tbody class="divide-y divide-border">
                             <tr v-if="monthly.forward">
-                                <td class="py-2 pr-4 align-top font-medium" colspan="2">Balance brought forward from {{ year - 1 }}</td>
+                                <td class="py-2 pr-4 align-top font-medium" colspan="2">
+                                    Balance brought forward from {{ year - 1 }}
+                                    <div v-if="monthly.forward.correction" class="text-xs font-normal text-warning-fg" :title="correctionNote(monthly.forward.correction)">
+                                        Corrected<span class="sr-only">. {{ correctionNote(monthly.forward.correction) }}</span>
+                                    </div>
+                                </td>
                                 <td class="border-l border-border px-3 py-2" colspan="2" />
                                 <td class="px-3 py-2 text-right align-top font-medium tabular-nums">{{ figure(monthly.forward.vl) }}</td>
                                 <td class="border-l border-border px-3 py-2" colspan="2" />
                                 <td class="px-3 py-2 text-right align-top font-medium tabular-nums">{{ figure(monthly.forward.sl) }}</td>
                                 <td class="border-l border-border py-2 pl-3 text-xs text-text-muted">{{ monthly.forward.source === 'card' ? 'From the leave card' : 'From the system' }}</td>
+                                <td v-if="canReverse" class="py-2 pl-3 text-right align-top">
+                                    <ActionButton v-if="monthly.forward.source === 'card'" icon="pencil" :label="`Correct the balance brought forward from ${year - 1}`" @click="emit('correct-month', { ...monthly.forward, month: 0, label: `Balance brought forward from ${year - 1}` })" />
+                                </td>
                             </tr>
                             <tr v-for="month in monthly.months" :key="month.month">
                                 <td class="whitespace-nowrap py-2 pr-4 align-top">
                                     {{ month.label }}
                                     <span v-if="month.source === 'ledger'" class="ml-1 text-xs text-text-muted">· system</span>
+                                    <div v-if="month.correction" class="text-xs text-warning-fg" :title="correctionNote(month.correction)">
+                                        Corrected<span class="sr-only">. {{ correctionNote(month.correction) }}</span>
+                                    </div>
                                 </td>
                                 <td class="py-2 pr-4 align-top text-text-muted">{{ month.particulars }}</td>
                                 <template v-for="group in ['vl', 'sl']" :key="group">
@@ -131,10 +155,16 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                     <td class="px-3 py-2 text-right align-top tabular-nums" :class="month[group].used > 0 ? 'text-danger-fg' : 'text-text-muted'">{{ usedFigure(month[group].used) }}</td>
                                     <td class="px-3 py-2 text-right align-top font-medium tabular-nums">
                                         {{ figure(month[group].balance) }}
-                                        <div v-if="month[group].adjusted" class="text-xs font-normal text-text-muted">{{ signed(month[group].adjusted) }} adjusted</div>
+                                        <div v-if="month[group].adjusted && month.source === 'card'" class="text-xs font-normal text-text-muted" title="Posted by HR in IMIS; not in the card's balance, but in today's balances">
+                                            {{ signed(month[group].adjusted) }} adjusted in IMIS
+                                        </div>
+                                        <div v-else-if="month[group].adjusted" class="text-xs font-normal text-text-muted">{{ signed(month[group].adjusted) }} adjusted</div>
                                     </td>
                                 </template>
                                 <td class="border-l border-border py-2 pl-3 align-top text-xs text-text-muted">{{ month.applications }}</td>
+                                <td v-if="canReverse" class="py-2 pl-3 text-right align-top">
+                                    <ActionButton v-if="month.source === 'card'" icon="pencil" :label="`Correct ${month.label} ${year}`" @click="emit('correct-month', month)" />
+                                </td>
                             </tr>
                         </tbody>
                         <tfoot>
@@ -146,6 +176,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                     <td class="px-3 py-2" />
                                 </template>
                                 <td class="border-l border-border" />
+                                <td v-if="canReverse" />
                             </tr>
                         </tfoot>
                     </table>
@@ -197,9 +228,10 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                             <td class="whitespace-nowrap py-2 pr-4 text-right align-top tabular-nums">{{ days(line.balance) }}</td>
                             <td v-if="canReverse" class="py-2 text-right align-top">
                                 <StatusBadge v-if="line.reversed" status="logged_out" label="Reversed" />
-                                <button v-else-if="!line.reverses_id" type="button" class="text-sm text-danger-fg hover:underline" @click="emit('reverse', line)">
-                                    Reverse<span class="sr-only"> the {{ line.code }} entry of {{ formatCalendarDate(line.date) }}</span>
-                                </button>
+                                <div v-else-if="!line.reverses_id" class="inline-flex gap-1.5 no-underline">
+                                    <ActionButton icon="pencil" :label="`Correct the ${line.code} entry of ${formatCalendarDate(line.date)}`" @click="emit('correct', line)" />
+                                    <ActionButton icon="refresh" tone="danger" :label="`Reverse the ${line.code} entry of ${formatCalendarDate(line.date)}`" @click="emit('reverse', line)" />
+                                </div>
                             </td>
                         </tr>
                     </tbody>

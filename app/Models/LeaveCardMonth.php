@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * HR-6: one month of an imported leave card (VL and SL: earned, used,
  * month-end balance, and the card's own notes). History for display only,
  * never read for balances — the ledger is the record of what's left.
+ * HR can correct a month; the figures as imported stay in `imported_values`.
  */
 class LeaveCardMonth extends Model
 {
@@ -28,11 +29,18 @@ class LeaveCardMonth extends Model
             'sl_earned' => 'float',
             'sl_used' => 'float',
             'sl_balance' => 'float',
+            'imported_values' => 'array',
+            'corrected_at' => 'datetime',
         ];
     }
 
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function corrector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'corrected_by');
     }
 }

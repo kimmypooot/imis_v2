@@ -82,7 +82,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
     <PageHeader
         title="Sync with the leave card file"
         description="HR's leave card workbook is the master. Upload it to bring each person's card history and Vacation and Sick Leave balance in line."
-        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Credits', href: '/admin/hr/leave' }, { label: 'Sync with the leave card file' }]"
+        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Leave Cards', href: '/admin/hr/leave' }, { label: 'Sync with the leave card file' }]"
     />
 
     <div class="space-y-6">

@@ -6,12 +6,14 @@ use App\Enums\AuditEvent;
 use App\Enums\LedgerEntryKind;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\LeaveCardMonth;
 use App\Models\LeaveLedgerEntry;
 use App\Models\User;
 use App\Support\HR\Leave\LeaveCredits;
 use App\Support\HR\Leave\Supervisors;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +55,7 @@ class EmployeeLeaveController extends Controller
                 'solo_parent_id_number' => $canManage ? $employee->solo_parent_id_number : null,
                 'solo_parent_id_expiry' => $employee->solo_parent_id_expiry?->toDateString(),
                 'solo_parent_valid' => $employee->hasValidSoloParentId(),
+                'pds_solo_parent' => $canManage && $credits->pdsSaysSoloParent($employee),
             ],
             'canManage' => $canManage,
             'manageOptions' => $canManage ? [
@@ -86,6 +89,37 @@ class EmployeeLeaveController extends Controller
         $this->audit()->record(AuditEvent::LeaveCreditReversed, "Reversed a leave credit entry of {$employee->user->name}", $reversal, ['reversed_entry' => $entry->id, 'reason' => $data['reason']]);
 
         return back()->with('status', 'The entry was reversed.');
+    }
+
+    public function correct(Request $request, Employee $employee, LeaveLedgerEntry $entry, LeaveCredits $credits): RedirectResponse
+    {
+        $this->authorize('manageLeave', $employee);
+
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'between:-999,999'],
+            'reason' => ['required', 'string', 'max:300'],
+        ]);
+        $result = $credits->correct($entry, (float) $data['amount'], $data['reason'], $request->user());
+
+        $this->audit()->record(AuditEvent::LeaveCreditCorrected, "Corrected a leave credit entry of {$employee->user->name}", $result['corrected'], [
+            'corrected_entry' => $entry->id, 'reversal' => $result['reversal']->id, 'from' => (float) $entry->amount, 'to' => (float) $result['corrected']->amount, 'reason' => $data['reason'],
+        ]);
+
+        return back()->with('status', 'The entry was corrected.');
+    }
+
+    public function correctMonth(Request $request, Employee $employee, LeaveCardMonth $cardMonth, LeaveCredits $credits): RedirectResponse
+    {
+        $this->authorize('manageLeave', $employee);
+
+        $changed = $credits->correctMonth($cardMonth, $request->validate($credits->monthCorrectionRules()), $request->user());
+
+        $label = $cardMonth->month === 0 ? "the {$cardMonth->year} brought-forward balance" : Carbon::create($cardMonth->year, $cardMonth->month, 1)->format('F Y');
+        $this->audit()->record(AuditEvent::LeaveCardMonthCorrected, "Corrected {$label} on the leave card of {$employee->user->name}", $cardMonth, [
+            'year' => $cardMonth->year, 'month' => $cardMonth->month, 'fields' => $changed, 'reason' => $cardMonth->correction_reason,
+        ]);
+
+        return back()->with('status', 'The leave card month was corrected.');
     }
 
     public function updateSettings(Request $request, Employee $employee, LeaveCredits $credits): RedirectResponse

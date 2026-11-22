@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
+use App\Models\Pds\PdsProfile;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -157,6 +158,28 @@ class LeaveFoundationTest extends TestCase
         $this->actingAs($hr)->post("/admin/hr/employees/{$own->id}/leave/entries", $this->opening('VL', 10))->assertForbidden();
     }
 
+    public function test_hr_corrects_an_entry_by_reversing_it_and_posting_the_right_amount(): void
+    {
+        $employee = $this->employee();
+        $hr = $this->hr();
+        $url = "/admin/hr/employees/{$employee->id}/leave";
+        $this->actingAs($hr)->post("{$url}/entries", $this->opening('VL', 42.5));
+        $entry = LeaveLedgerEntry::query()->sole();
+
+        $this->actingAs($hr)->post("{$url}/entries/{$entry->id}/correct", ['amount' => 42.5, 'reason' => 'Same'])->assertSessionHasErrors('amount');
+        $this->actingAs($hr)->post("{$url}/entries/{$entry->id}/correct", ['amount' => 24.5, 'reason' => 'Digits swapped'])->assertSessionHasNoErrors();
+
+        $this->assertSame(24.5, app(LeaveCredits::class)->balance($employee, $this->type('VL')));
+        $this->assertSame(3, LeaveLedgerEntry::query()->count(), 'The original, its reversal and the right amount.');
+        $this->assertTrue(LeaveLedgerEntry::query()->where('reverses_id', $entry->id)->exists());
+        $this->assertDatabaseHas('audit_logs', ['event' => 'leave_credit.corrected']);
+
+        $this->actingAs($hr)->post("{$url}/entries/{$entry->id}/correct", ['amount' => 20, 'reason' => 'Again'])->assertSessionHasErrors('reason');
+
+        $other = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/employees/{$other->id}/leave/entries/{$entry->id}/correct", ['amount' => 1, 'reason' => 'Wrong person'])->assertNotFound();
+    }
+
     public function test_the_card_runs_balances_from_what_was_brought_forward(): void
     {
         $employee = $this->employee();
@@ -180,6 +203,45 @@ class LeaveFoundationTest extends TestCase
 
         $this->actingAs($employee->user)->get('/my/leave')
             ->assertInertia(fn (Assert $page) => $page->component('Portal/MyLeave')->where('hasRecord', true)->has('card.lines', 3));
+    }
+
+    public function test_solo_parent_leave_only_shows_to_solo_parents_and_those_with_history(): void
+    {
+        $solo = $this->type('SOLO');
+        $codes = fn (Employee $employee) => app(LeaveCredits::class)->visibleBalances($employee)->pluck('code')->all();
+        $offered = fn (Employee $employee) => collect($this->actingAs($employee->user)->get('/my/leave/apply')->viewData('page')['props']['types']);
+
+        $plain = $this->employee();
+        $this->assertNotContains('SOLO', $codes($plain));
+        $this->assertFalse($offered($plain)->contains('code', 'SOLO'));
+        $this->actingAs($plain->user)->get('/my/leave')->assertInertia(fn (Assert $page) => $page->where('balances', fn ($balances) => ! collect($balances)->contains('code', 'SOLO')));
+
+        // Marked a solo parent with an expired ID: still shown, with the reason to renew.
+        $expired = $this->employee();
+        $expired->forceFill(['is_solo_parent' => true, 'solo_parent_id_number' => 'SP-1', 'solo_parent_id_expiry' => '2026-01-31'])->save();
+        $this->assertContains('SOLO', $codes($expired));
+        $this->assertStringContainsString('expired on January 31, 2026', $offered($expired)->firstWhere('code', 'SOLO')['ineligible'][0]);
+
+        // No longer marked, but has entries of it: the history stays visible.
+        $former = $this->employee();
+        $this->actingAs($this->hr())->post("/admin/hr/employees/{$former->id}/leave/entries", $this->opening('SOLO', 7));
+        $this->assertContains('SOLO', $codes($former));
+        $this->assertSame($solo->id, LeaveLedgerEntry::query()->value('leave_type_id'));
+    }
+
+    public function test_hr_is_prompted_when_the_pds_says_solo_parent_but_leave_settings_do_not(): void
+    {
+        $employee = $this->employee();
+        PdsProfile::query()->forceCreate(['employee_id' => $employee->id, 'questions' => ['q40c' => true, 'q40c_id' => 'SP-9']]);
+
+        $this->actingAs($this->hr())->get('/admin/hr/leave')
+            ->assertInertia(fn (Assert $page) => $page->where('employees.0.pds_solo_parent', true));
+        $this->actingAs($this->userWith(['leave.view']))->get('/admin/hr/leave')
+            ->assertInertia(fn (Assert $page) => $page->where('employees.0.pds_solo_parent', false));
+
+        $employee->forceFill(['is_solo_parent' => true, 'solo_parent_id_number' => 'SP-9'])->save();
+        $this->actingAs($this->hr())->get("/admin/hr/employees/{$employee->id}/leave")
+            ->assertInertia(fn (Assert $page) => $page->where('settings.pds_solo_parent', false));
     }
 
     public function test_leave_settings_keep_the_solo_parent_id_encrypted(): void

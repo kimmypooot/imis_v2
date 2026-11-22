@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\LeaveCardMonth;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\HR\Leave\LeaveCardWorkbook;
 use App\Support\HR\Leave\LeaveCredits;
@@ -91,7 +93,7 @@ class LeaveMonthlyCardTest extends TestCase
 
         $card = $credits->monthlyCard($ana, 2026);
 
-        $this->assertSame(['vl' => 10.0, 'sl' => 20.0, 'source' => 'card'], $card['forward']);
+        $this->assertSame(['vl' => 10.0, 'sl' => 20.0, 'source' => 'card', 'correction' => null], collect($card['forward'])->except('id')->all());
         $this->assertSame(['card', 'card', 'ledger'], array_column($card['months'], 'source'));
         $this->assertSame('(00-02-00) UT', $card['months'][0]['particulars']);
         $march = $card['months'][2];
@@ -118,6 +120,71 @@ class LeaveMonthlyCardTest extends TestCase
                 ->where('monthly.months.0.label', 'May')
                 ->where('monthly.months.0.source', 'card')
                 ->has('years', fn (Assert $years) => $years->where('0', (int) today()->year)->where('1', 2019)->etc()));
+    }
+
+    public function test_hr_corrects_an_imported_month_keeping_what_was_imported_and_a_reimport_leaves_it(): void
+    {
+        $ana = $this->employee();
+        $sheets = ['REYES' => $this->workbook([2026 => [10.0, 20.0, [1 => [1.25, 0.5]]]])];
+        (new LeaveCardWorkbook)->applyHistory((new LeaveCardWorkbook)->history($sheets));
+        $january = LeaveCardMonth::query()->where(['year' => 2026, 'month' => 1])->sole();
+        $forward = LeaveCardMonth::query()->where(['year' => 2026, 'month' => 0])->sole();
+        $hr = $this->hr();
+        $url = "/admin/hr/employees/{$ana->id}/leave/card-months";
+
+        $this->actingAs($hr)->put("{$url}/{$january->id}", ['vl_used' => 0.25, 'vl_balance' => 11.0])->assertSessionHasErrors('reason');
+        $this->actingAs($hr)->put("{$url}/{$january->id}", ['vl_earned' => 1.25, 'reason' => 'No change'])->assertSessionHasErrors('reason');
+        $this->actingAs($hr)->put("{$url}/{$january->id}", ['vl_used' => 0.25, 'vl_balance' => 11.0, 'reason' => 'Undertime was 2 hours, not 4'])->assertSessionHasNoErrors();
+        // Only the balances are sent for the brought-forward row; its particulars stay.
+        $this->actingAs($hr)->put("{$url}/{$forward->id}", ['vl_balance' => 9.5, 'sl_balance' => 20.0, 'reason' => 'Per the 2025 card'])->assertSessionHasNoErrors();
+
+        $january->refresh();
+        $this->assertSame(0.25, $january->vl_used);
+        $this->assertSame(0.5, $january->imported_values['vl_used']);
+        $this->assertSame($hr->id, $january->corrected_by);
+        $this->assertNotNull($forward->refresh()->particulars);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'leave_card.month_corrected', 'target_id' => $january->id]);
+        $this->assertSame(0, LeaveLedgerEntry::query()->count(), 'Correcting the card history never touches the ledger.');
+
+        (new LeaveCardWorkbook)->applyHistory((new LeaveCardWorkbook)->history($sheets));
+        $this->assertSame(0.25, $january->refresh()->vl_used, 'A re-import keeps the correction.');
+
+        $this->actingAs($hr)->get("/admin/hr/employees/{$ana->id}/leave?year=2026")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('monthly.months.0.correction.reason', 'Undertime was 2 hours, not 4')
+                ->where('monthly.months.0.correction.imported.vl_used', 0.5)
+                ->where('monthly.forward.vl', 9.5));
+
+        $other = $this->employee();
+        $this->actingAs($hr)->put("/admin/hr/employees/{$other->id}/leave/card-months/{$january->id}", ['vl_used' => 0, 'reason' => 'Wrong person'])->assertNotFound();
+        $this->actingAs($ana->user)->put("{$url}/{$january->id}", ['vl_used' => 0, 'reason' => 'Mine'])->assertForbidden();
+    }
+
+    public function test_an_imported_month_shows_hr_adjustments_but_not_the_carry_over_or_the_file_sync(): void
+    {
+        $ana = $this->employee();
+        LeaveCardMonth::factory()->for($ana)->create(['year' => 2026, 'month' => 2, 'vl_balance' => 12.25]);
+        $vl = LeaveType::query()->where('code', 'VL')->first();
+        $this->ledger($ana, $vl, LedgerEntryKind::Opening, 12.25, '2026-02-28');
+        $this->ledger($ana, $vl, LedgerEntryKind::Adjustment, 0.5, '2026-02-28', 'Synced with the leave card file (cards.xlsx): card 12.75, system had 12.25');
+        $this->ledger($ana, $vl, LedgerEntryKind::Adjustment, -1.0, '2026-02-15', 'Absence not on the card');
+
+        $february = app(LeaveCredits::class)->monthlyCard($ana, 2026)['months'][0];
+
+        $this->assertSame('card', $february['source']);
+        $this->assertSame(-1.0, $february['vl']['adjusted']);
+        $this->assertSame(12.25, $february['vl']['balance'], 'The card\'s own balance is still shown.');
+        $this->assertStringContainsString('VL: Absence not on the card', $february['applications']);
+    }
+
+    private function hr(): User
+    {
+        $user = User::factory()->create();
+        $role = Role::factory()->create();
+        $role->permissions()->attach(Permission::query()->firstOrCreate(['name' => 'leave.manage'], ['display_name' => 'leave.manage']));
+        $user->roles()->attach($role);
+
+        return $user;
     }
 
     private function employee(): Employee

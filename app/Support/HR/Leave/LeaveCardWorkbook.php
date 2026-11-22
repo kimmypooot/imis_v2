@@ -211,7 +211,8 @@ class LeaveCardWorkbook
     }
 
     /**
-     * Saves each ready person's months; re-running updates them in place.
+     * Saves each ready person's months; re-running updates them in place,
+     * except months HR corrected in IMIS, which keep the correction.
      *
      * @param  Collection<int, array<string, mixed>>  $checked
      * @return int months saved
@@ -221,7 +222,12 @@ class LeaveCardWorkbook
         $saved = 0;
         DB::transaction(function () use ($checked, &$saved) {
             foreach ($checked->where('ready', true) as $result) {
+                $corrected = LeaveCardMonth::query()->where('employee_id', $result['employee']->id)->whereNotNull('corrected_at')
+                    ->get(['year', 'month'])->map(fn (LeaveCardMonth $month) => "{$month->year}-{$month->month}")->flip();
                 foreach ($result['months'] as $month) {
+                    if ($corrected->has("{$month['year']}-{$month['month']}")) {
+                        continue;
+                    }
                     LeaveCardMonth::query()->updateOrCreate(
                         ['employee_id' => $result['employee']->id, 'year' => $month['year'], 'month' => $month['month']],
                         collect($month)->except(['year', 'month'])->all(),
