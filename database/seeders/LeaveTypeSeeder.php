@@ -55,13 +55,74 @@ class LeaveTypeSeeder extends Seeder
 
             $charges = $type['charges'] ?? null;
             unset($type['charges']);
+            $rules = self::cscFilingRules()[$type['code']] ?? [];
+            $excess = $rules['excess_charged_to'] ?? null;
+            unset($rules['excess_charged_to']);
+            $type = [...$type, ...$rules];
 
             LeaveType::query()->create([
                 ...$type,
                 'charged_to_id' => $charges ? LeaveType::query()->where('code', $charges)->value('id') : null,
+                'excess_charged_to_id' => $excess ? LeaveType::query()->where('code', $excess)->value('id') : null,
                 'sort_order' => $order + 1,
             ]);
         }
+    }
+
+    /**
+     * Who the civil service leave rules cover: appointees, not Job Order or
+     * Contract of Service workers (whose engagements aren't appointments).
+     *
+     * @var array<int, string>
+     */
+    public const CSC_APPOINTEES = ['permanent', 'temporary', 'coterminous', 'casual', 'contractual'];
+
+    /**
+     * Filing rules from the CSC leave rules, by code, laid over the types
+     * above (and applied to existing types by the migration that added
+     * them). HR can change any of them in Admin → Leave Types.
+     *
+     * - VL/FL: five days ahead "whenever possible" (late, with a reason);
+     *   days beyond the credits are without pay (MC 41, s. 1998).
+     * - SL: on return; a medical certificate if filed in advance; once SL is
+     *   used up, VL is charged (Sec. 56), then without pay.
+     * - ML: +15 days for a solo parent, up to 30 more without pay (RA 11210).
+     * - PL: the first four deliveries; proof attached (RA 8187).
+     * - SPL: a week ahead, except in emergencies (MC 6, s. 1996).
+     * - Solo Parent: six months of service; five days ahead (RA 11861).
+     * - SLBW: six months of service; five days before surgery, or on return
+     *   in an emergency; medical certificate (RA 9710).
+     * - Special Emergency: within 30 days of the calamity (MC 2 and 16, s. 2012).
+     * - Adoption: 60 days with proof of placement (MC 5, s. 2021).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function cscFilingRules(): array
+    {
+        $everyone = ['eligible_statuses' => self::CSC_APPOINTEES];
+
+        return [
+            'VL' => [...$everyone, 'late_filing_with_reason' => true, 'excess_without_pay' => true],
+            'FL' => [...$everyone, 'late_filing_with_reason' => true, 'excess_without_pay' => true],
+            'SL' => [...$everyone, 'excess_without_pay' => true, 'excess_charged_to' => 'VL', 'medical_certificate_if_advance' => true],
+            'ML' => [...$everyone, 'solo_parent_extra_days' => 15, 'unpaid_extension_days' => 30],
+            'PL' => [...$everyone, 'max_filings' => 4, 'requires_attachment' => true,
+                'supporting_documents' => 'The child\'s birth certificate and your marriage contract'],
+            'SPL' => [...$everyone, 'advance_filing_days' => 7, 'allows_emergency_filing' => true],
+            'SOLO' => [...$everyone, 'min_service_months' => 6, 'advance_filing_days' => 5, 'late_filing_with_reason' => true],
+            'STUDY' => $everyone,
+            'VAWC' => [...$everyone, 'requires_attachment' => true,
+                'supporting_documents' => 'A Barangay, Temporary or Permanent Protection Order; a certification that one was applied for; or a police report and medical certificate'],
+            'RL' => $everyone,
+            'SLBW' => [...$everyone, 'min_service_months' => 6, 'advance_filing_days' => 5, 'allows_emergency_filing' => true, 'requires_attachment' => true,
+                'supporting_documents' => 'Medical certificate and clinical summary from the attending surgeon'],
+            'SEL' => [...$everyone, 'event_label' => 'Date of the calamity (or of its declaration)', 'event_window_days' => 30,
+                'policy_reference' => 'CSC MC No. 2, s. 2012, as supplemented by CSC MC No. 16, s. 2012'],
+            'AL' => [...$everyone, 'max_days_per_filing' => 60, 'requires_attachment' => true,
+                'supporting_documents' => 'Pre-Adoptive Placement Authority (DSWD) or the Decree of Adoption',
+                'policy_reference' => 'RA 8552; CSC MC No. 5, s. 2021'],
+            'LWOP' => $everyone,
+        ];
     }
 
     /**

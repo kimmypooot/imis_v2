@@ -7,6 +7,7 @@ use App\Models\LeaveApplication;
 use App\Support\HR\Leave\CalendarAudience;
 use App\Support\HR\Leave\LeaveCalendar;
 use App\Support\HR\Leave\LeaveCredits;
+use App\Support\HR\Leave\LeaveDates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -64,6 +65,8 @@ class MyLeaveController extends Controller
                     'name' => $application->leaveType->name,
                     'date_from' => $application->date_from->toDateString(),
                     'date_to' => $application->date_to->toDateString(),
+                    'dates' => $application->hasChosenDates() ? $application->dates : null,
+                    'dates_label' => LeaveDates::describe($application),
                     'status' => $application->status->value,
                     'is_half_day' => $application->is_half_day,
                     'half_day_period' => $application->half_day_period,

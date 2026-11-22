@@ -22,7 +22,7 @@ const props = defineProps({
 const apply = (changes) => router.get('/admin/hr/leave/reports', { ...props.filters, ...changes }, { preserveScroll: true });
 const years = Array.from({ length: 6 }, (_, index) => new Date().getFullYear() + 1 - index);
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
-const range = (row) => (row.date_from === row.date_to ? formatCalendarDate(row.date_from) : `${formatCalendarDate(row.date_from)} – ${formatCalendarDate(row.date_to)}`);
+const range = (row) => (row.dates_label && row.date_from !== row.date_to ? row.dates_label : row.date_from === row.date_to ? formatCalendarDate(row.date_from) : `${formatCalendarDate(row.date_from)} – ${formatCalendarDate(row.date_to)}`);
 
 const columns = computed(() => ({
     on_leave: [

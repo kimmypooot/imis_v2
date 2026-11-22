@@ -56,6 +56,9 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
             <Button variant="secondary" :href="`/leave/applications/${application.id}/form`" external>
                 <Icon name="printer" size="sm" />CS Form No. 6
             </Button>
+            <Button variant="secondary" :href="`/leave/applications/${application.id}/form.xlsx`" external>
+                <Icon name="download" size="sm" />Excel
+            </Button>
             <Button v-if="canUpdate && application.status === 'returned'" :href="`/my/leave/apply?resubmit=${application.id}`">
                 <Icon name="pencil" size="sm" />Correct and resubmit
             </Button>
@@ -65,6 +68,10 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
 
     <div class="grid gap-6 xl:grid-cols-3">
         <div class="space-y-6 xl:col-span-2">
+            <p v-if="application.deemed_approved" class="rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">
+                <strong>Deemed approved:</strong> this application has waited {{ application.waiting_working_days }} working days without action. Under Sec. 49, Rule XVI of the
+                Omnibus Rules on Leave, an application not acted on within 5 working days is deemed approved. Act on it now.
+            </p>
             <Card title="Application" icon="clipboard">
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                     <div><dt class="text-text-muted">Employee</dt><dd class="mt-0.5 font-medium text-text">{{ application.name }}<span v-if="application.office" class="font-normal text-text-muted"> · {{ application.office }}</span></dd></div>
@@ -73,15 +80,21 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                     <div><dt class="text-text-muted">Dates</dt><dd class="mt-0.5 text-text">{{ leaveDates(application, formatCalendarDate) }}</dd></div>
                     <div v-if="application.detail_label"><dt class="text-text-muted">Details</dt><dd class="mt-0.5 text-text">{{ application.detail_label }}<template v-if="application.detail_text">: {{ application.detail_text }}</template></dd></div>
                     <div v-if="application.is_emergency"><dt class="text-text-muted">Filing</dt><dd class="mt-0.5 text-text">Emergency: filed upon return</dd></div>
+                    <div v-if="application.event_date"><dt class="text-text-muted">{{ application.event_label || 'Date' }}</dt><dd class="mt-0.5 text-text">{{ formatCalendarDate(application.event_date) }}</dd></div>
+                    <div v-if="application.late_reason" class="sm:col-span-2"><dt class="text-text-muted">Why it was filed late</dt><dd class="mt-0.5 whitespace-pre-line text-text">{{ application.late_reason }}</dd></div>
                     <div><dt class="text-text-muted">Commutation</dt><dd class="mt-0.5 text-text">{{ application.commutation_requested ? 'Requested' : 'Not requested' }}</dd></div>
                     <div v-if="application.status === 'approved'" class="sm:col-span-2">
                         <dt class="text-text-muted">Approved for</dt>
-                        <dd class="mt-0.5 text-text">{{ days(application.days_with_pay) }} day(s) with pay<template v-if="application.days_without_pay > 0">, {{ days(application.days_without_pay) }} without pay</template></dd>
+                        <dd class="mt-0.5 text-text">{{ days(application.days_with_pay) }} day(s) with pay<template v-if="application.days_without_pay > 0">, {{ days(application.days_without_pay) }} without pay</template><template v-if="application.charges && Object.keys(application.charges).length > 1"> (charged to {{ Object.entries(application.charges).map(([code, charged]) => code + ' ' + days(charged)).join(', ') }})</template></dd>
                     </div>
                     <div v-if="application.remarks" class="sm:col-span-2"><dt class="text-text-muted">Remarks</dt><dd class="mt-0.5 whitespace-pre-line text-text">{{ application.remarks }}</dd></div>
                     <div v-if="application.has_attachment" class="sm:col-span-2">
                         <dt class="text-text-muted">Supporting document</dt>
                         <dd class="mt-0.5"><a :href="`/leave/applications/${application.id}/attachment`" target="_blank" rel="noopener" class="text-link hover:underline">{{ application.attachment_name }}</a></dd>
+                    </div>
+                    <div v-if="application.has_clearance" class="sm:col-span-2">
+                        <dt class="text-text-muted">Clearance (money, property and work accountabilities)</dt>
+                        <dd class="mt-0.5"><a :href="`/leave/applications/${application.id}/clearance`" target="_blank" rel="noopener" class="text-link hover:underline">{{ application.clearance_name }}</a></dd>
                     </div>
                     <div><dt class="text-text-muted">Submitted</dt><dd class="mt-0.5 text-text">{{ application.submitted_at ? formatDateTime(application.submitted_at) : '—' }}</dd></div>
                     <div v-if="application.decided_at"><dt class="text-text-muted">Decided</dt><dd class="mt-0.5 text-text">{{ formatDateTime(application.decided_at) }}</dd></div>

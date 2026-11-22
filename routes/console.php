@@ -43,6 +43,10 @@ Schedule::command('imis:executive-digest')->weeklyOn(1, '07:00')->timezone('Asia
 // when System Settings → Security says so, accounts unused for too long.
 Schedule::command('imis:account-lifecycle')->dailyAt('00:30')->timezone('Asia/Manila')->withoutOverlapping();
 
+// HR-6b: approvers (and HR) are told as a leave application's five working
+// days to act run out (Sec. 49, Rule XVI, Omnibus Rules on Leave).
+Schedule::command('imis:leave-deadlines')->weekdays()->dailyAt('07:30')->timezone('Asia/Manila')->withoutOverlapping();
+
 // HR-8: employees hear when a recurring deduction is nearly completed.
 Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/Manila')->withoutOverlapping();
 

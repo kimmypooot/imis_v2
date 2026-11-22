@@ -33,6 +33,8 @@ const blank = {
     lapses_yearly: false, max_days_per_year: '', max_days_per_filing: '', max_consecutive_days: '', sex: '', eligible_statuses: [], min_service_months: 0,
     requires_solo_parent_id: false, advance_filing_days: 0, allows_emergency_filing: false, allows_half_day: true, counts_calendar_days: false, medical_certificate_after_days: '',
     supporting_documents: '', monetizable: false, policy_reference: '', sort_order: 0, is_active: true,
+    late_filing_with_reason: false, excess_without_pay: false, excess_charged_to_id: '', medical_certificate_if_advance: false, requires_attachment: false,
+    solo_parent_extra_days: '', unpaid_extension_days: '', max_filings: '', event_label: '', event_window_days: '',
 };
 
 const editing = ref(null);
@@ -62,14 +64,22 @@ const rules = (row) =>
         row.monthly_accrual ? `earns ${Number(row.monthly_accrual)}/month` : null,
         row.annual_grant ? `${Number(row.annual_grant)} days a year` : null,
         row.charged_to ? `uses ${row.charged_to} credits` : null,
+        row.excess_charged_to ? `then ${row.excess_charged_to}` : null,
+        row.excess_without_pay ? 'excess without pay' : null,
+        row.solo_parent_extra_days ? `+${Number(row.solo_parent_extra_days)} for a solo parent` : null,
+        row.unpaid_extension_days ? `+${Number(row.unpaid_extension_days)} without pay` : null,
+        row.max_filings ? `at most ${row.max_filings} times` : null,
+        row.event_label ? `within ${row.event_window_days ?? '—'} days of the event` : null,
         row.max_days_per_year ? `max ${Number(row.max_days_per_year)}/year` : null,
         row.max_days_per_filing ? `max ${Number(row.max_days_per_filing)} per filing` : null,
         row.max_consecutive_days ? `max ${row.max_consecutive_days} in a row` : null,
         row.counts_calendar_days ? 'calendar days' : null,
         row.sex_label ? `${row.sex_label} only` : null,
         row.requires_solo_parent_id ? 'Solo Parent ID' : null,
-        row.advance_filing_days ? `file ${row.advance_filing_days} days ahead` + (row.allows_emergency_filing ? ' (or on return, in an emergency)' : '') : null,
+        row.advance_filing_days ? `file ${row.advance_filing_days} days ahead` + (row.allows_emergency_filing ? ' (or on return, in an emergency)' : '') + (row.late_filing_with_reason ? ' (or later, with a reason)' : '') : null,
         row.medical_certificate_after_days ? `med. cert. after ${row.medical_certificate_after_days} days` : null,
+        row.medical_certificate_if_advance ? 'med. cert. if filed in advance' : null,
+        row.requires_attachment ? 'proof attached' : null,
         row.lapses_yearly ? 'lapses yearly' : null,
     ].filter(Boolean).join(' · ');
 
@@ -90,6 +100,10 @@ const checks = [
     ['lapses_yearly', 'Unused credits lapse at year end'],
     ['requires_solo_parent_id', 'Needs a valid Solo Parent ID'],
     ['allows_emergency_filing', 'In an emergency, can be filed on return instead of in advance'],
+    ['late_filing_with_reason', 'Filed in advance "whenever possible": later, with a reason'],
+    ['excess_without_pay', 'Days beyond the credits are without pay (not refused)'],
+    ['medical_certificate_if_advance', 'Medical certificate when filed in advance'],
+    ['requires_attachment', 'The supporting documents must be attached'],
     ['allows_half_day', 'Half days allowed'],
     ['counts_calendar_days', 'Counted in calendar days (not working days)'],
     ['monetizable', 'Can be monetized'],
@@ -142,12 +156,21 @@ const checks = [
                 <InputError :message="form.errors.charged_to_id" />
             </div>
 
-            <div v-for="[key, label] in [['monthly_accrual', 'Earned per month'], ['annual_grant', 'Granted each year'], ['max_days_per_year', 'Max days a year'], ['max_days_per_filing', 'Max days per filing']]" :key="key">
+            <div class="sm:col-span-2">
+                <InputLabel for="type-excess">Once its credits run out, charge</InputLabel>
+                <Select id="type-excess" v-model="form.excess_charged_to_id" :class="field" :options="chargeOptions" placeholder="— Nothing else —" :invalid="!!form.errors.excess_charged_to_id" />
+                <InputError :message="form.errors.excess_charged_to_id" />
+            </div>
+            <div class="sm:col-span-2">
+                <TextInput id="type-event" v-model="form.event_label" label="Date it depends on (label)" :error="form.errors.event_label" helper-text="E.g. the date of the calamity. Leave empty if none." />
+            </div>
+
+            <div v-for="[key, label] in [['monthly_accrual', 'Earned per month'], ['annual_grant', 'Granted each year'], ['max_days_per_year', 'Max days a year'], ['max_days_per_filing', 'Max days per filing'], ['solo_parent_extra_days', 'Extra days, solo parent'], ['unpaid_extension_days', 'Extension without pay (days)']]" :key="key">
                 <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
                 <input :id="`type-${key}`" v-model="form[key]" type="number" step="0.001" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
                 <InputError :message="form.errors[key]" />
             </div>
-            <div v-for="[key, label] in [['advance_filing_days', 'File days in advance'], ['max_consecutive_days', 'Max days in a row'], ['medical_certificate_after_days', 'Medical cert. after (days)'], ['min_service_months', 'Min. service (months)'], ['sort_order', 'Order']]" :key="key">
+            <div v-for="[key, label] in [['advance_filing_days', 'File days in advance'], ['max_consecutive_days', 'Max days in a row'], ['medical_certificate_after_days', 'Medical cert. after (days)'], ['min_service_months', 'Min. service (months)'], ['max_filings', 'Most times ever taken'], ['event_window_days', 'Days after that date'], ['sort_order', 'Order']]" :key="key">
                 <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
                 <input :id="`type-${key}`" v-model="form[key]" type="number" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
                 <InputError :message="form.errors[key]" />

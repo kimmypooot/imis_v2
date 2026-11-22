@@ -58,7 +58,7 @@ const weeks = computed(() => {
 
 const showDivision = ref(true);
 
-const leaveOn = (date) => props.leave.filter((item) => item.date_from <= iso(date) && item.date_to >= iso(date));
+const leaveOn = (date) => props.leave.filter((item) => (item.dates?.length ? item.dates.includes(iso(date)) : item.date_from <= iso(date) && item.date_to >= iso(date)));
 // Co-workers' days already skip weekends and non-working holidays (server side).
 const colleaguesByDate = computed(() => {
     const map = {};

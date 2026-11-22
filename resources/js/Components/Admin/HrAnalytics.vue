@@ -187,7 +187,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                             <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                         </div>
                         <span class="text-right text-xs whitespace-nowrap" :class="item.today ? 'font-semibold text-link' : 'text-text-muted'">
-                            {{ item.today ? 'On leave · until ' : '' }}{{ item.today ? shortDate(item.date_to) : `${shortDate(item.date_from)} – ${shortDate(item.date_to)}` }}
+                            {{ item.dates_label ?? (item.today ? `On leave · until ${shortDate(item.date_to)}` : `${shortDate(item.date_from)} – ${shortDate(item.date_to)}`) }}
                         </span>
                     </li>
                 </ul>
@@ -216,7 +216,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                                     <span class="font-medium text-text">{{ item.name }}</span>
                                     <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                                 </td>
-                                <td class="whitespace-nowrap text-text-muted">{{ shortDate(item.date_from) }} – {{ shortDate(item.date_to) }}</td>
+                                <td class="whitespace-nowrap text-text-muted">{{ item.dates_label ?? `${shortDate(item.date_from)} – ${shortDate(item.date_to)}` }}</td>
                                 <td class="text-right text-xs font-medium text-text">{{ item.status_label }}</td>
                             </tr>
                         </tbody>

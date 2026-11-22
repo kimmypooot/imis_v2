@@ -134,7 +134,9 @@ Route::middleware('auth')->group(function () {
     // its printable form and attachment; and the approvals queue.
     Route::get('leave/applications/{application}', [LeaveApplicationController::class, 'show'])->name('leave.applications.show');
     Route::get('leave/applications/{application}/form', [LeaveApplicationController::class, 'print'])->name('leave.applications.form');
+    Route::get('leave/applications/{application}/form.xlsx', [LeaveApplicationController::class, 'workbook'])->middleware('throttle:30,1')->name('leave.applications.form.xlsx');
     Route::get('leave/applications/{application}/attachment', [LeaveApplicationController::class, 'attachment'])->name('leave.applications.attachment');
+    Route::get('leave/applications/{application}/clearance', [LeaveApplicationController::class, 'clearance'])->name('leave.applications.clearance');
     Route::get('leave/approvals', [LeaveApprovalController::class, 'index'])->name('leave.approvals');
     Route::post('leave/approvals/steps/{step}', [LeaveApprovalController::class, 'act'])->middleware('throttle:60,1')->name('leave.approvals.act');
 

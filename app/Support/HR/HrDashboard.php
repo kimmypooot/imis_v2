@@ -14,6 +14,7 @@ use App\Models\Pds\PdsSubmission;
 use App\Models\PlantillaAppointment;
 use App\Models\PlantillaItem;
 use App\Models\User;
+use App\Support\HR\Leave\LeaveDates;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -332,6 +333,7 @@ class HrDashboard
             'type' => $application->leaveType?->name,
             'date_from' => $application->date_from->toDateString(),
             'date_to' => $application->date_to->toDateString(),
+            'dates_label' => $application->hasChosenDates() ? LeaveDates::describe($application) : null,
             'days' => (float) $application->days,
             'status' => $application->status->value,
             'status_label' => $application->status->label(),
@@ -342,7 +344,7 @@ class HrDashboard
             'onLeaveToday' => LeaveApplication::query()->with($with)
                 ->where('status', LeaveApplicationStatus::Approved)
                 ->whereDate('date_from', '<=', $this->today)->whereDate('date_to', '>=', $this->today)
-                ->orderBy('date_to')->get()->map($present)->all(),
+                ->orderBy('date_to')->get()->filter(fn (LeaveApplication $application) => $application->covers($this->today))->map($present)->values()->all(),
             'upcoming' => LeaveApplication::query()->with($with)
                 ->where('status', LeaveApplicationStatus::Approved)
                 ->whereDate('date_from', '>', $this->today)

@@ -41,6 +41,7 @@ class LeaveReports
         return $this->approved()
             ->whereDate('date_from', '<=', $day)->whereDate('date_to', '>=', $day)
             ->get()
+            ->filter(fn (LeaveApplication $application) => $application->covers($day))
             ->map(fn (LeaveApplication $application) => [
                 'id' => $application->id,
                 'reference_number' => $application->reference_number,
@@ -49,6 +50,7 @@ class LeaveReports
                 'type' => $application->leaveType->name,
                 'date_from' => $application->date_from->toDateString(),
                 'date_to' => $application->date_to->toDateString(),
+                'dates_label' => LeaveDates::describe($application),
                 'days' => (float) $application->days,
             ])
             ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values();
@@ -126,6 +128,7 @@ class LeaveReports
                 'type' => $application->leaveType->name,
                 'date_from' => $application->date_from->toDateString(),
                 'date_to' => $application->date_to->toDateString(),
+                'dates_label' => LeaveDates::describe($application),
                 'days_without_pay' => (float) $application->days_without_pay,
             ])
             ->sortBy('date_from')->values();

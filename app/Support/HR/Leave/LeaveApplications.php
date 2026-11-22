@@ -14,6 +14,7 @@ use App\Models\LeaveDesignation;
 use App\Models\LeaveType;
 use App\Models\User;
 use App\Notifications\LeaveApplicationUpdate;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -52,6 +53,15 @@ class LeaveApplications
 
     public const ATTACHMENT_KILOBYTES = 10240;
 
+    /** Leave this long or longer (calendar days) needs a clearance (CSC MC No. 2, s. 1985). */
+    public const CLEARANCE_CALENDAR_DAYS = 30;
+
+    /** Sec. 49, Rule XVI: an application not acted on within this many working days is deemed approved. */
+    public const DEEMED_APPROVED_WORKING_DAYS = 5;
+
+    /** The most dates one filing can choose one by one. */
+    public const MAX_CHOSEN_DATES = 60;
+
     public function __construct(
         private readonly LeaveCredits $credits,
         private readonly WorkingDays $workingDays,
@@ -67,8 +77,11 @@ class LeaveApplications
     {
         return [
             'leave_type_id' => ['required', 'integer', Rule::exists('leave_types', 'id')->where('is_active', true)],
-            'date_from' => ['required', 'date', 'after:1990-01-01'],
-            'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+            // Either a from–to range, or dates chosen one by one.
+            'date_from' => ['nullable', 'required_without:dates', 'date', 'after:1990-01-01'],
+            'date_to' => ['nullable', 'required_without:dates', 'date', 'after_or_equal:date_from'],
+            'dates' => ['nullable', 'array', 'min:1', 'max:'.self::MAX_CHOSEN_DATES],
+            'dates.*' => ['required', 'date', 'distinct', 'after:1990-01-01'],
             'is_half_day' => ['boolean'],
             'half_day_period' => ['nullable', 'required_if:is_half_day,true', 'in:AM,PM'],
             'detail' => ['nullable', Rule::enum(LeaveDetail::class)],
@@ -77,6 +90,9 @@ class LeaveApplications
             'is_emergency' => ['boolean'],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.self::ATTACHMENT_KILOBYTES],
+            'clearance' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.self::ATTACHMENT_KILOBYTES],
+            'late_reason' => ['nullable', 'string', 'max:1000'],
+            'event_date' => ['nullable', 'date', 'after:1990-01-01'],
         ];
     }
 
@@ -85,35 +101,47 @@ class LeaveApplications
      */
     public static function attributes(): array
     {
-        return ['leave_type_id' => 'type of leave', 'date_from' => 'start date', 'date_to' => 'end date', 'half_day_period' => 'AM or PM', 'detail_text' => 'details'];
+        return ['leave_type_id' => 'type of leave', 'date_from' => 'start date', 'date_to' => 'end date', 'dates' => 'dates', 'dates.*' => 'date', 'half_day_period' => 'AM or PM', 'detail_text' => 'details', 'late_reason' => 'reason for filing late', 'event_date' => 'date'];
     }
 
     /**
      * What the form shows as the dates change: the days counted, the credits
      * left after what's pending, and every rule the filing breaks (none:
-     * ready to submit).
+     * ready to submit). The dates are a from–to range, or (`dates`) dates
+     * chosen one by one, e.g. five separate days of VL.
      *
      * @param  array<string, mixed>  $input
-     * @return array{days: float, credit: ?array{code: string, balance: float, pending: float, available: float}, issues: array<string, string>}
+     * @return array{days: float, credit: ?array{code: string, balance: float, pending: float, available: float}, issues: array<string, string>, date_from?: string, date_to?: string, dates?: array<int, string>}
      */
     public function preview(Employee $employee, array $input, ?LeaveApplication $ignore = null): array
     {
-        $type = LeaveType::query()->with('chargedTo')->find($input['leave_type_id'] ?? null);
-        $from = $this->date($input['date_from'] ?? null);
-        $to = $this->date($input['date_to'] ?? null) ?? $from;
+        $type = LeaveType::query()->with(['chargedTo', 'excessChargedTo'])->find($input['leave_type_id'] ?? null);
+        $chosen = LeaveDates::normalize(array_filter((array) ($input['dates'] ?? []), fn ($date) => $this->date($date) !== null));
+        $from = $chosen ? Carbon::parse($chosen[0]) : $this->date($input['date_from'] ?? null);
+        $to = $chosen ? Carbon::parse(end($chosen)) : ($this->date($input['date_to'] ?? null) ?? $from);
 
         if (! $type || ! $from || ! $to || $to->lt($from)) {
-            return ['days' => 0.0, 'credit' => null, 'issues' => []];
+            return ['days' => 0.0, 'credit' => null, 'issues' => [], 'notices' => [], 'needs' => [], 'pay' => null];
         }
 
         $halfDay = (bool) ($input['is_half_day'] ?? false);
-        $days = $this->workingDays->count($from, $to, $halfDay, $type->counts_calendar_days, $employee);
+        $days = $chosen
+            ? (float) collect($chosen)->sum(fn (string $date) => $this->workingDays->count($date, $date, false, $type->counts_calendar_days, $employee))
+            : $this->workingDays->count($from, $to, $halfDay, $type->counts_calendar_days, $employee);
         $credit = $type->requires_balance ? $this->available($employee, $type, $ignore) : null;
+        $pay = $this->payPlan($employee, $type, $days, $from, fn (LeaveType $credits) => $this->available($employee, $credits, $ignore)['available']);
+        $needs = $this->needs($type, $from, $to, $chosen, $input);
 
         return [
             'days' => $days,
             'credit' => $credit,
-            'issues' => $this->issues($employee, $type, $from, $to, $halfDay, $days, $input, $credit, $ignore),
+            'pay' => $pay,
+            'needs' => $needs,
+            'issues' => $this->issues($employee, $type, $from, $to, $chosen, $halfDay, $days, $input, $credit, $ignore, $needs),
+            'notices' => $this->notices($type, $pay, $input),
+            'date_from' => $from->toDateString(),
+            'date_to' => $halfDay && ! $chosen ? $from->toDateString() : $to->toDateString(),
+            'dates' => $chosen,
         ];
     }
 
@@ -140,18 +168,23 @@ class LeaveApplications
             $application->forceFill([
                 'employee_id' => $employee->id,
                 'leave_type_id' => $type->id,
-                'date_from' => $data['date_from'],
-                'date_to' => ($data['is_half_day'] ?? false) ? $data['date_from'] : $data['date_to'],
+                'date_from' => $preview['date_from'],
+                'date_to' => $preview['date_to'],
+                'dates' => $preview['dates'] ?: null,
                 'is_half_day' => (bool) ($data['is_half_day'] ?? false),
                 'half_day_period' => ($data['is_half_day'] ?? false) ? $data['half_day_period'] : null,
                 'days' => $preview['days'],
                 'days_with_pay' => null,
                 'days_without_pay' => null,
                 'detail' => $detail,
-                'detail_text' => $detail?->needsText() || $detail === null ? ($data['detail_text'] ?? null) : null,
+                'detail_text' => $detail?->takesText() || $detail === null ? ($data['detail_text'] ?? null) : null,
                 'commutation_requested' => (bool) ($data['commutation_requested'] ?? false),
-                'is_emergency' => $this->filedLate($type, Carbon::parse($data['date_from'])) && $this->emergency($type, $data),
+                'is_emergency' => $this->filedLate($type, Carbon::parse($preview['date_from'])) && $this->emergency($type, $data),
                 'remarks' => $data['remarks'] ?? null,
+                'late_reason' => $preview['needs']['late_reason'] ? trim((string) ($data['late_reason'] ?? '')) : null,
+                'event_date' => $type->event_label ? ($data['event_date'] ?? null) : null,
+                'charges' => null,
+                'deadline_notices' => 0,
                 'status' => LeaveApplicationStatus::ForReview,
                 'filed_by' => $actor->id,
                 'submitted_at' => now(),
@@ -163,6 +196,7 @@ class LeaveApplications
             }
 
             $this->storeAttachment($application, $data['attachment'] ?? null);
+            $this->storeAttachment($application, $data['clearance'] ?? null, 'clearance');
 
             // A new round of steps; earlier rounds stay as the history.
             $round = $resubmitting ? $resubmitting->currentRound() + 1 : 1;
@@ -338,6 +372,8 @@ class LeaveApplications
             'type_name' => $application->leaveType->name,
             'date_from' => $application->date_from->toDateString(),
             'date_to' => $application->date_to->toDateString(),
+            'dates' => $application->hasChosenDates() ? $application->dates : null,
+            'dates_label' => LeaveDates::describe($application),
             'is_half_day' => $application->is_half_day,
             'half_day_period' => $application->half_day_period,
             'days' => (float) $application->days,
@@ -354,6 +390,14 @@ class LeaveApplications
             'submitted_at' => $application->submitted_at?->toIso8601String(),
             'decided_at' => $application->decided_at?->toIso8601String(),
             'has_attachment' => $application->attachment_path !== null,
+            'has_clearance' => $application->clearance_path !== null,
+            'clearance_name' => $application->clearance_name,
+            'late_reason' => $application->late_reason,
+            'event_date' => $application->event_date?->toDateString(),
+            'event_label' => $application->leaveType->event_label,
+            'charges' => $application->charges,
+            'waiting_working_days' => $this->waitingWorkingDays($application),
+            'deemed_approved' => $this->isDeemedApproved($application),
             'attachment_name' => $application->attachment_name,
         ];
     }
@@ -405,31 +449,252 @@ class LeaveApplications
     }
 
     /**
-     * Days of the same leave, pending or approved, running straight into
-     * these dates on either side (no working day between), for the
-     * "days in a row" cap.
+     * How a filing's days are paid: from its credits; once those run out,
+     * from the credits it falls back on (SL → VL, MC 41, s. 1998, Sec. 56);
+     * the rest without pay. Leave without credits is paid up to its paid
+     * limit (maternity: 105 days, 120 for a solo parent), the extension
+     * beyond it without pay.
+     *
+     * @param  callable(LeaveType): float  $balanceOf  the credits that can be used of a type
+     * @return array{charges: array<string, float>, with_pay: float, without_pay: float, fallback: ?string}
      */
-    private function adjoiningDays(Employee $employee, LeaveType $type, Carbon $from, Carbon $to, ?LeaveApplication $ignore): float
+    public function payPlan(Employee $employee, LeaveType $type, float $days, Carbon $from, callable $balanceOf): array
     {
-        $total = 0.0;
+        if ($type->code === 'LWOP') {
+            return ['charges' => [], 'with_pay' => 0.0, 'without_pay' => $days, 'fallback' => null];
+        }
 
-        foreach ([-1, 1] as $direction) {
-            $edge = $direction < 0 ? $from->copy() : $to->copy();
-            for ($hops = 0; $hops < 10; $hops++) {
-                $next = $this->nextWorkingDay($edge, $direction, $type, $employee);
-                $neighbour = LeaveApplication::query()->holdingDays()
-                    ->where('employee_id', $employee->id)->where('leave_type_id', $type->id)
-                    ->whereDate($direction < 0 ? 'date_to' : 'date_from', $next)
-                    ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->first();
-                if (! $neighbour) {
-                    break;
-                }
-                $total += (float) $neighbour->days;
-                $edge = $direction < 0 ? $neighbour->date_from->copy() : $neighbour->date_to->copy();
+        if (! $type->requires_balance) {
+            $paid = $type->max_days_per_filing !== null && $type->unpaid_extension_days
+                ? min($days, $this->paidLimit($employee, $type, $from))
+                : $days;
+
+            return ['charges' => [], 'with_pay' => round($paid, 3), 'without_pay' => round($days - $paid, 3), 'fallback' => null];
+        }
+
+        $charges = [];
+        $left = $days;
+        $fallback = null;
+        foreach (array_filter([$type->creditType(), $type->excessChargedTo?->creditType()]) as $index => $credits) {
+            $take = round(min($left, max(0, $balanceOf($credits))), 3);
+            if ($take > 0) {
+                $charges[$credits->code] = round(($charges[$credits->code] ?? 0) + $take, 3);
+                $left = round($left - $take, 3);
+                $fallback = $index > 0 ? $credits->code : $fallback;
             }
         }
 
-        return $total;
+        return ['charges' => $charges, 'with_pay' => round($days - $left, 3), 'without_pay' => $left, 'fallback' => $fallback];
+    }
+
+    /** The days a filing of a type with a per-filing cap is paid for (maternity: +15 for a solo parent). */
+    private function paidLimit(Employee $employee, LeaveType $type, Carbon $on): float
+    {
+        $extra = $type->solo_parent_extra_days && $employee->hasValidSoloParentId($on) ? (float) $type->solo_parent_extra_days : 0.0;
+
+        return (float) $type->max_days_per_filing + $extra;
+    }
+
+    /**
+     * What else this filing needs: a reason for filing late ("whenever
+     * possible"), a clearance for 30 calendar days or more, a required
+     * supporting document, a date the leave depends on.
+     *
+     * @param  array<int, string>  $chosen
+     * @param  array<string, mixed>  $input
+     * @return array{late_reason: bool, clearance: bool, attachment: bool, event_label: ?string}
+     */
+    private function needs(LeaveType $type, Carbon $from, Carbon $to, array $chosen, array $input): array
+    {
+        $span = $chosen ? count($chosen) : $from->diffInDays($to) + 1;
+
+        return [
+            'late_reason' => $type->late_filing_with_reason && $this->filedLate($type, $from) && ! $this->emergency($type, $input),
+            'clearance' => $span >= self::CLEARANCE_CALENDAR_DAYS,
+            'attachment' => $type->requires_attachment,
+            'event_label' => $type->event_label,
+        ];
+    }
+
+    /**
+     * What the employee should know but that doesn't stop the filing.
+     *
+     * @param  array{charges: array<string, float>, with_pay: float, without_pay: float, fallback: ?string}  $pay
+     * @param  array<string, mixed>  $input
+     * @return array<int, string>
+     */
+    private function notices(LeaveType $type, array $pay, array $input): array
+    {
+        $notices = [];
+        if ($pay['fallback']) {
+            $notices[] = "Your {$type->creditType()->code} credits don't cover it all: {$pay['charges'][$pay['fallback']]} day(s) would be charged to {$pay['fallback']}.";
+        }
+        if ($pay['without_pay'] > 0 && $type->code !== 'LWOP') {
+            $notices[] = $type->requires_balance
+                ? "{$pay['without_pay']} day(s) are beyond your credits and would be without pay."
+                : "{$pay['without_pay']} day(s) are beyond the paid {$type->name} and would be without pay.";
+        }
+        if (($input['detail'] ?? null) === LeaveDetail::Abroad->value) {
+            $notices[] = 'Leave abroad needs a travel authority: secure it with this application, and attach it if you already have it.';
+        }
+
+        return $notices;
+    }
+
+    /**
+     * Working days an application under review has waited since it was
+     * filed (the day it was filed not counted).
+     */
+    public function waitingWorkingDays(LeaveApplication $application): ?int
+    {
+        if ($application->status !== LeaveApplicationStatus::ForReview || ! $application->submitted_at) {
+            return null;
+        }
+
+        $from = $application->submitted_at->copy()->timezone(config('app.timezone'))->startOfDay()->addDay();
+
+        return $from->gt(today()) ? 0 : (int) $this->workingDays->count($from, today());
+    }
+
+    /**
+     * Sec. 49, Rule XVI of the Omnibus Rules on Leave: not acted on within
+     * five working days of receipt, an application is deemed approved.
+     * IMIS flags it (and reminds the approvers); it doesn't approve it on
+     * its own, since approval charges the credits.
+     */
+    public function isDeemedApproved(LeaveApplication $application): bool
+    {
+        return ($this->waitingWorkingDays($application) ?? 0) >= self::DEEMED_APPROVED_WORKING_DAYS;
+    }
+
+    /**
+     * Reminds whoever must act as the five working days run out: once on
+     * the last day, once when they have passed. Returns how many were sent.
+     */
+    public function remindOverdue(): int
+    {
+        $sent = 0;
+        LeaveApplication::query()->where('status', LeaveApplicationStatus::ForReview)->where('deadline_notices', '<', 2)
+            ->with(['employee.user', 'leaveType'])->get()
+            ->each(function (LeaveApplication $application) use (&$sent) {
+                $waited = $this->waitingWorkingDays($application) ?? 0;
+                $level = match (true) {
+                    $waited >= self::DEEMED_APPROVED_WORKING_DAYS => 2,
+                    $waited >= self::DEEMED_APPROVED_WORKING_DAYS - 1 => 1,
+                    default => 0,
+                };
+                if ($level <= $application->deadline_notices) {
+                    return;
+                }
+
+                $application->forceFill(['deadline_notices' => $level])->save();
+                $name = $application->employee->user->name;
+                $message = $level === 2
+                    ? "{$name}'s {$application->leaveType->name} ({$application->reference_number}) has waited ".self::DEEMED_APPROVED_WORKING_DAYS.' working days without action and is deemed approved under Sec. 49, Rule XVI of the Omnibus Rules on Leave. Act on it now.'
+                    : "{$name}'s {$application->leaveType->name} ({$application->reference_number}) must be acted on today: after ".self::DEEMED_APPROVED_WORKING_DAYS.' working days it is deemed approved (Sec. 49, Rule XVI, Omnibus Rules on Leave).';
+                $this->notifyStep($application, $level === 2 ? 'Leave application deemed approved: act now' : 'Leave application due today', $message, alsoHr: true);
+                $sent++;
+            });
+
+        return $sent;
+    }
+
+    /**
+     * The longest run of this leave in a row (no working day between),
+     * counting the same leave already filed or taken on either side, for
+     * the "days in a row" cap. Works the same for a range and for chosen
+     * dates (only the days that run together count).
+     *
+     * @param  array<string, float>  $own  date => days (1, or 0.5 for a half day)
+     * @return array{run: float, own: float}
+     */
+    private function longestRun(Employee $employee, LeaveType $type, array $own, ?LeaveApplication $ignore): array
+    {
+        if ($own === []) {
+            return ['run' => 0.0, 'own' => 0.0];
+        }
+
+        $first = Carbon::parse(array_key_first($own));
+        $last = Carbon::parse(array_key_last($own));
+        $held = [];
+        LeaveApplication::query()->holdingDays()
+            ->where('employee_id', $employee->id)->where('leave_type_id', $type->id)
+            ->whereDate('date_from', '<=', $last->copy()->addDays(31))->whereDate('date_to', '>=', $first->copy()->subDays(31))
+            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->get()
+            ->each(function (LeaveApplication $other) use (&$held, $type, $employee) {
+                foreach ($other->coveredDates() as $date) {
+                    if ($this->workingDays->count($date, $date, false, $type->counts_calendar_days, $employee) > 0) {
+                        $held[$date] = $other->is_half_day ? 0.5 : 1.0;
+                    }
+                }
+            });
+
+        $all = array_merge($held, $own);
+        $best = ['run' => 0.0, 'own' => 0.0];
+        $seen = [];
+
+        foreach (array_keys($own) as $date) {
+            if (isset($seen[$date])) {
+                continue;
+            }
+            $run = ['run' => $all[$date], 'own' => $own[$date]];
+            $seen[$date] = true;
+            foreach ([-1, 1] as $direction) {
+                $edge = Carbon::parse($date);
+                for ($hops = 0; $hops < 40; $hops++) {
+                    $next = $this->nextWorkingDay($edge, $direction, $type, $employee)->toDateString();
+                    if (! isset($all[$next])) {
+                        break;
+                    }
+                    $run['run'] += $all[$next];
+                    $run['own'] += $own[$next] ?? 0.0;
+                    $seen[$next] = true;
+                    $edge = Carbon::parse($next);
+                }
+            }
+            if ($run['run'] > $best['run']) {
+                $best = $run;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * The application this filing's days would overlap, if any: compared
+     * day by day, since chosen dates can sit between another filing's.
+     *
+     * @param  array<int, string>  $dates  every date this filing covers, sorted
+     */
+    private function overlapping(Employee $employee, array $dates, ?LeaveApplication $ignore): ?string
+    {
+        $wanted = array_flip($dates);
+
+        return LeaveApplication::query()->holdingDays()->where('employee_id', $employee->id)
+            ->whereDate('date_from', '<=', end($dates))->whereDate('date_to', '>=', $dates[0])
+            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->get()
+            ->first(fn (LeaveApplication $other) => array_intersect_key(array_flip($other->coveredDates()), $wanted) !== [])
+            ?->reference_number;
+    }
+
+    /**
+     * This filing's days, date => days: each working day of the range (a
+     * half day 0.5), or each chosen working date.
+     *
+     * @param  array<int, string>  $chosen
+     * @return array<string, float>
+     */
+    private function ownDays(Employee $employee, LeaveType $type, Carbon $from, Carbon $to, array $chosen, bool $halfDay): array
+    {
+        $dates = $chosen ?: collect(CarbonPeriod::create($from, $to))->map(fn (Carbon $day) => $day->toDateString())->all();
+        $own = [];
+        foreach ($dates as $date) {
+            if ($this->workingDays->count($date, $date, false, $type->counts_calendar_days, $employee) > 0) {
+                $own[$date] = $halfDay && ! $chosen ? 0.5 : 1.0;
+            }
+        }
+
+        return $own;
     }
 
     private function nextWorkingDay(Carbon $day, int $direction, LeaveType $type, Employee $employee): Carbon
@@ -446,13 +711,18 @@ class LeaveApplications
     }
 
     /**
+     * @param  array<int, string>  $chosen  dates chosen one by one (empty: the range)
      * @param  array<string, mixed>  $input
      * @param  ?array{code: string, balance: float, pending: float, available: float}  $credit
+     * @param  array{late_reason: bool, clearance: bool, attachment: bool, event_label: ?string}  $needs
      * @return array<string, string> field => message
      */
-    private function issues(Employee $employee, LeaveType $type, Carbon $from, Carbon $to, bool $halfDay, float $days, array $input, ?array $credit, ?LeaveApplication $ignore): array
+    private function issues(Employee $employee, LeaveType $type, Carbon $from, Carbon $to, array $chosen, bool $halfDay, float $days, array $input, ?array $credit, ?LeaveApplication $ignore, array $needs): array
     {
         $issues = [];
+        // With chosen dates, every date problem is reported on the dates.
+        $start = $chosen ? 'dates' : 'date_from';
+        $end = $chosen ? 'dates' : 'date_to';
 
         if ($reasons = $this->credits->ineligibilityReasons($employee, $type, $from)) {
             $issues['leave_type_id'] = implode(' ', $reasons);
@@ -464,28 +734,48 @@ class LeaveApplications
         }
         if ($halfDay && ! $type->allows_half_day) {
             $issues['is_half_day'] = "{$type->name} can't be taken by the half day.";
-        } elseif ($halfDay && ! $from->equalTo($to)) {
-            $issues['is_half_day'] = 'A half day is for a single date.';
+        } elseif ($halfDay && ($chosen || ! $from->equalTo($to))) {
+            $issues['is_half_day'] = 'A half day is for a single date: give it as the start and end date.';
         }
-        if ($days <= 0) {
-            $issues['date_to'] = 'Those dates have no working days.';
-        }
-        if ($this->filedLate($type, $from)) {
-            if (! $this->emergency($type, $input)) {
-                $issues['date_from'] = "{$type->name} must be filed at least {$type->advance_filing_days} days ahead."
-                    .($type->allows_emergency_filing ? ' In an emergency, tick "Emergency" and file on your return.' : '');
-            } elseif ($from->gt(today())) {
-                $issues['date_from'] = 'An emergency filing is made on your return, once the leave has started.';
+        if ($chosen && $type->counts_calendar_days) {
+            $issues['dates'] = "{$type->name} runs on consecutive days: give a start and end date instead.";
+        } elseif ($chosen) {
+            $off = array_values(array_filter($chosen, fn (string $date) => $this->workingDays->count($date, $date, false, false, $employee) <= 0));
+            if ($off !== []) {
+                $issues['dates'] = LeaveDates::list($off).(count($off) === 1 ? ' isn\'t a working day.' : ' aren\'t working days.');
             }
         }
-        if ($type->max_days_per_filing !== null && $days > (float) $type->max_days_per_filing) {
-            $issues['date_to'] = "{$type->name} is at most ".(float) $type->max_days_per_filing.' days per filing.';
+        if ($days <= 0) {
+            $issues[$end] = 'Those dates have no working days.';
+        }
+        if ($this->filedLate($type, $from)) {
+            if ($needs['late_reason']) {
+                // "Whenever possible" (VL): accepted late, with the reason.
+                if (blank($input['late_reason'] ?? null)) {
+                    $issues['late_reason'] = "{$type->name} is filed {$type->advance_filing_days} days ahead whenever possible: say why it's filed later.";
+                }
+            } elseif (! $this->emergency($type, $input)) {
+                $issues[$start] = "{$type->name} must be filed at least {$type->advance_filing_days} days ahead."
+                    .($type->allows_emergency_filing ? ' In an emergency, tick "Emergency" and file on your return.' : '');
+            } elseif ($from->gt(today())) {
+                $issues[$start] = 'An emergency filing is made on your return, once the leave has started.';
+            }
+        }
+        if ($type->max_days_per_filing !== null && $days > ($limit = $this->paidLimit($employee, $type, $from) + (float) $type->unpaid_extension_days)) {
+            $issues[$end] = "{$type->name} is at most {$limit} days per filing".($type->unpaid_extension_days ? ', counting the '.(float) $type->unpaid_extension_days.' days it can be extended without pay' : '').'.';
+        }
+        if ($type->max_filings !== null) {
+            $filed = LeaveApplication::query()->holdingDays()->where('employee_id', $employee->id)->where('leave_type_id', $type->id)
+                ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->count();
+            if ($filed >= $type->max_filings) {
+                $issues['leave_type_id'] = "{$type->name} can be taken at most {$type->max_filings} times; you have {$filed} on record.";
+            }
         }
         if ($type->max_consecutive_days !== null) {
-            $run = $days + $this->adjoiningDays($employee, $type, $from, $to, $ignore);
-            if ($run > $type->max_consecutive_days) {
-                $issues['date_to'] = "{$type->name} is at most {$type->max_consecutive_days} days in a row"
-                    .($run > $days ? ", counting the {$type->name} right before or after these dates" : '').'.';
+            $run = $this->longestRun($employee, $type, $this->ownDays($employee, $type, $from, $to, $chosen, $halfDay), $ignore);
+            if ($run['run'] > $type->max_consecutive_days) {
+                $issues[$end] = "{$type->name} is at most {$type->max_consecutive_days} days in a row"
+                    .($run['run'] > $run['own'] ? ", counting the {$type->name} right before or after these dates" : '').'.';
             }
         }
         if ($type->max_days_per_year !== null) {
@@ -495,21 +785,38 @@ class LeaveApplications
                 ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
                 ->sum('days');
             if ($taken + $days > (float) $type->max_days_per_year) {
-                $issues['date_to'] = "{$type->name} is at most ".(float) $type->max_days_per_year." days a year; {$taken} already filed or taken.";
+                $issues[$end] = "{$type->name} is at most ".(float) $type->max_days_per_year." days a year; {$taken} already filed or taken.";
             }
         }
-        if ($credit !== null && $days > $credit['available']) {
-            $issues['date_to'] = "Not enough {$credit['code']} credits: {$credit['available']} available (balance {$credit['balance']} less {$credit['pending']} pending), {$days} asked.";
+        // Leave the credits can't cover is refused, unless the excess is without pay (VL, FL, SL).
+        if ($credit !== null && $days > $credit['available'] && ! $type->excess_without_pay) {
+            $issues[$end] = "Not enough {$credit['code']} credits: {$credit['available']} available (balance {$credit['balance']} less {$credit['pending']} pending), {$days} asked.";
         }
-        $overlap = LeaveApplication::query()->holdingDays()->where('employee_id', $employee->id)
-            ->whereDate('date_from', '<=', $to)->whereDate('date_to', '>=', $from)
-            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))->value('reference_number');
-        if ($overlap) {
-            $issues['date_from'] = "Those dates overlap application {$overlap}.";
+        $covered = $chosen ?: collect(CarbonPeriod::create($from, $to))->map(fn (Carbon $day) => $day->toDateString())->all();
+        if ($overlap = $this->overlapping($employee, $covered, $ignore)) {
+            $issues[$start] = "Those dates overlap application {$overlap}.";
         }
-        if ($type->medical_certificate_after_days !== null && $days > $type->medical_certificate_after_days
-            && ! ($input['attachment'] ?? null) instanceof UploadedFile && ! $ignore?->attachment_path) {
+        $attached = ($input['attachment'] ?? null) instanceof UploadedFile || $ignore?->attachment_path;
+        if ($type->medical_certificate_after_days !== null && $days > $type->medical_certificate_after_days && ! $attached) {
             $issues['attachment'] = "Attach a medical certificate: {$type->name} over {$type->medical_certificate_after_days} days needs one.";
+        } elseif ($type->medical_certificate_if_advance && $from->gt(today()) && ! $attached) {
+            $issues['attachment'] = "Attach a medical certificate: {$type->name} filed in advance needs one.";
+        } elseif ($needs['attachment'] && ! $attached) {
+            $issues['attachment'] = 'Attach '.($type->supporting_documents ? lcfirst(rtrim($type->supporting_documents, '.')) : 'the supporting document').'.';
+        }
+        if ($needs['clearance'] && ! ($input['clearance'] ?? null) instanceof UploadedFile && ! $ignore?->clearance_path) {
+            $issues['clearance'] = 'Leave of '.self::CLEARANCE_CALENDAR_DAYS.' calendar days or more needs a clearance from money, property and work accountabilities (CSC MC No. 2, s. 1985).';
+        }
+        if ($needs['event_label']) {
+            $event = $this->date($input['event_date'] ?? null);
+            $window = (int) $type->event_window_days;
+            if (! $event) {
+                $issues['event_date'] = "Give the {$needs['event_label']}.";
+            } elseif ($event->gt($from)) {
+                $issues['event_date'] = "{$type->name} starts on or after the {$needs['event_label']}.";
+            } elseif ($window > 0 && $to->gt($event->copy()->addDays($window))) {
+                $issues[$end] = "{$type->name} is taken within {$window} days of the {$needs['event_label']} (until ".$event->copy()->addDays($window)->format('F j, Y').').';
+            }
         }
 
         $boxes = LeaveDetail::forCode($type->code);
@@ -581,20 +888,27 @@ class LeaveApplications
      */
     private function approve(LeaveApplication $application, User $by, array $data): void
     {
-        $type = $application->leaveType;
+        $type = $application->leaveType()->with(['chargedTo', 'excessChargedTo'])->first();
+        $employee = $application->employee;
         $days = (float) $application->days;
 
-        $withPay = match (true) {
-            $type->code === 'LWOP' => 0.0,
-            $type->requires_balance => min($days, max(0, $this->credits->balance($application->employee, $type))),
-            default => $days,
-        };
+        $plan = $this->payPlan($employee, $type, $days, $application->date_from, fn (LeaveType $credits) => $this->credits->balance($employee, $credits));
+        $withPay = $plan['with_pay'];
+        $charges = $plan['charges'];
 
         if (isset($data['days_with_pay']) && $data['days_with_pay'] !== '') {
             $asked = (float) $data['days_with_pay'];
             if ($asked > $withPay) {
                 throw ValidationException::withMessages(['days_with_pay' => "At most {$withPay} days can be with pay."]);
             }
+            // Fewer days with pay: taken off the credits used last (VL after SL) first.
+            $cut = round($withPay - $asked, 3);
+            foreach (array_reverse(array_keys($charges)) as $code) {
+                $less = min($cut, $charges[$code]);
+                $charges[$code] = round($charges[$code] - $less, 3);
+                $cut = round($cut - $less, 3);
+            }
+            $charges = array_filter($charges, fn (float $charged) => $charged > 0);
             $withPay = $asked;
         }
 
@@ -604,19 +918,28 @@ class LeaveApplications
             'decided_at' => now(),
             'days_with_pay' => $withPay,
             'days_without_pay' => round($days - $withPay, 3),
+            'charges' => $charges ?: null,
         ])->save();
 
         // Dated the day it's approved, as the legacy LMS did: a balance "as
         // of today" must already exclude approved leave still to come.
-        $this->credits->deductLeave($application->employee, $type, $withPay, today(),
-            "{$type->code} taken, {$application->reference_number} (".$application->date_from->format('M j').($application->date_to->equalTo($application->date_from) ? '' : '–'.$application->date_to->format('M j')).')', $by);
+        $when = $application->hasChosenDates()
+            ? LeaveDates::list($application->dates, short: true)
+            : $application->date_from->format('M j').($application->date_to->equalTo($application->date_from) ? '' : '–'.$application->date_to->format('M j'));
+        foreach ($charges as $code => $charged) {
+            $credits = LeaveType::query()->where('code', $code)->first();
+            if ($credits) {
+                $this->credits->deductLeave($employee, $credits, $charged, today(),
+                    "{$type->code} taken".($code !== $type->creditType()->code ? ", charged to {$code}" : '').", {$application->reference_number} ({$when})", $by);
+            }
+        }
 
         $this->notifyEmployee($application, 'Leave application approved',
             "Your application {$application->reference_number} was approved: {$withPay} day(s) with pay".($days > $withPay ? ', '.round($days - $withPay, 3).' without pay' : '').'.');
     }
 
-    /** Tells whoever acts next. */
-    private function notifyStep(LeaveApplication $application): void
+    /** Tells whoever acts next (and, for deadline reminders, HR too). */
+    private function notifyStep(LeaveApplication $application, ?string $title = null, ?string $message = null, bool $alsoHr = false): void
     {
         $step = $application->pendingStep();
         if (! $step) {
@@ -632,11 +955,14 @@ class LeaveApplications
             default => collect(),
         };
 
+        if ($alsoHr) {
+            $recipients = $recipients->merge($this->withPermission(PermissionName::LeaveCertify));
+        }
         $recipients = $recipients->unique('id')->reject(fn (User $user) => $user->id === $application->employee->user_id);
         $name = $application->employee->user->name;
 
-        Notification::send($recipients, new LeaveApplicationUpdate($application, 'Leave application for your action',
-            "{$name}'s {$application->leaveType->name} ({$application->reference_number}) is waiting for you: {$step->roleLabel()}.", '/leave/approvals'));
+        Notification::send($recipients, new LeaveApplicationUpdate($application, $title ?? 'Leave application for your action',
+            $message ?? "{$name}'s {$application->leaveType->name} ({$application->reference_number}) is waiting for you: {$step->roleLabel()}.", '/leave/approvals'));
     }
 
     private function notifyEmployee(LeaveApplication $application, string $title, string $message): void
@@ -654,20 +980,23 @@ class LeaveApplications
             ->get();
     }
 
-    private function storeAttachment(LeaveApplication $application, mixed $file): void
+    /**
+     * @param  'attachment'|'clearance'  $slot
+     */
+    private function storeAttachment(LeaveApplication $application, mixed $file, string $slot = 'attachment'): void
     {
         if (! $file instanceof UploadedFile) {
             return;
         }
 
-        $old = $application->attachment_path;
+        $old = $application->{"{$slot}_path"};
         $extension = $file->guessExtension() === 'jpeg' ? 'jpg' : $file->guessExtension();
 
         $application->forceFill([
-            'attachment_path' => $file->storeAs("hr/leave/{$application->employee_id}", Str::uuid().'.'.$extension, self::DISK),
-            'attachment_name' => Str::limit($file->getClientOriginalName(), 250, ''),
-            'attachment_mime' => $file->getMimeType(),
-            'attachment_size' => $file->getSize(),
+            "{$slot}_path" => $file->storeAs("hr/leave/{$application->employee_id}", Str::uuid().'.'.$extension, self::DISK),
+            "{$slot}_name" => Str::limit($file->getClientOriginalName(), 250, ''),
+            "{$slot}_mime" => $file->getMimeType(),
+            "{$slot}_size" => $file->getSize(),
         ])->save();
 
         if ($old) {

@@ -16,7 +16,8 @@ defineOptions({ layout: PortalLayout });
 
 /**
  * HR-6b: filing leave on CS Form No. 6 (legacy leave/apply.php), or
- * correcting a returned application. As the type and dates change, the
+ * correcting a returned application. The dates are a from–to range, or so
+ * many days each picked (e.g. VL on separate days). As the type and dates change, the
  * server previews the days counted, the credits left after what's
  * pending, and anything that would stop the filing.
  */
@@ -27,6 +28,7 @@ const props = defineProps({
     supervisor: { type: String, default: null },
     resubmitting: { type: Object, default: null },
     preview: { type: Object, default: null },
+    maxChosenDates: { type: Number, default: 60 },
     attachmentKilobytes: { type: Number, required: true },
 });
 
@@ -35,6 +37,10 @@ const form = useForm({
     leave_type_id: source.leave_type_id ?? '',
     date_from: source.date_from ?? '',
     date_to: source.date_to ?? '',
+    // 'range': from–to; 'chosen': so many days, each date picked (e.g. VL on separate days).
+    date_mode: source.dates?.length ? 'chosen' : 'range',
+    day_count: source.dates?.length ?? '',
+    dates: source.dates ? [...source.dates] : [],
     is_half_day: source.is_half_day ?? false,
     half_day_period: source.half_day_period ?? 'AM',
     detail: source.detail ?? '',
@@ -43,6 +49,11 @@ const form = useForm({
     is_emergency: source.is_emergency ?? false,
     remarks: source.remarks ?? '',
     attachment: null,
+    // CSC filing rules: a reason when filed later than "whenever possible",
+    // the date the leave depends on (calamity), the clearance for 30+ days.
+    late_reason: source.late_reason ?? '',
+    event_date: source.event_date ?? '',
+    clearance: null,
 });
 
 const type = computed(() => props.types.find((option) => option.id === Number(form.leave_type_id)) ?? null);
@@ -51,6 +62,23 @@ const typeOptions = computed(() =>
 );
 const details = computed(() => (type.value ? (props.detailOptions[type.value.code] ?? []) : []));
 const detail = computed(() => details.value.find((option) => option.value === form.detail) ?? null);
+
+// Picking dates: one date field per day asked for (kept as the count changes).
+const chosen = computed(() => form.date_mode === 'chosen');
+const pickedDates = computed(() => form.dates.filter(Boolean));
+watch(() => form.day_count, (count) => {
+    const n = Math.max(0, Math.min(props.maxChosenDates, Math.floor(Number(count) || 0)));
+    form.dates = Array.from({ length: n }, (_, index) => form.dates[index] ?? '');
+});
+watch(() => form.date_mode, (mode) => {
+    if (mode === 'chosen') form.is_half_day = false;
+});
+// Leave counted in calendar days (maternity) runs on consecutive days.
+watch(() => type.value?.counts_calendar_days, (calendar) => {
+    if (calendar) form.date_mode = 'range';
+});
+const datesError = computed(() => form.errors.dates || Object.entries(form.errors).find(([key]) => key.startsWith('dates.'))?.[1] || issues.value.dates);
+const missingDates = ref(false);
 
 // A half day is a single date.
 watch(() => form.is_half_day, (half) => half && (form.date_to = form.date_from));
@@ -65,16 +93,17 @@ watch(() => form.leave_type_id, () => {
 // Ask the server again whenever what it checks changes (debounced).
 let timer = null;
 watch(
-    () => [form.leave_type_id, form.date_from, form.date_to, form.is_half_day, form.is_emergency, form.detail, form.detail_text],
+    () => [form.leave_type_id, form.date_mode, form.date_from, form.date_to, pickedDates.value.join(','), form.is_half_day, form.is_emergency, form.detail, form.detail_text, form.late_reason, form.event_date],
     () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            if (!form.leave_type_id || !form.date_from) return;
+            if (!form.leave_type_id || (chosen.value ? !pickedDates.value.length : !form.date_from)) return;
+            const dates = chosen.value ? { dates: pickedDates.value } : { date_from: form.date_from, date_to: form.date_to || form.date_from };
             router.reload({
                 only: ['preview'],
                 data: {
-                    leave_type_id: form.leave_type_id, date_from: form.date_from, date_to: form.date_to || form.date_from,
-                    is_half_day: form.is_half_day ? 1 : 0, is_emergency: form.is_emergency ? 1 : 0, detail: form.detail, detail_text: form.detail_text,
+                    leave_type_id: form.leave_type_id, ...dates,
+                    is_half_day: form.is_half_day ? 1 : 0, is_emergency: form.is_emergency ? 1 : 0, detail: form.detail, detail_text: form.detail_text, late_reason: form.late_reason, event_date: form.event_date,
                     ...(props.resubmitting ? { resubmit: props.resubmitting.id } : {}),
                 },
                 preserveState: true,
@@ -89,8 +118,14 @@ const issues = computed(() => props.preview?.issues ?? {});
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
 
 const submit = () => {
+    missingDates.value = chosen.value && (!form.dates.length || pickedDates.value.length < form.dates.length);
+    if (missingDates.value) return;
+
     const options = { preserveScroll: true, forceFormData: true };
-    const data = (values) => ({ ...values, is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, is_emergency: values.is_emergency && type.value?.allows_emergency_filing ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
+    const dates = (values) => (values.date_mode === 'chosen'
+        ? { dates: values.dates.filter(Boolean), date_from: '', date_to: '' }
+        : { dates: [] });
+    const data = ({ date_mode, day_count, ...values }) => ({ ...values, ...dates({ ...values, date_mode }), is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, is_emergency: values.is_emergency && type.value?.allows_emergency_filing ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
 
     form.transform(data).post(props.resubmitting ? `/my/leave/applications/${props.resubmitting.id}` : '/my/leave/applications', options);
 };
@@ -131,17 +166,88 @@ const field = 'mt-1 block w-full';
                             {{ option.label }}
                         </label>
                     </div>
-                    <TextInput v-if="detail?.needs_text" id="apply-detail-text" v-model="form.detail_text" class="mt-2" label="Specify" required :invalid="!!(form.errors.detail_text || issues.detail_text)" />
+                    <TextInput
+                        v-if="detail?.takes_text"
+                        id="apply-detail-text"
+                        v-model="form.detail_text"
+                        class="mt-2"
+                        :label="form.detail === 'within_ph' ? 'Where (optional)' : 'Specify'"
+                        :required="detail.needs_text"
+                        :helper-text="form.detail === 'within_ph' ? 'Printed on the form, e.g. Residence, or the city or province.' : ''"
+                        :invalid="!!(form.errors.detail_text || issues.detail_text)"
+                    />
                     <InputError :message="form.errors.detail || issues.detail || form.errors.detail_text || issues.detail_text" />
                 </fieldset>
 
-                <div>
-                    <TextInput id="apply-from" v-model="form.date_from" type="date" label="6.C From" required :invalid="!!(form.errors.date_from || issues.date_from)" />
-                    <InputError :message="form.errors.date_from || issues.date_from" />
+                <fieldset class="sm:col-span-2">
+                    <legend class="block text-sm font-medium text-text">6.C Dates</legend>
+                    <div class="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                        <label class="inline-flex items-center gap-2 text-sm text-text">
+                            <input v-model="form.date_mode" type="radio" value="range" class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
+                            From – to (days in a row)
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm" :class="type?.counts_calendar_days ? 'text-text-muted' : 'text-text'">
+                            <input v-model="form.date_mode" type="radio" value="chosen" :disabled="!!type?.counts_calendar_days" class="h-4 w-4 border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
+                            Pick the dates (separate days)
+                        </label>
+                    </div>
+                    <p v-if="type?.counts_calendar_days" class="mt-1 text-xs text-text-muted">{{ type.name }} runs on consecutive days, so it takes a start and end date.</p>
+                </fieldset>
+
+                <template v-if="!chosen">
+                    <div>
+                        <TextInput id="apply-from" v-model="form.date_from" type="date" label="From" required :invalid="!!(form.errors.date_from || issues.date_from)" />
+                        <InputError :message="form.errors.date_from || issues.date_from" />
+                    </div>
+                    <div>
+                        <TextInput id="apply-to" v-model="form.date_to" type="date" label="To" required :disabled="form.is_half_day" :invalid="!!(form.errors.date_to || issues.date_to)" />
+                        <InputError :message="form.errors.date_to || issues.date_to" />
+                    </div>
+                </template>
+
+                <div v-else class="sm:col-span-2">
+                    <TextInput
+                        id="apply-day-count"
+                        v-model="form.day_count"
+                        type="number"
+                        label="How many days?"
+                        required
+                        :helper-text="`Then pick each date below (working days only, up to ${maxChosenDates}).`"
+                        class="max-w-48"
+                    />
+                    <div v-if="form.dates.length" class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                        <TextInput
+                            v-for="(date, index) in form.dates"
+                            :id="`apply-date-${index}`"
+                            :key="index"
+                            v-model="form.dates[index]"
+                            type="date"
+                            :label="`Day ${index + 1}`"
+                            required
+                            :invalid="!!(datesError || (missingDates && !date))"
+                        />
+                    </div>
+                    <InputError :message="missingDates ? `Pick all ${form.dates.length} dates.` : datesError" />
                 </div>
-                <div>
-                    <TextInput id="apply-to" v-model="form.date_to" type="date" label="To" required :disabled="form.is_half_day" :invalid="!!(form.errors.date_to || issues.date_to)" />
-                    <InputError :message="form.errors.date_to || issues.date_to" />
+
+                <div v-if="type?.event_label" class="sm:col-span-2 sm:max-w-xs">
+                    <TextInput
+                        id="apply-event-date"
+                        v-model="form.event_date"
+                        type="date"
+                        :label="type.event_label"
+                        required
+                        :helper-text="type.event_window_days ? `The leave is taken within ${type.event_window_days} days of it.` : ''"
+                        :invalid="!!(form.errors.event_date || issues.event_date)"
+                    />
+                    <InputError :message="form.errors.event_date || issues.event_date" />
+                </div>
+
+                <div v-if="preview?.needs?.late_reason" class="sm:col-span-2">
+                    <InputLabel for="apply-late-reason" required>Why it's filed less than {{ type?.advance_filing_days }} days ahead</InputLabel>
+                    <Textarea id="apply-late-reason" v-model="form.late_reason" class="mt-1" :invalid="!!(form.errors.late_reason || issues.late_reason)" />
+                    <p class="mt-1 text-xs text-text-muted">{{ type?.name }} is filed {{ type?.advance_filing_days }} days ahead whenever possible. Your approvers see this reason.</p>
+                    <InputError :message="form.errors.late_reason || issues.late_reason" />
                 </div>
 
                 <div v-if="type?.allows_emergency_filing" class="sm:col-span-2">
@@ -151,7 +257,7 @@ const field = 'mt-1 block w-full';
                     </label>
                 </div>
 
-                <div v-if="type?.allows_half_day" class="flex flex-wrap items-center gap-4 sm:col-span-2">
+                <div v-if="type?.allows_half_day && !chosen" class="flex flex-wrap items-center gap-4 sm:col-span-2">
                     <label class="inline-flex items-center gap-2 text-sm text-text">
                         <input v-model="form.is_half_day" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
                         Half day
@@ -181,6 +287,7 @@ const field = 'mt-1 block w-full';
                 <div class="sm:col-span-2">
                     <label for="apply-attachment" class="block text-sm font-medium text-text">
                         Supporting document
+                        <span v-if="type?.requires_attachment" class="text-danger-fg" aria-hidden="true">*</span>
                         <template v-if="type?.medical_certificate_after_days !== null && type?.medical_certificate_after_days !== undefined">
                             (a medical certificate is required over {{ type.medical_certificate_after_days }} days)
                         </template>
@@ -196,6 +303,21 @@ const field = 'mt-1 block w-full';
                         :hint="`PDF, JPG or PNG, up to ${Math.round(attachmentKilobytes / 1024)} MB. Only you, your approvers and HR can open it.`"
                     />
                     <InputError :message="form.errors.attachment || issues.attachment" />
+                </div>
+
+                <div v-if="preview?.needs?.clearance" class="sm:col-span-2">
+                    <label for="apply-clearance" class="block text-sm font-medium text-text">Clearance from money, property and work accountabilities <span class="text-danger-fg" aria-hidden="true">*</span></label>
+                    <p v-if="resubmitting?.has_clearance" class="mt-1 text-sm text-text">Already attached: {{ resubmitting.clearance_name }}. Choose a file only to replace it.</p>
+                    <FileInput
+                        id="apply-clearance"
+                        v-model="form.clearance"
+                        class="mt-1"
+                        accept="application/pdf,image/jpeg,image/png"
+                        :max-size-mb="Math.round(attachmentKilobytes / 1024)"
+                        :invalid="!!(form.errors.clearance || issues.clearance)"
+                        hint="Needed for leave of 30 calendar days or more (CSC MC No. 2, s. 1985). PDF, JPG or PNG."
+                    />
+                    <InputError :message="form.errors.clearance || issues.clearance" />
                 </div>
             </form>
 
@@ -226,11 +348,24 @@ const field = 'mt-1 block w-full';
                             <dd class="font-semibold tabular-nums text-text">{{ days(preview.credit.available) }}</dd>
                         </div>
                     </template>
+                    <template v-if="preview?.pay && (Object.keys(preview.pay.charges).length > 1 || preview.pay.without_pay > 0)">
+                        <div v-for="(charged, code) in preview.pay.charges" :key="code" class="flex justify-between gap-3">
+                            <dt class="text-text-muted">Charged to {{ code }}</dt>
+                            <dd class="tabular-nums text-text">{{ days(charged) }}</dd>
+                        </div>
+                        <div v-if="preview.pay.without_pay > 0" class="flex justify-between gap-3">
+                            <dt class="text-text-muted">Without pay</dt>
+                            <dd class="tabular-nums text-text">{{ days(preview.pay.without_pay) }}</dd>
+                        </div>
+                    </template>
                     <div class="border-t border-border pt-2">
                         <dt class="text-text-muted">Immediate supervisor</dt>
                         <dd class="mt-0.5 text-text">{{ supervisor || 'Not set — ask HR' }}</dd>
                     </div>
                 </dl>
+                <ul v-if="preview?.notices?.length" class="mt-4 space-y-2">
+                    <li v-for="notice in preview.notices" :key="notice" class="rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">{{ notice }}</li>
+                </ul>
                 <p v-if="preview && Object.keys(issues).length === 0 && preview.days > 0" class="mt-4 rounded-md bg-success-bg px-3 py-2 text-sm text-success-fg">Ready to submit.</p>
             </Card>
 

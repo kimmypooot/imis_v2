@@ -55,6 +55,14 @@ final class SettingRegistry
                 'default' => 'Civil Service Commission Regional Office VIII',
                 'editable' => false,
             ],
+            'office_address' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::General,
+                'label' => 'Office address',
+                'description' => 'Printed under the agency name on official forms, such as CS Form No. 6 (Application for Leave).',
+                'default' => 'Government Center, Palo, Leyte',
+                'constraints' => ['max' => 150],
+            ],
             'portal_name' => [
                 'type' => SettingType::String,
                 'group' => SettingGroup::General,

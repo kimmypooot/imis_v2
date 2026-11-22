@@ -50,7 +50,7 @@ const release = async (row) => {
 };
 
 const terminalOpen = ref(false);
-const terminal = useForm({ employee_id: '', remarks: '' });
+const terminal = useForm({ employee_id: '', remarks: '', clearance_on_file: false });
 const submitTerminal = () => terminal.post('/admin/hr/leave/monetization/terminal', { preserveScroll: true, onSuccess: () => (terminalOpen.value = false) });
 
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
@@ -136,6 +136,11 @@ const columns = [
                 <InputLabel for="terminal-employee">Separated employee</InputLabel>
                 <Select id="terminal-employee" v-model="terminal.employee_id" class="mt-1 block w-full" :options="separated" placeholder="— Select —" required />
                 <InputError :message="terminal.errors.employee_id" />
+                <label class="mt-3 flex items-start gap-2 text-sm text-text">
+                    <input v-model="terminal.clearance_on_file" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
+                    Their clearance from money, property and work accountabilities is on file (CSC MC No. 2, s. 1985).
+                </label>
+                <InputError :message="terminal.errors.clearance_on_file" />
             </div>
             <div>
                 <InputLabel for="terminal-remarks">Remarks (optional)</InputLabel>

@@ -48,11 +48,14 @@ class LeaveMonetizationController extends Controller
     public function terminal(Request $request, LeaveMonetizations $monetizations): RedirectResponse
     {
         $this->authorize('manage', LeaveType::class);
-        $data = $request->validate(['employee_id' => ['required', 'integer', 'exists:employees,id'], 'remarks' => ['nullable', 'string', 'max:1000']]);
+        // Terminal leave needs a clearance from money, property and work accountabilities (CSC MC No. 2, s. 1985).
+        $data = $request->validate(['employee_id' => ['required', 'integer', 'exists:employees,id'], 'remarks' => ['nullable', 'string', 'max:1000'], 'clearance_on_file' => ['accepted']],
+            ['clearance_on_file.accepted' => 'Terminal leave needs their clearance from money, property and work accountabilities on file first (CSC MC No. 2, s. 1985).']);
         $employee = Employee::query()->findOrFail($data['employee_id']);
         abort_if($employee->user_id === $request->user()->id, 403);
 
         $item = $monetizations->requestTerminal($employee, $data['remarks'] ?? null, $request->user());
+        $item->forceFill(['clearance_on_file' => true])->save();
         $this->audit()->record(AuditEvent::LeaveMonetizationRequested, "Filed {$item->label}", $item, ['vl' => (float) $item->vl_days, 'sl' => (float) $item->sl_days]);
 
         return back()->with('status', "Terminal leave {$item->reference_number} was filed.");

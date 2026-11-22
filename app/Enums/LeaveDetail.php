@@ -39,6 +39,16 @@ enum LeaveDetail: string
     }
 
     /**
+     * Whether the box has a line to write on at all. "Within the
+     * Philippines" has one (where, for the travel authority), but it may
+     * be left blank.
+     */
+    public function takesText(): bool
+    {
+        return $this->needsText() || $this === self::WithinPhilippines;
+    }
+
+    /**
      * The boxes for a leave type code (empty: no details asked).
      *
      * @return array<int, self>
@@ -55,12 +65,12 @@ enum LeaveDetail: string
     }
 
     /**
-     * @return array<string, array<int, array{value: string, label: string, needs_text: bool}>>
+     * @return array<string, array<int, array{value: string, label: string, needs_text: bool, takes_text: bool}>>
      */
     public static function optionsByCode(): array
     {
         return collect(['VL', 'SPL', 'SL', 'SLBW', 'STUDY'])->mapWithKeys(fn (string $code) => [
-            $code => array_map(fn (self $case) => ['value' => $case->value, 'label' => $case->label(), 'needs_text' => $case->needsText()], self::forCode($code)),
+            $code => array_map(fn (self $case) => ['value' => $case->value, 'label' => $case->label(), 'needs_text' => $case->needsText(), 'takes_text' => $case->takesText()], self::forCode($code)),
         ])->all();
     }
 }

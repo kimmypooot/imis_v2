@@ -28,6 +28,8 @@ class LeaveType extends Model
         'lapses_yearly', 'max_days_per_year', 'max_days_per_filing', 'max_consecutive_days', 'sex', 'eligible_statuses', 'min_service_months',
         'requires_solo_parent_id', 'advance_filing_days', 'allows_emergency_filing', 'allows_half_day', 'counts_calendar_days',
         'medical_certificate_after_days', 'supporting_documents', 'monetizable', 'policy_reference', 'sort_order', 'is_active',
+        'late_filing_with_reason', 'excess_without_pay', 'excess_charged_to_id', 'medical_certificate_if_advance', 'requires_attachment',
+        'solo_parent_extra_days', 'unpaid_extension_days', 'max_filings', 'event_label', 'event_window_days',
     ];
 
     protected function casts(): array
@@ -51,7 +53,24 @@ class LeaveType extends Model
             'monetizable' => 'boolean',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
+            'late_filing_with_reason' => 'boolean',
+            'excess_without_pay' => 'boolean',
+            'medical_certificate_if_advance' => 'boolean',
+            'requires_attachment' => 'boolean',
+            'solo_parent_extra_days' => 'decimal:2',
+            'unpaid_extension_days' => 'decimal:2',
+            'max_filings' => 'integer',
+            'event_window_days' => 'integer',
         ];
+    }
+
+    /**
+     * The credits used once this type's own run out (SL → VL; MC 41,
+     * s. 1998, Sec. 56). Beyond those, without pay (excess_without_pay).
+     */
+    public function excessChargedTo(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'excess_charged_to_id');
     }
 
     /** The type whose credits a filing of this type uses (e.g. FL → VL). */

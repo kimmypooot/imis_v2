@@ -43,7 +43,8 @@ class LeaveCalendar
             ->map(function (LeaveApplication $application) use ($start, $end, $daysOff) {
                 $from = $application->date_from->max($start);
                 $to = $application->date_to->min($end);
-                $dates = collect(CarbonPeriod::create($from, $to))
+                $dates = collect($application->hasChosenDates() ? array_map(fn (string $date) => Carbon::parse($date), $application->dates) : CarbonPeriod::create($from, $to))
+                    ->filter(fn (Carbon $day) => $day->betweenIncluded($from, $to))
                     ->filter(fn (Carbon $day) => $application->leaveType->counts_calendar_days || (! $day->isWeekend() && ! $daysOff->has($day->toDateString())))
                     ->map(fn (Carbon $day) => $day->toDateString())
                     ->values();

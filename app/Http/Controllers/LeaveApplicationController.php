@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\AuditEvent;
 use App\Enums\LeaveStepAction;
 use App\Models\LeaveApplication;
-use App\Models\LeaveType;
 use App\Models\User;
 use App\Support\HR\Leave\LeaveApplications;
-use App\Support\HR\Plantilla\Plantilla;
+use App\Support\HR\Leave\LeaveForm;
+use App\Support\HR\Leave\LeaveFormWorkbook;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,7 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * HR-6b: one leave application — for the employee, the people on its
  * approval chain, and HR (LeaveApplicationPolicy::view) — with its
  * approval history, the step's action form when it's yours to act on,
- * the printable CS Form No. 6, and the attachment. Anyone other than the
+ * the printable CS Form No. 6 (and its Excel copy), and the attachment. Anyone other than the
  * employee opening it is on the access trail.
  */
 class LeaveApplicationController extends Controller
@@ -50,38 +51,54 @@ class LeaveApplicationController extends Controller
         ]);
     }
 
-    public function print(Request $request, LeaveApplication $application, LeaveApplications $applications, Plantilla $plantilla): Response
+    public function print(Request $request, LeaveApplication $application, LeaveForm $form): Response
     {
         $this->authorize('view', $application);
         $this->trail($request, $application, AuditEvent::LeaveApplicationViewed, 'Printed');
 
-        $employee = $application->employee()->with(['user.organizationalUnit'])->first();
-        $user = $employee->user;
-        $current = $plantilla->historyOf($employee)->firstWhere('current', true);
-
         return Inertia::render('HR/LeaveFormPrint', [
-            'application' => $applications->present($application),
-            'steps' => $applications->presentSteps($application)->where('round', $application->currentRound())->values(),
-            'person' => [
-                'office' => $user->organizationalUnit?->name,
-                'surname' => $user->last_name ?? $user->name,
-                'first_name' => $user->first_name,
-                'middle_name' => $user->middle_name,
-                'position' => $user->position,
-                'monthly_salary' => $current['monthly_salary'] ?? null,
-            ],
-            'types' => LeaveType::query()->active()->ordered()->get(['id', 'code', 'name']),
+            'form' => $form->present($application, $request->user()),
+            'types' => collect(LeaveForm::TYPES)->map(fn (array $type, string $code) => ['code' => $code, 'name' => $type[0], 'basis' => $type[1]])->values(),
+        ]);
+    }
+
+    /** The same form as an Excel workbook on CSC's own template, set for Folio. */
+    public function workbook(Request $request, LeaveApplication $application, LeaveForm $form, LeaveFormWorkbook $workbook): HttpResponse
+    {
+        $this->authorize('view', $application);
+        $this->trail($request, $application, AuditEvent::LeaveApplicationViewed, 'Downloaded CS Form No. 6 (Excel) of');
+
+        return response($workbook->build($form->present($application, $request->user())), 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="CS Form No. 6 - '.$application->reference_number.'.xlsx"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
     public function attachment(Request $request, LeaveApplication $application): StreamedResponse
     {
-        $this->authorize('view', $application);
-        abort_unless($application->attachment_path && Storage::disk(LeaveApplications::DISK)->exists($application->attachment_path), 404);
-        $this->trail($request, $application, AuditEvent::LeaveAttachmentViewed, 'Opened the attachment of');
+        return $this->file($request, $application, 'attachment');
+    }
 
-        return Storage::disk(LeaveApplications::DISK)->response($application->attachment_path, $application->attachment_name, [
-            'Content-Type' => $application->attachment_mime,
+    /** The clearance from money, property and work accountabilities (leave of 30 days or more). */
+    public function clearance(Request $request, LeaveApplication $application): StreamedResponse
+    {
+        return $this->file($request, $application, 'clearance');
+    }
+
+    /**
+     * @param  'attachment'|'clearance'  $slot
+     */
+    private function file(Request $request, LeaveApplication $application, string $slot): StreamedResponse
+    {
+        $this->authorize('view', $application);
+        $path = $application->{"{$slot}_path"};
+        abort_unless($path && Storage::disk(LeaveApplications::DISK)->exists($path), 404);
+        $this->trail($request, $application, AuditEvent::LeaveAttachmentViewed, $slot === 'clearance' ? 'Opened the clearance of' : 'Opened the attachment of');
+
+        return Storage::disk(LeaveApplications::DISK)->response($path, $application->{"{$slot}_name"}, [
+            'Content-Type' => $application->{"{$slot}_mime"},
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ], 'inline');

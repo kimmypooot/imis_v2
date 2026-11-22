@@ -94,6 +94,8 @@ const recentColumns = [
                 <template #cell-waiting_since="{ row }">
                     <span class="whitespace-nowrap">{{ formatDateTime(row.waiting_since) }}</span>
                     <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.waiting_since)">{{ ageLabel(row.waiting_since) }}</span>
+                    <span v-if="row.deemed_approved" class="ml-2 rounded-full bg-danger-bg px-2 py-0.5 text-xs font-medium text-danger-fg" title="Sec. 49, Rule XVI: not acted on within 5 working days">Deemed approved: act now</span>
+                    <span v-else-if="row.waiting_working_days === 4" class="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-xs font-medium text-warning-fg">Due today</span>
                 </template>
             </DataTable>
         </Card>

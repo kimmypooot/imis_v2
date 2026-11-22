@@ -33,7 +33,7 @@ class LeaveSource implements MetricSource
         $onLeave = LeaveApplication::query()->with('employee.user.organizationalUnit')
             ->where('status', LeaveApplicationStatus::Approved)
             ->whereDate('date_from', '<=', $today)->whereDate('date_to', '>=', $today)
-            ->get();
+            ->get()->filter(fn (LeaveApplication $application) => $application->covers($today));
         $approvedThisMonth = LeaveApplication::query()
             ->where('status', LeaveApplicationStatus::Approved)
             ->whereYear('date_from', $today->year)->whereMonth('date_from', $today->month);

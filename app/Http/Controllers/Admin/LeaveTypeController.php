@@ -24,10 +24,11 @@ class LeaveTypeController extends Controller
         $this->authorize('viewAny', LeaveType::class);
 
         return Inertia::render('Admin/HR/Leave/Types', [
-            'types' => LeaveType::query()->with('chargedTo')->ordered()->get()->map(fn (LeaveType $type) => [
+            'types' => LeaveType::query()->with(['chargedTo', 'excessChargedTo'])->ordered()->get()->map(fn (LeaveType $type) => [
                 ...$type->only($type->getFillable()),
                 'id' => $type->id,
                 'charged_to' => $type->chargedTo?->code,
+                'excess_charged_to' => $type->excessChargedTo?->code,
                 'sex_label' => Sex::labelFor($type->sex),
                 'has_credits' => $type->hasCredits(),
             ]),
@@ -89,7 +90,18 @@ class LeaveTypeController extends Controller
             'policy_reference' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'between:0,999'],
             'is_active' => ['boolean'],
-        ], [], ['charged_to_id' => 'charged to', 'eligible_statuses' => 'eligible statuses']);
+            // CSC filing rules.
+            'late_filing_with_reason' => ['boolean'],
+            'excess_without_pay' => ['boolean'],
+            'excess_charged_to_id' => ['nullable', 'integer', 'exists:leave_types,id', Rule::notIn([$type?->id])],
+            'medical_certificate_if_advance' => ['boolean'],
+            'requires_attachment' => ['boolean'],
+            'solo_parent_extra_days' => ['nullable', 'numeric', 'between:0,366'],
+            'unpaid_extension_days' => ['nullable', 'numeric', 'between:0,366'],
+            'max_filings' => ['nullable', 'integer', 'between:1,99'],
+            'event_label' => ['nullable', 'string', 'max:120'],
+            'event_window_days' => ['nullable', 'integer', 'between:1,366'],
+        ], [], ['charged_to_id' => 'charged to', 'eligible_statuses' => 'eligible statuses', 'excess_charged_to_id' => 'then charged to']);
 
         return [
             ...$data,

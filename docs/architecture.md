@@ -4088,7 +4088,62 @@ writer.
     (`…/form`, `HR/LeaveFormPrint.vue`, 8.5 × 13 in): 6.A–6.D from the
     application; 7.A from HR's frozen credits (VL/SL total earned, less
     this application, balance); 7.B–7.D from the steps. Each signatory
-    line names who acted in IMIS and when.
+    line names who acted in IMIS and their position.
+    `App\Support\HR\Leave\LeaveForm` words every entry the way the form
+    is filled in ("2 days", "June 15-16, 2026"; types not on the form,
+    such as Wellness Leave, on the "Others" line) and both outputs read
+    it. Print or "Save as PDF" from the page (Folio, one page), or
+    download **Excel** (`…/form.xlsx`, `LeaveFormWorkbook`): CSC's own
+    fillable template (`resources/templates/hr/`) with its boxes ticked,
+    its text boxes filled, the agency logo, name and **Office address**
+    (System Settings → General), set to Folio and fitted to one page per
+    sheet (sheet 2 is the Instructions and Requirements). The template
+    is drawn for A4, so its rows are stretched to fill Folio between
+    quarter-inch margins; the printable page uses the same edge. IMIS
+    prints on Folio only. Downloads are audited like views.
+  - The form follows CSC's own leave system printout: Control Number
+    and ANNEX A in the masthead, "Oct. 28, 2026", position in capitals,
+    "Php", "1.000 day", m/d/yy dates, the leave type not on the form
+    (e.g. Wellness Leave) by name on the "Others" line, a five-row 7.A
+    (Total Earned and Total Enjoyed + Tardy from the ledger as of HR's
+    certification, the certified Balance, Less this Application, the
+    Balance after; the Excel template keeps its three rows), and "This is
+    a system generated document. / Printed by:" at the foot.
+  - **Picked dates:** besides a from–to range, leave can be filed on so
+    many days each picked (`dates` JSON on `leave_applications`; up to
+    `MAX_CHOSEN_DATES`), e.g. five separate days of VL. `date_from` /
+    `date_to` are then the first and last; use `coveredDates()` /
+    `covers()` where the exact days matter. Overlaps and the "days in a
+    row" cap (Wellness Leave: 3) are checked day by day; leave counted in
+    calendar days (maternity) can't be picked. `LeaveDates` words them.
+  - **CSC filing rules** (settings on each leave type, in Admin → Leave
+    Types; seeded by `LeaveTypeSeeder::cscFilingRules()`, applied to
+    existing types by a migration):
+    - VL/FL are filed 5 days ahead "whenever possible": later needs a
+      reason (`late_filing_with_reason`, `late_reason`), shown to approvers.
+    - Days beyond the credits are without pay, not refused
+      (`excess_without_pay`: VL, FL, SL). SL beyond its credits is charged
+      to VL first (`excess_charged_to_id`, MC 41, s. 1998, Sec. 56). The
+      split is kept in `charges` and shown on 7.A.
+    - SL filed in advance needs a medical certificate; PL, VAWC, SLBW and
+      Adoption need their proof attached (`requires_attachment`).
+    - Maternity: 105 days, +15 for a solo parent, up to 30 more without
+      pay. Paternity: at most 4 times (`max_filings`). Adoption: 60 days.
+      SPL: a week ahead (or on return in an emergency). Solo Parent and
+      SLBW: 6 months of service. Special Emergency Leave: within 30 days
+      of the calamity date (`event_label`, `event_window_days`).
+    - Job Order and Contract of Service workers can't file civil service
+      leave; contractual appointees earn VL/SL.
+    - 30 calendar days or more needs a clearance from money, property and
+      work accountabilities (CSC MC No. 2, s. 1985), uploaded at filing;
+      terminal leave needs HR to confirm it's on file.
+    - Sec. 49, Rule XVI (deemed approved after 5 working days):
+      `imis:leave-deadlines` reminds the approvers and HR on the last day
+      and once it has passed; the queue and the application show it.
+      IMIS flags it but doesn't approve on its own.
+  - "Within the Philippines" takes an optional place (e.g. Residence),
+    printed on its line in 6.B; "Abroad" and the illness lines still
+    require theirs.
 - **Admin → Human Resources:** **Leave Applications** (all, by year and
   status) and **OIC Designations**.
 

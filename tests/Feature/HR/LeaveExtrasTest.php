@@ -95,10 +95,12 @@ class LeaveExtrasTest extends TestCase
 
     public function test_terminal_leave_commutes_all_vl_and_sl_on_separation(): void
     {
-        $this->actingAs($this->hr)->post('/admin/hr/leave/monetization/terminal', ['employee_id' => $this->employee->id])->assertSessionHasErrors('employee_id');
+        $this->actingAs($this->hr)->post('/admin/hr/leave/monetization/terminal', ['employee_id' => $this->employee->id, 'clearance_on_file' => true])->assertSessionHasErrors('employee_id');
 
         $this->employee->forceFill(['separation_date' => '2026-05-31', 'separation_reason' => 'Retirement'])->save();
-        $this->actingAs($this->hr)->post('/admin/hr/leave/monetization/terminal', ['employee_id' => $this->employee->id])->assertSessionHasNoErrors();
+        // Not without the clearance (CSC MC No. 2, s. 1985).
+        $this->actingAs($this->hr)->post('/admin/hr/leave/monetization/terminal', ['employee_id' => $this->employee->id])->assertSessionHasErrors('clearance_on_file');
+        $this->actingAs($this->hr)->post('/admin/hr/leave/monetization/terminal', ['employee_id' => $this->employee->id, 'clearance_on_file' => true])->assertSessionHasNoErrors();
 
         $request = LeaveMonetization::query()->sole();
         $this->assertSame('terminal', $request->kind);

@@ -55,18 +55,23 @@ class MyLeaveApplicationController extends Controller
                 'description' => $type->description,
                 'medical_certificate_after_days' => $type->medical_certificate_after_days,
                 'supporting_documents' => $type->supporting_documents,
+                'requires_attachment' => $type->requires_attachment,
+                'event_label' => $type->event_label,
+                'event_window_days' => $type->event_window_days,
                 'ineligible' => $credits->ineligibilityReasons($employee, $type),
             ]),
             'detailOptions' => LeaveDetail::optionsByCode(),
+            'maxChosenDates' => LeaveApplications::MAX_CHOSEN_DATES,
             'balances' => $credits->balances($employee),
             'supervisor' => app(Supervisors::class)->for($employee)['name'],
             'resubmitting' => $returned ? [
                 ...$applications->present($returned),
                 'returned_remarks' => $returned->steps()->where('action', 'returned')->latest('acted_at')->value('remarks'),
             ] : null,
-            // Recomputed as the dates change (partial reload of `preview`).
-            'preview' => fn () => $request->filled(['leave_type_id', 'date_from'])
-                ? $applications->preview($employee, $request->only(['leave_type_id', 'date_from', 'date_to', 'is_half_day', 'is_emergency', 'detail', 'detail_text']), $returned)
+            // Recomputed as the dates change (partial reload of `preview`): a
+            // from–to range, or dates chosen one by one.
+            'preview' => fn () => $request->filled('leave_type_id') && ($request->filled('date_from') || $request->filled('dates'))
+                ? $applications->preview($employee, $request->only(['leave_type_id', 'date_from', 'date_to', 'dates', 'is_half_day', 'is_emergency', 'detail', 'detail_text', 'late_reason', 'event_date']), $returned)
                 : null,
             'attachmentKilobytes' => LeaveApplications::ATTACHMENT_KILOBYTES,
         ]);

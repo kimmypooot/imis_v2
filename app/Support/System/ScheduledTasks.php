@@ -41,6 +41,7 @@ class ScheduledTasks
         'imis:prune-logs' => 'Deletes logs older than their retention period.',
         'imis:collect-metrics' => 'Collects the Executive Dashboard figures from IMIS and connected systems.',
         'imis:account-lifecycle' => 'Deactivates the accounts of separated employees, and accounts unused past the limit in System Settings → Security.',
+        'imis:leave-deadlines' => 'Reminds approvers and HR of leave applications on their last day to act, and of those past the five working days (deemed approved, Sec. 49, Rule XVI).',
         'imis:notify-loan-endings' => 'Tells employees when a recurring deduction (loan) is nearly completed.',
         'queue:work' => 'Sends the emails and notifications waiting in the queue, so pages stay quick. Pausing it holds those emails until it is resumed.',
         'imis:executive-digest' => 'Sends top management the weekly summary. Skipped while it is turned off.',
