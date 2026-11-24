@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Notifications\HrUpdate;
 use App\Support\HR\Payroll\Loans;
 use App\Support\HR\Payroll\Payrolls;
+use App\Support\HR\Payroll\PayrollWorkbook;
 use Database\Seeders\PayComponentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -100,6 +101,17 @@ class PayrollTest extends TestCase
         $this->assertSame(8870.01, (float) $entry->net_pay);
         $this->assertSame(4435.0, (float) $entry->first_half);
         $this->assertSame(4435.01, (float) $entry->second_half);
+    }
+
+    public function test_a_philhealth_premium_that_splits_to_a_half_centavo_gives_the_employee_the_lower_half(): void
+    {
+        $employee = $this->staff('Attorney III', 21);
+        // 73,303 × 2.5% = 1,832.575: the employee pays 1,832.57, the government 1,832.58.
+        PlantillaAppointment::query()->where('employee_id', $employee->id)->update(['salary_override' => 73303]);
+
+        $entry = $this->payroll('2026-10')->entries()->where('employee_id', $employee->id)->sole();
+
+        $this->assertSame(1832.57, (float) $entry->lines->firstWhere('label', 'PhilHealth')->amount);
     }
 
     public function test_my_earnings_shows_the_net_pay_as_released_in_the_two_quincenas(): void
@@ -198,6 +210,92 @@ class PayrollTest extends TestCase
         $this->actingAs($viewer)->get('/admin/hr/payroll')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Admin/HR/Payroll/Index')->where('canManage', false));
         $this->actingAs($viewer)->post('/admin/hr/payroll/runs', ['month' => '2026-10'])->assertForbidden();
+    }
+
+    public function test_the_general_payroll_groups_people_by_office_with_a_column_for_each_deduction_and_leaves_out_cancelled_payslips(): void
+    {
+        $this->staff('Utility Worker', 1);
+        $this->staff('Human Resource Specialist', 15);
+        $gone = $this->staff('Driver', 1);
+        $run = $this->payroll('2026-10');
+        $hr = $this->hr();
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/entries/{$run->entries()->where('employee_id', $gone->id)->value('id')}/cancel", ['reason' => 'Test'])->assertRedirect();
+
+        $this->actingAs($hr)->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/HR/Payroll/GeneralPayroll')
+            ->has('payroll.groups', 1)
+            ->where('payroll.groups.0.office', 'HRD')
+            ->has('payroll.groups.0.rows', 2)
+            ->where('payroll.columns.0.label', 'GSIS Personal Share')
+            ->where('payroll.totals.basic', 38000)
+            ->where('payroll.totals.net', fn ($net) => (float) $net === (float) $run->entries()->whereNull('cancelled_at')->sum('net_pay')));
+
+        $this->actingAs($this->userWith(['payroll.view']))->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertOk();
+        $this->actingAs(User::factory()->create())->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertForbidden();
+    }
+
+    public function test_remittances_work_out_the_employer_shares_and_list_each_agencys_lines(): void
+    {
+        $high = $this->staff('Chief Human Resource Specialist', 24); // 110,000
+        $odd = $this->staff('Attorney III', 15);
+        PlantillaAppointment::query()->where('employee_id', $odd->id)->update(['salary_override' => 73303]);
+        $run = $this->payroll('2026-10');
+        $hr = $this->hr();
+        $entry = $run->entries()->where('employee_id', $high->id)->sole();
+        $wtax = PayComponent::query()->where('code', 'WTAX')->sole();
+        app(Payrolls::class)->addLine($entry, ['kind' => 'deduction', 'pay_component_id' => $wtax->id, 'amount' => 21000], $hr);
+
+        $this->actingAs($hr)->get("/admin/hr/payroll/runs/{$run->id}/remittances")->assertOk()->assertInertia(function (Assert $page) use ($high, $odd) {
+            $page->component('Admin/HR/Payroll/Remittances');
+            $sections = collect($page->toArray()['props']['sections']);
+            $row = fn (string $section, Employee $employee) => collect($sections[$section]['rows'])->firstWhere('name', $employee->user->name);
+
+            $gsis = $row('gsis', $high);
+            $this->assertSame([9900.0, 13200.0, 100.0, 23200.0], [(float) $gsis['employee'], (float) $gsis['employer'], (float) $gsis['ecc'], (float) $gsis['total']]);
+            $phic = $row('philhealth', $high);
+            $this->assertSame([2500.0, 2500.0], [(float) $phic['employee'], (float) $phic['employer']], 'on the 100,000 ceiling');
+            $odd = $row('philhealth', $odd);
+            $this->assertSame([1832.57, 1832.58], [(float) $odd['employee'], (float) $odd['employer']], 'the government pays the odd centavo');
+            $this->assertSame([200.0, 200.0], [(float) $row('pagibig', $high)['employee'], (float) $row('pagibig', $high)['employer']]);
+            $this->assertSame([21000.0], collect($sections['tax']['rows'])->pluck('amount')->map(fn ($amount) => (float) $amount)->all());
+        });
+
+        $this->actingAs(User::factory()->create())->get("/admin/hr/payroll/runs/{$run->id}/remittances")->assertForbidden();
+    }
+
+    public function test_reconciliation_explains_each_difference_from_the_workbook_in_effects_that_add_up(): void
+    {
+        $same = $this->staff('Human Resource Specialist', 15); // 30,000
+        $differs = $this->staff('Utility Worker', 1);          // 8,000
+        $absent = $this->staff('Driver', 1);
+        $same->user->update(['first_name' => 'Ana', 'last_name' => 'Reyes']);
+        $differs->user->update(['first_name' => 'Ben', 'last_name' => 'Cruz']);
+        $absent->user->update(['first_name' => 'Cora', 'last_name' => 'Dizon']);
+        $run = $this->payroll('2026-10');
+
+        $employees = collect([
+            ['surname' => 'REYES', 'first_name' => 'ANA B.', 'basic' => 30000.0, 'gross' => 32000.0, 'gsis_ps' => 2700.0, 'phic_ps' => 750.0, 'hdmf_ps' => 200.0, 'other_deductions' => [], 'net_recomputed' => 28350.0],
+            // IMIS has no tax on the profile and deducts ₱160 Pag-IBIG where the workbook has ₱200.
+            ['surname' => 'CRUZ', 'first_name' => 'BEN', 'basic' => 8000.0, 'gross' => 10000.0, 'gsis_ps' => 720.0, 'phic_ps' => 250.0, 'hdmf_ps' => 200.0, 'other_deductions' => ['Withholding Tax' => 500.0], 'net_recomputed' => 8330.0],
+            ['surname' => 'NOBODY', 'first_name' => 'NO ONE', 'basic' => 9000.0, 'gross' => 11000.0, 'gsis_ps' => 0.0, 'phic_ps' => 0.0, 'hdmf_ps' => 0.0, 'other_deductions' => [], 'net_recomputed' => 11000.0],
+        ]);
+
+        $result = app(PayrollWorkbook::class)->reconcile($employees, $run);
+
+        $this->assertSame(['workbook' => 3, 'agree' => 1, 'differ' => 1, 'unmatched' => 1, 'only_in_imis' => 1], $result['summary']);
+        $this->assertSame('agrees', $result['rows'][0]['status']);
+        $cruz = $result['rows'][1];
+        $this->assertSame(540.0, $cruz['variance']);
+        $this->assertEqualsCanonicalizing([['label' => 'Pag-IBIG', 'amount' => 40.0], ['label' => 'Tax, loans and other deductions', 'amount' => 500.0]], $cruz['effects']);
+        $this->assertSame($cruz['variance'], round(collect($cruz['effects'])->sum('amount'), 2), 'the effects add up to the variance');
+        $this->assertSame('unmatched', $result['rows'][2]['status']);
+        $this->assertSame([$absent->user->name], $result['only_in_imis']);
+
+        $hr = $this->hr();
+        $this->actingAs($hr)->get("/admin/hr/payroll/runs/{$run->id}/reconciliation")->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Admin/HR/Payroll/Reconciliation')->where('result', null));
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/reconciliation", [])->assertSessionHasErrors('file');
+        $this->actingAs(User::factory()->create())->get("/admin/hr/payroll/runs/{$run->id}/reconciliation")->assertForbidden();
     }
 
     public function test_an_employee_requests_a_payslip_the_head_of_hrd_approves_and_then_they_can_print_it(): void

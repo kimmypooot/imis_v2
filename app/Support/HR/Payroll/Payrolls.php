@@ -299,6 +299,76 @@ class Payrolls
     }
 
     /**
+     * The General Payroll as the accounting office signs it: one row per
+     * person (cancelled payslips left out), grouped by office, with a
+     * column for each deduction that someone actually has (components in
+     * their configured order, one-off lines last) and totals per office
+     * and overall.
+     *
+     * @return array{columns: array<int, array{key: string, label: string}>, groups: array<int, array<string, mixed>>, totals: array<string, mixed>}
+     */
+    public function generalPayroll(PayrollRun $run): array
+    {
+        $entries = $run->entries()->whereNull('cancelled_at')->with('lines.component')->orderBy('office')->orderBy('name')->get();
+
+        $columns = [];
+        foreach ($entries as $entry) {
+            foreach ($entry->lines->where('kind', 'deduction') as $line) {
+                if ((float) $line->amount > 0) {
+                    $key = $line->pay_component_id ? "c{$line->pay_component_id}" : 'l:'.$line->label;
+                    $columns[$key] ??= ['key' => $key, 'label' => $line->component?->name ?? $line->label, 'sort' => $line->component?->sort_order ?? 99999];
+                }
+            }
+        }
+        uasort($columns, fn (array $a, array $b) => [$a['sort'], $a['label']] <=> [$b['sort'], $b['label']]);
+        $columns = array_values(array_map(fn (array $column) => ['key' => $column['key'], 'label' => $column['label']], $columns));
+
+        $blank = fn () => ['basic' => 0.0, 'allowances' => 0.0, 'gross' => 0.0, 'deductions' => 0.0, 'net' => 0.0, 'first_half' => 0.0, 'second_half' => 0.0, 'columns' => []];
+        $add = function (array $total, array $row) {
+            foreach (['basic', 'allowances', 'gross', 'deductions', 'net', 'first_half', 'second_half'] as $field) {
+                $total[$field] = round($total[$field] + $row[$field], 2);
+            }
+            foreach ($row['columns'] as $key => $amount) {
+                $total['columns'][$key] = round(($total['columns'][$key] ?? 0.0) + $amount, 2);
+            }
+
+            return $total;
+        };
+
+        $grand = $blank();
+        $groups = [];
+        foreach ($entries->groupBy(fn (PayrollEntry $entry) => $entry->office ?: 'No office') as $office => $members) {
+            $rows = [];
+            $subtotal = $blank();
+            foreach ($members as $entry) {
+                $amounts = [];
+                foreach ($entry->lines->where('kind', 'deduction') as $line) {
+                    $key = $line->pay_component_id ? "c{$line->pay_component_id}" : 'l:'.$line->label;
+                    $amounts[$key] = round(($amounts[$key] ?? 0.0) + (float) $line->amount, 2);
+                }
+                $row = [
+                    'name' => $entry->name,
+                    'position' => $entry->position,
+                    'basic' => (float) $entry->basic_salary,
+                    'allowances' => round($entry->lines->where('kind', 'earning')->sum(fn ($line) => (float) $line->amount), 2),
+                    'gross' => (float) $entry->gross_pay,
+                    'deductions' => (float) $entry->total_deductions,
+                    'net' => (float) $entry->net_pay,
+                    'first_half' => (float) $entry->first_half,
+                    'second_half' => (float) $entry->second_half,
+                    'columns' => $amounts,
+                ];
+                $rows[] = $row;
+                $subtotal = $add($subtotal, $row);
+                $grand = $add($grand, $row);
+            }
+            $groups[] = ['office' => (string) $office, 'rows' => $rows, 'totals' => $subtotal];
+        }
+
+        return ['columns' => $columns, 'groups' => $groups, 'totals' => $grand];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function presentRun(PayrollRun $run): array
@@ -506,8 +576,9 @@ class Payrolls
 
         return match ($component->method) {
             PayComputation::Fixed => round((float) $component->amount, 2),
+            // A premium that splits to a half-centavo gives the employee the lower half (PhilHealth's rule).
             PayComputation::Percent => round(min(max($basic, (float) ($component->base_min ?? 0)), $component->base_max !== null ? (float) $component->base_max : PHP_FLOAT_MAX)
-                * (float) $component->rate / 100, 2),
+                * (float) $component->rate / 100, 2, PHP_ROUND_HALF_DOWN),
             PayComputation::Manual => 0.0,
         };
     }

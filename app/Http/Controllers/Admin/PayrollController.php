@@ -16,6 +16,8 @@ use App\Support\HR\Payroll\DeductionNotices;
 use App\Support\HR\Payroll\Loans;
 use App\Support\HR\Payroll\Payrolls;
 use App\Support\HR\Payroll\PayslipApprovers;
+use App\Support\HR\Payroll\Remittances;
+use App\Support\Settings\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -82,6 +84,31 @@ class PayrollController extends Controller
                 ->map(fn (PayComponent $component) => ['value' => $component->id, 'label' => $component->name, 'kind' => $component->kind->isDeduction() ? 'deduction' : 'earning'])
                 : [],
             'minimumNet' => Payrolls::MINIMUM_NET_PAY,
+        ]);
+    }
+
+    /** What the month's payroll owes GSIS, PhilHealth, Pag-IBIG, the Welfare Fund and the BIR. */
+    public function remittances(PayrollRun $run, Payrolls $payrolls, Remittances $remittances): Response
+    {
+        $this->authorize('view', $run);
+
+        return Inertia::render('Admin/HR/Payroll/Remittances', [
+            'run' => $payrolls->presentRun($run),
+            'sections' => $remittances->forRun($run),
+        ]);
+    }
+
+    /** The General Payroll for signing and printing (landscape, long bond). */
+    public function generalPayroll(PayrollRun $run, Payrolls $payrolls): Response
+    {
+        $this->authorize('view', $run);
+        $run->load(['creator', 'finalizer']);
+
+        return Inertia::render('Admin/HR/Payroll/GeneralPayroll', [
+            'run' => $payrolls->presentRun($run),
+            'payroll' => $payrolls->generalPayroll($run),
+            'organization' => Settings::get('organization_name'),
+            'address' => Settings::get('office_address'),
         ]);
     }
 

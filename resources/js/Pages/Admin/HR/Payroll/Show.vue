@@ -130,13 +130,18 @@ const columns = [
         :title="`Payroll — ${run.period}`"
         :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Payroll', href: '/admin/hr/payroll' }, { label: run.period }]"
     >
-        <template v-if="canManage" #actions>
-            <template v-if="isDraft">
-                <Button variant="secondary" @click="regenerate"><Icon name="refresh" size="sm" />Regenerate</Button>
-                <Button variant="secondary" @click="destroy" icon="trash">Delete draft</Button>
-                <Button variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
+        <template #actions>
+            <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/general-payroll`" external><Icon name="printer" size="sm" />General Payroll</Button>
+            <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/remittances`"><Icon name="database" size="sm" />Remittances</Button>
+            <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/reconciliation`"><Icon name="clipboard" size="sm" />Compare with workbook</Button>
+            <template v-if="canManage">
+                <template v-if="isDraft">
+                    <Button variant="secondary" @click="regenerate"><Icon name="refresh" size="sm" />Regenerate</Button>
+                    <Button variant="secondary" @click="destroy" icon="trash">Delete draft</Button>
+                    <Button variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
+                </template>
+                <Button v-else variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
             </template>
-            <Button v-else variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
         </template>
     </PageHeader>
 

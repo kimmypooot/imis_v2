@@ -51,6 +51,7 @@ use App\Http\Controllers\Admin\PayComponentController;
 use App\Http\Controllers\Admin\PayProfileController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PayrollMonitoringController;
+use App\Http\Controllers\Admin\PayrollReconciliationController;
 use App\Http\Controllers\Admin\PdsVerificationController;
 use App\Http\Controllers\Admin\PlantillaAppointmentController;
 use App\Http\Controllers\Admin\PlantillaController;
@@ -433,6 +434,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:payroll.view,payroll.manage')->scopeBindings()->group(function () {
         Route::get('admin/hr/payroll', [PayrollController::class, 'index'])->name('admin.hr.payroll.index');
         Route::get('admin/hr/payroll/runs/{run}', [PayrollController::class, 'show'])->name('admin.hr.payroll.show');
+        Route::get('admin/hr/payroll/runs/{run}/general-payroll', [PayrollController::class, 'generalPayroll'])->name('admin.hr.payroll.general');
+        Route::get('admin/hr/payroll/runs/{run}/remittances', [PayrollController::class, 'remittances'])->name('admin.hr.payroll.remittances');
+        Route::get('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'show'])->name('admin.hr.payroll.reconciliation');
+        Route::post('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'store'])->middleware('throttle:20,1')->name('admin.hr.payroll.reconciliation.store');
+        Route::delete('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'destroy'])->name('admin.hr.payroll.reconciliation.destroy');
         Route::get('admin/hr/payroll/components', [PayComponentController::class, 'index'])->name('admin.hr.payroll.components');
         Route::get('admin/hr/payroll/profiles', [PayProfileController::class, 'index'])->name('admin.hr.payroll.profiles');
         Route::get('admin/hr/payroll/profiles/{employee}', [PayProfileController::class, 'show'])->name('admin.hr.payroll.profiles.show');

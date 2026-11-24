@@ -181,6 +181,8 @@ enum AuditEvent: string
     case LeaveCardsImported = 'leave_credit.imported_from_workbook';
     // The leave card sync: balances and card history brought in line with the workbook (counts in metadata).
     case LeaveCardsSynced = 'leave_credit.synced_from_workbook';
+    // `imis:check-payroll-workbook --apply`: pay items and loans loaded from the payroll workbook (counts in metadata, never amounts).
+    case PayrollWorkbookImported = 'payroll.imported_from_workbook';
     // HR-8 payroll. Metadata names fields or counts — never amounts.
     case PayComponentCreated = 'pay_component.created';
     case PayComponentUpdated = 'pay_component.updated';
