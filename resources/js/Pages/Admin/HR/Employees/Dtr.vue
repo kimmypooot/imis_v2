@@ -11,6 +11,7 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import DtrSheetTable from '../../../../Components/HR/DtrSheetTable.vue';
+import DtrPunchesModal from '../../../../Components/HR/DtrPunchesModal.vue';
 import DtrPrintChoice from '../../../../Components/HR/DtrPrintChoice.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
@@ -45,6 +46,8 @@ const kinds = [
     { value: 'times', label: 'Correct the time in or out' },
 ];
 
+// The day whose raw punches are open.
+const punchDay = ref(null);
 const open = ref(false);
 const day = ref(null);
 const form = useForm({ date: '', kind: 'credit', time_in: '', time_out: '', remark: '' });
@@ -111,9 +114,11 @@ const removeAdjustment = async (row) => {
                 </span>
                 <span class="ml-2 text-text-muted">{{ formatDateTime(sheet.signature.signed_at) }} · code {{ sheet.signature.code }}</span>
             </p>
-            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :can-adjust="canManage" @adjust="adjust" />
+            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :can-adjust="canManage" can-see-punches @adjust="adjust" @punches="(row) => (punchDay = row.date)" />
         </Card>
     </div>
+
+    <DtrPunchesModal :employee-id="employee.id" :date="punchDay" :can-manage="canManage" @close="punchDay = null" />
 
     <DtrPrintChoice :url="printing ? printUrl(printing) : null" :period="printing?.period ?? ''" @close="printing = null" />
 

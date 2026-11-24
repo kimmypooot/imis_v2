@@ -206,6 +206,14 @@ class Employee extends Model
     }
 
     /**
+     * DTR: the work schedules assigned to them over time.
+     */
+    public function workSchedules(): HasMany
+    {
+        return $this->hasMany(EmployeeWorkSchedule::class);
+    }
+
+    /**
      * HR-8: recurring allowances and deductions on their pay profile.
      */
     public function payItems(): HasMany

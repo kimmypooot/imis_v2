@@ -147,6 +147,9 @@ enum AuditEvent: string
     case DtrLeaveDeductionReversed = 'dtr_leave.reversed';
     case DtrAdjustmentSaved = 'dtr_adjustment.saved';
     case DtrAdjustmentRemoved = 'dtr_adjustment.removed';
+    case DtrPunchAdded = 'dtr_punch.added';
+    case DtrPunchVoided = 'dtr_punch.voided';
+    case DtrPunchRestored = 'dtr_punch.restored';
     case DtrEntryVerified = 'dtr_entry.verified';
     // HR-6b leave applications.
     case LeaveApplicationFiled = 'leave_application.filed';

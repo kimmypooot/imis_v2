@@ -273,6 +273,7 @@ export const hrNavItems = [
         group: 'Time Records',
         icon: 'clock',
         items: [
+            { label: 'DTR Management', href: '/admin/hr/dtr', icon: 'clipboard', permission: ['dtr.view', 'dtr.manage'] },
             { label: 'Biometric Logs', href: '/admin/hr/dtr/import', icon: 'download', permission: ['dtr.view', 'dtr.manage'] },
             { label: 'Work Schedules', href: '/admin/hr/dtr/schedules', icon: 'clock', permission: ['dtr.view', 'dtr.manage'] },
         ],

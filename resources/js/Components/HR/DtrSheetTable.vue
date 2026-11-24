@@ -11,6 +11,8 @@ const props = defineProps({
     rows: { type: Array, required: true },
     totals: { type: Object, required: true },
     canAdjust: { type: Boolean, default: false },
+    /** HRD can open a day's raw punches (reading needs `dtr.view`, changing them `canAdjust`). */
+    canSeePunches: { type: Boolean, default: false },
     /** Employee self-entry: in and out times and a reason become inputs, kept in `drafts` by date. */
     editing: { type: Boolean, default: false },
     drafts: { type: Object, default: () => ({}) },
@@ -19,7 +21,7 @@ const props = defineProps({
     fileLeave: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['adjust']);
+const emit = defineEmits(['adjust', 'punches']);
 
 const hm = (minutes) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
 const time = (value) => value ?? '';
@@ -77,7 +79,7 @@ const summary = [
                         <th scope="col" class="px-3 py-2 font-medium">Time out</th>
                         <th scope="col" class="px-3 py-2 text-right font-medium">Worked hrs</th>
                         <th scope="col" class="px-3 py-2 font-medium">Remarks</th>
-                        <th v-if="canAdjust" scope="col" class="py-2 pl-3 text-right font-medium"><span class="sr-only">Actions</span></th>
+                        <th v-if="canAdjust || canSeePunches" scope="col" class="py-2 pl-3 text-right font-medium"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
@@ -108,8 +110,9 @@ const summary = [
                             <span v-if="row.late_minutes" class="ml-2 text-xs text-text-muted">{{ row.late_minutes }} min late</span>
                             <span v-if="row.undertime_minutes" class="ml-2 text-xs text-text-muted">{{ row.undertime_minutes }} min short</span>
                         </td>
-                        <td v-if="canAdjust" class="py-1.5 pl-3 text-right">
-                            <ActionButton v-if="row.date <= localToday" icon="pencil" :label="`Adjust ${formatCalendarDate(row.date)}`" @click="emit('adjust', row)" />
+                        <td v-if="canAdjust || canSeePunches" class="whitespace-nowrap py-1.5 pl-3 text-right">
+                            <ActionButton v-if="canSeePunches && row.date <= localToday" icon="clock" :label="`Punches on ${formatCalendarDate(row.date)}`" @click="emit('punches', row)" />
+                            <ActionButton v-if="canAdjust && row.date <= localToday" icon="pencil" :label="`Adjust ${formatCalendarDate(row.date)}`" @click="emit('adjust', row)" />
                         </td>
                     </tr>
                 </tbody>

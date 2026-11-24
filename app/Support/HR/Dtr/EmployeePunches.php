@@ -37,6 +37,7 @@ class EmployeePunches
 
         $punches = BiometricPunch::query()
             ->where('biometric_id', $employee->biometric_id)
+            ->whereNull('voided_at')
             ->where('punched_at', '>=', $windowStart->format('Y-m-d H:i:s'))
             ->where('punched_at', '<', $windowEnd->format('Y-m-d H:i:s'))
             ->orderBy('punched_at')

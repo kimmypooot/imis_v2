@@ -28,6 +28,7 @@ class UploadMonitor
         $to = $month->copy()->endOfMonth();
 
         $punched = BiometricPunch::query()
+            ->whereNull('voided_at')
             ->whereBetween('punched_at', [$from, $to])
             ->groupBy('biometric_id')
             ->selectRaw('biometric_id, max(punched_at) as last_at')

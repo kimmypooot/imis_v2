@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\CommitteeController;
 use App\Http\Controllers\Admin\CommitteeMemberController;
 use App\Http\Controllers\Admin\DashboardLayoutController;
 use App\Http\Controllers\Admin\DataCorrectionController;
+use App\Http\Controllers\Admin\DtrManagementController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\EmployeeAssignmentController;
 use App\Http\Controllers\Admin\EmployeeController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Admin\EmployeeLearningDevelopmentController;
 use App\Http\Controllers\Admin\EmployeeLeaveController;
 use App\Http\Controllers\Admin\EmployeePdsController;
 use App\Http\Controllers\Admin\EmployeePdsImportController;
+use App\Http\Controllers\Admin\EmployeePunchController;
 use App\Http\Controllers\Admin\EmployeeServiceRecordController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\FlexibleWorkController;
@@ -360,9 +362,11 @@ Route::middleware('auth')->group(function () {
 
     // DTR: biometric logs uploaded by HRD. `dtr.manage` also reads.
     Route::middleware('permission:dtr.view,dtr.manage')->group(function () {
+        Route::get('admin/hr/dtr', [DtrManagementController::class, 'index'])->name('admin.hr.dtr.index');
         Route::get('admin/hr/dtr/import', [BiometricImportController::class, 'show'])->name('admin.hr.dtr.import');
         Route::get('admin/hr/dtr/schedules', [WorkScheduleController::class, 'show'])->name('admin.hr.dtr.schedules');
         Route::get('admin/hr/employees/{employee}/dtr', [EmployeeDtrController::class, 'show'])->name('admin.hr.employees.dtr');
+        Route::get('admin/hr/employees/{employee}/dtr/punches', [EmployeePunchController::class, 'index'])->name('admin.hr.employees.dtr.punches');
         Route::get('admin/hr/employees/{employee}/dtr/print', [EmployeeDtrController::class, 'print'])->name('admin.hr.employees.dtr.print');
         Route::get('admin/hr/employees/{employee}/dtr/export', [EmployeeDtrController::class, 'export'])->middleware('throttle:30,1')->name('admin.hr.employees.dtr.export');
         Route::get('admin/hr/dtr/export', OfficeDtrExportController::class)->middleware('throttle:6,1')->name('admin.hr.dtr.export');
@@ -373,6 +377,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('admin/hr/dtr/import/ids', [BiometricImportController::class, 'clearIds'])->name('admin.hr.dtr.import.clear-ids');
         Route::post('admin/hr/employees/{employee}/dtr/adjustments', [EmployeeDtrController::class, 'store'])->name('admin.hr.employees.dtr.adjustments.store');
         Route::delete('admin/hr/employees/{employee}/dtr/adjustments/{adjustment}', [EmployeeDtrController::class, 'destroy'])->name('admin.hr.employees.dtr.adjustments.destroy');
+        Route::post('admin/hr/employees/{employee}/dtr/punches', [EmployeePunchController::class, 'store'])->middleware('throttle:60,1')->name('admin.hr.employees.dtr.punches.store');
+        Route::patch('admin/hr/employees/{employee}/dtr/punches/{punch}/void', [EmployeePunchController::class, 'void'])->name('admin.hr.employees.dtr.punches.void');
+        Route::patch('admin/hr/employees/{employee}/dtr/punches/{punch}/restore', [EmployeePunchController::class, 'restore'])->name('admin.hr.employees.dtr.punches.restore');
         Route::post('admin/hr/dtr/schedules', [WorkScheduleController::class, 'store'])->name('admin.hr.dtr.schedules.store');
         Route::post('admin/hr/dtr/schedules/assign', [WorkScheduleController::class, 'assign'])->name('admin.hr.dtr.schedules.assign');
         Route::post('admin/hr/dtr/schedules/assign-many', [WorkScheduleController::class, 'assignMany'])->middleware('throttle:20,1')->name('admin.hr.dtr.schedules.assign-many');
