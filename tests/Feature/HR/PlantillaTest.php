@@ -148,6 +148,30 @@ class PlantillaTest extends TestCase
         $this->assertSame('Administrative Officer II', $employee->user->fresh()->position);
     }
 
+    public function test_a_promotion_moves_the_account_to_the_new_items_office_and_the_directory_feeds_follow(): void
+    {
+        config(['etts.api_token' => 'secret-token']);
+        $hr = $this->hr();
+        $msd = OrganizationalUnit::factory()->create(['name' => 'Management Services Division', 'short_name' => 'MSD']);
+        $employee = $this->employee();
+        $employee->user->forceFill(['organizational_unit_id' => $this->hrd->id])->save();
+        $lower = $this->item(['item_number' => 'CSCB-AO2-1', 'position_title' => 'Administrative Officer II']);
+        $higher = $this->item(['item_number' => 'CSCB-AO4-1', 'organizational_unit_id' => $msd->id]);
+
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$lower->id}/appointments", $this->appointment($employee, ['date_from' => '2020-01-02']));
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$higher->id}/appointments", $this->appointment($employee, ['nature' => 'promotion', 'date_from' => '2026-03-01']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($msd->id, $employee->user->fresh()->organizational_unit_id);
+        $feed = collect($this->withToken('secret-token')->getJson('/api/v1/etts/employees')->json('data'))->firstWhere('id', $employee->user_id);
+        $this->assertSame('Administrative Officer IV', $feed['position']);
+
+        // Undoing the promotion puts the account back at the old item's office.
+        $promotion = PlantillaAppointment::query()->where('plantilla_item_id', $higher->id)->sole();
+        $this->actingAs($hr)->delete("/admin/hr/plantilla/{$higher->id}/appointments/{$promotion->id}")->assertSessionHasNoErrors();
+        $this->assertSame($this->hrd->id, $employee->user->fresh()->organizational_unit_id);
+    }
+
     public function test_a_step_increment_opens_the_next_period_and_vacating_frees_the_item(): void
     {
         $hr = $this->hr();

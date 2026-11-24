@@ -219,14 +219,29 @@ class NonPlantilla
         }
     }
 
-    /** The employee record's status follows the running contract, else the latest one. */
+    /**
+     * The employee record's status and the account's position follow the
+     * running contract (its designation), else the latest one. With no
+     * contract left, both stay as they are.
+     */
     private function syncStatus(Employee $employee): void
     {
         $contracts = $employee->nonPlantillaContracts()->orderByDesc('date_from')->get();
         $contract = $contracts->first(fn (NonPlantillaContract $contract) => $contract->isCurrentOn(today())) ?? $contracts->first();
 
-        if ($contract && $employee->employment_status !== $contract->employment_status) {
+        if (! $contract) {
+            return;
+        }
+
+        if ($employee->employment_status !== $contract->employment_status) {
             $employee->forceFill(['employment_status' => $contract->employment_status])->save();
+        }
+
+        $designation = trim($contract->designation);
+        $user = $employee->user ?? $employee->user()->first();
+
+        if ($designation !== '' && $user->position !== $designation) {
+            $user->forceFill(['position' => $designation])->save();
         }
     }
 }

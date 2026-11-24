@@ -152,6 +152,7 @@ const visible = computed(() =>
         <!-- Keyed by tab: each tab starts on page 1 with its own search. -->
         <DataTable
             :key="activeStatus"
+            class="[&_th]:whitespace-normal [&_th>button]:text-left [&_.table-card]:overflow-x-hidden"
             :columns="columns"
             :rows="visible"
             :caption="`Employee records — ${activeLabel}`"
@@ -176,7 +177,9 @@ const visible = computed(() =>
                 <template v-if="row.csc_service">
                     <span class="tabular-nums" :title="`In the CSC since ${row.csc_service.since}`">{{ row.csc_service.label }}</span>
                     <span v-if="row.csc_service.from_other_agency" class="block text-xs text-text-muted">from another agency</span>
-                    <StatusBadge v-if="row.csc_service.award_this_year" status="info" :label="`${row.csc_service.award_this_year}-yr loyalty award`" class="mt-1" />
+                    <div v-if="row.csc_service.award_this_year" class="mt-1">
+                        <StatusBadge status="info" :label="`${row.csc_service.award_this_year}-yr loyalty award`" class="whitespace-nowrap" />
+                    </div>
                 </template>
                 <span v-else class="text-text-muted">—</span>
             </template>

@@ -210,6 +210,7 @@ class Plantilla
             ])->save();
 
             $this->followHolder($appointment);
+            $this->followItemOffice($appointment);
 
             return $appointment;
         });
@@ -271,6 +272,7 @@ class Plantilla
             }
 
             $appointment = $this->open($item, $employee, $data, $actor);
+            $this->followItemOffice($appointment);
 
             return ['appointment' => $appointment, 'ended' => $current];
         });
@@ -385,6 +387,7 @@ class Plantilla
 
             $previous->forceFill(['date_to' => null, 'end_reason' => null])->save();
             $this->followHolder($previous);
+            $this->followItemOffice($previous);
 
             return $previous;
         });
@@ -494,6 +497,24 @@ class Plantilla
         $this->followHolder($appointment);
 
         return $appointment;
+    }
+
+    /**
+     * A new appointment (a promotion, or a link to an item) moves the
+     * account to the item's place of assignment, when the item has one.
+     * Step increments and corrections don't, so an office set by a
+     * reassignment order stays.
+     */
+    private function followItemOffice(PlantillaAppointment $appointment): void
+    {
+        $unitId = $appointment->item()->value('organizational_unit_id');
+
+        if ($unitId === null) {
+            return;
+        }
+
+        $appointment->employee()->with('user')->first()->user
+            ->forceFill(['organizational_unit_id' => $unitId])->save();
     }
 
     /**

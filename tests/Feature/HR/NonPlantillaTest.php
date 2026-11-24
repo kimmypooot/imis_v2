@@ -91,6 +91,30 @@ class NonPlantillaTest extends TestCase
         }
     }
 
+    public function test_the_account_position_follows_the_running_contracts_designation(): void
+    {
+        $hr = $this->userWith(['plantilla.manage']);
+        $worker = $this->staff('Computer Technician', null);
+
+        $this->actingAs($hr)->post('/admin/hr/non-plantilla/contracts', $this->data($worker, ['designation' => 'Computer Technician', 'date_from' => '2026-01-01', 'date_to' => '2026-06-30']))
+            ->assertSessionHasNoErrors();
+        $this->actingAs($hr)->post('/admin/hr/non-plantilla/contracts', $this->data($worker, ['designation' => 'Systems Analyst', 'date_from' => '2026-07-01', 'date_to' => '2026-12-31']))
+            ->assertSessionHasNoErrors();
+
+        // The first contract is the running one today (15 June), so the later renewal doesn't take over yet.
+        $this->assertSame('Computer Technician', $worker->user->fresh()->position);
+
+        // Correcting the running contract's designation updates the account.
+        $running = $worker->nonPlantillaContracts()->orderBy('date_from')->first();
+        $this->actingAs($hr)->put("/admin/hr/non-plantilla/contracts/{$running->id}", collect($this->data($worker, ['designation' => 'Information Systems Analyst I', 'date_from' => '2026-01-01', 'date_to' => '2026-06-30']))->except('employee_id')->all())
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Information Systems Analyst I', $worker->user->fresh()->position);
+
+        // Removing it leaves the renewal as the latest contract.
+        $this->actingAs($hr)->delete("/admin/hr/non-plantilla/contracts/{$running->id}")->assertSessionHasNoErrors();
+        $this->assertSame('Systems Analyst', $worker->user->fresh()->position);
+    }
+
     public function test_guards(): void
     {
         $hr = $this->userWith(['plantilla.manage']);
