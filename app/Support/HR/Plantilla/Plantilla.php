@@ -10,6 +10,7 @@ use App\Models\OrganizationalUnit;
 use App\Models\PlantillaAppointment;
 use App\Models\PlantillaItem;
 use App\Models\User;
+use App\Support\HR\ServiceRecords;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -277,6 +278,71 @@ class Plantilla
 
             return ['appointment' => $appointment, 'ended' => $current];
         });
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function pastPeriodRules(): array
+    {
+        return [
+            ...$this->appointmentRules(),
+            'date_to' => ['required', 'date', 'after_or_equal:date_from', 'before:today'],
+            'end_reason' => ['required', 'string', 'max:255'],
+        ];
+    }
+
+    /**
+     * Whom HR can record a past period for: anyone with an employee record
+     * but the viewer, separated staff included (they held positions too).
+     *
+     * @return array<int, array{value: int, label: string}>
+     */
+    public function pastPeriodEmployees(User $viewer): array
+    {
+        return Employee::query()->with('user')->get()
+            ->reject(fn (Employee $employee) => $employee->user_id === $viewer->id)
+            ->sortBy(fn (Employee $employee) => $employee->user->name, SORT_NATURAL | SORT_FLAG_CASE)
+            ->map(fn (Employee $employee) => ['value' => $employee->id, 'label' => $employee->user->name])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Backfills a period that already ended (an earlier promotion, an item
+     * since filled again or abolished). It only adds a closed Service Record
+     * line: nobody's current period, status, position title or office
+     * changes, and the item's current holder is untouched. The dates may
+     * not overlap another holder of the item, nor the person's other
+     * periods or hand-entered service lines.
+     *
+     * @param  array<string, mixed>  $data  validated by pastPeriodRules()
+     */
+    public function recordPast(PlantillaItem $item, Employee $employee, array $data, User $actor): PlantillaAppointment
+    {
+        $from = Carbon::parse($data['date_from'])->startOfDay();
+        $to = Carbon::parse($data['date_to'])->startOfDay();
+
+        $heldBy = $item->appointments()->with('employee.user')->whereNotNull('date_from')
+            ->whereDate('date_from', '<=', $to)
+            ->where(fn ($query) => $query->whereNull('date_to')->orWhereDate('date_to', '>=', $from))
+            ->first();
+        if ($heldBy) {
+            throw ValidationException::withMessages(['date_from' => "{$heldBy->employee->user->name} held this item then (from {$heldBy->date_from->toDateString()})."]);
+        }
+
+        if ($overlap = app(ServiceRecords::class)->overlapping($employee, $from, $to, null)) {
+            throw ValidationException::withMessages(['date_from' => "These dates overlap {$overlap}."]);
+        }
+
+        $appointment = new PlantillaAppointment(collect($data)->only(['step', 'status', 'nature', 'date_from', 'date_to', 'end_reason', 'remarks', 'salary_override'])->all());
+        $appointment->forceFill([
+            'plantilla_item_id' => $item->id,
+            'employee_id' => $employee->id,
+            'recorded_by' => $actor->id,
+        ])->save();
+
+        return $appointment;
     }
 
     /**

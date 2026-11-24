@@ -498,6 +498,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('admin/hr/plantilla/{item}/restore', [PlantillaController::class, 'restore'])->name('admin.hr.plantilla.restore');
 
         Route::post('admin/hr/plantilla/{item}/appointments', [PlantillaAppointmentController::class, 'store'])->name('admin.hr.plantilla.appointments.store');
+        Route::post('admin/hr/plantilla/{item}/appointments/past', [PlantillaAppointmentController::class, 'storePast'])->name('admin.hr.plantilla.appointments.store-past');
         Route::put('admin/hr/plantilla/{item}/appointments/{appointment}', [PlantillaAppointmentController::class, 'update'])->name('admin.hr.plantilla.appointments.update');
         Route::post('admin/hr/plantilla/{item}/appointments/{appointment}/step-increment', [PlantillaAppointmentController::class, 'stepIncrement'])->name('admin.hr.plantilla.appointments.step-increment');
         Route::patch('admin/hr/plantilla/{item}/appointments/{appointment}/vacate', [PlantillaAppointmentController::class, 'vacate'])->name('admin.hr.plantilla.appointments.vacate');

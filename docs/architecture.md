@@ -3598,6 +3598,16 @@ pending. Fields can be adjusted once it arrives.
   the next at a higher step, on the same item and status.
 - **Vacating** ends the period with a date and a reason (retirement,
   resignation, …).
+- **Recording a past period** (`recordPast()`, "Record past period" on the
+  item page, `plantilla.manage`, never your own) backfills service that
+  already ended: an earlier promotion, or an item since filled again or
+  abolished. It adds a closed period only, so nobody's current period,
+  status, position title or office changes. The last day must be before
+  today; the dates may not overlap another holder of the item, the person's
+  other periods or hand-entered service lines. Audited as
+  `plantilla_appointment.past_recorded`. `PlantillaItem::incumbency` takes
+  the open period inside the query, so a backfilled period (a higher id)
+  never hides the current holder.
 - **Correcting** a period fixes its fields. **Removing** one (soft
   delete) reopens the holder's previous period if this one ended it, as
   long as that item is still free.

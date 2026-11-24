@@ -74,6 +74,7 @@ class PlantillaController extends Controller
             'appointForm' => $canManage && ! $item->isAbolished() && ! $item->incumbency
                 ? $plantilla->appointableEmployees($item, $request->user())
                 : null,
+            'pastEmployees' => $canManage ? $plantilla->pastPeriodEmployees($request->user()) : null,
             'appointmentOptions' => [
                 'statusOptions' => EmploymentStatus::plantillaOptions(),
                 'natureOptions' => AppointmentNature::appointmentOptions(),

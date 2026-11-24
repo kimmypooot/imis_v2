@@ -33,6 +33,7 @@ const props = defineProps({
     canManage: { type: Boolean, required: true },
     itemForm: { type: Object, default: null },
     appointForm: { type: Object, default: null },
+    pastEmployees: { type: Array, default: null },
     appointmentOptions: { type: Object, required: true },
 });
 
@@ -47,6 +48,7 @@ const form = useForm({});
 
 const titles = {
     appoint: 'Appoint to this item',
+    past: 'Record a past period',
     step: 'Step increment',
     vacate: 'Vacate the item',
     correct: 'Correct this period',
@@ -58,6 +60,7 @@ const open = (next, row = null) => {
     const today = new Date().toISOString().slice(0, 10);
     const values = {
         appoint: { employee_id: '', step: 1, status: 'permanent', nature: 'original', date_from: '', salary_override: '', remarks: '' },
+        past: { employee_id: '', step: 1, status: 'permanent', nature: 'original', date_from: '', date_to: '', end_reason: '', salary_override: '', remarks: '' },
         step: { step: Math.min(8, (row?.step ?? 1) + 1), date_from: '', salary_override: '', remarks: '' },
         vacate: { date_to: '', end_reason: '' },
         correct: row && {
@@ -84,6 +87,7 @@ const submit = () => {
 
     ({
         appoint: () => form.transform(blankToNull).post(`${base.value}/appointments`, options),
+        past: () => form.transform(blankToNull).post(`${base.value}/appointments/past`, options),
         step: () => form.transform(blankToNull).post(`${appointment}/step-increment`, options),
         vacate: () => form.patch(`${appointment}/vacate`, options),
         correct: () => form.transform(blankToNull).put(appointment, options),
@@ -122,6 +126,7 @@ const field = 'mt-1 block w-full';
     >
         <template v-if="canManage" #actions>
             <Button v-if="appointForm" variant="success" @click="open('appoint')"><Icon name="plus" size="sm" />Appoint</Button>
+            <Button v-if="pastEmployees" variant="secondary" @click="open('past')"><Icon name="plus" size="sm" />Record past period</Button>
             <Button variant="secondary" @click="editOpen = true"><Icon name="pencil" size="sm" />Edit item</Button>
             <Button v-if="item.status === 'vacant'" variant="danger" @click="open('abolish')">Abolish</Button>
             <Button v-if="item.abolished" variant="secondary" @click="restore">Restore</Button>
@@ -236,10 +241,17 @@ const field = 'mt-1 block w-full';
                 </div>
             </template>
 
+            <div v-if="mode === 'past'" class="sm:col-span-2">
+                <InputLabel for="past-employee" required>Employee</InputLabel>
+                <Select id="past-employee" v-model="form.employee_id" :class="field" :options="pastEmployees" placeholder="— Select —" required :invalid="!!form.errors.employee_id" />
+                <p class="mt-1 text-xs text-text-muted">For service on this item that has already ended, such as an earlier promotion or a period before the current holder. It only adds a line to their Service Record: their current item, position title, status and office don't change.</p>
+                <InputError :message="form.errors.employee_id" />
+            </div>
+
             <p v-if="mode === 'correct' && target && !target.can_manage" class="rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text sm:col-span-2">
                 This is your own record. Correct it only where the data is wrong; the change is logged as a correction of your own record.
             </p>
-            <template v-if="mode === 'appoint' || mode === 'correct'">
+            <template v-if="mode === 'appoint' || mode === 'correct' || mode === 'past'">
                 <div>
                     <InputLabel for="action-status" required>Status</InputLabel>
                     <Select id="action-status" v-model="form.status" :class="field" :options="appointmentOptions.statusOptions" required :invalid="!!form.errors.status" />
@@ -251,7 +263,7 @@ const field = 'mt-1 block w-full';
                         id="action-nature"
                         v-model="form.nature"
                         :class="field"
-                        :options="mode === 'correct' ? appointmentOptions.allNatureOptions : appointmentOptions.natureOptions"
+                        :options="mode === 'correct' || mode === 'past' ? appointmentOptions.allNatureOptions : appointmentOptions.natureOptions"
                         required
                         :invalid="!!form.errors.nature"
                     />
@@ -259,14 +271,14 @@ const field = 'mt-1 block w-full';
                 </div>
             </template>
 
-            <template v-if="mode === 'appoint' || mode === 'step' || mode === 'correct'">
+            <template v-if="mode === 'appoint' || mode === 'step' || mode === 'correct' || mode === 'past'">
                 <div>
                     <InputLabel for="action-step" required>{{ mode === 'step' ? 'New step' : 'Step' }}</InputLabel>
                     <Select id="action-step" v-model="form.step" :class="field" :options="steps" required :invalid="!!form.errors.step" />
                     <InputError :message="form.errors.step" />
                 </div>
                 <div>
-                    <TextInput id="action-from" v-model="form.date_from" type="date" :label="mode === 'correct' ? 'From' : 'Effective date'" required :error="form.errors.date_from" />
+                    <TextInput id="action-from" v-model="form.date_from" type="date" :label="mode === 'correct' || mode === 'past' ? 'From' : 'Effective date'" required :error="form.errors.date_from" />
                 </div>
                 <div class="sm:col-span-2">
                     <TextInput id="action-salary-override" v-model="form.salary_override" type="number" step="0.01" min="0" label="Monthly salary override (optional)" :invalid="!!form.errors.salary_override" />
@@ -275,12 +287,12 @@ const field = 'mt-1 block w-full';
                 </div>
             </template>
 
-            <template v-if="mode === 'correct' || mode === 'vacate'">
+            <template v-if="mode === 'correct' || mode === 'vacate' || mode === 'past'">
                 <div>
-                    <TextInput id="action-to" v-model="form.date_to" type="date" label="Last day" :required="mode === 'vacate'" :error="form.errors.date_to" />
+                    <TextInput id="action-to" v-model="form.date_to" type="date" label="Last day" :required="mode === 'vacate' || mode === 'past'" :error="form.errors.date_to" />
                 </div>
                 <div>
-                    <TextInput id="action-reason" v-model="form.end_reason" label="Reason (e.g. Retirement, Resignation)" :required="mode === 'vacate'" :error="form.errors.end_reason" />
+                    <TextInput id="action-reason" v-model="form.end_reason" label="Reason (e.g. Retirement, Resignation)" :required="mode === 'vacate' || mode === 'past'" :error="form.errors.end_reason" />
                 </div>
             </template>
 
@@ -303,7 +315,7 @@ const field = 'mt-1 block w-full';
         <template #footer>
             <Button variant="secondary" @click="close" icon="close">Cancel</Button>
             <Button type="submit" form="plantilla-action-form" :variant="mode === 'abolish' ? 'danger' : 'primary'" :loading="form.processing">
-                {{ { appoint: 'Appoint', step: 'Record increment', vacate: 'Vacate', correct: 'Save', abolish: 'Abolish' }[mode] ?? 'Save' }}
+                {{ { appoint: 'Appoint', past: 'Record period', step: 'Record increment', vacate: 'Vacate', correct: 'Save', abolish: 'Abolish' }[mode] ?? 'Save' }}
             </Button>
         </template>
     </Modal>

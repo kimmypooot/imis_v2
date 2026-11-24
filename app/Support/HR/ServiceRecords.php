@@ -205,7 +205,7 @@ class ServiceRecords
     }
 
     /** What the dates run into, if anything ("the period as …"). */
-    private function overlapping(Employee $employee, Carbon $from, Carbon $to, ?ServiceRecordEntry $ignore): ?string
+    public function overlapping(Employee $employee, Carbon $from, Carbon $to, ?ServiceRecordEntry $ignore): ?string
     {
         $period = $employee->plantillaAppointments()->with('item')->whereNotNull('date_from')
             ->whereDate('date_from', '<=', $to)

@@ -64,7 +64,8 @@ class PlantillaItem extends Model
      */
     public function incumbency(): HasOne
     {
-        return $this->hasOne(PlantillaAppointment::class)->whereNull('date_to')->latestOfMany();
+        return $this->hasOne(PlantillaAppointment::class)
+            ->ofMany(['id' => 'max'], fn ($query) => $query->whereNull('date_to'));
     }
 
     /** Selections the Recruitment Portal has reported for this item. */

@@ -202,6 +202,65 @@ class PlantillaTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event' => 'plantilla_appointment.vacated']);
     }
 
+    public function test_a_past_period_is_backfilled_on_a_filled_item_without_touching_the_current_one(): void
+    {
+        $hr = $this->hr();
+        $this->schedule();
+        $item = $this->item();
+        $employee = $this->employee();
+        $earlier = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$item->id}/appointments", $this->appointment($employee, ['date_from' => '2024-01-02']));
+        $current = PlantillaAppointment::query()->sole();
+        $employee->user->forceFill(['position' => 'Unchanged Title'])->save();
+        $past = ['employee_id' => $earlier->id, 'step' => 3, 'status' => 'permanent', 'nature' => 'original', 'date_from' => '2018-03-01', 'date_to' => '2023-12-31', 'end_reason' => 'Promotion'];
+
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$item->id}/appointments/past", $past)->assertSessionHasNoErrors();
+
+        $period = PlantillaAppointment::query()->where('employee_id', $earlier->id)->sole();
+        $this->assertSame('2023-12-31', $period->date_to->toDateString());
+        $this->assertTrue($current->fresh()->isOpen());
+        $this->assertSame($employee->id, $item->fresh()->incumbency->employee_id);
+        $this->assertSame('Unchanged Title', $employee->user->fresh()->position);
+        $this->assertNull($earlier->user->fresh()->position);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'plantilla_appointment.past_recorded', 'target_id' => $period->id]);
+    }
+
+    public function test_a_past_period_may_not_overlap_the_item_holder_the_persons_service_or_reach_today(): void
+    {
+        $hr = $this->hr();
+        $item = $this->item();
+        $employee = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$item->id}/appointments", $this->appointment($employee, ['date_from' => '2024-01-02']));
+        $url = "/admin/hr/plantilla/{$item->id}/appointments/past";
+        $past = ['employee_id' => $this->employee()->id, 'step' => 1, 'status' => 'permanent', 'nature' => 'original', 'date_from' => '2020-01-01', 'date_to' => '2020-12-31', 'end_reason' => 'Promotion'];
+
+        // Someone held the item then.
+        $this->actingAs($hr)->post($url, [...$past, 'date_to' => '2024-03-01'])->assertSessionHasErrors('date_from');
+        // It has to be over already.
+        $this->actingAs($hr)->post($url, [...$past, 'date_to' => '2026-06-15'])->assertSessionHasErrors('date_to');
+        $this->actingAs($hr)->post($url, [...$past, 'date_to' => '2019-12-31'])->assertSessionHasErrors('date_to');
+        $this->actingAs($hr)->post($url, [...$past, 'end_reason' => null])->assertSessionHasErrors('end_reason');
+
+        // The person's other period (on another item) runs into it.
+        $other = $this->item(['item_number' => 'CSCB-AO2-1']);
+        $mine = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$other->id}/appointments", $this->appointment($mine, ['date_from' => '2020-06-01']));
+        $this->actingAs($hr)->post($url, [...$past, 'employee_id' => $mine->id])->assertSessionHasErrors('date_from');
+
+        $this->assertSame(1, PlantillaAppointment::query()->where('plantilla_item_id', $item->id)->count());
+    }
+
+    public function test_a_past_period_is_never_recorded_for_yourself_or_without_manage(): void
+    {
+        $hr = $this->hr();
+        $own = Employee::factory()->for($hr)->create();
+        $item = $this->item();
+        $past = ['employee_id' => $own->id, 'step' => 1, 'status' => 'permanent', 'nature' => 'original', 'date_from' => '2020-01-01', 'date_to' => '2020-12-31', 'end_reason' => 'Promotion'];
+
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$item->id}/appointments/past", $past)->assertForbidden();
+        $this->actingAs($this->userWith(['plantilla.view']))->post("/admin/hr/plantilla/{$item->id}/appointments/past", [...$past, 'employee_id' => $this->employee()->id])->assertForbidden();
+    }
+
     public function test_only_a_vacant_item_can_be_abolished_and_it_can_be_restored(): void
     {
         $hr = $this->hr();

@@ -39,6 +39,24 @@ class PlantillaAppointmentController extends Controller
             .($ended ? " Their period on {$ended->item->reference} ended the day before." : ''));
     }
 
+    public function storePast(Request $request, PlantillaItem $item, Plantilla $plantilla): RedirectResponse
+    {
+        $data = $request->validate($plantilla->pastPeriodRules(), [], $this->attributes());
+        $employee = Employee::query()->with('user')->findOrFail($data['employee_id']);
+        $this->authorize('appoint', [PlantillaItem::class, $employee]);
+
+        $appointment = $plantilla->recordPast($item, $employee, $data, $request->user());
+
+        $this->audit()->record(AuditEvent::PlantillaPastRecorded, "Recorded a past period of {$employee->user->name} on {$item->label}", $appointment, [
+            'date_from' => $appointment->date_from->toDateString(),
+            'date_to' => $appointment->date_to->toDateString(),
+            'nature' => $appointment->nature->value,
+            'step' => $appointment->step,
+        ]);
+
+        return back()->with('status', "A past period of {$employee->user->name} on {$item->reference} was recorded.");
+    }
+
     public function stepIncrement(Request $request, PlantillaItem $item, PlantillaAppointment $appointment, Plantilla $plantilla): RedirectResponse
     {
         $this->authorize('appoint', [PlantillaItem::class, $appointment->employee]);

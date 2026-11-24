@@ -90,6 +90,7 @@ enum AuditEvent: string
     case PlantillaItemAbolished = 'plantilla_item.abolished';
     case PlantillaItemRestored = 'plantilla_item.restored';
     case PlantillaAppointed = 'plantilla_appointment.appointed';
+    case PlantillaPastRecorded = 'plantilla_appointment.past_recorded';
     case PlantillaStepIncrement = 'plantilla_appointment.step_increment';
     case PlantillaVacated = 'plantilla_appointment.vacated';
     case PlantillaAppointmentCorrected = 'plantilla_appointment.corrected';
