@@ -27,7 +27,12 @@ class OrganizationalUnitController extends Controller
 
         $user = $request->user();
 
-        $organizationalUnit->load('parent:id,name');
+        $organizationalUnit->load('parent:id,name,plantilla_only');
+
+        // An office that exists only for plantilla items isn't shown as a parent.
+        if ($organizationalUnit->parent?->plantilla_only) {
+            $organizationalUnit->setRelation('parent', null);
+        }
 
         $children = $organizationalUnit->children()->active()->orderBy('sort_order')->orderBy('name')->get();
         $applications = $organizationalUnit->applications()->visibleTo($user)->withAccessFor($user)->orderBy('sort_order')->get();

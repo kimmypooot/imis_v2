@@ -19,7 +19,7 @@ class JportalController extends Controller
     public function directory(UnitLeadership $leadership): JsonResponse
     {
         $units = OrganizationalUnit::query()
-            ->active()
+            ->active()->workingOffices()
             ->whereIn('unit_type', [
                 UnitType::RegionalSupportUnit->value,
                 UnitType::FieldOffice->value,

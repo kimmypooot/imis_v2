@@ -43,9 +43,9 @@ use RuntimeException;
 class PlantillaOfPersonnel
 {
     /**
-     * Office headings on the sheet => office short name. Checked in order
+     * Office headings on the sheet => office code (the label shown in IMIS may differ). Checked in order
      * against the heading text; null leaves the place of assignment as is
-     * (HR hasn't decided which Leyte office "FO No. 6 Leyte" is).
+     * ("FO No. 6 Leyte" is the parent office over Leyte I and II).
      */
     private const OFFICES = [
         'OFFICE OF THE DIRECTOR' => 'ORD',
@@ -60,7 +60,7 @@ class PlantillaOfPersonnel
         'SOUTHERN LEYTE' => 'SLFO',
         'NORTHERN SAMAR' => 'NSFO',
         'EASTERN SAMAR' => 'ESFO',
-        'FO NO. 6 LEYTE' => null,
+        'FO NO. 6 LEYTE' => 'LFO',
     ];
 
     /** The sheet's status codes. */
@@ -515,7 +515,7 @@ class PlantillaOfPersonnel
                 if ($shortName === null) {
                     return [null, "Place of assignment left as is (\"{$section}\" isn't mapped to an IMIS office)."];
                 }
-                $office = $offices->first(fn (OrganizationalUnit $unit) => $unit->short_name === $shortName);
+                $office = $offices->first(fn (OrganizationalUnit $unit) => $unit->code === $shortName || $unit->short_name === $shortName);
 
                 return $office ? [$office->id, null] : [null, "No IMIS office {$shortName}; place of assignment left as is."];
             }

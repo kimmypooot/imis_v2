@@ -31,6 +31,7 @@ class DashboardLayoutController extends Controller
         $this->authorize('update', new Application);
 
         $units = OrganizationalUnit::query()
+            ->workingOffices()
             ->with('listedApplications:id')
             ->withCount('applications')
             ->orderBy('sort_order')

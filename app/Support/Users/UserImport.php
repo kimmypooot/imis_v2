@@ -162,7 +162,7 @@ class UserImport
      */
     private function checked(array $rows): array
     {
-        $offices = OrganizationalUnit::query()->active()->get(['id', 'code', 'short_name', 'name']);
+        $offices = OrganizationalUnit::query()->active()->workingOffices()->get(['id', 'code', 'short_name', 'name']);
         $roles = Role::query()->active()->where('name', '!=', RoleName::SuperAdmin->value)->get(['id', 'name', 'display_name']);
         $emails = collect($rows)->countBy(fn ($row) => Str::lower($row['email']));
         $usernames = collect($rows)->filter(fn ($row) => $row['username'] !== '')->countBy(fn ($row) => Usernames::normalize($row['username']));

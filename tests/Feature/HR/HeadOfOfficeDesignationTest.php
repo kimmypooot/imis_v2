@@ -73,6 +73,40 @@ class HeadOfOfficeDesignationTest extends TestCase
         $this->actingAs($this->director)->get("/admin/hr/employees/{$leyteStaff->id}")->assertOk();
     }
 
+    public function test_the_head_of_a_parent_office_sees_the_offices_under_it(): void
+    {
+        $first = OrganizationalUnit::factory()->create(['parent_id' => $this->leyte->id]);
+        $second = OrganizationalUnit::factory()->create(['parent_id' => $this->leyte->id]);
+        $firstStaff = $this->staffOf($first);
+        $secondStaff = $this->staffOf($second);
+        $samarStaff = $this->staffOf($this->samar);
+
+        $this->actingAs($this->director)->get("/admin/hr/employees/{$firstStaff->id}")->assertOk();
+        $this->actingAs($this->director)->get("/admin/hr/employees/{$secondStaff->id}")->assertOk();
+        $this->actingAs($this->director)->get("/admin/hr/employees/{$samarStaff->id}")->assertForbidden();
+
+        // Staff of a child office don't see their sibling.
+        $member = $this->userWith(['employees.view_unit'], ['organizational_unit_id' => $first->id]);
+        Employee::factory()->for($member)->create();
+        $this->actingAs($member)->get("/admin/hr/employees/{$secondStaff->id}")->assertForbidden();
+    }
+
+    public function test_head_of_the_same_place_of_assignment_heads_the_office_without_being_concurrent(): void
+    {
+        $samarStaff = $this->staffOf($this->samar);
+
+        $this->designate(['head_capacity' => 'head']);
+
+        $entry = EmployeeAssignment::query()->sole();
+        $this->assertTrue($entry->as_head);
+        $this->assertSame('Head', $entry->capacity()->shortLabel());
+        $this->actingAs($this->director)->get("/admin/hr/employees/{$samarStaff->id}")->assertOk();
+
+        $office = $this->directorRecord->fresh()->concurrentOffices()[0];
+        $this->assertSame('Head', $office['capacity']);
+        $this->assertFalse($office['concurrent']);
+    }
+
     public function test_a_plain_designation_or_one_without_the_supervisor_role_opens_nothing(): void
     {
         $samarStaff = $this->staffOf($this->samar);
@@ -225,13 +259,13 @@ class HeadOfOfficeDesignationTest extends TestCase
 
         $this->actingAs($hr)->get("/admin/hr/employees/{$this->directorRecord->id}")->assertInertia(fn (Assert $page) => $page
             ->where('employee.user.unit', 'LFO')
-            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'OIC']]));
+            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'OIC', 'concurrent' => true]]));
         $this->actingAs($hr)->get('/admin/hr/employees')->assertInertia(fn (Assert $page) => $page
-            ->where('employees', fn ($employees) => collect($employees)->firstWhere('id', $this->directorRecord->id)['user']['concurrent_units'] === [['office' => 'SFO', 'capacity' => 'OIC']]));
+            ->where('employees', fn ($employees) => collect($employees)->firstWhere('id', $this->directorRecord->id)['user']['concurrent_units'] === [['office' => 'SFO', 'capacity' => 'OIC', 'concurrent' => true]]));
         $this->actingAs($this->director)->get('/my/employee-record')->assertInertia(fn (Assert $page) => $page
-            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'OIC']]));
+            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'OIC', 'concurrent' => true]]));
         $this->actingAs($this->userWith(['users.view']))->get('/users')->assertInertia(fn (Assert $page) => $page
-            ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->director->id)['concurrent_offices'] === [['office' => 'SFO', 'capacity' => 'OIC']]));
+            ->where('users', fn ($users) => collect($users)->firstWhere('id', $this->director->id)['concurrent_offices'] === [['office' => 'SFO', 'capacity' => 'OIC', 'concurrent' => true]]));
 
         // Not once it has ended.
         $this->travelTo('2027-01-01 09:00:00');
@@ -254,10 +288,10 @@ class HeadOfOfficeDesignationTest extends TestCase
 
         $hr = $this->hr();
         $this->actingAs($hr)->get("/admin/hr/employees/{$this->directorRecord->id}")->assertInertia(fn (Assert $page) => $page
-            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'Caretaker']])
+            ->where('employee.user.concurrent_units', [['office' => 'SFO', 'capacity' => 'Caretaker', 'concurrent' => true]])
             ->where('assignments.entries.0.head_capacity', 'caretaker')
             ->where('assignments.entries.0.head_capacity_label', 'Caretaker')
-            ->has('assignmentForm.capacityOptions', 2));
+            ->has('assignmentForm.capacityOptions', 3));
         $this->actingAs($this->userWith(['plantilla.view']))->get('/admin/hr/staffing')->assertInertia(fn (Assert $page) => $page
             ->where('designations.0.capacity', 'Caretaker')
             ->where('offices', fn ($offices) => collect($offices)->firstWhere('short_name', 'SFO')['headed_by'] === ['Dir. Reyes (Caretaker)']));

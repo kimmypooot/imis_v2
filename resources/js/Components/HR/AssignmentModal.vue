@@ -45,11 +45,11 @@ const blank = {
 const form = useForm({ ...blank });
 const editing = computed(() => props.entry !== null);
 const hasEndDate = computed(() => ['detail', 'designation'].includes(form.kind));
-// Heading the office = a capacity is chosen (Officer-in-Charge or Caretaker).
+// Heading the office = a capacity is chosen (Officer-in-Charge, Caretaker or Head).
 const asHead = computed(() => form.kind === 'designation' && !!form.head_capacity);
 const capacityChoices = computed(() => [
     { value: '', label: 'Serves in the office (not its head)' },
-    ...props.capacityOptions.map((option) => ({ value: option.value, label: `${option.label} (heads the office)` })),
+    ...props.capacityOptions.map((option) => ({ value: option.value, label: option.label })),
 ]);
 const handedAt = computed(() => props.entry?.supervision_handed_at ?? null);
 const restoredAt = computed(() => props.entry?.supervision_restored_at ?? null);
@@ -130,7 +130,7 @@ const field = 'mt-1 block w-full';
                     :invalid="!!form.errors.head_capacity"
                 />
                 <p id="assignment-capacity-hint" class="text-xs text-text-muted">
-                    Officer-in-Charge or Caretaker of the office, as the order says. Either one heads it in a concurrent capacity.
+                    As the order says. Officer-in-Charge and Caretaker head a second office in a concurrent capacity; Head is for an office that is part of the person's one place of assignment (e.g. Leyte I and II).
                 </p>
                 <InputError :message="form.errors.head_capacity" />
                 <template v-if="asHead">

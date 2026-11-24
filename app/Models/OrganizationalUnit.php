@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 
 #[Fillable([
     'parent_id', 'code', 'name', 'short_name', 'slug', 'description', 'unit_type',
-    'status', 'sort_order', 'email', 'telephone', 'address', 'website_url',
+    'status', 'plantilla_only', 'sort_order', 'email', 'telephone', 'address', 'website_url',
 ])]
 class OrganizationalUnit extends Model
 {
@@ -32,12 +32,24 @@ class OrganizationalUnit extends Model
         return [
             'status' => Status::class,
             'unit_type' => UnitType::class,
+            'plantilla_only' => 'boolean',
         ];
     }
 
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', Status::Active);
+    }
+
+    /**
+     * Offices people work in and pick from: leaves out the ones that exist
+     * only as a plantilla place of assignment.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWorkingOffices(Builder $query): Builder
+    {
+        return $query->where('plantilla_only', false);
     }
 
     public function scopeRoots(Builder $query): Builder

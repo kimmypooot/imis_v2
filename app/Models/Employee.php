@@ -88,6 +88,7 @@ class Employee extends Model
             ->map(fn (EmployeeAssignment $designation) => [
                 'office' => $designation->toUnit->short_name ?: $designation->toUnit->name,
                 'capacity' => $designation->capacity()->shortLabel(),
+                'concurrent' => $designation->capacity()->isConcurrent(),
             ])
             ->unique('office')->values()->all();
     }
@@ -259,19 +260,51 @@ class Employee extends Model
 
     /**
      * The offices whose staff a supervisor (`employees.view_unit`) sees:
-     * their own, plus any they head today by designation in a concurrent
-     * capacity (EmployeeAssignment::officesHeadedBy) — that one closes
-     * by itself when the designation ends.
+     * their own and the offices under it (the head of a parent office such
+     * as the Leyte field office), plus any they head today by designation
+     * in a concurrent capacity (EmployeeAssignment::officesHeadedBy) — that
+     * one closes by itself when the designation ends.
      *
      * @return array<int, int>
      */
+    /**
+     * Every office under a unit in the hierarchy, from one query.
+     *
+     * @return array<int, int>
+     */
+    private static function officesBelow(int $unitId): array
+    {
+        $byParent = OrganizationalUnit::query()->whereNotNull('parent_id')->get(['id', 'parent_id'])->groupBy('parent_id');
+        $found = [];
+        $queue = [$unitId];
+
+        while ($queue !== []) {
+            foreach ($byParent->get(array_shift($queue), []) as $child) {
+                if (! in_array($child->id, $found, true)) {
+                    $found[] = $child->id;
+                    $queue[] = $child->id;
+                }
+            }
+        }
+
+        return $found;
+    }
+
     public static function officesSupervisedBy(User $viewer): array
     {
         if (! $viewer->hasPermission(PermissionName::EmployeesViewUnit->value)) {
             return [];
         }
 
-        return collect([$viewer->organizational_unit_id, ...EmployeeAssignment::officesHeadedBy($viewer)])
+        $below = $viewer->organizational_unit_id ? self::officesBelow((int) $viewer->organizational_unit_id) : [];
+
+        // Holding the item of an office that groups others (the Leyte field
+        // office) means heading the offices under it.
+        $grouped = PlantillaItem::query()
+            ->whereHas('incumbency', fn (Builder $query) => $query->whereHas('employee', fn (Builder $employee) => $employee->where('user_id', $viewer->id)))
+            ->pluck('organizational_unit_id')->filter()->flatMap(fn ($unitId) => self::officesBelow((int) $unitId))->all();
+
+        return collect([$viewer->organizational_unit_id, ...$below, ...$grouped, ...EmployeeAssignment::officesHeadedBy($viewer)])
             ->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
     }
 }

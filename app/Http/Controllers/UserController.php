@@ -416,7 +416,7 @@ class UserController extends Controller
      */
     private function officeOptions(): array
     {
-        $units = OrganizationalUnit::query()->active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'short_name', 'unit_type']);
+        $units = OrganizationalUnit::query()->active()->workingOffices()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'short_name', 'unit_type']);
 
         return collect(UnitType::cases())
             ->map(fn (UnitType $type) => [

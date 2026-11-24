@@ -211,7 +211,7 @@ class ApplicationController extends Controller
                 fn (Visibility $case) => ['value' => $case->value, 'label' => ucfirst($case->value)],
                 Visibility::cases(),
             ),
-            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get(['id', 'name']),
+            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get(['id', 'name']),
         ];
     }
 }

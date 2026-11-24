@@ -97,7 +97,7 @@ class ServiceController extends Controller
                 Visibility::cases(),
             ),
             'categoryOptions' => ServiceCategory::query()->active()->ordered()->get(['id', 'name']),
-            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get(['id', 'name']),
+            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get(['id', 'name']),
         ];
     }
 }

@@ -164,7 +164,7 @@ class PortalSearch
             SearchType::Services => Service::query()->visibleTo($this->user)
                 ->when(! Settings::get('portal_services_enabled'), fn ($query) => $query->whereRaw('1 = 0')),
             SearchType::Applications => Application::query()->visibleTo($this->user),
-            SearchType::OrganizationalUnits => OrganizationalUnit::query()->active(),
+            SearchType::OrganizationalUnits => OrganizationalUnit::query()->active()->workingOffices(),
             SearchType::Announcements => Announcement::query()->published(),
         };
 

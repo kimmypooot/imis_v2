@@ -153,7 +153,7 @@ const vacancyColumns = [
             id="headed-by-designation"
             title="Offices headed by designation"
             icon="users"
-            description="Headed in a concurrent capacity by someone who stays in, and holds an item in, their own office. They aren't counted as serving here."
+            description="Headed by designation by someone who stays in, and holds an item in, their own office (or shares it as one place of assignment). They aren't counted as serving here."
         >
             <DataTable
                 :columns="designationColumns"

@@ -27,8 +27,10 @@ const date = (value) => (value ? formatCalendarDate(value) : '—');
                     <p class="truncate text-sm text-text-muted">{{ show(employee.user.position) }}</p>
                     <p v-if="employee.user.unit" class="truncate text-sm text-text-muted">{{ employee.user.unit }}</p>
                     <p v-if="employee.user.concurrent_units?.length" class="text-sm text-text-muted">
-                        {{ employee.user.concurrent_units.map((unit) => `${unit.capacity} of ${unit.office}`).join(', ') }}
-                        <span class="ml-1 rounded-full bg-info-bg px-2 py-0.5 text-xs text-link">concurrent</span>
+                        <template v-for="(unit, index) in employee.user.concurrent_units" :key="unit.office">
+                            <template v-if="index > 0">, </template>{{ unit.capacity }} of {{ unit.office }}
+                            <span v-if="unit.concurrent" class="ml-1 rounded-full bg-info-bg px-2 py-0.5 text-xs text-link">concurrent</span>
+                        </template>
                     </p>
                 </div>
             </div>

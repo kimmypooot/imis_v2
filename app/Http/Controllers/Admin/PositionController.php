@@ -37,7 +37,7 @@ class PositionController extends Controller
                 'levelOptions' => PositionLevel::options(),
                 'gradeOptions' => array_map(fn (int $grade) => ['value' => $grade, 'label' => "SG {$grade}"], range(1, SalarySchedules::GRADES)),
                 // For "Add item" on a position (saved through the plantilla).
-                'officeOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get()
+                'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get()
                     ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
             ] : null,
         ]);

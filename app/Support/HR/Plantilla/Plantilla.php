@@ -6,6 +6,7 @@ use App\Enums\AppointmentNature;
 use App\Enums\EmploymentStatus;
 use App\Enums\PositionLevel;
 use App\Models\Employee;
+use App\Models\OrganizationalUnit;
 use App\Models\PlantillaAppointment;
 use App\Models\PlantillaItem;
 use App\Models\User;
@@ -502,14 +503,15 @@ class Plantilla
     /**
      * A new appointment (a promotion, or a link to an item) moves the
      * account to the item's place of assignment, when the item has one.
-     * Step increments and corrections don't, so an office set by a
-     * reassignment order stays.
+     * Not when the item's office is plantilla-only (the Leyte field office):
+     * they stay in the office they work in. Step increments and corrections
+     * don't either, so an office set by a reassignment order stays.
      */
     private function followItemOffice(PlantillaAppointment $appointment): void
     {
         $unitId = $appointment->item()->value('organizational_unit_id');
 
-        if ($unitId === null) {
+        if ($unitId === null || OrganizationalUnit::query()->whereKey($unitId)->where('plantilla_only', true)->exists()) {
             return;
         }
 

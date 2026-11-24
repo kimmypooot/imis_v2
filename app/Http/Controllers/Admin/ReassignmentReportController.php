@@ -74,7 +74,7 @@ class ReassignmentReportController extends Controller
             'stations' => $stations,
             'movements' => $movements,
             'kindOptions' => AssignmentKind::options(),
-            'officeOptions' => OrganizationalUnit::query()->orderBy('name')->get()
+            'officeOptions' => OrganizationalUnit::query()->workingOffices()->orderBy('name')->get()
                 ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
         ]);
     }

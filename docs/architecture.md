@@ -2909,6 +2909,25 @@ item from the staffing plan.
   whether staff were handed over or given back. Flash messages and audit
   metadata (`supervision`) say how many staff were handed over or given
   back.
+- **Head (same place of assignment)** (`HeadCapacity::SamePlace`, value
+  `head`): for a head whose second office is part of their one place of
+  assignment, as top management treats Leyte I and II. It heads the office
+  like OIC and Caretaker (access, handover, Staffing, payroll and DTR
+  heads) but isn't concurrent: `isConcurrent()` is false, so there's no
+  "concurrent" badge and the directory says "Head".
+- **Plantilla-only offices** (`organizational_units.plantilla_only`, scope
+  `workingOffices()`): the CSC Field Office - Leyte (`LFO`) exists only as
+  a plantilla place of assignment, with Leyte I and II (`LFO-I`, `LFO-II`)
+  as its children. It is left out of every working-office picker and list
+  (users, employees, reports, services, the portal directory, JPortal's
+  feed) but not the plantilla item form, Staffing or the admin Organizational
+  Units screen. Appointing to its item doesn't move the account
+  (`followItemOffice`). Whoever holds an item of an office with children
+  supervises those offices (`Employee::officesSupervisedBy()`), as does the
+  head of a parent office.
+- **Office labels:** `short_name` is the label IMIS shows (FO-Leyte I,
+  SO-WL, ...); `code` is the key connected systems match on and doesn't
+  change with it.
 - **Tests:** `tests/Feature/HR/HeadOfOfficeDesignationTest.php`.
 
 ### Data

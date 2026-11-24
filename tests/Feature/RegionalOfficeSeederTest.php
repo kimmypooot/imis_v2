@@ -12,12 +12,13 @@ class RegionalOfficeSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_seeds_the_fifteen_regional_offices_by_type(): void
+    public function test_seeds_the_regional_offices_by_type(): void
     {
         $this->seed(RegionalOfficeSeeder::class);
 
         $this->assertSame(7, OrganizationalUnit::where('unit_type', UnitType::RegionalSupportUnit)->count());
-        $this->assertSame(7, OrganizationalUnit::where('unit_type', UnitType::FieldOffice)->count());
+        $this->assertSame(8, OrganizationalUnit::where('unit_type', UnitType::FieldOffice)->count());
+        $this->assertSame(2, OrganizationalUnit::whereNotNull('parent_id')->count());
         $this->assertSame(1, OrganizationalUnit::where('unit_type', UnitType::SatelliteOffice)->count());
         $this->assertDatabaseHas('organizational_units', ['code' => 'ESD', 'name' => 'Examination Services Division']);
     }
@@ -29,7 +30,7 @@ class RegionalOfficeSeederTest extends TestCase
 
         $this->seed(RegionalOfficeSeeder::class);
 
-        $this->assertSame(15, OrganizationalUnit::count());
+        $this->assertSame(16, OrganizationalUnit::count());
         $this->assertSame('Edited by an admin', OrganizationalUnit::where('code', 'ESD')->value('description'));
     }
 }

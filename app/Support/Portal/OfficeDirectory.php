@@ -53,7 +53,8 @@ class OfficeDirectory
     {
         $units = OrganizationalUnit::query()
             ->active()
-            ->roots()
+            ->workingOffices()
+            ->where(fn ($query) => $query->whereNull('parent_id')->orWhereHas('parent', fn ($parent) => $parent->where('plantilla_only', true)))
             ->withCount('children')
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -128,7 +129,7 @@ class OfficeDirectory
 
             if ($leader['user']->id === $headId) {
                 $roles[$leader['user']->id] = $leader['user']->organizational_unit_id !== $unit->id
-                    ? 'Concurrent'
+                    ? ($leader['capacity']?->isConcurrent() === false ? 'Head' : 'Concurrent')
                     : ($leader['capacity']?->shortLabel() ?? 'Head');
             }
         }
@@ -183,10 +184,11 @@ class OfficeDirectory
     private function vacancies(): array
     {
         $parents = OrganizationalUnit::query()->pluck('parent_id', 'id');
-        $root = function (?int $id) use ($parents): ?int {
+        $hidden = OrganizationalUnit::query()->where('plantilla_only', true)->pluck('id')->flip();
+        $root = function (?int $id) use ($parents, $hidden): ?int {
             for ($i = 0; $id !== null && $i < 20; $i++) {
                 $parent = $parents[$id] ?? null;
-                if ($parent === null) {
+                if ($parent === null || $hidden->has($parent)) {
                     return $id;
                 }
                 $id = $parent;

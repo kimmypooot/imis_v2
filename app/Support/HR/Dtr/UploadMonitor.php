@@ -33,7 +33,7 @@ class UploadMonitor
             ->selectRaw('biometric_id, max(punched_at) as last_at')
             ->pluck('last_at', 'biometric_id');
 
-        $units = OrganizationalUnit::query()->active()->get(['id', 'unit_type', 'name', 'short_name'])->keyBy('id');
+        $units = OrganizationalUnit::query()->active()->workingOffices()->get(['id', 'unit_type', 'name', 'short_name'])->keyBy('id');
 
         $groups = [self::REGIONAL => ['office' => 'Regional Office', 'sort' => '', 'employees' => 0, 'with_id' => 0, 'with_punches' => 0, 'last' => null, 'people' => []]];
         foreach ($units as $unit) {

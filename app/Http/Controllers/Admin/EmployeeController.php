@@ -115,7 +115,7 @@ class EmployeeController extends Controller
             'assignmentForm' => $canReassign ? [
                 'kindOptions' => AssignmentKind::options(),
                 'capacityOptions' => HeadCapacity::options(),
-                'officeOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get()
+                'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get()
                     ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
                 'scanKilobytes' => EmployeeDocuments::MAX_KILOBYTES,
             ] : null,
