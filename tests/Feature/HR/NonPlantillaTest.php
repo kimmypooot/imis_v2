@@ -115,6 +115,27 @@ class NonPlantillaTest extends TestCase
         $this->assertSame('Systems Analyst', $worker->user->fresh()->position);
     }
 
+    public function test_the_sync_command_catches_up_everyone_with_a_contract(): void
+    {
+        $behind = $this->staff('', null);
+        $current = $this->staff('Systems Analyst', EmploymentStatus::ContractOfService);
+        $noContract = $this->staff('Driver', null);
+
+        // Written straight to the table, as before the position followed the contract.
+        $contract = $behind->nonPlantillaContracts()->make(['employment_status' => EmploymentStatus::JobOrder, 'designation' => 'Records Aide', 'date_from' => '2026-01-01', 'date_to' => '2026-12-31']);
+        $contract->save();
+        $this->contract($current, '2026-01-01', '2026-12-31');
+
+        $this->artisan('imis:sync-contract-positions', ['--dry-run' => true])->expectsOutputToContain('Would update 1 employee(s).')->assertSuccessful();
+        $this->assertSame('', (string) $behind->user->fresh()->position);
+
+        $this->artisan('imis:sync-contract-positions')->expectsOutputToContain('Updated 1 employee(s).')->assertSuccessful();
+        $this->assertSame('Records Aide', $behind->user->fresh()->position);
+        $this->assertSame(EmploymentStatus::JobOrder, $behind->fresh()->employment_status);
+        $this->assertSame('Systems Analyst', $current->user->fresh()->position);
+        $this->assertSame('Driver', $noContract->user->fresh()->position);
+    }
+
     public function test_guards(): void
     {
         $hr = $this->userWith(['plantilla.manage']);

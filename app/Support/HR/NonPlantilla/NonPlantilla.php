@@ -226,8 +226,7 @@ class NonPlantilla
      */
     private function syncStatus(Employee $employee): void
     {
-        $contracts = $employee->nonPlantillaContracts()->orderByDesc('date_from')->get();
-        $contract = $contracts->first(fn (NonPlantillaContract $contract) => $contract->isCurrentOn(today())) ?? $contracts->first();
+        $contract = $this->governingContract($employee);
 
         if (! $contract) {
             return;
@@ -243,5 +242,42 @@ class NonPlantilla
         if ($designation !== '' && $user->position !== $designation) {
             $user->forceFill(['position' => $designation])->save();
         }
+    }
+
+    /** The contract running today, else the latest one. */
+    private function governingContract(Employee $employee): ?NonPlantillaContract
+    {
+        $contracts = $employee->nonPlantillaContracts()->orderByDesc('date_from')->get();
+
+        return $contracts->first(fn (NonPlantillaContract $contract) => $contract->isCurrentOn(today())) ?? $contracts->first();
+    }
+
+    /**
+     * Brings every employee with a contract in step with it (status and
+     * account position), as saving one of their contracts does. With
+     * `$dryRun` nothing is saved.
+     *
+     * @return Collection<int, array{employee: string, position: array{0: ?string, 1: string}|null, status: array{0: ?string, 1: string}|null}>
+     */
+    public function syncAll(bool $dryRun = false): Collection
+    {
+        return Employee::query()->whereHas('nonPlantillaContracts')->with('user')->get()
+            ->map(function (Employee $employee) use ($dryRun) {
+                $contract = $this->governingContract($employee);
+                $designation = trim((string) $contract?->designation);
+
+                $position = $designation !== '' && $employee->user->position !== $designation ? [$employee->user->position, $designation] : null;
+                $status = $contract && $employee->employment_status !== $contract->employment_status
+                    ? [$employee->employment_status?->label(), $contract->employment_status->label()]
+                    : null;
+
+                if (($position || $status) && ! $dryRun) {
+                    $this->syncStatus($employee);
+                }
+
+                return ['employee' => $employee->user->name, 'position' => $position, 'status' => $status];
+            })
+            ->filter(fn (array $change) => $change['position'] || $change['status'])
+            ->values();
     }
 }
