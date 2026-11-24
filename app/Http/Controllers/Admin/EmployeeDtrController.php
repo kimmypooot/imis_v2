@@ -42,12 +42,14 @@ class EmployeeDtrController extends Controller
     {
         $this->authorize('viewDtr', $employee);
         $range = $request->validate(DtrSheets::rangeRules($request->query('from')));
-        $this->trail($request, $employee, AuditEvent::DtrPrinted, 'Printed', ['from' => $range['from'], 'to' => $range['to']]);
+        $layout = $request->query('layout') === 'double' ? 'double' : 'single';
+        $this->trail($request, $employee, AuditEvent::DtrPrinted, 'Printed', ['from' => $range['from'], 'to' => $range['to'], 'layout' => $layout]);
 
         return Inertia::render('HR/DtrPrint', [
             ...$sheets->header($employee),
             'sheet' => $sheets->forRange($employee, Carbon::parse($range['from']), Carbon::parse($range['to'])),
             'generated_at' => now()->format('Y-m-d H:i'),
+            'layout' => $layout,
         ]);
     }
 

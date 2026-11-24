@@ -220,15 +220,30 @@ class TardinessDeductionsTest extends TestCase
         $this->assertNotNull($this->chargeOctober());
     }
 
-    public function test_someone_whose_leave_card_comes_from_the_hr_workbook_is_flagged_and_not_charged_here(): void
+    public function test_a_month_the_hr_workbook_already_covers_is_flagged_and_not_charged_here(): void
     {
-        LeaveCardMonth::factory()->create(['employee_id' => $this->employee->id]);
+        LeaveCardMonth::factory()->create(['employee_id' => $this->employee->id, 'year' => 2026, 'month' => 10]);
 
         $row = collect((new TardinessDeductions)->forMonth(Carbon::parse('2026-10-01')))->firstWhere('employee_id', $this->employee->id);
         $this->assertTrue($row['card_managed']);
+        $this->assertFalse($row['card_pending']);
 
         $this->expectException(ValidationException::class);
         $this->chargeOctober();
+    }
+
+    public function test_a_month_after_the_workbooks_last_month_is_charged_here_as_pending(): void
+    {
+        LeaveCardMonth::factory()->create(['employee_id' => $this->employee->id, 'year' => 2026, 'month' => 7]);
+
+        $row = collect((new TardinessDeductions)->forMonth(Carbon::parse('2026-10-01')))->firstWhere('employee_id', $this->employee->id);
+        $this->assertFalse($row['card_managed']);
+        $this->assertTrue($row['card_pending']);
+
+        $deduction = $this->chargeOctober();
+
+        $this->assertNotNull($deduction->entry);
+        $this->assertStringContainsString('pending the leave card file', $deduction->entry->particulars);
     }
 
     public function test_a_tardiness_charge_cannot_be_corrected_from_the_leave_card(): void

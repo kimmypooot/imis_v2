@@ -55,10 +55,16 @@ class EmployeeResource extends JsonResource
                 // Offices they also head by designation (concurrent capacity).
                 'concurrent_units' => $this->resource->concurrentOffices(),
             ],
+            // The parts of the name HR may correct (only for those who can).
+            'personal' => $request->user()?->can('updatePersonal', $this->resource)
+                ? $user->only(['honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex'])
+                    + ['birthday' => $user->birthday?->toDateString()]
+                : null,
             // What this viewer may do — resolved here so the page never
             // guesses (the routes and policy still enforce it).
             'can' => [
                 'update' => $request->user()?->can('update', $this->resource) ?? false,
+                'updatePersonal' => $request->user()?->can('updatePersonal', $this->resource) ?? false,
                 'viewPds' => $request->user()?->can('viewPds', $this->resource) ?? false,
                 'viewDocuments' => $request->user()?->can('viewDocuments', $this->resource) ?? false,
                 'viewLd' => $request->user()?->can('viewLd', $this->resource) ?? false,

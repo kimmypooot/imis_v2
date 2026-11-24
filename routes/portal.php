@@ -6,6 +6,7 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
+use App\Http\Controllers\DtrEntryVerificationController;
 use App\Http\Controllers\DtrSignatureController;
 use App\Http\Controllers\EmployeeDocumentFileController;
 use App\Http\Controllers\ExecutiveDashboardController;
@@ -182,11 +183,14 @@ Route::middleware('auth')->group(function () {
 
     // DTR: your own monthly Daily Time Record (read-only).
     Route::get('my/dtr', [MyDtrController::class, 'show'])->name('my.dtr');
+    Route::get('dtr/entries', [DtrEntryVerificationController::class, 'index'])->name('dtr.entries');
+    Route::post('dtr/entries', [DtrEntryVerificationController::class, 'store'])->middleware('throttle:30,1')->name('dtr.entries.store');
     Route::get('my/dtr/print', [MyDtrController::class, 'print'])->name('my.dtr.print');
     Route::get('my/dtr/export', [MyDtrController::class, 'export'])->middleware('throttle:30,1')->name('my.dtr.export');
     // Signing re-checks the password, so it's rate-limited like the other e-signatures.
     Route::post('my/dtr/adjustments', [MyDtrController::class, 'adjust'])->middleware('throttle:20,1')->name('my.dtr.adjustments');
     Route::post('my/dtr/sign', [MyDtrController::class, 'sign'])->middleware('throttle:20,1')->name('my.dtr.sign');
+    Route::post('my/dtr/signatory', [MyDtrController::class, 'signatory'])->middleware('throttle:30,1')->name('my.dtr.signatory');
     Route::get('dtr/signatures/{signature}/image', [DtrSignatureController::class, 'image'])->name('dtr.signatures.image');
 
     // HR-5: your own Service Record (a reference copy; HR certifies).

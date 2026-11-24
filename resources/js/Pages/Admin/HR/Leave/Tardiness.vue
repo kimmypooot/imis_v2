@@ -11,6 +11,7 @@ import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -46,7 +47,7 @@ const days = (value) => Number(value).toFixed(3);
 const changeMonth = (event) => event.target.value && router.get('/admin/hr/leave/tardiness', { month: event.target.value }, { preserveScroll: true });
 
 const charging = ref(null);
-const charge = useForm({ employee_id: '', month: props.month, charge: 'VL', health_certified: false });
+const charge = useForm({ employee_id: '', month: props.month, charge: 'VL', health_certified: false, post_anyway: false });
 const chargeOptions = [
     { value: 'VL', label: 'Vacation Leave (the rule)' },
     { value: 'SL', label: 'Sick Leave (health reasons only)' },
@@ -68,6 +69,33 @@ const openReverse = (row) => {
     reversal.clearErrors();
 };
 const submitReverse = () => reversal.post(`/admin/hr/leave/tardiness/${reversing.value.deduction.id}/reverse`, { preserveScroll: true, onSuccess: () => (reversing.value = null) });
+
+// Days the employee entered: expand to see them; HR can verify them when the supervisor can't.
+const opened = ref([]);
+const toggleOpen = (id) => (opened.value = opened.value.includes(id) ? opened.value.filter((item) => item !== id) : [...opened.value, id]);
+const verifyAsHr = async (row) => {
+    const ok = await confirm({ title: `Verify ${row.name}'s entered days?`, text: 'Their supervisor or office head normally verifies these. Verify them yourself only if you have checked them.', confirmText: 'Verify' });
+    if (ok) router.post('/admin/hr/leave/tardiness/verify', { employee_id: row.employee_id, month: props.month }, { preserveScroll: true });
+};
+
+// Rows that need no decision: something to charge, nothing unverified, no workbook card.
+const readyCount = computed(() => props.rows.filter((row) => !row.deduction && row.minutes && !row.card_managed && !row.unverified_days).length);
+// Charged months whose DTR has changed since (an adjustment or a late import).
+const changedCount = computed(() => props.rows.filter((row) => row.deduction?.dtr_changed && !row.card_managed && !row.unverified_days).length);
+const workbookCount = computed(() => props.rows.filter((row) => row.card_managed && !row.deduction).length);
+const syncCount = computed(() => readyCount.value + changedCount.value);
+const syncWithDtr = async () => {
+    const parts = [
+        readyCount.value ? `charge ${plural(readyCount.value, 'employee')} to Vacation Leave` : null,
+        changedCount.value ? `re-charge ${plural(changedCount.value, 'employee')} whose DTR changed after they were charged` : null,
+    ].filter(Boolean);
+    const ok = await confirm({
+        title: `Sync ${props.label} with the DTR?`,
+        text: `This will ${parts.join(' and ')}. A re-charge reverses the old entry and posts the new total. Rows that need a decision stay in the list.`,
+        confirmText: 'Sync',
+    });
+    if (ok) router.post('/admin/hr/leave/tardiness/sync', { month: props.month }, { preserveScroll: true });
+};
 
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 const absenceText = (row) =>
@@ -146,7 +174,13 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
         </Card>
 
         <Card :title="`${label}: ${rows.length} ${rows.length === 1 ? 'employee' : 'employees'}`" icon="clock">
-            <p v-if="!finished" class="mb-3 text-sm text-warning-fg">This month has not ended yet. Figures are for review only; charging opens when it ends.</p>
+            <template v-if="canManage" #actions>
+                <Button icon="check" :disabled="!finished || !syncCount" @click="syncWithDtr">Sync with DTR ({{ syncCount }})</Button>
+            </template>
+            <p v-if="!finished" class="mb-3 text-sm text-warning-fg">This month has not ended yet. Figures are for review only; syncing opens when it ends.</p>
+            <p v-else-if="canManage && !syncCount" class="mb-3 text-sm text-text-muted">
+                Nothing to sync: {{ workbookCount ? `${plural(workbookCount, 'employee')} ${workbookCount === 1 ? 'is' : 'are'} already covered by HR's leave card workbook (record their tardiness there), and the rest ` : 'every row ' }}{{ workbookCount ? 'are' : 'is' }} already charged, has nothing to charge, or still has unverified days.
+            </p>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-left text-sm">
                     <caption class="sr-only">Tardiness and undertime by employee</caption>
@@ -169,6 +203,20 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
                                 <div v-if="row.absences || row.half_day_absences" class="text-xs text-text-muted">
                                     {{ absenceText(row) }}, without pay: not charged here
                                 </div>
+                                <div v-if="row.entered_days.length" class="mt-1 text-xs">
+                                    <button type="button" class="text-left text-link hover:underline" :aria-expanded="opened.includes(row.employee_id)" @click="toggleOpen(row.employee_id)">
+                                        {{ plural(row.entered_days.length, 'day') }} entered by the employee{{ row.entered_minutes ? `, ${hm(row.entered_minutes)} late or short` : '' }}{{ row.unverified_days ? `; ${row.unverified_days} not verified` : '; all verified' }}
+                                    </button>
+                                    <ul v-if="opened.includes(row.employee_id)" class="mt-1 space-y-0.5 text-text-muted">
+                                        <li v-for="day in row.entered_days" :key="day.date">
+                                            {{ day.date }} · {{ day.time_in || '—' }} to {{ day.time_out || '—' }}{{ day.minutes ? ` (${day.minutes} min)` : '' }} · {{ day.remark }}
+                                            <span :class="day.verified ? 'text-success-fg' : 'text-warning-fg'">{{ day.verified ? 'Verified' : 'Not verified' }}</span>
+                                        </li>
+                                    </ul>
+                                    <ActionButton v-if="canManage && row.unverified_days" icon="check" :label="`Verify ${row.name}'s entered days as HR`" @click="verifyAsHr(row)" />
+                                </div>
+                                <div v-if="row.habitual.tardiness" class="mt-1 text-xs text-warning-fg">Possible habitual tardiness (CSC MC No. 23, s. 1998): {{ row.habitual.tardiness }}.</div>
+                                <div v-if="row.habitual.absenteeism" class="mt-1 text-xs text-warning-fg">Possible habitual absenteeism (CSC MC No. 23, s. 1998): {{ row.habitual.absenteeism }}.</div>
                             </td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ hm(row.late_minutes) }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ hm(row.undertime_minutes) }}</td>
@@ -185,8 +233,11 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
                                     <div class="mt-1 text-xs text-text-muted">{{ formatDateTime(row.deduction.posted_at) }}</div>
                                     <div v-if="row.deduction.dtr_changed" class="mt-1 text-xs text-warning-fg">The DTR has changed since: now {{ hm(row.minutes) }}. Reverse and charge again to correct it.</div>
                                 </template>
-                                <span v-else-if="row.card_managed" class="text-xs text-text-muted">Leave card comes from HR's workbook: record it there.</span>
-                                <span v-else class="text-text-muted">Not charged</span>
+                                <span v-else-if="row.card_managed" class="text-xs text-text-muted">HR's leave card workbook already covers {{ label }}: record it there.</span>
+                                <template v-else>
+                                    <span class="text-text-muted">Not charged</span>
+                                    <div v-if="row.card_pending" class="mt-1 text-xs text-text-muted">The workbook does not reach {{ label }} yet: charged here, and settled when the workbook catches up.</div>
+                                </template>
                             </td>
                             <td v-if="canManage" class="py-2 pl-3 text-right">
                                 <ActionButton v-if="row.deduction" icon="refresh" tone="danger" :label="`Reverse the charge for ${row.name}`" @click="openReverse(row)" />
@@ -225,6 +276,10 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
             <label v-if="charge.charge === 'SL'" class="flex items-start gap-2 text-sm text-text">
                 <input v-model="charge.health_certified" type="checkbox" class="mt-1" />
                 <span>The undertime is for health reasons, and a medical certificate and a leave application are on file.</span>
+            </label>
+            <label v-if="charging && charging.unverified_days" class="flex items-start gap-2 text-sm text-text">
+                <input v-model="charge.post_anyway" type="checkbox" class="mt-1" />
+                <span>{{ plural(charging.unverified_days, 'day') }} the employee entered {{ charging.unverified_days === 1 ? 'is' : 'are' }} not verified yet. Charge anyway. This is recorded in the audit log.</span>
             </label>
             <InputError :message="charge.errors.charge || charge.errors.month" />
         </form>

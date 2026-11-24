@@ -48,7 +48,12 @@ class MyLeaveApplicationController extends Controller
         $types = LeaveType::query()->active()->ordered()->get();
         $shown = $credits->shownTypeIds($employee, $types);
 
+        $prefill = $request->filled('date_from') && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('date_from'))
+            ? ['date_from' => $request->query('date_from'), 'date_to' => $request->query('date_from')]
+            : null;
+
         return Inertia::render('Portal/LeaveApply', [
+            'prefill' => $prefill,
             'types' => $types->filter(fn (LeaveType $type) => in_array($type->id, $shown, true) || $type->id === $returned?->leave_type_id)->values()->map(fn (LeaveType $type) => [
                 'id' => $type->id,
                 'code' => $type->code,

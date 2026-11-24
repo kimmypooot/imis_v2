@@ -3,6 +3,7 @@
 namespace App\Support\HR\Dtr;
 
 use App\Models\DtrAdjustment;
+use App\Models\DtrLeaveDeduction;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -47,8 +48,16 @@ class DtrAdjustments
 
         return DtrAdjustment::query()->updateOrCreate(
             ['employee_id' => $employee->id, 'date' => $date->toDateString()],
-            ['kind' => $kind, 'time_in' => $timeIn, 'time_out' => $timeOut, 'remark' => $remark, 'entered_by_employee' => false, 'created_by' => $actor->id],
+            ['kind' => $kind, 'time_in' => $timeIn, 'time_out' => $timeOut, 'remark' => $remark, 'entered_by_employee' => false, 'verified_by' => null, 'verified_at' => null, 'created_by' => $actor->id],
         );
+    }
+
+    /** Whether the month of `$date` is already charged to leave credits: the DTR no longer changes under it. */
+    public static function monthCharged(Employee $employee, Carbon $date): bool
+    {
+        return DtrLeaveDeduction::query()->where('employee_id', $employee->id)
+            ->where('period_year', $date->year)->where('period_month', $date->month)
+            ->get()->contains(fn (DtrLeaveDeduction $deduction) => $deduction->isActive());
     }
 
     /** The earliest day an employee may still enter: the first of last month, in step with the monthly cycle. */
@@ -81,6 +90,8 @@ class DtrAdjustments
                 $errors[] = "{$day}: a day that has not happened yet can't be entered.";
             } elseif ($date->lt($earliest)) {
                 $errors[] = "{$day}: it is too old to change here. Ask HRD.";
+            } elseif (self::monthCharged($employee, $date)) {
+                $errors[] = "{$day}: {$date->format('F Y')} was already charged to leave credits. Ask HRD.";
             } elseif ($existing && ! $existing->entered_by_employee) {
                 $errors[] = "{$day}: HRD adjusted this day. Ask HRD to change it.";
             } else {
@@ -126,7 +137,7 @@ class DtrAdjustments
 
                 $saved[] = DtrAdjustment::query()->updateOrCreate(
                     ['employee_id' => $employee->id, 'date' => $step[1]->toDateString()],
-                    ['kind' => 'times', 'time_in' => $step[2], 'time_out' => $step[3], 'remark' => $step[4], 'entered_by_employee' => true, 'created_by' => $actor->id],
+                    ['kind' => 'times', 'time_in' => $step[2], 'time_out' => $step[3], 'remark' => $step[4], 'entered_by_employee' => true, 'verified_by' => null, 'verified_at' => null, 'created_by' => $actor->id],
                 );
             }
 

@@ -135,6 +135,20 @@ class DtrSigningTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('sheet.signature.status', 'changed'));
     }
 
+    public function test_the_print_is_a_single_dtr_unless_a_double_one_is_asked_for(): void
+    {
+        $query = 'from=2026-10-01&to=2026-10-31';
+        $hr = $this->userWith(['dtr.view']);
+
+        $this->actingAs($this->employee->user)->get("/my/dtr/print?{$query}")->assertInertia(fn (Assert $page) => $page->where('layout', 'single'));
+        $this->actingAs($this->employee->user)->get("/my/dtr/print?{$query}&layout=double")->assertInertia(fn (Assert $page) => $page->where('layout', 'double'));
+        $this->actingAs($this->employee->user)->get("/my/dtr/print?{$query}&layout=triple")->assertInertia(fn (Assert $page) => $page->where('layout', 'single'));
+
+        $this->actingAs($hr)->get("/admin/hr/employees/{$this->employee->id}/dtr/print?{$query}&layout=double")
+            ->assertInertia(fn (Assert $page) => $page->where('layout', 'double'));
+        $this->assertDatabaseHas('audit_logs', ['event' => 'dtr.printed']);
+    }
+
     public function test_an_unsigned_print_has_no_signature(): void
     {
         $this->actingAs($this->employee->user)->get('/my/dtr/print?from=2026-10-01&to=2026-10-31')

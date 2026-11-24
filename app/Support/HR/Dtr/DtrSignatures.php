@@ -2,6 +2,7 @@
 
 namespace App\Support\HR\Dtr;
 
+use App\Models\DtrSignatory;
 use App\Models\DtrSignature;
 use App\Models\Employee;
 use App\Models\User;
@@ -32,7 +33,13 @@ class DtrSignatures
 
     public function hashFor(Employee $employee, Carbon $from, Carbon $to): string
     {
-        return $this->hashOf($employee, $from, $to, $this->record->build($employee, $from->copy()->startOfDay(), $to->copy()->startOfDay()));
+        return $this->hashOf(
+            $employee,
+            $from,
+            $to,
+            $this->record->build($employee, $from->copy()->startOfDay(), $to->copy()->startOfDay()),
+            DtrSignatory::forSheet($employee->id, $from, $to)?->signatory_user_id,
+        );
     }
 
     /**
@@ -40,10 +47,13 @@ class DtrSignatures
      * it twice. Only the facts count: the times, the credited minutes, the
      * status and HRD's reason for an adjustment. The wording of leave types
      * and holidays is not part of it, so renaming one later changes nothing.
+     * So is the signatory the employee picked, when they picked one: choosing
+     * another after signing makes the signing stale. With none picked it is
+     * left out, so the fingerprint of every earlier signing stays the same.
      *
      * @param  array{days: Collection<int, array<string, mixed>>, totals: array<string, mixed>}  $record
      */
-    public function hashOf(Employee $employee, Carbon $from, Carbon $to, array $record): string
+    public function hashOf(Employee $employee, Carbon $from, Carbon $to, array $record, ?int $signatoryId = null): string
     {
         $keys = ['date', 'in', 'break_out', 'break_in', 'out', 'minutes', 'late_minutes', 'undertime_minutes', 'absent_minutes', 'status'];
 
@@ -53,6 +63,7 @@ class DtrSignatures
             'to' => $to->toDateString(),
             'days' => $record['days']->map(fn (array $day) => [...array_intersect_key($day, array_flip($keys)), 'adjustment' => $day['adjustment']['remark'] ?? null])->values()->all(),
             'totals' => $record['totals'],
+            ...($signatoryId !== null ? ['signatory' => $signatoryId] : []),
         ], JSON_THROW_ON_ERROR));
     }
 

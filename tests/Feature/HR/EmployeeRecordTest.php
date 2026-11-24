@@ -10,6 +10,8 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -190,6 +192,82 @@ class EmployeeRecordTest extends TestCase
         $this->assertSame('permanent', $employee->employment_status->value);
         $this->assertSame($ownerId, $employee->user_id);
         $this->assertDatabaseHas('audit_logs', ['event' => 'employee.updated', 'target_id' => $employee->id]);
+    }
+
+    public function test_hr_edits_personal_information_without_users_update(): void
+    {
+        $employee = Employee::factory()->create();
+        $hr = $this->userWith('employees.update');
+        $this->assertFalse($hr->hasPermission('users.update'));
+
+        $this->actingAs($hr)->put("/admin/hr/employees/{$employee->id}/personal", [
+            'first_name' => 'Maria',
+            'middle_name' => 'Santos',
+            'last_name' => 'Cruz',
+            'sex' => 'female',
+            'birthday' => '1990-05-04',
+        ])->assertRedirect();
+
+        $user = $employee->user->fresh();
+        $this->assertSame('Maria', $user->first_name);
+        $this->assertSame('female', $user->sex);
+        $this->assertSame('1990-05-04', $user->birthday->toDateString());
+        $this->assertStringContainsString('Cruz', $user->name);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'user.updated', 'target_id' => $user->id]);
+    }
+
+    public function test_personal_information_needs_a_name_and_permission_and_is_not_self_service(): void
+    {
+        $employee = Employee::factory()->create();
+        $hr = $this->userWith('employees.update');
+
+        $this->actingAs($hr)->put("/admin/hr/employees/{$employee->id}/personal", ['first_name' => ''])
+            ->assertSessionHasErrors(['first_name', 'last_name']);
+
+        $this->actingAs($this->userWith('employees.view'))
+            ->put("/admin/hr/employees/{$employee->id}/personal", ['first_name' => 'A', 'last_name' => 'B'])
+            ->assertForbidden();
+
+        $own = Employee::factory()->for($hr)->create();
+        $this->actingAs($hr)->put("/admin/hr/employees/{$own->id}/personal", ['first_name' => 'A', 'last_name' => 'B'])
+            ->assertForbidden();
+    }
+
+    public function test_hr_sets_the_title_and_the_profile_photo(): void
+    {
+        Storage::fake('public');
+        $employee = Employee::factory()->create();
+        $hr = $this->userWith('employees.update');
+
+        $this->actingAs($hr)->put("/admin/hr/employees/{$employee->id}/personal", [
+            'honorific' => 'Atty.',
+            'first_name' => 'Maria',
+            'last_name' => 'Cruz',
+        ])->assertRedirect();
+        $this->assertSame('Atty.', $employee->user->fresh()->honorific);
+        $this->assertStringStartsWith('Atty. Maria', $employee->user->fresh()->name);
+
+        $this->actingAs($hr)->post("/admin/hr/employees/{$employee->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->image('p.jpg', 300, 300),
+        ])->assertRedirect();
+        $this->assertNotNull($employee->user->fresh()->profile_photo_path);
+
+        $this->actingAs($hr)->delete("/admin/hr/employees/{$employee->id}/photo")->assertRedirect();
+        $this->assertNull($employee->user->fresh()->profile_photo_path);
+
+        $this->actingAs($this->userWith('employees.view'))
+            ->delete("/admin/hr/employees/{$employee->id}/photo")->assertForbidden();
+    }
+
+    public function test_hr_cannot_edit_a_super_administrators_personal_information(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::factory()->create(['name' => RoleName::SuperAdmin->value]));
+        $employee = Employee::factory()->for($admin)->create();
+
+        $this->actingAs($this->userWith('employees.update'))
+            ->put("/admin/hr/employees/{$employee->id}/personal", ['first_name' => 'A', 'last_name' => 'B'])
+            ->assertForbidden();
     }
 
     public function test_separation_needs_a_reason_and_a_valid_date(): void

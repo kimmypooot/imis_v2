@@ -2,9 +2,11 @@
 
 namespace App\Support\HR\Dtr;
 
+use App\Models\DtrSignatory;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
 use App\Models\OrganizationalUnit;
+use App\Models\User;
 use App\Support\HR\OfficeHeads;
 use Closure;
 use Illuminate\Support\Carbon;
@@ -17,9 +19,10 @@ use Illuminate\Validation\ValidationException;
  * per-division sheets are). Each carries the office, the work schedule in
  * force at its end, and the head who verifies it.
  *
- * Head of a sheet: the head-of-office designation (officer-in-charge or
- * caretaker) covering the sheet's last day; otherwise the office's
- * regular head as OfficeHeads knows it today; otherwise none.
+ * Who verifies a sheet: the person the employee picked for it (DtrSignatories);
+ * otherwise the head-of-office designation (officer-in-charge or caretaker)
+ * covering the sheet's last day; otherwise the office's regular head as
+ * OfficeHeads knows it today; otherwise none.
  */
 class DtrSheets
 {
@@ -28,6 +31,7 @@ class DtrSheets
         private readonly DtrPeriods $periods = new DtrPeriods,
         private readonly WorkSchedules $schedules = new WorkSchedules,
         private readonly DtrSignatures $signatures = new DtrSignatures,
+        private readonly DtrSignatories $signatories = new DtrSignatories,
     ) {}
 
     /**
@@ -117,6 +121,8 @@ class DtrSheets
     {
         $unit = $unitId ? OrganizationalUnit::query()->find($unitId) : null;
         $record = $this->record->build($employee, $from, $to);
+        $picked = DtrSignatory::forSheet($employee->id, $from, $to)?->load('signatory')->signatory;
+        $verifier = $picked ?? $this->head($unitId, $to);
 
         return [
             'from' => $from->toDateString(),
@@ -124,10 +130,11 @@ class DtrSheets
             'period' => self::periodLabel($from, $to),
             'unit' => $unit ? ($unit->short_name ?: $unit->name) : null,
             'schedule' => $this->schedules->on($employee, $to)?->name,
-            'head' => $this->head($unitId, $to),
+            'head' => $verifier?->name,
+            'signatory' => $this->signatories->present($verifier, $picked !== null),
             'rows' => $record['days']->all(),
             'totals' => $record['totals'],
-            'signature' => $this->signature($employee, $from, $to, $record),
+            'signature' => $this->signature($employee, $from, $to, $record, $picked?->id),
         ];
     }
 
@@ -136,14 +143,14 @@ class DtrSheets
      *
      * @return array{code: string, signed_at: string, status: string, image_url: ?string, verify_url: string}|null
      */
-    private function signature(Employee $employee, Carbon $from, Carbon $to, array $record): ?array
+    private function signature(Employee $employee, Carbon $from, Carbon $to, array $record, ?int $signatoryId): ?array
     {
         $signature = $this->signatures->current($employee, $from, $to);
 
         return $signature ? [
             'code' => $signature->code,
             'signed_at' => $signature->signed_at->toIso8601String(),
-            'status' => $this->signatures->status($signature, $this->signatures->hashOf($employee, $from, $to, $record)),
+            'status' => $this->signatures->status($signature, $this->signatures->hashOf($employee, $from, $to, $record, $signatoryId)),
             'image_url' => $signature->signature_path ? route('dtr.signatures.image', $signature) : null,
             // From the configured address, so a QR printed on an intranet address still opens outside it.
             'verify_url' => rtrim((string) config('app.url'), '/').route('dtr.verify', $signature->code, false),
@@ -164,7 +171,7 @@ class DtrSheets
             : $from->format('F j').' - '.$to->format('F j');
     }
 
-    private function head(?int $unitId, Carbon $date): ?string
+    private function head(?int $unitId, Carbon $date): ?User
     {
         if (! $unitId) {
             return null;
@@ -174,6 +181,6 @@ class DtrSheets
             ->with('employee.user')->orderByDesc('effective_date')->orderByDesc('id')->first();
 
         // Without a designation that day, the office's regular head: today's officer-in-charge doesn't apply to a past sheet.
-        return ($designation?->employee?->user ?? (app(OfficeHeads::class)->regular()[$unitId]['user'] ?? null))?->name;
+        return $designation?->employee?->user ?? (app(OfficeHeads::class)->regular()[$unitId]['user'] ?? null);
     }
 }

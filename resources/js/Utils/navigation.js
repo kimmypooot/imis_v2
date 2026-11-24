@@ -94,6 +94,7 @@ export const portalNavItems = [
                     { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
                     { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
                     { label: 'My DTR', href: '/my/dtr', icon: 'clock' },
+                    { label: 'DTR Entries to Verify', href: '/dtr/entries', icon: 'checkCircle', flag: 'dtrVerifier' },
                     { label: 'My Learning & Development', href: '/my/learning-development', icon: 'activity' },
                 ],
             },

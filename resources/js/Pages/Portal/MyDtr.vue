@@ -10,6 +10,8 @@ import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import DtrSheetTable from '../../Components/HR/DtrSheetTable.vue';
+import DtrPrintChoice from '../../Components/HR/DtrPrintChoice.vue';
+import Combobox from '../../Components/Forms/Combobox.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
 defineOptions({ layout: PortalLayout });
@@ -29,10 +31,16 @@ const props = defineProps({
     hasRecord: { type: Boolean, required: true },
     hasSignature: { type: Boolean, default: false },
     earliestEntry: { type: String, default: '' },
+    // Months HRD already charged to leave credits: closed to your own entries.
+    chargedMonths: { type: Array, default: () => [] },
+    /** Who can verify a sheet: [{ value, label, description, group }]. */
+    signatoryOptions: { type: Array, default: () => [] },
 });
 
 const changeMonth = (event) => event.target.value && router.get('/my/dtr', { month: event.target.value }, { preserveScroll: true });
 const printUrl = (sheet) => `/my/dtr/print?from=${sheet.from}&to=${sheet.to}`;
+// The sheet whose "Print CS Form 48" is open, to choose a single or double DTR.
+const printing = ref(null);
 const exportUrl = (sheet) => `/my/dtr/export?from=${sheet.from}&to=${sheet.to}`;
 
 const localToday = (() => {
@@ -41,6 +49,18 @@ const localToday = (() => {
 })();
 const finished = (sheet) => sheet.to < localToday;
 const needsSigning = (sheet) => finished(sheet) && (!sheet.signature || sheet.signature.status !== 'valid');
+
+// Who verifies a sheet (the name under "Office Head Name/Signature"): you pick, because supervisors are sometimes away at short notice.
+const picking = ref(null);
+const pickForm = useForm({ from: '', to: '', signatory_id: null });
+const openPick = (sheet) => {
+    picking.value = sheet;
+    pickForm.clearErrors();
+    pickForm.from = sheet.from;
+    pickForm.to = sheet.to;
+    pickForm.signatory_id = sheet.signatory?.chosen ? sheet.signatory.id : null;
+};
+const savePick = () => pickForm.post('/my/dtr/signatory', { preserveScroll: true, onSuccess: () => (picking.value = null) });
 
 const signing = ref(null);
 const form = useForm({ from: '', to: '', password: '' });
@@ -58,7 +78,7 @@ const base = {};
 const confirming = ref(false);
 const adjustForm = useForm({ entries: [], certify: false });
 
-const canEnter = (row) => row.date <= localToday && (!props.earliestEntry || row.date >= props.earliestEntry) && !(row.adjustment && !row.adjustment.by_employee);
+const canEnter = (row) => row.date <= localToday && !props.chargedMonths.includes(row.date.slice(0, 7)) && (!props.earliestEntry || row.date >= props.earliestEntry) && !(row.adjustment && !row.adjustment.by_employee);
 const startEdit = (sheet) => {
     Object.keys(drafts).forEach((key) => delete drafts[key]);
     for (const row of sheet.rows) {
@@ -132,11 +152,24 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
                 </template>
                 <Button v-else-if="!editingFrom" variant="secondary" icon="pencil" @click="startEdit(sheet)">Edit my entries</Button>
                 <Button v-if="needsSigning(sheet) && hasSignature && !editingFrom" variant="success" icon="pencil" @click="openSign(sheet)">{{ sheet.signature ? 'Sign again' : 'Sign this DTR' }}</Button>
-                <Button variant="secondary" :href="printUrl(sheet)" target="_blank" icon="printer">Print CS Form 48</Button>
+                <Button variant="secondary" icon="printer" @click="printing = sheet">Print CS Form 48</Button>
                 <Button variant="secondary" :href="exportUrl(sheet)" external icon="download">Export to Excel</Button>
             </template>
             <p class="mb-3 text-sm text-text-muted">
                 Work schedule: <span class="text-text">{{ sheet.schedule ?? 'Not assigned yet' }}</span>
+            </p>
+            <p class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted">
+                <span>Verified by:</span>
+                <template v-if="sheet.signatory">
+                    <span class="font-medium text-text">{{ sheet.signatory.name }}</span>
+                    <span v-if="sheet.signatory.position">({{ sheet.signatory.position }})</span>
+                    <span v-if="!sheet.signatory.chosen">· the office head</span>
+                    <span v-if="!sheet.signatory.active" class="text-warning-fg">· no longer active, choose someone else</span>
+                </template>
+                <span v-else class="text-warning-fg">No one yet: choose who verifies this sheet</span>
+                <Button :variant="sheet.signatory?.chosen ? 'secondary' : 'primary'" size="sm" icon="pencil" @click="openPick(sheet)">
+                    {{ sheet.signatory?.chosen ? 'Change verifier' : 'Choose verifier' }}
+                </Button>
             </p>
             <p v-if="sheet.signature" class="mb-3 text-sm">
                 <span
@@ -146,15 +179,15 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
                     {{ sheet.signature.status === 'valid' ? 'Signed' : 'Changed since signed' }}
                 </span>
                 <span class="ml-2 text-text-muted">{{ formatDateTime(sheet.signature.signed_at) }} · code {{ sheet.signature.code }}</span>
-                <span v-if="sheet.signature.status !== 'valid'" class="ml-2 text-warning-fg">HRD adjusted this sheet after you signed it. Review it and sign again.</span>
+                <span v-if="sheet.signature.status !== 'valid'" class="ml-2 text-warning-fg">This sheet changed after you signed it (an HRD adjustment, or a different person to verify it). Review it and sign again.</span>
             </p>
             <p v-else-if="finished(sheet) && !hasSignature" class="mb-3 text-sm text-text-muted">
                 To sign this sheet, first <Link href="/my/employee-record" class="text-link hover:underline">save your e-signature</Link>.
             </p>
             <p v-if="editingFrom === sheet.from" class="mb-3 rounded-md border border-info-border bg-info-bg px-3 py-2 text-sm text-text">
-                Enter your actual time in and out for a day where a punch is missing or wrong, with a reason. Your fingerprint punches are never changed: what you enter is kept beside them, shown as "Employee-entered" on the printed form, and HRD can see it. Days HRD adjusted are locked. Clear both times to take back an entry of yours.
+                Enter your actual time in and out for a day where a punch is missing or wrong, with a reason. Your fingerprint punches are never changed: what you enter is kept beside them, shown as "Employee-entered" on the printed form, and HRD can see it. Days HRD adjusted, and months already charged to leave credits, are locked. Your supervisor or office head verifies what you enter. Clear both times to take back an entry of yours.
             </p>
-            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :editing="editingFrom === sheet.from" :drafts="drafts" :earliest="earliestEntry" />
+            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :editing="editingFrom === sheet.from" :drafts="drafts" :earliest="earliestEntry" file-leave />
         </Card>
     </div>
 
@@ -179,6 +212,23 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
             <Button type="submit" form="dtr-entries-form" :loading="adjustForm.processing" :disabled="!adjustForm.certify">Yes, save them</Button>
         </template>
     </Modal>
+
+    <Modal :open="picking !== null" title="Who verifies this DTR?" icon="pencil" @close="picking = null">
+        <form id="dtr-signatory-form" class="space-y-3" @submit.prevent="savePick">
+            <p v-if="picking" class="text-sm text-text">
+                Choose the supervisor or office head who verifies your {{ picking.period }} record. Their name is printed under “Office Head Name/Signature”, with their title (Atty., Dr., Engr. and so on) if their account has one.
+            </p>
+            <Combobox id="dtr-signatory" v-model="pickForm.signatory_id" inline label="Verified by" :options="signatoryOptions" placeholder="Type a name or position" :invalid="!!pickForm.errors.signatory_id" />
+            <p class="text-xs text-text-muted">Leave it empty to use the office head. If you had already signed this sheet, sign it again after changing who verifies it.</p>
+            <InputError :message="pickForm.errors.signatory_id || pickForm.errors.to || pickForm.errors.from" />
+        </form>
+        <template #footer>
+            <Button variant="secondary" icon="close" @click="picking = null">Cancel</Button>
+            <Button type="submit" form="dtr-signatory-form" icon="check" :loading="pickForm.processing">Save</Button>
+        </template>
+    </Modal>
+
+    <DtrPrintChoice :url="printing ? printUrl(printing) : null" :period="printing?.period ?? ''" @close="printing = null" />
 
     <Modal :open="signing !== null" title="Sign your DTR" icon="pencil" tone="success" @close="signing = null">
         <form id="dtr-sign-form" class="space-y-3" @submit.prevent="submit">

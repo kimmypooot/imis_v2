@@ -310,6 +310,9 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:employees.update')->group(function () {
         Route::put('admin/hr/employees/{employee}', [EmployeeController::class, 'update'])->name('admin.hr.employees.update');
+        Route::put('admin/hr/employees/{employee}/personal', [EmployeeController::class, 'updatePersonal'])->name('admin.hr.employees.update-personal');
+        Route::post('admin/hr/employees/{employee}/photo', [EmployeeController::class, 'updatePhoto'])->name('admin.hr.employees.photo.update');
+        Route::delete('admin/hr/employees/{employee}/photo', [EmployeeController::class, 'destroyPhoto'])->name('admin.hr.employees.photo.destroy');
     });
 
     // HR-1b: reassignment history. Who was where on a date, and movements
@@ -383,6 +386,9 @@ Route::middleware('auth')->group(function () {
         // HR-7: what is left before the legacy LMS and ldms are retired.
         Route::get('admin/hr/readiness', [HrReadinessController::class, 'index'])->name('admin.hr.readiness');
         Route::post('admin/hr/leave/tardiness', [TardinessController::class, 'store'])->name('admin.hr.leave.tardiness.store');
+        Route::post('admin/hr/leave/tardiness/reviewed', [TardinessController::class, 'storeReviewed'])->middleware('throttle:6,1')->name('admin.hr.leave.tardiness.reviewed');
+        Route::post('admin/hr/leave/tardiness/sync', [TardinessController::class, 'sync'])->middleware('throttle:6,1')->name('admin.hr.leave.tardiness.sync');
+        Route::post('admin/hr/leave/tardiness/verify', [TardinessController::class, 'verify'])->middleware('throttle:30,1')->name('admin.hr.leave.tardiness.verify');
         Route::post('admin/hr/leave/tardiness/{deduction}/reverse', [TardinessController::class, 'reverse'])->name('admin.hr.leave.tardiness.reverse');
         Route::post('admin/hr/leave/accrual', [LeaveCreditController::class, 'accrue'])->name('admin.hr.leave.accrue');
         Route::post('admin/hr/leave/year-start', [LeaveCreditController::class, 'startYear'])->name('admin.hr.leave.year-start');

@@ -9,6 +9,8 @@ use App\Enums\HeadCapacity;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\BulkStoreEmployeesRequest;
 use App\Http\Requests\Employee\StoreEmployeeRequest;
+use App\Http\Requests\Employee\UpdateEmployeePersonalRequest;
+use App\Http\Requests\Employee\UpdateEmployeePhotoRequest;
 use App\Http\Requests\Employee\UpdateEmployeeRequest;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Employee;
@@ -19,6 +21,7 @@ use App\Support\HR\EmployeeAssignments;
 use App\Support\HR\EmployeeDocuments;
 use App\Support\HR\EmployeeRecords;
 use App\Support\HR\Plantilla\Plantilla;
+use App\Support\ProfilePhotos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -105,6 +108,7 @@ class EmployeeController extends Controller
         return Inertia::render('Admin/HR/Employees/Show', [
             'employee' => EmployeeResource::make($employee),
             'employmentStatusOptions' => EmploymentStatus::options(),
+            'honorificOptions' => User::HONORIFICS,
             // HR-1b: the assignment history, and what HR needs to record one.
             'assignments' => $assignments->timeline($employee, $request->user()),
             // HR-4: the items they've held (plantilla viewers and the person
@@ -129,5 +133,40 @@ class EmployeeController extends Controller
         $this->audit()->recordChanges(AuditEvent::EmployeeUpdated, "Updated the {$employee->label}", $employee);
 
         return back()->with('status', "Employee record of {$employee->user->name} was saved.");
+    }
+
+    public function updatePersonal(UpdateEmployeePersonalRequest $request, Employee $employee): RedirectResponse
+    {
+        $user = $employee->user;
+        $user->update($request->validated());
+
+        $this->audit()->recordChanges(AuditEvent::UserUpdated, "Updated the personal information of {$user->name}", $user);
+
+        return back()->with('status', "Personal information of {$user->name} was saved.");
+    }
+
+    public function updatePhoto(UpdateEmployeePhotoRequest $request, Employee $employee, ProfilePhotos $photos): RedirectResponse
+    {
+        $user = $employee->user;
+        $user->forceFill([
+            'profile_photo_path' => $photos->store($request->file('profile_photo'), $user->profile_photo_path),
+        ])->save();
+
+        $this->audit()->record(AuditEvent::UserUpdated, "Changed the profile photo of {$user->name}", $user);
+
+        return back()->with('status', 'Profile photo updated.');
+    }
+
+    public function destroyPhoto(Employee $employee, ProfilePhotos $photos): RedirectResponse
+    {
+        $this->authorize('updatePersonal', $employee);
+
+        $user = $employee->user;
+        $photos->delete($user->profile_photo_path);
+        $user->forceFill(['profile_photo_path' => null])->save();
+
+        $this->audit()->record(AuditEvent::UserUpdated, "Removed the profile photo of {$user->name}", $user);
+
+        return back()->with('status', 'Profile photo removed.');
     }
 }

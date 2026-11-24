@@ -29,12 +29,14 @@ const props = defineProps({
     supervisor: { type: String, default: null },
     hasSignature: { type: Boolean, default: false },
     resubmitting: { type: Object, default: null },
+    // A day to file for, e.g. from an absence on the DTR.
+    prefill: { type: Object, default: null },
     preview: { type: Object, default: null },
     maxChosenDates: { type: Number, default: 60 },
     attachmentKilobytes: { type: Number, required: true },
 });
 
-const source = props.resubmitting ?? {};
+const source = props.resubmitting ?? props.prefill ?? {};
 const form = useForm({
     leave_type_id: source.leave_type_id ?? '',
     date_from: source.date_from ?? '',

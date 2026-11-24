@@ -8,6 +8,7 @@ use App\Enums\RoleName;
 use App\Models\Changelog;
 use App\Models\Feedback;
 use App\Support\Branding\Branding;
+use App\Support\HR\Dtr\DtrEntryVerification;
 use App\Support\HR\HrQueues;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Payroll\PayslipApprovers;
@@ -85,6 +86,8 @@ class HandleInertiaRequests extends Middleware
             'flags' => fn () => $user ? [
                 // HR-6b: a supervisor, HR certifier, the Head or an OIC.
                 'leaveApprover' => app(LeaveApplications::class)->isApprover($user),
+                // DTR: supervises or heads people whose entered days they verify.
+                'dtrVerifier' => app(DtrEntryVerification::class)->employeeIdsFor($user)->isNotEmpty(),
                 // HR-8: the head of HRD, or someone designated head of HRD.
                 'payslipApprover' => app(PayslipApprovers::class)->isApprover($user),
                 // Settings → Portal: the Services directory is switched on.

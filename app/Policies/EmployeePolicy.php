@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\EmploymentStatus;
 use App\Enums\PermissionName;
+use App\Enums\RoleName;
 use App\Models\Employee;
 use App\Models\User;
 
@@ -176,5 +177,17 @@ class EmployeePolicy
     {
         return $employee->user_id !== $user->id
             && $user->hasPermission(PermissionName::EmployeesUpdate->value);
+    }
+
+    /**
+     * The person's own details (name, sex, birthday): HR keeps these on the
+     * employee record, so they don't need `users.update`. Same
+     * separation-of-duties rule as `update`, and a Super Administrator's
+     * account stays protected like it is in UserPolicy.
+     */
+    public function updatePersonal(User $user, Employee $employee): bool
+    {
+        return $this->update($user, $employee)
+            && ! $employee->user->hasRole(RoleName::SuperAdmin);
     }
 }

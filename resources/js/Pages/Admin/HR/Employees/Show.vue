@@ -6,6 +6,7 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
+import EmployeePersonalModal from '../../../../Components/HR/EmployeePersonalModal.vue';
 import EmployeeDetails from '../../../../Components/HR/EmployeeDetails.vue';
 import AssignmentTimeline from '../../../../Components/HR/AssignmentTimeline.vue';
 import AssignmentModal from '../../../../Components/HR/AssignmentModal.vue';
@@ -22,6 +23,7 @@ defineOptions({ layout: AdminLayout });
 const props = defineProps({
     employee: { type: Object, required: true },
     employmentStatusOptions: { type: Array, required: true },
+    honorificOptions: { type: Array, default: () => [] },
     assignments: { type: Object, required: true },
     // HR-4: plantilla periods; null when the viewer may not see salaries.
     plantilla: { type: Array, default: null },
@@ -30,6 +32,9 @@ const props = defineProps({
 });
 
 const editOpen = ref(false);
+
+// HR corrects the person's own details here, without users.update.
+const personalOpen = ref(false);
 
 // HR-1b: record, correct or remove a movement.
 const assignmentsUrl = computed(() => `/admin/hr/employees/${props.employee.id}/assignments`);
@@ -58,7 +63,8 @@ const breadcrumbs = computed(() => [
     <Head :title="employee.user.name" />
 
     <PageHeader :title="employee.user.name" :breadcrumbs="breadcrumbs">
-        <template v-if="employee.can.update || employee.can.viewPds || employee.can.viewDocuments || employee.can.viewLd || employee.can.viewServiceRecord || employee.can.viewLeave || employee.can.viewDtr" #actions>
+        <!-- Seven buttons don't fit beside the title (it was squeezed into a narrow column), so they sit under it. -->
+        <div v-if="employee.can.update || employee.can.viewPds || employee.can.viewDocuments || employee.can.viewLd || employee.can.viewServiceRecord || employee.can.viewLeave || employee.can.viewDtr" class="flex flex-wrap items-center gap-2">
             <Link
                 v-if="employee.can.viewLeave"
                 :href="`/admin/hr/employees/${employee.id}/leave`"
@@ -101,8 +107,9 @@ const breadcrumbs = computed(() => [
             >
                 <Icon name="clipboard" size="sm" />Personal Data Sheet
             </Link>
+            <Button v-if="employee.can.updatePersonal" variant="secondary" @click="personalOpen = true"><Icon name="user" size="sm" />Edit personal info</Button>
             <Button v-if="employee.can.update" @click="editOpen = true"><Icon name="pencil" size="sm" />Edit employment</Button>
-        </template>
+        </div>
     </PageHeader>
 
     <EmployeeDetails :employee="employee" />
@@ -132,6 +139,14 @@ const breadcrumbs = computed(() => [
         :office-options="assignmentForm.officeOptions"
         :scan-kilobytes="assignmentForm.scanKilobytes"
         @close="assignmentOpen = false"
+    />
+
+    <EmployeePersonalModal
+        v-if="employee.can.updatePersonal"
+        :open="personalOpen"
+        :employee="employee"
+        :honorific-options="honorificOptions"
+        @close="personalOpen = false"
     />
 
     <RecordModal

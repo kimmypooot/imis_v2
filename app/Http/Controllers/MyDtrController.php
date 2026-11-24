@@ -6,7 +6,9 @@ use App\Enums\AuditEvent;
 use App\Models\DtrAdjustment;
 use App\Support\HR\Dtr\DtrAdjustments;
 use App\Support\HR\Dtr\DtrDownload;
+use App\Support\HR\Dtr\DtrEntryVerification;
 use App\Support\HR\Dtr\DtrSheets;
+use App\Support\HR\Dtr\DtrSignatories;
 use App\Support\HR\Dtr\DtrSignatures;
 use App\Support\HR\Dtr\DtrWorkbook;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +35,7 @@ class MyDtrController extends Controller
             ...$sheets->header($employee),
             'sheet' => $sheets->forRange($employee, Carbon::parse($range['from']), Carbon::parse($range['to'])),
             'generated_at' => now()->format('Y-m-d H:i'),
+            'layout' => $request->query('layout') === 'double' ? 'double' : 'single',
         ]);
     }
 
@@ -54,7 +57,7 @@ class MyDtrController extends Controller
      * punches are never touched. Every entry is audited with what it
      * replaced, and a sheet you signed shows as changed until you sign again.
      */
-    public function adjust(Request $request, DtrAdjustments $adjustments): RedirectResponse
+    public function adjust(Request $request, DtrAdjustments $adjustments, DtrEntryVerification $verification): RedirectResponse
     {
         $employee = $request->user()->employee;
         abort_unless($employee, 404);
@@ -83,6 +86,9 @@ class MyDtrController extends Controller
         ]);
 
         $count = count($result['saved']);
+        if ($count > 0) {
+            $verification->tellVerifiers($employee, $count);
+        }
 
         return back()->with('status', trim(
             ($count ? "Saved {$count} ".($count === 1 ? 'day' : 'days').' as certified true and correct. ' : '')
@@ -116,13 +122,47 @@ class MyDtrController extends Controller
         return back()->with('status', 'Your DTR is signed. The printed form carries your signature and a code to validate it.');
     }
 
-    public function show(Request $request, DtrSheets $sheets): Response
+    /**
+     * Picks who verifies one of your sheets (printed under "Office Head
+     * Name/Signature"), or goes back to the office's head with no choice.
+     * Changing it after you signed makes that signing stale: sign again.
+     */
+    public function signatory(Request $request, DtrSheets $sheets, DtrSignatories $signatories): RedirectResponse
+    {
+        $employee = $request->user()->employee;
+        abort_unless($employee, 404);
+
+        $data = $request->validate([
+            ...DtrSheets::rangeRules($request->input('from')),
+            'signatory_id' => ['nullable', 'integer'],
+        ]);
+        $from = Carbon::parse($data['from']);
+        $to = Carbon::parse($data['to']);
+
+        // One real sheet only: not a range across a reassignment.
+        $sheets->forRange($employee, $from, $to);
+
+        $result = $signatories->choose($employee, $from, $to, isset($data['signatory_id']) ? (int) $data['signatory_id'] : null);
+        $period = DtrSheets::periodLabel($from, $to);
+
+        $this->audit()->record(
+            AuditEvent::DtrSignatoryChosen,
+            $result['to'] ? "Chose {$result['to']->name} to verify their DTR for {$period}" : "Went back to the office head to verify their DTR for {$period}",
+            $employee,
+            ['from' => $from->toDateString(), 'to' => $to->toDateString(), 'previous' => $result['from']?->name, 'signatory' => $result['to']?->name],
+        );
+
+        return back()->with('status', ($result['to'] ? "{$result['to']->name} will verify your DTR for {$period}." : "The office head will verify your DTR for {$period}.")
+            .' If you had already signed this sheet, sign it again.');
+    }
+
+    public function show(Request $request, DtrSheets $sheets, DtrSignatories $signatories): Response
     {
         $month = DtrSheets::parseMonth($request->query('month'));
         $employee = $request->user()->employee;
 
         return Inertia::render('Portal/MyDtr', $employee
-            ? [...$sheets->forMonth($employee, $month), 'earliestEntry' => DtrAdjustments::earliestEntry()->toDateString(), 'hasRecord' => true, 'hasSignature' => $request->user()->signature_path !== null]
+            ? [...$sheets->forMonth($employee, $month), 'signatoryOptions' => $signatories->options($employee), 'earliestEntry' => DtrAdjustments::earliestEntry()->toDateString(), 'chargedMonths' => collect([DtrAdjustments::earliestEntry(), DtrAdjustments::earliestEntry()->addMonth(), today()])->filter(fn (Carbon $date) => DtrAdjustments::monthCharged($employee, $date))->map(fn (Carbon $date) => $date->format('Y-m'))->unique()->values()->all(), 'hasRecord' => true, 'hasSignature' => $request->user()->signature_path !== null]
             : ['employee' => null, 'month' => $month->format('Y-m'), 'label' => $month->format('F Y'), 'sheets' => [], 'hasRecord' => false]);
     }
 }

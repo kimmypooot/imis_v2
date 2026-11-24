@@ -117,6 +117,7 @@ class DailyTimeRecord
                     'time_out' => $adjustment->time_out ? substr($adjustment->time_out, 0, 5) : null,
                     'remark' => $adjustment->remark,
                     'by_employee' => (bool) $adjustment->entered_by_employee,
+                    'verified' => $adjustment->verified_at !== null,
                 ] : null,
                 'out' => $out && $count > 1 ? $out->format('H:i') : null,
                 'minutes' => $minutes,

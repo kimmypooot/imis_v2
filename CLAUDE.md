@@ -89,7 +89,7 @@ particular:
   yet: the built-in figures are starters and targets are data. JPortal
   (`../jportal`), GAD Corner, TIMS (`../csc-tims`) and PROCTAD
   (`../proctad`; both connected locally 2026-11-21) serve a feed; no other system does yet. Exec-4 (legacy PHP systems, CTS) is next.
-- Released versions are tracked in What's New notes (latest 3.6.1, 2026-11-17;
+- Released versions are tracked in What's New notes (latest 3.7.1, 2026-11-24;
   3.6.0 added a dark theme, phone install, the Executive dashboard revamp and
   a refreshed look (error pages, solid-blue dialog headers, button icons, a
   flat progress bar/spinner, count-up figures); 3.5.x added ETTS and CARES hub APIs, richer branded emails with a live

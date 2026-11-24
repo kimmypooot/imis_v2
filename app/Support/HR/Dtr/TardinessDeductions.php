@@ -3,6 +3,7 @@
 namespace App\Support\HR\Dtr;
 
 use App\Enums\AuditEvent;
+use App\Models\DtrAdjustment;
 use App\Models\DtrLeaveDeduction;
 use App\Models\Employee;
 use App\Models\LeaveType;
@@ -33,9 +34,13 @@ use Illuminate\Validation\ValidationException;
  *   frees it to be charged again. The deduction is dated the last day of
  *   the month.
  * - Employees whose leave card comes from HR's workbook (`leave_card_months`)
- *   are left out: their balances are brought back to the workbook on every
- *   sync, so a charge made here would be lost or doubled. Their tardiness
- *   belongs in the workbook.
+ *   are charged only for months the workbook has not reached yet. The
+ *   workbook stays the master: each sync brings the ledger back to the
+ *   card's last month, so a charge made for a month the card already covers
+ *   would be undone (the workbook has its own tardiness there). A charge for
+ *   a later month is a pending one: it keeps the balance honest meanwhile,
+ *   and when the workbook reaches that month the sync settles the difference
+ *   (the workbook's figure wins, so nothing is doubled).
  */
 class TardinessDeductions
 {
@@ -43,6 +48,7 @@ class TardinessDeductions
         private readonly DailyTimeRecord $record = new DailyTimeRecord,
         private readonly TardinessConversion $conversion = new TardinessConversion,
         private readonly LeaveCredits $credits = new LeaveCredits,
+        private readonly HabitualAttendance $habitual = new HabitualAttendance,
     ) {}
 
     /**
@@ -56,20 +62,26 @@ class TardinessDeductions
         $from = $month->copy()->startOfMonth();
         $to = $month->copy()->endOfMonth()->startOfDay();
         $vacation = LeaveType::query()->where('code', 'VL')->first();
-        $cardManaged = DB::table('leave_card_months')->distinct()->pluck('employee_id')->flip();
+        $cardThrough = $this->cardThrough();
+        $key = $from->year * 100 + $from->month;
 
         return Employee::query()->with('user')
             ->whereNotNull('biometric_id')
             ->where(fn ($query) => $query->whereNull('separation_date')->orWhereDate('separation_date', '>=', $from))
             ->get()
-            ->map(function (Employee $employee) use ($from, $to, $vacation, $cardManaged) {
-                $totals = $this->record->build($employee, $from, $to)['totals'];
+            ->map(function (Employee $employee) use ($from, $to, $vacation, $cardThrough, $key) {
+                $built = $this->record->build($employee, $from, $to);
+                $totals = $built['totals'];
                 $minutes = $totals['late_minutes'] + $totals['undertime_minutes'];
                 $posted = $this->active($employee, $from);
+                $habitual = $this->habitual->evaluate($employee, $from, $built['days']);
 
-                if ($minutes === 0 && ! $posted) {
+                if ($minutes === 0 && ! $posted && ! $habitual['tardiness'] && ! $habitual['absenteeism']) {
                     return null;
                 }
+
+                // Days the employee entered themselves, and the minutes they bring.
+                $entered = $built['days']->filter(fn (array $day) => $day['adjustment']['by_employee'] ?? false)->values();
 
                 $days = $this->conversion->days($minutes);
                 $available = $vacation ? max(0.0, $this->credits->balance($employee, $vacation, $to)) : 0.0;
@@ -84,7 +96,21 @@ class TardinessDeductions
                     'days' => $days,
                     'absences' => $totals['absences'],
                     'half_day_absences' => $totals['half_day_absences'],
-                    'card_managed' => $cardManaged->has($employee->id),
+                    // The workbook already covers this month: its own tardiness is there.
+                    'card_managed' => $cardThrough->has($employee->id) && $cardThrough[$employee->id] >= $key,
+                    // The workbook doesn't reach this month yet: charged here until it does.
+                    'card_pending' => $cardThrough->has($employee->id) && $cardThrough[$employee->id] < $key,
+                    'entered_days' => $entered->map(fn (array $day) => [
+                        'date' => $day['date'],
+                        'time_in' => $day['adjustment']['time_in'],
+                        'time_out' => $day['adjustment']['time_out'],
+                        'remark' => $day['adjustment']['remark'],
+                        'minutes' => $day['late_minutes'] + $day['undertime_minutes'],
+                        'verified' => $day['adjustment']['verified'],
+                    ])->all(),
+                    'entered_minutes' => $entered->sum(fn (array $day) => $day['late_minutes'] + $day['undertime_minutes']),
+                    'unverified_days' => $entered->where('adjustment.verified', false)->count(),
+                    'habitual' => ['tardiness' => $habitual['tardiness'], 'absenteeism' => $habitual['absenteeism']],
                     // Vacation Leave credits at the end of the month, and what they would not cover.
                     'available' => $available,
                     'without_pay' => round(max(0.0, $days - $available), 3),
@@ -105,7 +131,10 @@ class TardinessDeductions
             ->values();
     }
 
-    public function post(Employee $employee, Carbon $month, string $charge, bool $healthCertified, User $actor): DtrLeaveDeduction
+    /**
+     * @param  bool  $postAnyway  charge although days the employee entered are not verified yet; audited
+     */
+    public function post(Employee $employee, Carbon $month, string $charge, bool $healthCertified, User $actor, bool $postAnyway = false): DtrLeaveDeduction
     {
         $from = $month->copy()->startOfMonth();
         $to = $month->copy()->endOfMonth()->startOfDay();
@@ -122,13 +151,16 @@ class TardinessDeductions
 
         $label = $from->format('F Y');
 
-        $deduction = DB::transaction(function () use ($employee, $charge, $from, $to, $label, $actor) {
+        $unverified = 0;
+        $deduction = DB::transaction(function () use ($employee, $charge, $from, $to, $label, $actor, $postAnyway, &$unverified) {
             // One change at a time per employee, so two requests cannot both pass the checks below.
             Employee::query()->whereKey($employee->id)->lockForUpdate()->first();
 
-            if (DB::table('leave_card_months')->where('employee_id', $employee->id)->exists()) {
-                throw ValidationException::withMessages(['month' => 'This employee\'s leave card comes from HR\'s workbook. Record their tardiness and undertime there, so a sync does not undo or double it.']);
+            $through = $this->cardThrough()->get($employee->id);
+            if ($through !== null && $through >= $from->year * 100 + $from->month) {
+                throw ValidationException::withMessages(['month' => 'HR\'s leave card workbook already covers '.$label.' for this employee. Record their tardiness and undertime there, so a sync does not undo or double it.']);
             }
+            $pending = $through !== null;
             if ($this->active($employee, $from)) {
                 throw ValidationException::withMessages(['month' => 'This month is already charged. Reverse the charge first to post it again.']);
             }
@@ -137,6 +169,12 @@ class TardinessDeductions
             $minutes = $totals['late_minutes'] + $totals['undertime_minutes'];
             if ($minutes <= 0) {
                 throw ValidationException::withMessages(['month' => 'There is no tardiness or undertime to charge for this month.']);
+            }
+
+            $unverified = DtrAdjustment::query()->where('employee_id', $employee->id)->where('entered_by_employee', true)->whereNull('verified_at')
+                ->whereBetween('date', [$from->toDateString(), $to->toDateString()])->count();
+            if ($unverified > 0 && ! $postAnyway) {
+                throw ValidationException::withMessages(['month' => $unverified.' day'.($unverified === 1 ? '' : 's').' entered by the employee '.($unverified === 1 ? 'is' : 'are').' not verified yet. Have their supervisor or office head verify '.($unverified === 1 ? 'it' : 'them').', or charge anyway.']);
             }
 
             $type = LeaveType::query()->where('code', $charge)->first();
@@ -153,7 +191,7 @@ class TardinessDeductions
             $entry = $charged > 0
                 ? $this->credits->deductLeave($employee, $type, $charged, $to, sprintf(
                     'Tardiness and undertime, %s (%s = %s day, CSC Table IV)%s',
-                    $label, $hours, number_format($days, 3), $withoutPay > 0 ? '; '.number_format($withoutPay, 3).' day without pay, credits used up' : ''), $actor)
+                    $label, $hours, number_format($days, 3), ($withoutPay > 0 ? '; '.number_format($withoutPay, 3).' day without pay, credits used up' : '').($pending ? '; pending the leave card file' : '')), $actor)
                 : null;
 
             return DtrLeaveDeduction::query()->create([
@@ -177,9 +215,94 @@ class TardinessDeductions
             'days_without_pay' => (float) $deduction->days_without_pay,
             'leave_type' => $charge,
             'health_certified' => $charge === 'SL',
+            'unverified_days' => $unverified,
+            'posted_anyway' => $unverified > 0,
         ]);
 
         return $deduction->load('entry.leaveType');
+    }
+
+    /**
+     * Charges every row that is ready to Vacation Leave: the month has ended,
+     * there is something to charge, nothing is waiting for verification, and
+     * the leave card isn't HR's workbook. Anything that needs a decision is
+     * left in the list.
+     *
+     * @param  callable(Employee): bool  $mayCharge
+     * @return array{posted: int, left: int}
+     */
+    public function postReviewed(Carbon $month, User $actor, callable $mayCharge): array
+    {
+        $posted = 0;
+        $left = 0;
+
+        foreach ($this->forMonth($month) as $row) {
+            if ($row['deduction'] || $row['minutes'] === 0 || $row['card_managed']) {
+                continue;
+            }
+
+            $employee = Employee::query()->with('user')->find($row['employee_id']);
+            if ($row['unverified_days'] > 0 || ! $employee || ! $mayCharge($employee)) {
+                $left++;
+
+                continue;
+            }
+
+            try {
+                $this->post($employee, $month, 'VL', false, $actor);
+                $posted++;
+            } catch (ValidationException) {
+                $left++;
+            }
+        }
+
+        return ['posted' => $posted, 'left' => $left];
+    }
+
+    /**
+     * Brings the leave cards in line with the DTR for a month that has
+     * ended: charges what is ready (see postReviewed) and re-charges a
+     * posted month whose DTR changed since (an adjustment or a late biometric
+     * import) — the old charge is reversed and the new total posted to the
+     * same leave type. Rows needing a decision (unverified days, a workbook
+     * card, someone the actor may not charge) are left alone.
+     *
+     * @param  callable(Employee): bool  $mayCharge
+     * @return array{posted: int, updated: int, left: int}
+     */
+    public function sync(Carbon $month, User $actor, callable $mayCharge): array
+    {
+        $updated = 0;
+        $left = 0;
+
+        foreach ($this->forMonth($month) as $row) {
+            if (! $row['deduction'] || ! $row['deduction']['dtr_changed'] || $row['card_managed']) {
+                continue;
+            }
+
+            $employee = Employee::query()->with('user')->find($row['employee_id']);
+            if ($row['unverified_days'] > 0 || ! $employee || ! $mayCharge($employee)) {
+                $left++;
+
+                continue;
+            }
+
+            $charge = $row['deduction']['type'];
+
+            try {
+                $this->reverse(DtrLeaveDeduction::query()->findOrFail($row['deduction']['id']), 'The DTR changed after this was charged; re-synced.', $actor);
+                if ($row['minutes'] > 0) {
+                    $this->post($employee, $month, $charge, $charge === 'SL', $actor);
+                }
+                $updated++;
+            } catch (ValidationException) {
+                $left++;
+            }
+        }
+
+        $new = $this->postReviewed($month, $actor, $mayCharge);
+
+        return ['posted' => $new['posted'], 'updated' => $updated, 'left' => $left + $new['left']];
     }
 
     public function reverse(DtrLeaveDeduction $deduction, string $reason, User $actor): void
@@ -206,6 +329,22 @@ class TardinessDeductions
             'days' => (float) $deduction->days,
             'reason' => $reason,
         ]);
+    }
+
+    /**
+     * The last month (as year*100+month) each workbook-managed employee's
+     * card reaches. A year's brought-forward row (month 0) counts as the end
+     * of the year before.
+     *
+     * @return Collection<int, int> employee id => last month covered
+     */
+    private function cardThrough(): Collection
+    {
+        return DB::table('leave_card_months')
+            ->selectRaw('employee_id, max(year * 100 + month) as through')
+            ->groupBy('employee_id')
+            ->pluck('through', 'employee_id')
+            ->map(fn ($value) => (int) $value);
     }
 
     private function active(Employee $employee, Carbon $from): ?DtrLeaveDeduction

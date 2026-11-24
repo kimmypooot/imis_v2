@@ -11,6 +11,7 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import DtrSheetTable from '../../../../Components/HR/DtrSheetTable.vue';
+import DtrPrintChoice from '../../../../Components/HR/DtrPrintChoice.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
@@ -34,6 +35,8 @@ const props = defineProps({
 const base = computed(() => `/admin/hr/employees/${props.employee.id}/dtr`);
 const changeMonth = (event) => event.target.value && router.get(base.value, { month: event.target.value }, { preserveScroll: true });
 const printUrl = (sheet) => `${props.printBase}?from=${sheet.from}&to=${sheet.to}`;
+// The sheet whose "Print CS Form 48" is open, to choose a single or double DTR.
+const printing = ref(null);
 const exportUrl = (sheet) => `${props.printBase.replace(/\/print$/, '/export')}?from=${sheet.from}&to=${sheet.to}`;
 
 const kinds = [
@@ -92,7 +95,7 @@ const removeAdjustment = async (row) => {
     <div class="space-y-6">
         <Card v-for="sheet in sheets" :key="sheet.from" :title="`${sheet.period}${sheet.unit ? ` · ${sheet.unit}` : ''}`" icon="clock">
             <template #actions>
-                <Button variant="secondary" :href="printUrl(sheet)" target="_blank" icon="printer">Print CS Form 48</Button>
+                <Button variant="secondary" icon="printer" @click="printing = sheet">Print CS Form 48</Button>
                 <Button variant="secondary" :href="exportUrl(sheet)" external icon="download">Export to Excel</Button>
             </template>
             <p class="mb-3 text-sm text-text-muted">
@@ -111,6 +114,8 @@ const removeAdjustment = async (row) => {
             <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :can-adjust="canManage" @adjust="adjust" />
         </Card>
     </div>
+
+    <DtrPrintChoice :url="printing ? printUrl(printing) : null" :period="printing?.period ?? ''" @close="printing = null" />
 
     <Modal :open="open" :title="day ? `Adjust ${formatCalendarDate(day.date)}` : 'Adjust'" icon="pencil" tone="primary" @close="open = false">
         <form id="dtr-adjust-form" class="space-y-4" @submit.prevent="submit">

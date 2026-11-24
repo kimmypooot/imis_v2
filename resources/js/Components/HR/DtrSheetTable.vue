@@ -15,6 +15,8 @@ const props = defineProps({
     editing: { type: Boolean, default: false },
     drafts: { type: Object, default: () => ({}) },
     earliest: { type: String, default: '' },
+    /** Offer a link to file leave on days the employee was absent (their own DTR). */
+    fileLeave: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['adjust']);
@@ -99,9 +101,10 @@ const summary = [
                             <input v-if="editable(row)" v-model="drafts[row.date].remark" type="text" maxlength="255" placeholder="Reason, if you change the times" class="filter-control mb-1 w-full min-w-48" :aria-label="`Reason for ${formatCalendarDate(row.date)}`" />
                             <span v-if="statuses[row.status]" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statuses[row.status]">{{ badge(row) }}</span>
                             <template v-else>{{ label(row) }}</template>
-                            <span v-if="row.flags.includes('adjusted') && row.adjustment?.by_employee" class="ml-2 text-xs font-medium text-link">Entered by the employee</span>
+                            <span v-if="row.flags.includes('adjusted') && row.adjustment?.by_employee" class="ml-2 text-xs font-medium text-link">Entered by the employee{{ row.adjustment.verified ? ', verified' : ', not verified yet' }}</span>
                             <span v-else-if="row.flags.includes('adjusted')" class="ml-2 text-xs font-medium text-link">Adjusted by HRD{{ editing ? ' (locked)' : '' }}</span>
                             <span v-if="row.flags.includes('worked_day_off')" class="ml-2 text-xs text-warning-fg">Punched on a day off</span>
+                            <a v-if="fileLeave && !editing && row.status === 'absent'" :href="`/my/leave/apply?date_from=${row.date}`" class="ml-2 text-xs font-medium text-link hover:underline">File leave for this day</a>
                             <span v-if="row.late_minutes" class="ml-2 text-xs text-text-muted">{{ row.late_minutes }} min late</span>
                             <span v-if="row.undertime_minutes" class="ml-2 text-xs text-text-muted">{{ row.undertime_minutes }} min short</span>
                         </td>

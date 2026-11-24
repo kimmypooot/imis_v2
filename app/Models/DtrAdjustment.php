@@ -20,12 +20,17 @@ class DtrAdjustment extends Model
 
     protected function casts(): array
     {
-        return ['date' => 'date:Y-m-d', 'entered_by_employee' => 'boolean'];
+        return ['date' => 'date:Y-m-d', 'entered_by_employee' => 'boolean', 'verified_at' => 'datetime'];
     }
 
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
     public function creator(): BelongsTo
