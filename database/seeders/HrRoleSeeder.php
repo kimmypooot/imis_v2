@@ -30,8 +30,8 @@ class HrRoleSeeder extends Seeder
     {
         return [
             'hr-officer' => [
-                'display_name' => 'HR Officer',
-                'description' => 'Human Resource staff: employee records, PDS verification, 201 files, L&D, plantilla, Service Records, leave (including certifying credits), and payroll.',
+                'display_name' => 'HR Staff',
+                'description' => 'Human Resource staff: employee records, PDS verification, 201 files, L&D, plantilla, Service Records, leave (including certifying credits), DTR, payroll, and reviewing data-correction requests.',
                 'permissions' => [
                     P::EmployeesView, P::EmployeesCreate, P::EmployeesUpdate, P::EmployeesReassign,
                     P::PdsView, P::PdsUpdate, P::PdsVerify,

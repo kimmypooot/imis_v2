@@ -50,6 +50,10 @@ Schedule::command('imis:leave-deadlines')->weekdays()->dailyAt('07:30')->timezon
 // HR-8: employees hear when a recurring deduction is nearly completed.
 Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/Manila')->withoutOverlapping();
 
+// DTR: HR is reminded once a month ends that its tardiness still has to be
+// synced to leave credits (from the 2nd, once the biometric logs are in).
+Schedule::command('imis:remind-tardiness-sync')->dailyAt('08:15')->timezone('Asia/Manila')->withoutOverlapping();
+
 // Queued work (bell and email notifications, so a page never waits on the
 // mail server). Needs only `schedule:run` in cron, like every task here: the
 // worker handles what is waiting, then stops after at most 50 seconds, so the

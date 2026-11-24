@@ -39,9 +39,10 @@ class DailyTimeRecord
     ) {}
 
     /**
+     * @param  array<string, DtrAdjustment>  $overrides  unsaved adjustments by Y-m-d that stand in for the stored ones (a preview of times being entered)
      * @return array{days: Collection<int, array<string, mixed>>, totals: array<string, mixed>}
      */
-    public function build(Employee $employee, Carbon $from, Carbon $to): array
+    public function build(Employee $employee, Carbon $from, Carbon $to, array $overrides = []): array
     {
         $from = $from->copy()->startOfDay();
         $to = $to->copy()->startOfDay();
@@ -51,7 +52,8 @@ class DailyTimeRecord
             ->keyBy(fn (Holiday $holiday) => $holiday->date->toDateString());
         $adjustments = DtrAdjustment::query()->where('employee_id', $employee->id)
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])->get()
-            ->keyBy(fn (DtrAdjustment $adjustment) => $adjustment->date->toDateString());
+            ->keyBy(fn (DtrAdjustment $adjustment) => $adjustment->date->toDateString())
+            ->toBase()->merge($overrides);
         $leave = $this->leaveByDay($employee, $from, $to);
         $assignments = EmployeeWorkSchedule::query()->with('schedule')->where('employee_id', $employee->id)
             ->where('valid_from', '<=', $to->toDateString())

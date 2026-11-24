@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AuditEvent;
 use App\Models\DtrAdjustment;
+use App\Support\HR\Dtr\DailyTimeRecord;
 use App\Support\HR\Dtr\DtrAdjustments;
 use App\Support\HR\Dtr\DtrDownload;
 use App\Support\HR\Dtr\DtrEntryVerification;
@@ -11,6 +12,7 @@ use App\Support\HR\Dtr\DtrSheets;
 use App\Support\HR\Dtr\DtrSignatories;
 use App\Support\HR\Dtr\DtrSignatures;
 use App\Support\HR\Dtr\DtrWorkbook;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -30,6 +32,8 @@ class MyDtrController extends Controller
         abort_unless($employee, 404);
 
         $range = $request->validate(DtrSheets::rangeRules($request->query('from')));
+        // A printed copy is final: the period must have ended, like the Excel export.
+        abort_unless(Carbon::parse($range['to'])->startOfDay()->lt(today()), 403, 'Printing opens once the period has ended.');
 
         return Inertia::render('HR/DtrPrint', [
             ...$sheets->header($employee),
@@ -46,9 +50,57 @@ class MyDtrController extends Controller
         abort_unless($employee, 404);
 
         $range = $request->validate(DtrSheets::rangeRules($request->query('from')));
+        // The copy is final: a period still running keeps changing in IMIS, so it opens once the last day has passed.
+        abort_unless(Carbon::parse($range['to'])->startOfDay()->lt(today()), 403, 'Export to Excel opens once the period has ended.');
+
         $sheet = $sheets->forRange($employee, Carbon::parse($range['from']), Carbon::parse($range['to']));
 
-        return DtrDownload::xlsx($workbook->build([['employee' => $employee->user->name, 'sheet' => $sheet]], now()->format('n/j/Y g:i:s A')), "CS Form 48 - {$employee->user->name} - {$sheet['period']}");
+        $layout = $request->query('layout') === 'double' ? DtrWorkbook::DOUBLE : DtrWorkbook::SINGLE;
+
+        return DtrDownload::xlsx($workbook->build([['employee' => $employee->user->name, 'sheet' => $sheet]], now()->format('n/j/Y g:i:s A'), $layout, $request->user()->username), "CS Form 48 - {$employee->user->name} - {$sheet['period']}".($layout === DtrWorkbook::DOUBLE ? ' (double)' : ''));
+    }
+
+    /**
+     * What the day would count as with the times being typed in (worked
+     * hours, late and undertime), worked out by the same rules as the DTR
+     * itself. Nothing is saved. Days HRD adjusted keep HRD's result.
+     */
+    public function preview(Request $request, DailyTimeRecord $record): JsonResponse
+    {
+        $employee = $request->user()->employee;
+        abort_unless($employee, 404);
+
+        $data = $request->validate([
+            'entries' => ['required', 'array', 'min:1', 'max:31'],
+            'entries.*.date' => ['required', 'date_format:Y-m-d', 'distinct'],
+            'entries.*.time_in' => ['nullable', 'date_format:H:i'],
+            'entries.*.time_out' => ['nullable', 'date_format:H:i'],
+        ]);
+
+        $locked = DtrAdjustment::query()->where('employee_id', $employee->id)->where('entered_by_employee', false)
+            ->whereIn('date', array_column($data['entries'], 'date'))->get()->map(fn (DtrAdjustment $row) => $row->date->toDateString());
+
+        $overrides = [];
+        foreach ($data['entries'] as $entry) {
+            $in = $entry['time_in'] ?? null;
+            $out = $entry['time_out'] ?? null;
+            if (($in === null && $out === null) || $locked->contains($entry['date']) || ($in !== null && $out !== null && $out <= $in)) {
+                continue;
+            }
+            $overrides[$entry['date']] = new DtrAdjustment(['employee_id' => $employee->id, 'date' => $entry['date'], 'kind' => 'times', 'time_in' => $in, 'time_out' => $out, 'remark' => '', 'entered_by_employee' => true]);
+        }
+
+        $days = [];
+        if ($overrides !== []) {
+            $dates = array_keys($overrides);
+            $built = $record->build($employee, Carbon::parse(min($dates)), Carbon::parse(max($dates)), $overrides)['days']->keyBy('date');
+            foreach ($dates as $date) {
+                $row = $built[$date];
+                $days[$date] = ['minutes' => $row['minutes'], 'late_minutes' => $row['late_minutes'], 'undertime_minutes' => $row['undertime_minutes'], 'status' => $row['status']];
+            }
+        }
+
+        return response()->json(['days' => $days]);
     }
 
     /**

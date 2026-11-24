@@ -19,12 +19,16 @@ const props = defineProps({
     earliest: { type: String, default: '' },
     /** Offer a link to file leave on days the employee was absent (their own DTR). */
     fileLeave: { type: Boolean, default: false },
+    /** While editing: what each changed day would count as, by date (worked, late and undertime minutes), worked out by the server. */
+    previews: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits(['adjust', 'punches']);
 
 const hm = (minutes) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
 const time = (value) => value ?? '';
+// A day being edited shows what it would count as; every other day shows the record.
+const shown = (row) => (props.editing && props.previews[row.date] ? { ...row, ...props.previews[row.date] } : row);
 const dayName = (date) => new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short' });
 
 // A day can be entered by the employee when it has happened, is recent enough, and HRD hasn't adjusted it.
@@ -68,7 +72,7 @@ const summary = [
 <template>
     <div>
         <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
+            <table class="dtr-table min-w-full text-left text-sm">
                 <caption class="sr-only">Daily time record</caption>
                 <thead class="border-b border-border text-xs text-text-muted">
                     <tr>
@@ -82,7 +86,7 @@ const summary = [
                         <th v-if="canAdjust || canSeePunches" scope="col" class="py-2 pl-3 text-right font-medium"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody>
                     <tr v-for="row in rows" :key="row.date" :class="quiet(row.status) ? 'text-text-muted' : ''">
                         <td class="whitespace-nowrap py-1.5 pr-3 tabular-nums">
                             <span class="font-medium">{{ Number(row.date.slice(8)) }}</span>
@@ -98,7 +102,7 @@ const summary = [
                             <input v-if="editable(row)" v-model="drafts[row.date].out" type="time" class="filter-control w-28" :aria-label="`Time out for ${formatCalendarDate(row.date)}`" />
                             <template v-else>{{ time(row.out) }}</template>
                         </td>
-                        <td class="px-3 py-1.5 text-right tabular-nums">{{ row.minutes ? hm(row.minutes) : '' }}</td>
+                        <td class="px-3 py-1.5 text-right tabular-nums">{{ shown(row).minutes ? hm(shown(row).minutes) : '' }}</td>
                         <td class="px-3 py-1.5">
                             <input v-if="editable(row)" v-model="drafts[row.date].remark" type="text" maxlength="255" placeholder="Reason, if you change the times" class="filter-control mb-1 w-full min-w-48" :aria-label="`Reason for ${formatCalendarDate(row.date)}`" />
                             <span v-if="statuses[row.status]" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statuses[row.status]">{{ badge(row) }}</span>
@@ -107,8 +111,8 @@ const summary = [
                             <span v-else-if="row.flags.includes('adjusted')" class="ml-2 text-xs font-medium text-link">Adjusted by HRD{{ editing ? ' (locked)' : '' }}</span>
                             <span v-if="row.flags.includes('worked_day_off')" class="ml-2 text-xs text-warning-fg">Punched on a day off</span>
                             <a v-if="fileLeave && !editing && row.status === 'absent'" :href="`/my/leave/apply?date_from=${row.date}`" class="ml-2 text-xs font-medium text-link hover:underline">File leave for this day</a>
-                            <span v-if="row.late_minutes" class="ml-2 text-xs text-text-muted">{{ row.late_minutes }} min late</span>
-                            <span v-if="row.undertime_minutes" class="ml-2 text-xs text-text-muted">{{ row.undertime_minutes }} min short</span>
+                            <span v-if="shown(row).late_minutes" class="ml-2 text-xs text-text-muted">{{ shown(row).late_minutes }} min late</span>
+                            <span v-if="shown(row).undertime_minutes" class="ml-2 text-xs text-text-muted">{{ shown(row).undertime_minutes }} min short</span>
                         </td>
                         <td v-if="canAdjust || canSeePunches" class="whitespace-nowrap py-1.5 pl-3 text-right">
                             <ActionButton v-if="canSeePunches && row.date <= localToday" icon="clock" :label="`Punches on ${formatCalendarDate(row.date)}`" @click="emit('punches', row)" />
@@ -131,3 +135,11 @@ const summary = [
         </dl>
     </div>
 </template>
+
+<style scoped>
+/* A bordered table, so every time sits in its own cell. */
+.dtr-table { border: 1px solid var(--color-border); border-collapse: collapse; }
+.dtr-table th,
+.dtr-table td { border: 1px solid var(--color-border); padding-left: 0.75rem; padding-right: 0.75rem; }
+.dtr-table thead th { background: var(--color-surface-muted); color: var(--color-text); }
+</style>

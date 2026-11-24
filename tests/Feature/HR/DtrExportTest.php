@@ -44,20 +44,26 @@ class DtrExportTest extends TestCase
         $this->assertSame(0, AuditLog::query()->where('event', AuditEvent::DtrExported->value)->count());
     }
 
-    public function test_a_signed_sheet_carries_the_code_but_no_image(): void
+    public function test_a_signed_sheet_carries_the_qr_but_no_signature_image(): void
     {
         $employee = Employee::factory()->create();
-        $signature = DtrSignature::factory()->create(['employee_id' => $employee->id, 'period_from' => '2026-03-01', 'period_to' => '2026-03-31']);
+        DtrSignature::factory()->create(['employee_id' => $employee->id, 'period_from' => '2026-03-01', 'period_to' => '2026-03-31']);
 
         $zip = $this->workbook($this->actingAs($employee->user)->get('/my/dtr/export?from=2026-03-01&to=2026-03-31'));
 
-        $this->assertStringContainsString($signature->code, $zip->getFromName('xl/worksheets/sheet1.xml'));
-        // Only the agency logo is drawn: the employee's signature image is never in the file.
+        // The agency logo and the QR of the printed form are drawn: the employee's signature image is never in the file.
         $this->assertNotFalse($zip->locateName('xl/media/logo.png'));
-        $this->assertSame(1, substr_count($zip->getFromName('xl/drawings/drawing1.xml'), '<xdr:pic>'));
+        // The logo, its faded copy behind the form (when GD can make it) and the QR.
+        $this->assertSame(function_exists('imagecreatefromstring') ? 3 : 2, substr_count($zip->getFromName('xl/drawings/drawing1.xml'), '<xdr:pic>'));
         $this->assertStringContainsString('Agency logo', $zip->getFromName('xl/drawings/drawing1.xml'));
+        $this->assertStringContainsString('name="QR code"', $zip->getFromName('xl/drawings/drawing1.xml'));
         $media = array_filter(array_map(fn ($i) => $zip->getNameIndex($i), range(0, $zip->numFiles - 1)), fn ($name) => str_starts_with($name, 'xl/media/'));
-        $this->assertSame(['xl/media/logo.png'], array_values($media));
+        $media = array_values($media);
+        sort($media);
+        $this->assertSame(function_exists('imagecreatefromstring') ? ['xl/media/logo.png', 'xl/media/qr1.png', 'xl/media/watermark.png'] : ['xl/media/logo.png', 'xl/media/qr1.png'], $media);
+        // The QR is a real PNG, and the code and link are no longer printed as text in its cell.
+        $this->assertSame("\x89PNG", substr($zip->getFromName('xl/media/qr1.png'), 0, 4));
+        $this->assertStringNotContainsString('/dtr/verify/', $zip->getFromName('xl/worksheets/sheet1.xml'));
     }
 
     public function test_hrd_can_export_anyones_sheet_and_it_is_audited(): void

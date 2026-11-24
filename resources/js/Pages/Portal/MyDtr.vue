@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
@@ -7,6 +7,7 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Tooltip from '@cscro8/ui/Components/UI/Tooltip.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import DtrSheetTable from '../../Components/HR/DtrSheetTable.vue';
@@ -42,12 +43,27 @@ const printUrl = (sheet) => `/my/dtr/print?from=${sheet.from}&to=${sheet.to}`;
 // The sheet whose "Print CS Form 48" is open, to choose a single or double DTR.
 const printing = ref(null);
 const exportUrl = (sheet) => `/my/dtr/export?from=${sheet.from}&to=${sheet.to}`;
+// The sheet whose "Export to Excel" is open, to choose the same single or double layout.
+const exporting = ref(null);
 
 const localToday = (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 })();
 const finished = (sheet) => sheet.to < localToday;
+// Printing and exporting give a final copy: they wait for the period to end and for unsaved entries to be saved or cancelled.
+const lock = (sheet) => {
+    if (!finished(sheet)) return `Finalize your DTR to enable this. It opens once the period ends (${exportOpens(sheet, true)}).`;
+    if (editingFrom.value) return 'Save or cancel your changes to enable this, so the copy matches your DTR in IMIS.';
+
+    return null;
+};
+const exportOpens = (sheet, lastDay = false) => {
+    const day = new Date(`${sheet.to}T00:00:00`);
+    if (!lastDay) day.setDate(day.getDate() + 1);
+
+    return (lastDay ? 'after ' : '') + day.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+};
 const needsSigning = (sheet) => finished(sheet) && (!sheet.signature || sheet.signature.status !== 'valid');
 
 // Who verifies a sheet (the name under "Office Head Name/Signature"): you pick, because supervisors are sometimes away at short notice.
@@ -78,6 +94,43 @@ const base = {};
 const confirming = ref(false);
 const adjustForm = useForm({ entries: [], certify: false });
 
+// While editing, the worked hours (and late and undertime) of each changed day, worked out by the server
+// with the same rules as the DTR, shortly after the times stop changing.
+const previews = ref({});
+let previewTimer = null;
+let previewRun = 0;
+const xsrfToken = () => decodeURIComponent(document.cookie.split('; ').find((part) => part.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+const loadPreviews = async () => {
+    const entries = Object.keys(drafts)
+        .filter((date) => drafts[date].in !== base[date].in || drafts[date].out !== base[date].out)
+        .map((date) => ({ date, time_in: drafts[date].in || null, time_out: drafts[date].out || null }));
+    if (!entries.length) {
+        previews.value = {};
+        return;
+    }
+
+    const run = ++previewRun;
+    try {
+        const response = await fetch('/my/dtr/preview', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
+            body: JSON.stringify({ entries }),
+        });
+        if (response.ok && run === previewRun) previews.value = (await response.json()).days;
+    } catch {
+        // The figures simply stay as they were; saving does not depend on them.
+    }
+};
+watch(
+    () => Object.values(drafts).map((draft) => `${draft.in}|${draft.out}`).join(','),
+    () => {
+        window.clearTimeout(previewTimer);
+        previewTimer = window.setTimeout(loadPreviews, 250);
+    },
+);
+onBeforeUnmount(() => window.clearTimeout(previewTimer));
+
 const canEnter = (row) => row.date <= localToday && !props.chargedMonths.includes(row.date.slice(0, 7)) && (!props.earliestEntry || row.date >= props.earliestEntry) && !(row.adjustment && !row.adjustment.by_employee);
 const startEdit = (sheet) => {
     Object.keys(drafts).forEach((key) => delete drafts[key]);
@@ -94,6 +147,7 @@ const startEdit = (sheet) => {
 const stopEdit = () => {
     editingFrom.value = null;
     confirming.value = false;
+    previews.value = {};
 };
 const hadEntry = (sheet, date) => !!sheet.rows.find((row) => row.date === date)?.adjustment?.by_employee;
 const changes = computed(() => {
@@ -152,9 +206,18 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
                 </template>
                 <Button v-else-if="!editingFrom" variant="secondary" icon="pencil" @click="startEdit(sheet)">Edit my entries</Button>
                 <Button v-if="needsSigning(sheet) && hasSignature && !editingFrom" variant="success" icon="pencil" @click="openSign(sheet)">{{ sheet.signature ? 'Sign again' : 'Sign this DTR' }}</Button>
-                <Button variant="secondary" icon="printer" @click="printing = sheet">Print CS Form 48</Button>
-                <Button variant="secondary" :href="exportUrl(sheet)" external icon="download">Export to Excel</Button>
+                <Tooltip v-if="lock(sheet)" :label="lock(sheet)">
+                    <Button variant="secondary" icon="printer" disabled>Print CS Form 48</Button>
+                </Tooltip>
+                <Button v-else variant="secondary" icon="printer" @click="printing = sheet">Print CS Form 48</Button>
+                <Tooltip v-if="lock(sheet)" :label="lock(sheet)">
+                    <Button variant="secondary" icon="download" disabled>Export to Excel</Button>
+                </Tooltip>
+                <Button v-else variant="secondary" icon="download" @click="exporting = sheet">Export to Excel</Button>
             </template>
+            <p v-if="!finished(sheet)" class="mb-3 text-sm text-text-muted">
+                Print and Export to Excel open on {{ exportOpens(sheet) }}, once this period has ended. Fix any wrong time here first, so the copy you get is final.
+            </p>
             <p class="mb-3 text-sm text-text-muted">
                 Work schedule: <span class="text-text">{{ sheet.schedule ?? 'Not assigned yet' }}</span>
             </p>
@@ -187,7 +250,7 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
             <p v-if="editingFrom === sheet.from" class="mb-3 rounded-md border border-info-border bg-info-bg px-3 py-2 text-sm text-text">
                 Enter your actual time in and out for a day where a punch is missing or wrong, with a reason. Your fingerprint punches are never changed: what you enter is kept beside them, shown as "Employee-entered" on the printed form, and HRD can see it. Days HRD adjusted, and months already charged to leave credits, are locked. Your supervisor or office head verifies what you enter. Clear both times to take back an entry of yours.
             </p>
-            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :editing="editingFrom === sheet.from" :drafts="drafts" :earliest="earliestEntry" file-leave />
+            <DtrSheetTable :rows="sheet.rows" :totals="sheet.totals" :editing="editingFrom === sheet.from" :drafts="drafts" :previews="previews" :earliest="earliestEntry" file-leave />
         </Card>
     </div>
 
@@ -229,6 +292,7 @@ const submit = () => form.post('/my/dtr/sign', { preserveScroll: true, onSuccess
     </Modal>
 
     <DtrPrintChoice :url="printing ? printUrl(printing) : null" :period="printing?.period ?? ''" @close="printing = null" />
+    <DtrPrintChoice action="export" acknowledge :url="exporting ? exportUrl(exporting) : null" :period="exporting?.period ?? ''" @close="exporting = null" />
 
     <Modal :open="signing !== null" title="Sign your DTR" icon="pencil" tone="success" @close="signing = null">
         <form id="dtr-sign-form" class="space-y-3" @submit.prevent="submit">

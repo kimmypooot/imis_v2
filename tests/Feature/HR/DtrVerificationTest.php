@@ -173,6 +173,33 @@ class DtrVerificationTest extends TestCase
         $this->assertSame(2, DtrLeaveDeduction::query()->count());
     }
 
+    public function test_the_employee_is_told_when_tardiness_is_charged(): void
+    {
+        Notification::fake();
+
+        (new TardinessDeductions)->post($this->employee, Carbon::parse('2026-10-01'), 'VL', false, $this->hr);
+
+        Notification::assertSentTo($this->employee->user, HrUpdate::class, fn (HrUpdate $notice) => str_contains($notice->toArray($this->employee->user)['message'], 'charged to your Vacation Leave'));
+    }
+
+    public function test_hr_is_reminded_once_a_month_while_tardiness_is_uncharged(): void
+    {
+        $this->artisan('imis:remind-tardiness-sync')->assertSuccessful();
+        $this->artisan('imis:remind-tardiness-sync')->assertSuccessful();
+
+        $this->assertSame(1, $this->hr->notifications()->where('data->title', 'Sync October 2026 tardiness with leave credits')->count());
+    }
+
+    public function test_no_reminder_when_everything_is_charged(): void
+    {
+        (new TardinessDeductions)->post($this->employee, Carbon::parse('2026-10-01'), 'VL', false, $this->hr);
+        Notification::fake();
+
+        $this->artisan('imis:remind-tardiness-sync')->assertSuccessful();
+
+        Notification::assertNothingSent();
+    }
+
     public function test_sync_needs_leave_manage_and_a_finished_month(): void
     {
         $this->actingAs(User::factory()->create())->post('/admin/hr/leave/tardiness/sync', ['month' => '2026-10'])->assertForbidden();

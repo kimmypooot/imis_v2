@@ -31,7 +31,9 @@ class OfficeDtrExportController extends Controller
         $data = $request->validate([
             'office' => ['required', 'string', 'regex:/^(regional|\d+)$/'],
             'month' => ['required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+            'layout' => ['nullable', 'in:single,double'],
         ]);
+        $layout = ($data['layout'] ?? null) === 'double' ? DtrWorkbook::DOUBLE : DtrWorkbook::SINGLE;
         $month = DtrSheets::parseMonth($data['month']);
 
         if ($data['office'] === UploadMonitor::REGIONAL) {
@@ -62,6 +64,6 @@ class OfficeDtrExportController extends Controller
             }
         }
 
-        return DtrDownload::xlsx($workbook->build($entries, now()->format('n/j/Y g:i:s A')), "CS Form 48 - {$label} - {$month->format('F Y')}");
+        return DtrDownload::xlsx($workbook->build($entries, now()->format('n/j/Y g:i:s A'), $layout, $request->user()->username), "CS Form 48 - {$label} - {$month->format('F Y')}".($layout === DtrWorkbook::DOUBLE ? ' (double)' : ''));
     }
 }

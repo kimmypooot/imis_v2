@@ -39,6 +39,20 @@ const toggleRole = (id, checked) => {
         : form.role_ids.filter((roleId) => roleId !== id);
 };
 
+// Bulk helpers. "Select all" skips Super Administrator and inactive roles
+// (the first is too powerful to grant by accident, the second grants nothing).
+const selectableRoles = computed(() => props.roles.filter((role) => role.name !== 'super-admin' && role.status !== 'inactive'));
+const allSelected = computed(() => selectableRoles.value.every((role) => form.role_ids.includes(role.id)));
+
+const selectAllRoles = () => {
+    form.role_ids = [...new Set([...form.role_ids, ...selectableRoles.value.map((role) => role.id)])];
+};
+
+const clearRoles = () => {
+    const listed = props.roles.map((role) => role.id);
+    form.role_ids = form.role_ids.filter((id) => !listed.includes(id));
+};
+
 const submit = () => {
     form.put(`/users/${props.user.id}/roles`);
 };
@@ -96,6 +110,10 @@ const isGrantingSuperAdmin = computed(() => {
     <div class="grid items-start gap-6 lg:grid-cols-2">
         <Card title="Assigned roles">
             <form class="space-y-3" @submit.prevent="submit">
+                <div v-if="roles.length > 1" class="flex gap-2">
+                    <Button type="button" variant="secondary" size="sm" :disabled="allSelected" @click="selectAllRoles">Select all</Button>
+                    <Button type="button" variant="secondary" size="sm" :disabled="form.role_ids.length === 0" @click="clearRoles">Clear all</Button>
+                </div>
                 <Checkbox
                     v-for="role in roles"
                     :key="role.id"

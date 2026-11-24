@@ -188,6 +188,7 @@ Route::middleware('auth')->group(function () {
     Route::get('my/dtr/print', [MyDtrController::class, 'print'])->name('my.dtr.print');
     Route::get('my/dtr/export', [MyDtrController::class, 'export'])->middleware('throttle:30,1')->name('my.dtr.export');
     // Signing re-checks the password, so it's rate-limited like the other e-signatures.
+    Route::post('my/dtr/preview', [MyDtrController::class, 'preview'])->middleware('throttle:240,1')->name('my.dtr.preview');
     Route::post('my/dtr/adjustments', [MyDtrController::class, 'adjust'])->middleware('throttle:20,1')->name('my.dtr.adjustments');
     Route::post('my/dtr/sign', [MyDtrController::class, 'sign'])->middleware('throttle:20,1')->name('my.dtr.sign');
     Route::post('my/dtr/signatory', [MyDtrController::class, 'signatory'])->middleware('throttle:30,1')->name('my.dtr.signatory');

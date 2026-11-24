@@ -3,16 +3,19 @@
 namespace App\Support\HR\Dtr;
 
 use App\Enums\AuditEvent;
+use App\Enums\PermissionName;
 use App\Models\DtrAdjustment;
 use App\Models\DtrLeaveDeduction;
 use App\Models\Employee;
 use App\Models\LeaveType;
 use App\Models\User;
+use App\Notifications\HrUpdate;
 use App\Support\Audit\AuditLogger;
 use App\Support\HR\Leave\LeaveCredits;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -219,7 +222,71 @@ class TardinessDeductions
             'posted_anyway' => $unverified > 0,
         ]);
 
+        $this->tellEmployee($employee, $deduction, $label, $charge);
+
         return $deduction->load('entry.leaveType');
+    }
+
+    /**
+     * Tells the employee what was charged and why, so a deduction on their
+     * leave card never comes as a surprise.
+     */
+    private function tellEmployee(Employee $employee, DtrLeaveDeduction $deduction, string $label, string $charge): void
+    {
+        $hours = intdiv($deduction->minutes, 60).' hr '.($deduction->minutes % 60).' min';
+        $days = (float) $deduction->days;
+        $withoutPay = (float) $deduction->days_without_pay;
+        $type = $charge === 'SL' ? 'Sick Leave' : 'Vacation Leave';
+
+        $result = match (true) {
+            $days > 0 && $withoutPay > 0 => number_format($days, 3)." day was charged to your {$type} and ".number_format($withoutPay, 3).' day is without pay, as your credits ran out.',
+            $days > 0 => number_format($days, 3)." day was charged to your {$type}.",
+            default => number_format($withoutPay, 3).' day is without pay, as your credits ran out.',
+        };
+
+        $employee->loadMissing('user')->user->notify(new HrUpdate(
+            "Tardiness charged to your leave for {$label}",
+            "Your DTR for {$label} has {$hours} of tardiness and undertime (CSC Table IV). {$result}",
+            '/my/leave',
+        ));
+    }
+
+    /**
+     * Reminds HR (anyone with leave.manage) that a finished month still has
+     * tardiness to charge, or a charge whose DTR changed. Once per person
+     * per month, so running it daily never repeats the notice.
+     *
+     * @return int how many people were reminded
+     */
+    public function remindSyncDue(Carbon $month): int
+    {
+        $rows = $this->forMonth($month);
+        $uncharged = $rows->filter(fn (array $row) => ! $row['deduction'] && $row['minutes'] > 0 && ! $row['card_managed'])->count();
+        $changed = $rows->filter(fn (array $row) => $row['deduction'] && $row['deduction']['dtr_changed'] && ! $row['card_managed'])->count();
+
+        if ($uncharged + $changed === 0) {
+            return 0;
+        }
+
+        $label = $month->format('F Y');
+        $title = "Sync {$label} tardiness with leave credits";
+        $recipients = User::query()->where('status', 'active')
+            ->whereHas('activeRoles.permissions', fn ($query) => $query->where('name', PermissionName::LeaveManage->value))
+            ->get()
+            ->reject(fn (User $user) => $user->notifications()->where('data->title', $title)->exists());
+
+        $parts = array_filter([
+            $uncharged > 0 ? $uncharged.($uncharged === 1 ? ' employee has' : ' employees have').' tardiness or undertime not yet charged' : null,
+            $changed > 0 ? $changed.' charged '.($changed === 1 ? 'month has' : 'months have').' a DTR that changed afterwards' : null,
+        ]);
+
+        Notification::send($recipients, new HrUpdate(
+            $title,
+            ucfirst(implode('; ', $parts))." for {$label}. Open Tardiness & Undertime and press Sync with DTR.",
+            '/admin/hr/leave/tardiness?month='.$month->format('Y-m'),
+        ));
+
+        return $recipients->count();
     }
 
     /**

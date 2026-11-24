@@ -38,6 +38,8 @@ const changeMonth = (event) => event.target.value && router.get(base.value, { mo
 const printUrl = (sheet) => `${props.printBase}?from=${sheet.from}&to=${sheet.to}`;
 // The sheet whose "Print CS Form 48" is open, to choose a single or double DTR.
 const printing = ref(null);
+// The sheet whose "Export to Excel" is open, to choose a single or double layout.
+const exporting = ref(null);
 const exportUrl = (sheet) => `${props.printBase.replace(/\/print$/, '/export')}?from=${sheet.from}&to=${sheet.to}`;
 
 const kinds = [
@@ -99,7 +101,7 @@ const removeAdjustment = async (row) => {
         <Card v-for="sheet in sheets" :key="sheet.from" :title="`${sheet.period}${sheet.unit ? ` · ${sheet.unit}` : ''}`" icon="clock">
             <template #actions>
                 <Button variant="secondary" icon="printer" @click="printing = sheet">Print CS Form 48</Button>
-                <Button variant="secondary" :href="exportUrl(sheet)" external icon="download">Export to Excel</Button>
+                <Button variant="secondary" icon="download" @click="exporting = sheet">Export to Excel</Button>
             </template>
             <p class="mb-3 text-sm text-text-muted">
                 Work schedule: <span class="text-text">{{ sheet.schedule ?? 'None assigned: punches are shown without hours' }}</span>
@@ -121,6 +123,7 @@ const removeAdjustment = async (row) => {
     <DtrPunchesModal :employee-id="employee.id" :date="punchDay" :can-manage="canManage" @close="punchDay = null" />
 
     <DtrPrintChoice :url="printing ? printUrl(printing) : null" :period="printing?.period ?? ''" @close="printing = null" />
+    <DtrPrintChoice action="export" :url="exporting ? exportUrl(exporting) : null" :period="exporting?.period ?? ''" @close="exporting = null" />
 
     <Modal :open="open" :title="day ? `Adjust ${formatCalendarDate(day.date)}` : 'Adjust'" icon="pencil" tone="primary" @close="open = false">
         <form id="dtr-adjust-form" class="space-y-4" @submit.prevent="submit">

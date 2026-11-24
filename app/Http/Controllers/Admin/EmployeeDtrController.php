@@ -62,7 +62,9 @@ class EmployeeDtrController extends Controller
 
         $sheet = $sheets->forRange($employee, Carbon::parse($range['from']), Carbon::parse($range['to']));
 
-        return DtrDownload::xlsx($workbook->build([['employee' => $employee->user->name, 'sheet' => $sheet]], now()->format('n/j/Y g:i:s A')), "CS Form 48 - {$employee->user->name} - {$sheet['period']}");
+        $layout = $request->query('layout') === 'double' ? DtrWorkbook::DOUBLE : DtrWorkbook::SINGLE;
+
+        return DtrDownload::xlsx($workbook->build([['employee' => $employee->user->name, 'sheet' => $sheet]], now()->format('n/j/Y g:i:s A'), $layout, $request->user()->username), "CS Form 48 - {$employee->user->name} - {$sheet['period']}".($layout === DtrWorkbook::DOUBLE ? ' (double)' : ''));
     }
 
     public function store(Request $request, Employee $employee, DtrAdjustments $adjustments): RedirectResponse

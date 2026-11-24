@@ -14,6 +14,7 @@ import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import DtrPrintChoice from '../../../../Components/HR/DtrPrintChoice.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -73,7 +74,9 @@ const clearSelected = async () => {
 };
 
 const open = ref(null);
-const goToMonth = (value) => router.get('/admin/hr/dtr/import', { month: value }, { preserveScroll: true, preserveState: true, only: ['month', 'monthLabel', 'monitor'], onSuccess: () => (open.value = null) });
+// The office whose "Excel" is open, to choose a single or double layout.
+const exporting = ref(null);
+const goToMonth =(value) => router.get('/admin/hr/dtr/import', { month: value }, { preserveScroll: true, preserveState: true, only: ['month', 'monthLabel', 'monitor'], onSuccess: () => (open.value = null) });
 const shiftMonth = (step) => {
     const [year, mon] = props.month.split('-').map(Number);
     const date = new Date(year, mon - 1 + step, 1);
@@ -139,7 +142,7 @@ const number = (value) => Number(value).toLocaleString();
                                 <td class="hidden px-3 py-2 text-right tabular-nums sm:table-cell">{{ row.employees }}</td>
                                 <td class="hidden whitespace-nowrap py-2 pl-3 text-text-muted sm:table-cell">{{ row.last_punch ? formatCalendarDate(row.last_punch) : '—' }}</td>
                                 <td class="py-2 pl-3 text-right">
-                                    <Button v-if="row.employees" size="sm" variant="secondary" external icon="download" :href="`/admin/hr/dtr/export?office=${row.key}&month=${month}`" :aria-label="`Export ${row.office} DTRs for ${monthLabel} to Excel`">Excel</Button>
+                                    <Button v-if="row.employees" size="sm" variant="secondary" icon="download" :aria-label="`Export ${row.office} DTRs for ${monthLabel} to Excel`" @click="exporting = row">Excel</Button>
                                 </td>
                             </tr>
                             <tr v-if="open === row.key" :id="`monitor-${row.key}`">
@@ -283,4 +286,6 @@ const number = (value) => Number(value).toLocaleString();
             </div>
         </Card>
     </div>
+
+    <DtrPrintChoice action="export" :url="exporting ? `/admin/hr/dtr/export?office=${exporting.key}&month=${month}` : null" :subject="exporting?.office ?? ''" :period="monthLabel" @close="exporting = null" />
 </template>

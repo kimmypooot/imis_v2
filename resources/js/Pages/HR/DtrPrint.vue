@@ -132,8 +132,8 @@ onMounted(async () => {
 
     <main class="dtr">
         <section class="page" :class="{ double: isDouble }">
-            <!-- The faded agency logo behind a double DTR, as on the "two DTR in one paper" report. -->
-            <img v-if="isDouble && logo" class="watermark" :src="logo" alt="" />
+            <!-- The faded agency logo behind the form(s): the "two DTR in one paper" report has it, and a single DTR now matches. -->
+            <img v-if="logo" class="watermark" :src="logo" alt="" />
             <div class="copies">
                 <div v-for="copy in copies" :key="copy" class="copy">
                     <table class="tpl" :style="{ width: `${columnWidths.reduce((sum, width) => sum + width, 0)}cm` }">
@@ -279,7 +279,7 @@ onMounted(async () => {
 
 /* The paper: A4 portrait with the template's 0.508 cm margins, always black on white. */
 .page {
-    width: 21.001cm; min-height: 29.7cm; margin: 0 auto; padding: 0.508cm; box-sizing: border-box;
+    position: relative; width: 21.001cm; min-height: 29.7cm; margin: 0 auto; padding: 0.508cm; box-sizing: border-box;
     background: #fff; color: #000; box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
 }
 
@@ -290,14 +290,15 @@ onMounted(async () => {
  * behind both; the forms have no background of their own, so it shows through.
  */
 .page.double { position: relative; padding: 0.508cm 0.25cm; }
-.double .copies { position: relative; z-index: 1; display: flex; gap: 0.2cm; }
+.copies { position: relative; z-index: 1; }
+.double .copies { display: flex; gap: 0.2cm; }
 .double .copy { flex: none; }
 .double .tpl { --form-scale: 1; margin-left: 0; }
 .double .title { white-space: normal; font-size: 12pt; line-height: 1.2; }
 .double .agency-text { white-space: normal; }
 .double .schedule { font-size: 8pt; line-height: 1.05; }
 .watermark {
-    position: absolute; z-index: 0; top: 7.4cm; left: 50%; width: 16.5cm; height: auto;
+    position: absolute; z-index: 0; top: 5.4cm; left: 50%; width: 16.5cm; height: auto;
     transform: translateX(-50%); opacity: 0.12; pointer-events: none;
 }
 
