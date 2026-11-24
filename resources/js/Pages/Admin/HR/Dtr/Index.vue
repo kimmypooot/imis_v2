@@ -5,6 +5,7 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import Pagination from '@cscro8/ui/Components/UI/Pagination.vue';
 
@@ -103,51 +104,51 @@ const dtrUrl = (employee) => `/admin/hr/employees/${employee.id}/dtr?month=${pro
         </Card>
 
         <Card :title="`${employees.total} ${employees.total === 1 ? 'employee' : 'employees'}`" icon="clock">
-            <div v-if="employees.data.length" class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
+            <div v-if="employees.data.length" class="table-card">
+                <table class="data-table">
                     <caption class="sr-only">Employees and their DTR for {{ label }}</caption>
-                    <thead class="border-b border-border text-xs text-text-muted">
+                    <thead>
                         <tr>
-                            <th scope="col" class="py-2 pr-3 font-medium">Employee</th>
-                            <th scope="col" class="px-3 py-2 font-medium">Biometric ID</th>
-                            <th scope="col" class="px-3 py-2 font-medium">Schedule</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Hours</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Late</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Undertime</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Absent</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Leave</th>
-                            <th scope="col" class="px-3 py-2 font-medium">Notes</th>
-                            <th scope="col" class="py-2 pl-3 text-right font-medium"><span class="sr-only">Open</span></th>
+                            <th scope="col" class="font-medium">Employee</th>
+                            <th scope="col" class="font-medium">Biometric ID</th>
+                            <th scope="col" class="font-medium">Schedule</th>
+                            <th scope="col" class="text-right font-medium">Hours</th>
+                            <th scope="col" class="text-right font-medium">Late</th>
+                            <th scope="col" class="text-right font-medium">Undertime</th>
+                            <th scope="col" class="text-right font-medium">Absent</th>
+                            <th scope="col" class="text-right font-medium">Leave</th>
+                            <th scope="col" class="font-medium">Notes</th>
+                            <th scope="col" class="text-right font-medium"><span class="sr-only">Open</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-border">
+                    <tbody>
                         <tr v-for="employee in employees.data" :key="employee.id">
-                            <td class="py-2 pr-3">
+                            <td>
                                 <Link :href="dtrUrl(employee)" class="font-medium text-link hover:underline">{{ employee.name }}</Link>
                                 <div class="text-xs text-text-muted">{{ employee.office ?? 'Regional Office' }}</div>
                             </td>
-                            <td class="px-3 py-2 tabular-nums">
+                            <td class="tabular-nums">
                                 <span v-if="employee.biometric_id">{{ employee.biometric_id }}</span>
                                 <span v-else class="inline-flex rounded-full bg-danger-bg px-2.5 py-0.5 text-xs font-semibold text-danger-fg">None</span>
                             </td>
-                            <td class="px-3 py-2">
+                            <td>
                                 <span v-if="employee.schedule">{{ employee.schedule }}</span>
                                 <span v-else class="inline-flex rounded-full bg-warning-bg px-2.5 py-0.5 text-xs font-semibold text-warning-fg">None</span>
                             </td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(employee.hours_minutes) }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(employee.late_minutes) }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(employee.undertime_minutes) }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ employee.absences || '–' }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ employee.leave_days || '–' }}</td>
-                            <td class="px-3 py-2">
+                            <td class="text-right tabular-nums">{{ hm(employee.hours_minutes) }}</td>
+                            <td class="text-right tabular-nums">{{ hm(employee.late_minutes) }}</td>
+                            <td class="text-right tabular-nums">{{ hm(employee.undertime_minutes) }}</td>
+                            <td class="text-right tabular-nums">{{ employee.absences || '–' }}</td>
+                            <td class="text-right tabular-nums">{{ employee.leave_days || '–' }}</td>
+                            <td>
                                 <div class="flex flex-wrap gap-1.5">
                                     <span v-if="employee.unverified_days" class="inline-flex rounded-full bg-warning-bg px-2.5 py-0.5 text-xs font-semibold text-warning-fg">{{ employee.unverified_days }} to verify</span>
                                     <span v-if="employee.adjusted_days" class="inline-flex rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-semibold text-link">{{ employee.adjusted_days }} adjusted</span>
                                     <span v-if="employee.charged" class="inline-flex rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-semibold text-success-fg">Charged to leave</span>
                                 </div>
                             </td>
-                            <td class="py-2 pl-3 text-right">
-                                <Button size="sm" variant="secondary" :href="dtrUrl(employee)">Open DTR</Button>
+                            <td class="text-right">
+                                <ActionButton icon="eye" tone="neutral" :label="`Open the DTR of ${employee.name}`" :href="dtrUrl(employee)" />
                             </td>
                         </tr>
                     </tbody>
