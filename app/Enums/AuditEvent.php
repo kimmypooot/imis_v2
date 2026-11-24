@@ -27,6 +27,7 @@ enum AuditEvent: string
     case DatabaseBackupFailed = 'system.backup_failed';
     case DatabaseBackupDeleted = 'system.backup_deleted';
     case LogsPruned = 'system.logs_pruned';
+    case LeaveCreditsPurged = 'system.leave_credits_purged';
     case ScheduledTaskPaused = 'system.task_paused';
     case ScheduledTaskResumed = 'system.task_resumed';
     case ScheduledTaskRun = 'system.task_run';

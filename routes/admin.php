@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\LeaveApplicationController as AdminLeaveApplicati
 use App\Http\Controllers\Admin\LeaveCalendarController;
 use App\Http\Controllers\Admin\LeaveCardSyncController;
 use App\Http\Controllers\Admin\LeaveCreditController;
+use App\Http\Controllers\Admin\LeaveCreditsPurgeController;
 use App\Http\Controllers\Admin\LeaveDesignationController;
 use App\Http\Controllers\Admin\LeaveMonetizationController;
 use App\Http\Controllers\Admin\LeaveReportController;
@@ -729,5 +730,7 @@ Route::middleware('auth')->group(function () {
     // 404. Protected settings are refused by UpdateSettingsRequest.
     Route::middleware('permission:settings.update')->group(function () {
         Route::put('admin/settings/{group}', [SettingController::class, 'update'])->name('admin.settings.update');
+        // Danger zone, Super Administrators only (see LeaveCreditsPurgeController).
+        Route::delete('admin/settings/leave-credits', [LeaveCreditsPurgeController::class, 'destroy'])->middleware('throttle:3,1')->name('admin.settings.leave-credits.destroy');
     });
 });

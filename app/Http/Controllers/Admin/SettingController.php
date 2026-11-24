@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
+use App\Enums\RoleName;
 use App\Enums\SettingGroup;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingsRequest;
@@ -38,6 +39,9 @@ class SettingController extends Controller
         return Inertia::render('Admin/Settings/Index', [
             'groups' => $groups,
             'canUpdate' => $request->user()->can('update', Setting::class),
+            'leaveCreditsPurge' => $request->user()->hasRole(RoleName::SuperAdmin) && $request->user()->can('update', Setting::class)
+                ? ['entries' => DB::table('leave_ledger_entries')->count(), 'phrase' => LeaveCreditsPurgeController::PHRASE]
+                : null,
         ]);
     }
 

@@ -5,12 +5,14 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import SettingsGroupForm from '../../../Components/Settings/SettingsGroupForm.vue';
+import LeaveCreditsDangerZone from '../../../Components/Settings/LeaveCreditsDangerZone.vue';
 
 defineOptions({ layout: AdminLayout });
 
 defineProps({
     groups: { type: Array, required: true },
     canUpdate: { type: Boolean, default: false },
+    leaveCreditsPurge: { type: Object, default: null },
 });
 </script>
 
@@ -34,5 +36,7 @@ defineProps({
             title="No settings defined"
             description="Settings are created by running the settings seeder (php artisan db:seed --class=SettingSeeder)."
         />
+
+        <LeaveCreditsDangerZone v-if="leaveCreditsPurge" :entries="leaveCreditsPurge.entries" :phrase="leaveCreditsPurge.phrase" />
     </div>
 </template>
