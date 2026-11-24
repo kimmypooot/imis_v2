@@ -11,7 +11,7 @@ import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
 import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
-import { firstName, useSplash } from '../Composables/useSplash';
+import { greetingName, useSplash } from '../Composables/useSplash';
 import { useBranding } from '../Composables/useBranding';
 import { useAuthorization } from '../Composables/useAuthorization';
 import { refreshRememberedAccount } from '../Composables/useRememberedAccounts';
@@ -55,7 +55,7 @@ if (page.props.flash?.signedIn) {
         instant: true,
         title: 'Login Successful',
         subtitle: 'Welcome back, {name}',
-        name: firstName(page.props.auth.user?.name),
+        name: greetingName(page.props.auth.user),
         note: 'Redirecting to your dashboard…',
     });
     hideSplash(1400);

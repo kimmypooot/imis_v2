@@ -159,6 +159,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
+     * How greetings and the sign-in/out screens address the person: the
+     * honorific and the whole first name ("Atty. Juan Pedro"). Null for an
+     * account without a split name.
+     */
+    public function greetingName(): ?string
+    {
+        return filled($this->first_name) ? trim("{$this->honorific} {$this->first_name}") : null;
+    }
+
+    /**
      * The legacy systems have no honorific field and show the first name
      * as the person's name, so the title rides along there as before.
      */

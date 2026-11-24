@@ -7,7 +7,7 @@ import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { useTheme } from '../../Composables/useTheme';
-import { firstName, useSplash } from '../../Composables/useSplash';
+import { greetingName, useSplash } from '../../Composables/useSplash';
 import { formatDateTime } from '../../Utils/datetime';
 
 /**
@@ -52,7 +52,7 @@ const logout = () => {
     showSplash({
         title: 'Signing Out',
         subtitle: 'See you soon, {name}',
-        name: firstName(props.user.name),
+        name: greetingName(props.user),
         note: 'Redirecting to the login page…',
     });
 
@@ -158,7 +158,7 @@ const groupClass = 'border-b border-border py-1';
                 <p class="mt-4 text-base font-semibold break-words text-text">{{ user.name }}</p>
                 <p v-if="user.position" class="text-xs break-words text-text-muted">{{ user.position }}</p>
                 <p class="mt-4 text-sm text-text-muted">
-                    Leaving already, {{ firstName(user.name) }}? Your work is saved and your session will end on this device.
+                    Leaving already, {{ greetingName(user) }}? Your work is saved and your session will end on this device.
                 </p>
             </div>
 

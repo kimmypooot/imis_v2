@@ -32,6 +32,10 @@ const hide = (delay = 0) => {
 
 export const firstName = (name) => (name || '').trim().split(/\s+/)[0] || '';
 
+// How to address a person: the honorific and whole first name (the server's
+// `greeting`), or the first word of the name when the account has no split name.
+export const greetingName = (person) => person?.greeting || firstName(person?.name);
+
 export function useSplash() {
     return { splash: readonly(state), show, hide };
 }

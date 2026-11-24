@@ -48,7 +48,7 @@ export function refreshRememberedAccount(user) {
     write(
         saved.map((a) =>
             a.username === user.username
-                ? { name: user.name, username: user.username, photoUrl: photoPath(user.profile_photo_url) }
+                ? { name: user.name, greeting: user.greeting ?? null, username: user.username, photoUrl: photoPath(user.profile_photo_url) }
                 : a,
         ),
     );
@@ -57,9 +57,9 @@ export function refreshRememberedAccount(user) {
 export function useRememberedAccounts() {
     const accounts = ref(read());
 
-    const remember = ({ name, username, photoUrl = null }) => {
+    const remember = ({ name, username, greeting = null, photoUrl = null }) => {
         accounts.value = [
-            { name, username, photoUrl: photoPath(photoUrl) },
+            { name, greeting, username, photoUrl: photoPath(photoUrl) },
             ...accounts.value.filter((a) => a.username !== username),
         ].slice(0, MAX_ACCOUNTS);
         write(accounts.value);

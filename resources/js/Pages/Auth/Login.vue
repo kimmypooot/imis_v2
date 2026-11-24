@@ -11,7 +11,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
-import { firstName } from '../../Composables/useSplash';
+import { greetingName } from '../../Composables/useSplash';
 import { useRememberedAccounts } from '../../Composables/useRememberedAccounts';
 
 defineOptions({ layout: AuthLayout });
@@ -228,7 +228,7 @@ const {
             onSuccess: (page) => {
                 const user = page.props.auth?.user;
                 if (props.rememberAccounts && user) {
-                    rememberAccount({ name: user.name, username: user.username, photoUrl: user.profile_photo_url });
+                    rememberAccount({ name: user.name, greeting: user.greeting, username: user.username, photoUrl: user.profile_photo_url });
                 }
             },
         }),
@@ -344,7 +344,7 @@ const submit = () => {
                     <Icon name="users" size="sm" />
                 </button>
                 <UserAvatar :name="selected.name" :photo-url="selected.photoUrl" size="xl" highlight class="mx-auto" />
-                <p class="mt-3 text-xs font-medium text-link">Welcome back, {{ firstName(selected.name) }}</p>
+                <p class="mt-3 text-xs font-medium text-link">Welcome back, {{ greetingName(selected) }}</p>
                 <p class="truncate text-base font-semibold">{{ selected.name }}</p>
                 <p class="truncate text-xs text-muted">{{ selected.username }}</p>
             </div>

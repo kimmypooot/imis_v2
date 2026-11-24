@@ -13,7 +13,7 @@ import MetricTile from '../../Components/Executive/MetricTile.vue';
 import StatusRing from '../../Components/Executive/StatusRing.vue';
 import SystemTile from '../../Components/Executive/SystemTile.vue';
 import { formatAge, formatValue, headline, sectionStates, systemStates, targetStatuses } from '../../Components/Executive/format';
-import { firstName } from '../../Composables/useSplash';
+import { greetingName } from '../../Composables/useSplash';
 import { toast } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -39,7 +39,7 @@ const page = usePage();
 const greeting = computed(() => {
     const hour = new Date().getHours();
     const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    const name = firstName(page.props.auth.user?.name);
+    const name = greetingName(page.props.auth.user);
 
     return name ? `${part}, ${name}` : part;
 });

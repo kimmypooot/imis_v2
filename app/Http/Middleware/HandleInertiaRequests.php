@@ -56,6 +56,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     'id' => $user->id,
                     'name' => $user->name,
+                    // Honorific and whole first name, for greetings; null when the account has none.
+                    'greeting' => $user->greetingName(),
                     'username' => $user->username,
                     'email' => $user->email,
                     // Shown under the name in the header; may be null.

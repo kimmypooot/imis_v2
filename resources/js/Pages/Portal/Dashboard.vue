@@ -8,7 +8,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import { formatDateTime } from '../../Utils/datetime';
-import { firstName } from '../../Composables/useSplash';
+import { greetingName } from '../../Composables/useSplash';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
@@ -57,7 +57,7 @@ const user = computed(() => page.props.auth.user);
 const greeting = computed(() => {
     const hour = new Date().getHours();
     const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    const name = firstName(user.value?.name);
+    const name = greetingName(user.value);
 
     return name ? `${part}, ${name}! 👋` : `${part}!`;
 });
