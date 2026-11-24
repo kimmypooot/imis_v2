@@ -96,10 +96,25 @@ class LeaveCalendarTest extends TestCase
             ->where('colleagues.0.name', $colleague->user->name)
             ->where('colleagues.0.status', 'for_review')
             ->where('colleagues.0.dates', ['2026-06-09', '2026-06-10'])
-            // Who is out, not why.
-            ->missing('colleagues.0.type_code')
-            ->missing('colleagues.0.type_name')
+            // Who is out and what kind of leave; the reference and reasons stay private.
+            ->where('colleagues.0.type_code', 'SL')
             ->missing('colleagues.0.reference_number'));
+
+        // Their modal: who, what kind of leave, when, and nothing more.
+        $pendingOne = LeaveApplication::query()->where('employee_id', $colleague->id)->where('status', 'for_review')->sole();
+        $this->actingAs($me->user)->getJson("/my/leave/calendar/{$pendingOne->id}")
+            ->assertOk()
+            ->assertJsonPath('application.type_code', 'SL')
+            ->assertJsonPath('application.limited', true)
+            ->assertJsonMissingPath('application.remarks')
+            ->assertJsonMissingPath('application.late_reason')
+            ->assertJsonMissingPath('application.reference_number')
+            ->assertJsonPath('steps', [])
+            ->assertJsonPath('can_print', false);
+
+        // Not another division's, and not leave that was turned down.
+        $this->actingAs($me->user)->getJson('/my/leave/calendar/'.LeaveApplication::query()->where('employee_id', $elsewhere->id)->value('id'))->assertForbidden();
+        $this->actingAs($me->user)->getJson('/my/leave/calendar/'.LeaveApplication::query()->where('employee_id', $colleague->id)->where('status', 'disapproved')->value('id'))->assertForbidden();
 
         // No division, no co-workers.
         $loner = Employee::factory()->create();
@@ -142,12 +157,59 @@ class LeaveCalendarTest extends TestCase
         $this->actingAs($director->user->fresh())->get('/my/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
             ->where('seesEveryone', true)
             ->has('colleagues', 1)
-            ->where('colleagues.0.name', $elsewhere->user->name));
+            ->where('colleagues.0.name', $elsewhere->user->name)
+            // Top management also sees what kind of leave it is.
+            ->where('colleagues.0.type_code', 'VL'));
 
         $regular = $this->employee($this->office);
         $this->actingAs($regular->user)->get('/my/leave/calendar?month=2026-06')->assertInertia(fn (Assert $page) => $page
             ->where('seesEveryone', false)
             ->has('colleagues', 0));
+    }
+
+    public function test_the_calendar_modal_details_follow_the_calendars_reach(): void
+    {
+        $mine = $this->employee($this->office);
+        $other = $this->employee(OrganizationalUnit::factory()->create());
+        $own = $this->file($mine, 'VL', '2026-06-08', '2026-06-08', 'approved');
+        $away = $this->file($other, 'SL', '2026-06-09', '2026-06-09', 'approved');
+
+        // Top management / HR head sees any office's application.
+        $this->actingAs($this->hr)->getJson("/admin/hr/leave/calendar/{$away->id}")
+            ->assertOk()->assertJsonPath('application.id', $away->id)->assertJsonStructure(['application', 'steps'])
+            // HR can also print the form.
+            ->assertJsonPath('can_print', true);
+
+        // So does a Super Administrator, with no other permission.
+        $admin = User::factory()->create(['position' => 'Systems Administrator']);
+        $admin->roles()->attach(Role::factory()->create(['name' => 'super-admin']));
+        $this->actingAs($admin)->getJson("/admin/hr/leave/calendar/{$away->id}")->assertOk();
+
+        // Other HR staff: their own division only.
+        $staff = $this->userWith(['leave.view']);
+        $staff->update(['organizational_unit_id' => $this->office->id, 'position' => 'Human Resource Specialist']);
+        $this->actingAs($staff)->getJson("/admin/hr/leave/calendar/{$own->id}")->assertOk();
+        $this->actingAs($staff)->getJson("/admin/hr/leave/calendar/{$away->id}")->assertForbidden();
+
+        // No leave permission, no details.
+        $this->actingAs(User::factory()->create(['position' => 'Director IV']))->getJson("/admin/hr/leave/calendar/{$away->id}")->assertForbidden();
+    }
+
+    public function test_the_portal_calendar_modal_is_for_the_wide_audience_only(): void
+    {
+        $other = $this->employee(OrganizationalUnit::factory()->create());
+        $away = $this->file($other, 'SL', '2026-06-09', '2026-06-09', 'approved');
+
+        // A Director IV needs no leave permission to open it from the portal calendar.
+        $director = User::factory()->create(['position' => 'Director IV']);
+        $this->actingAs($director)->getJson("/my/leave/calendar/{$away->id}")
+            ->assertOk()->assertJsonPath('application.id', $away->id)->assertJsonStructure(['application', 'steps'])
+            // No leave permission, so no link to a form they could not open.
+            ->assertJsonPath('can_print', false);
+
+        // A co-worker in another division gets nothing.
+        $regular = $this->employee($this->office);
+        $this->actingAs($regular->user)->getJson("/my/leave/calendar/{$away->id}")->assertForbidden();
     }
 
     public function test_who_sees_every_office(): void

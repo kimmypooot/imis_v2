@@ -21,6 +21,8 @@ class MyEmployeeRecordController extends Controller
         $employee = $request->user()->employee()->with(['user.organizationalUnit', 'headDesignations.toUnit'])->first();
 
         return Inertia::render('Portal/MyEmployeeRecord', [
+            // Your saved e-signature image (drawn or uploaded), if any.
+            'signatureUrl' => $request->user()->signature_path ? '/my/signature?v='.substr(md5($request->user()->signature_path), 0, 8) : null,
             'employee' => $employee ? EmployeeResource::make($employee) : null,
             // HR-1b: your own movements between offices.
             'assignments' => $employee ? $assignments->timeline($employee, $request->user()) : null,

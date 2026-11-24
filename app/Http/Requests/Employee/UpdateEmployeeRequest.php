@@ -32,6 +32,8 @@ class UpdateEmployeeRequest extends FormRequest
     {
         return [
             'employee_number' => ['nullable', 'string', 'max:30', Rule::unique('employees', 'employee_number')->ignore($employee)],
+            // The number their fingerprint or face is enrolled under on the biometric device (1 to 6 digits), which is how their punches find them.
+            'biometric_id' => ['nullable', 'string', 'regex:/^\d{1,6}$/', Rule::unique('employees', 'biometric_id')->ignore($employee)],
             // Optional: a record can exist before HR knows it ("Not set").
             'employment_status' => ['nullable', new Enum(EmploymentStatus::class)],
             'original_appointment_date' => ['nullable', 'date', 'before_or_equal:today'],
@@ -79,6 +81,7 @@ class UpdateEmployeeRequest extends FormRequest
         return [
             'user_id' => 'employee',
             'employee_number' => 'employee number',
+            'biometric_id' => 'biometric ID',
             'employment_status' => 'employment status',
             'original_appointment_date' => 'original appointment date',
             'csc_entry_date' => 'date entered the CSC',

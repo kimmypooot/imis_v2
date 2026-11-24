@@ -14,6 +14,7 @@ use App\Models\LeaveDesignation;
 use App\Models\LeaveType;
 use App\Models\User;
 use App\Notifications\LeaveApplicationUpdate;
+use App\Support\HR\Signatures;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -188,6 +189,11 @@ class LeaveApplications
                 'status' => LeaveApplicationStatus::ForReview,
                 'filed_by' => $actor->id,
                 'submitted_at' => now(),
+                // Optional e-signature of the applicant; a resubmission is signed afresh or not at all.
+                'signed_at' => ($data['signed'] ?? false) ? now() : null,
+                'signed_ip' => ($data['signed'] ?? false) ? ($data['signed_ip'] ?? null) : null,
+                // A copy of the saved signature image, so changing it later doesn't alter this filing.
+                'signature_path' => ($data['signed'] ?? false) ? app(Signatures::class)->snapshot($actor->signature_path) : null,
                 'decided_at' => null,
             ])->save();
 
@@ -277,6 +283,9 @@ class LeaveApplications
             'action' => ['required', Rule::in(array_map(fn (LeaveStepAction $action) => $action->value, LeaveStepAction::forRole($step->role)))],
             'remarks' => ['nullable', 'string', 'max:1000'],
             'days_with_pay' => ['nullable', 'numeric', 'min:0', 'max:999'],
+            // Optional e-signature: ticked, it needs the account password (as when signing the PDS).
+            'sign' => ['nullable', 'boolean'],
+            'password' => ['required_if_accepted:sign', 'nullable', 'current_password'],
         ];
     }
 
@@ -307,6 +316,9 @@ class LeaveApplications
                 'acted_by' => $user->id,
                 'acted_for' => $authority['acting_for'],
                 'acted_at' => now(),
+                'signed_at' => ($data['signed'] ?? false) ? now() : null,
+                'signed_ip' => ($data['signed'] ?? false) ? ($data['signed_ip'] ?? null) : null,
+                'signature_path' => ($data['signed'] ?? false) ? app(Signatures::class)->snapshot($user->signature_path) : null,
                 // 7.A: freeze the credits as HR certified them.
                 'certified_credits' => $step->role === 'hr' ? $this->credits->balances($application->employee)->pluck('balance', 'code')->all() : null,
             ])->save();
@@ -388,6 +400,7 @@ class LeaveApplications
             'status' => $application->status->value,
             'status_label' => $application->status->label(),
             'submitted_at' => $application->submitted_at?->toIso8601String(),
+            'signed_at' => $application->signed_at?->toIso8601String(),
             'decided_at' => $application->decided_at?->toIso8601String(),
             'has_attachment' => $application->attachment_path !== null,
             'has_clearance' => $application->clearance_path !== null,
@@ -425,6 +438,7 @@ class LeaveApplications
                 'acted_by_position' => $step->actor?->position,
                 'acted_for' => $step->actingFor?->name,
                 'acted_at' => $step->acted_at?->toIso8601String(),
+                'signed_at' => $step->signed_at?->toIso8601String(),
                 'certified_credits' => $step->certified_credits,
             ]);
     }
@@ -934,8 +948,10 @@ class LeaveApplications
             }
         }
 
+        // The Head's own note (the same one printed on the form, under 7.D).
+        $note = trim((string) $application->steps()->where('role', 'head')->latest('id')->value('remarks'));
         $this->notifyEmployee($application, 'Leave application approved',
-            "Your application {$application->reference_number} was approved: {$withPay} day(s) with pay".($days > $withPay ? ', '.round($days - $withPay, 3).' without pay' : '').'.');
+            "Your application {$application->reference_number} was approved: {$withPay} day(s) with pay".($days > $withPay ? ', '.round($days - $withPay, 3).' without pay' : '').'.'.($note !== '' ? " Note from the Head: {$note}" : ''));
     }
 
     /** Tells whoever acts next (and, for deadline reminders, HR too). */
@@ -962,12 +978,28 @@ class LeaveApplications
         $name = $application->employee->user->name;
 
         Notification::send($recipients, new LeaveApplicationUpdate($application, $title ?? 'Leave application for your action',
-            $message ?? "{$name}'s {$application->leaveType->name} ({$application->reference_number}) is waiting for you: {$step->roleLabel()}.", '/leave/approvals'));
+            $message ?? "{$name}'s {$application->leaveType->name} ({$application->reference_number}) is waiting for you: {$step->roleLabel()}.".$this->signedNote($application, applicant: true), '/leave/approvals'));
     }
 
     private function notifyEmployee(LeaveApplication $application, string $title, string $message): void
     {
-        $application->employee->user->notify(new LeaveApplicationUpdate($application, $title, $message, "/leave/applications/{$application->id}"));
+        $application->employee->user->notify(new LeaveApplicationUpdate($application, $title, $message.$this->signedNote($application), "/leave/applications/{$application->id}"));
+    }
+
+    /**
+     * " Signed electronically by …" for the step just acted on (and, going
+     * to an approver, the applicant's own signature), or nothing.
+     */
+    private function signedNote(LeaveApplication $application, bool $applicant = false): string
+    {
+        $last = $application->steps()->with('actor:id,name')->where('action', '!=', LeaveStepAction::Pending->value)->whereNotNull('acted_at')
+            ->reorder()->orderByDesc('acted_at')->orderByDesc('id')->first();
+        $who = collect([
+            $applicant && $application->signed_at ? 'the applicant' : null,
+            $last?->signed_at ? $last->actor?->name : null,
+        ])->filter()->unique()->values();
+
+        return $who->isEmpty() ? '' : ' Signed electronically by '.$who->implode(' and ').'.';
     }
 
     /**

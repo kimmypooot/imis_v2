@@ -61,12 +61,16 @@ class LeaveApprovalController extends Controller
     {
         abort_unless($applications->authority($request->user(), $step)['can'], 403);
 
-        $application = $applications->act($step, $request->user(), $request->validate($applications->actionRules($step), [], ['days_with_pay' => 'days with pay']));
+        $data = $request->validate($applications->actionRules($step), ['password.current_password' => 'That password is incorrect.'], ['days_with_pay' => 'days with pay']);
+        $signed = (bool) ($data['sign'] ?? false);
+
+        $application = $applications->act($step, $request->user(), [...$data, 'signed' => $signed, 'signed_ip' => $signed ? $request->ip() : null]);
 
         $this->audit()->record(AuditEvent::LeaveApplicationActed, "{$step->fresh()->action->label()}: {$application->label}", $application, array_filter([
             'step' => $step->role,
             'action' => $request->input('action'),
             'acting_for' => $step->fresh()->acted_for,
+            'e_signed' => $signed ?: null,
         ]));
 
         return to_route('leave.approvals')->with('status', "{$application->reference_number}: {$step->fresh()->action->label()}.");

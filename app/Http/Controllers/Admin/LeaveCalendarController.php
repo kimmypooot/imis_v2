@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Models\LeaveApplication;
 use App\Models\LeaveType;
 use App\Models\OrganizationalUnit;
 use App\Support\HR\Leave\CalendarAudience;
+use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Leave\LeaveCalendar;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -60,6 +63,36 @@ class LeaveCalendarController extends Controller
                 ->map(fn (LeaveType $type) => ['value' => $type->id, 'label' => $type->name, 'code' => $type->code]),
             'leave' => $calendar->leave($month, $filters),
             'holidays' => $calendar->holidays($month, $month->copy()->endOfMonth()),
+        ]);
+    }
+
+    /**
+     * One application's details for the calendar's modal. Same reach as the
+     * calendar itself: every office for those in CalendarAudience (HR head,
+     * Director IV/III, Super Administrator), otherwise the viewer's own
+     * division. Opening it lands on the access trail.
+     */
+    public function show(Request $request, LeaveApplication $application, LeaveApplications $applications, CalendarAudience $audience): JsonResponse
+    {
+        $this->authorize('viewAny', LeaveApplication::class);
+
+        $user = $request->user();
+        $application->loadMissing('employee.user');
+        abort_unless(
+            $audience->seesEveryone($user)
+                || ($user->organizational_unit_id && $application->employee->user->organizational_unit_id === $user->organizational_unit_id),
+            403,
+        );
+
+        if ($application->employee->user_id !== $user->id) {
+            $this->audit()->record(AuditEvent::LeaveApplicationViewed, "Viewed {$application->label}", $application);
+        }
+
+        return response()->json([
+            'application' => $applications->present($application),
+            'steps' => $applications->presentSteps($application),
+            // The form follows the application page's own permission, which not everyone here has.
+            'can_print' => $user->can('view', $application),
         ]);
     }
 }

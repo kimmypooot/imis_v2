@@ -95,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
         'employees.view', 'employees.view_unit', 'pds.view', 'pds.verify', 'employee_documents.view',
         'ld.view', 'ld.manage', 'ld.approve', 'plantilla.view', 'plantilla.manage',
         'service_records.view', 'leave.view', 'leave.manage', 'payroll.view', 'payroll.manage', 'data_corrections.review',
+        'dtr.view', 'dtr.manage',
     ];
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\PermissionName;
 use App\Models\Employee;
 use App\Models\User;
@@ -128,6 +129,28 @@ class EmployeePolicy
     {
         return $employee->user_id === $user->id
             || $user->hasAnyPermission([PermissionName::LeaveView->value, PermissionName::LeaveManage->value]);
+    }
+
+    /**
+     * DTR: someone's Daily Time Record — your own always; anyone's with
+     * `dtr.view` or `dtr.manage` (HR).
+     */
+    public function viewDtr(User $user, Employee $employee): bool
+    {
+        return $employee->user_id === $user->id
+            || ($employee->employment_status === EmploymentStatus::Permanent
+                && $user->hasAnyPermission([PermissionName::DtrView->value, PermissionName::DtrManage->value]));
+    }
+
+    /**
+     * DTR adjustments (a missing punch, an event day, a travel day): HR,
+     * never on their own record (separation of duties).
+     */
+    public function manageDtr(User $user, Employee $employee): bool
+    {
+        return $employee->user_id !== $user->id
+            && $employee->employment_status === EmploymentStatus::Permanent
+            && $user->hasPermission(PermissionName::DtrManage->value);
     }
 
     /**

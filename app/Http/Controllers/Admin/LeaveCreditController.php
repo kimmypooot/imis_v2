@@ -38,6 +38,8 @@ class LeaveCreditController extends Controller
             'employees' => $employees->map(fn (Employee $employee) => [
                 'id' => $employee->id,
                 'name' => $employee->user->name,
+                'position' => $employee->user->position,
+                'photo_url' => $employee->user->profile_photo_url,
                 'office' => $employee->user->organizationalUnit?->short_name ?: $employee->user->organizationalUnit?->name,
                 'status' => $employee->employment_status?->label() ?? 'Not Set',
                 'separated' => $employee->isSeparated(),
@@ -66,7 +68,7 @@ class LeaveCreditController extends Controller
         $result = $credits->accrueMonth((int) $data['year'], (int) $data['month'], $request->user());
         $this->audit()->record(AuditEvent::LeaveAccrualRun, 'Ran leave accrual for '.$period->format('F Y'), null, $data + $result);
 
-        return back()->with('status', "Accrual for {$period->format('F Y')}: {$result['posted']} credited, {$result['already']} already done, {$result['not_eligible']} not eligible.");
+        return back()->with('status', "Accrual for {$period->format('F Y')}: {$result['posted']} credited, {$result['already']} already done, {$result['not_eligible']} not eligible, {$result['card_managed']} left to their imported leave card.");
     }
 
     public function startYear(Request $request, LeaveCredits $credits): RedirectResponse

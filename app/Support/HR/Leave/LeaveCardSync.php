@@ -6,6 +6,7 @@ use App\Enums\LedgerEntryKind;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
 use App\Models\User;
+use App\Notifications\HrUpdate;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -125,6 +126,17 @@ class LeaveCardSync
                 }
             }
         });
+
+        // Tell each person their card was updated (one notice each, not one per month).
+        foreach ($selected as $row) {
+            $row['employee']->loadMissing('user');
+            $through = Carbon::parse($row['sync']['date'] ?? today())->format('F Y');
+            $row['employee']->user->notify(new HrUpdate(
+                'Your leave card was updated',
+                "HR updated your monthly leave card through {$through}. Your leave credits now follow what HR recorded.",
+                '/my/leave',
+            ));
+        }
 
         return $counts;
     }

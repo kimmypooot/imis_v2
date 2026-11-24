@@ -10,6 +10,7 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import EmployeeDetails from '../../Components/HR/EmployeeDetails.vue';
 import AssignmentTimeline from '../../Components/HR/AssignmentTimeline.vue';
 import PlantillaHistory from '../../Components/HR/PlantillaHistory.vue';
+import MySignatureCard from '../../Components/HR/MySignatureCard.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -23,6 +24,8 @@ const props = defineProps({
     assignments: { type: Object, default: null },
     // HR-4: the plantilla items you've held.
     plantilla: { type: Array, default: null },
+    // Your saved e-signature image, if any.
+    signatureUrl: { type: String, default: null },
 });
 
 const summary = computed(() => (props.employee ? [
@@ -51,6 +54,7 @@ const summary = computed(() => (props.employee ? [
         <EmployeeDetails :employee="employee" />
         <PlantillaHistory v-if="plantilla" :periods="plantilla" />
         <AssignmentTimeline v-if="assignments" :assignments="assignments" />
+        <MySignatureCard :url="signatureUrl" />
     </div>
     <Card v-else>
         <EmptyState

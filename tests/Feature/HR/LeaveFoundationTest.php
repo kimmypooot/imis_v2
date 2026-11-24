@@ -5,6 +5,7 @@ namespace Tests\Feature\HR;
 use App\Enums\EmploymentStatus;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\LeaveCardMonth;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
 use App\Models\Pds\PdsProfile;
@@ -272,6 +273,27 @@ class LeaveFoundationTest extends TestCase
     /**
      * @return array<string, mixed>
      */
+    public function test_hr_is_reminded_once_when_people_with_an_imported_card_are_not_accrued(): void
+    {
+        $hr = $this->hr();
+        $carded = $this->employee();
+        LeaveCardMonth::factory()->for($carded)->create(['year' => 2026, 'month' => 1]);
+
+        $this->artisan('imis:leave-accrual', ['--year' => 2026, '--month' => 3])->assertSuccessful();
+        $this->artisan('imis:leave-accrual', ['--year' => 2026, '--month' => 3])->assertSuccessful();
+
+        // Told once for the month, however often the accrual is run.
+        $reminders = $hr->notifications()->where('data->title', 'Import the leave card for March 2026')->get();
+        $this->assertCount(1, $reminders);
+        $this->assertStringContainsString('1 employee has', $reminders->first()->data['message']);
+        $this->assertSame('/admin/hr/leave/sync', $reminders->first()->data['url']);
+
+        // Nothing to remind about when no one has an imported card.
+        $carded->leaveCardMonths()->delete();
+        $this->artisan('imis:leave-accrual', ['--year' => 2026, '--month' => 4])->assertSuccessful();
+        $this->assertSame(0, $hr->notifications()->where('data->title', 'Import the leave card for April 2026')->count());
+    }
+
     private function opening(string $code, float $amount): array
     {
         return ['leave_type_id' => $this->type($code)->id, 'kind' => 'opening', 'entry_date' => '2026-01-01', 'amount' => $amount, 'particulars' => 'Carried over from the paper leave card'];

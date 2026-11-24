@@ -34,6 +34,7 @@ class Employee extends Model
      */
     protected $fillable = [
         'employee_number',
+        'biometric_id',
         'employment_status',
         'original_appointment_date',
         'csc_entry_date',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
+use App\Http\Controllers\DtrSignatureController;
 use App\Http\Controllers\EmployeeDocumentFileController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\ExecutiveSettingsController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\LeaveDelegationController;
 use App\Http\Controllers\My201FileController;
 use App\Http\Controllers\MyDataCorrectionController;
 use App\Http\Controllers\MyDataExportController;
+use App\Http\Controllers\MyDtrController;
 use App\Http\Controllers\MyEarningsController;
 use App\Http\Controllers\MyEmployeeRecordController;
 use App\Http\Controllers\MyFlexibleWorkController;
@@ -28,6 +30,7 @@ use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
 use App\Http\Controllers\MyRecordAccessController;
 use App\Http\Controllers\MyServiceRecordController;
+use App\Http\Controllers\MySignatureController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationalUnitController;
 use App\Http\Controllers\PayslipApprovalController;
@@ -106,6 +109,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('my.pds.submit');
     Route::get('my/pds/submissions/{submission}', [MyPdsController::class, 'submission'])->name('my.pds.submission');
+    // Your saved e-signature image (drawn or uploaded), used when you choose to sign.
+    Route::get('my/signature', [MySignatureController::class, 'show'])->name('my.signature');
+    Route::post('my/signature', [MySignatureController::class, 'store'])->middleware('throttle:20,1')->name('my.signature.store');
+    Route::delete('my/signature', [MySignatureController::class, 'destroy'])->name('my.signature.destroy');
     Route::get('my/pds/photo', [PdsPhotoController::class, 'showOwn'])->name('my.pds.photo');
     Route::post('my/pds/photo', [PdsPhotoController::class, 'storeOwn'])->name('my.pds.photo.store');
     Route::delete('my/pds/photo', [PdsPhotoController::class, 'destroyOwn'])->name('my.pds.photo.destroy');
@@ -135,6 +142,7 @@ Route::middleware('auth')->group(function () {
     Route::get('leave/applications/{application}', [LeaveApplicationController::class, 'show'])->name('leave.applications.show');
     Route::get('leave/applications/{application}/form', [LeaveApplicationController::class, 'print'])->name('leave.applications.form');
     Route::get('leave/applications/{application}/form.xlsx', [LeaveApplicationController::class, 'workbook'])->middleware('throttle:30,1')->name('leave.applications.form.xlsx');
+    Route::get('leave/applications/{application}/signature/{signer}', [LeaveApplicationController::class, 'signature'])->where('signer', 'applicant|[0-9]+')->name('leave.applications.signature');
     Route::get('leave/applications/{application}/attachment', [LeaveApplicationController::class, 'attachment'])->name('leave.applications.attachment');
     Route::get('leave/applications/{application}/clearance', [LeaveApplicationController::class, 'clearance'])->name('leave.applications.clearance');
     Route::get('leave/approvals', [LeaveApprovalController::class, 'index'])->name('leave.approvals');
@@ -146,6 +154,7 @@ Route::middleware('auth')->group(function () {
 
     // HR-6c: monetization, flexible work and weekly reports, the calendar.
     Route::get('my/leave/calendar', [MyLeaveController::class, 'calendar'])->name('my.leave.calendar');
+    Route::get('my/leave/calendar/{application}', [MyLeaveController::class, 'calendarDetails'])->name('my.leave.calendar.details');
     Route::get('my/leave/monetization', [MyMonetizationController::class, 'show'])->name('my.leave.monetization');
     Route::post('my/leave/monetization', [MyMonetizationController::class, 'store'])->middleware('throttle:10,1')->name('my.leave.monetization.store');
     Route::post('my/leave/monetization/{monetization}/cancel', [MyMonetizationController::class, 'cancel'])->name('my.leave.monetization.cancel');
@@ -170,6 +179,15 @@ Route::middleware('auth')->group(function () {
     Route::get('notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('notifications/{id}', [NotificationController::class, 'open'])->name('notifications.open');
+
+    // DTR: your own monthly Daily Time Record (read-only).
+    Route::get('my/dtr', [MyDtrController::class, 'show'])->name('my.dtr');
+    Route::get('my/dtr/print', [MyDtrController::class, 'print'])->name('my.dtr.print');
+    Route::get('my/dtr/export', [MyDtrController::class, 'export'])->middleware('throttle:30,1')->name('my.dtr.export');
+    // Signing re-checks the password, so it's rate-limited like the other e-signatures.
+    Route::post('my/dtr/adjustments', [MyDtrController::class, 'adjust'])->middleware('throttle:20,1')->name('my.dtr.adjustments');
+    Route::post('my/dtr/sign', [MyDtrController::class, 'sign'])->middleware('throttle:20,1')->name('my.dtr.sign');
+    Route::get('dtr/signatures/{signature}/image', [DtrSignatureController::class, 'image'])->name('dtr.signatures.image');
 
     // HR-5: your own Service Record (a reference copy; HR certifies).
     Route::get('my/service-record', [MyServiceRecordController::class, 'show'])->name('my.service-record');

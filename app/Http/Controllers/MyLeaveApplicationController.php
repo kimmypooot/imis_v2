@@ -69,6 +69,8 @@ class MyLeaveApplicationController extends Controller
             'maxChosenDates' => LeaveApplications::MAX_CHOSEN_DATES,
             'balances' => $credits->visibleBalances($employee),
             'supervisor' => app(Supervisors::class)->for($employee)['name'],
+            // Whether a saved signature image will go on the form when they sign.
+            'hasSignature' => $request->user()->signature_path !== null,
             'resubmitting' => $returned ? [
                 ...$applications->present($returned),
                 'returned_remarks' => $returned->steps()->where('action', 'returned')->latest('acted_at')->value('remarks'),
@@ -88,7 +90,7 @@ class MyLeaveApplicationController extends Controller
         $application = $applications->file($employee, $this->validated($request, $applications), $request->user());
 
         $this->audit()->record(AuditEvent::LeaveApplicationFiled, "Filed {$application->label}", $application, [
-            'type' => $application->leaveType->code, 'days' => (float) $application->days,
+            'type' => $application->leaveType->code, 'days' => (float) $application->days, 'e_signed' => $application->signed_at ? true : null,
         ]);
 
         return to_route('leave.applications.show', $application)->with('status', "Application {$application->reference_number} was submitted.");
@@ -121,7 +123,15 @@ class MyLeaveApplicationController extends Controller
      */
     private function validated(Request $request, LeaveApplications $applications): array
     {
-        return $request->validate($applications->rules(), [], LeaveApplications::attributes());
+        $data = $request->validate([
+            ...$applications->rules(),
+            // Optional e-signature: ticked, it needs the account password (as when signing the PDS).
+            'sign' => ['nullable', 'boolean'],
+            'password' => ['required_if_accepted:sign', 'nullable', 'current_password'],
+        ], ['password.current_password' => 'That password is incorrect.'], LeaveApplications::attributes());
+        $signed = (bool) ($data['sign'] ?? false);
+
+        return [...$data, 'signed' => $signed, 'signed_ip' => $signed ? $request->ip() : null];
     }
 
     private function employee(Request $request): Employee

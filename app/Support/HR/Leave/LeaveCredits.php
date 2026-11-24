@@ -4,16 +4,20 @@ namespace App\Support\HR\Leave;
 
 use App\Enums\LeaveApplicationStatus;
 use App\Enums\LedgerEntryKind;
+use App\Enums\PermissionName;
+use App\Models\DtrLeaveDeduction;
 use App\Models\Employee;
 use App\Models\LeaveApplication;
 use App\Models\LeaveCardMonth;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveType;
 use App\Models\User;
+use App\Notifications\HrUpdate;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -333,6 +337,10 @@ class LeaveCredits
         if ($entry->reverses_id !== null) {
             throw ValidationException::withMessages(['reason' => 'A reversal can\'t be corrected; post an adjustment instead.']);
         }
+        // A tardiness and undertime charge is redone from its own screen, which keeps the month charged once.
+        if (DtrLeaveDeduction::query()->where('leave_ledger_entry_id', $entry->id)->exists()) {
+            throw ValidationException::withMessages(['reason' => 'This is a tardiness and undertime charge. Reverse it under Tardiness & Undertime and charge the month again.']);
+        }
         if (abs($amount - (float) $entry->amount) < 0.0005) {
             throw ValidationException::withMessages(['amount' => 'That is already the entry\'s amount.']);
         }
@@ -441,21 +449,30 @@ class LeaveCredits
     // ── Runs ─────────────────────────────────────────────────────────
 
     /**
-     * Posts a month's accrual for everyone in service and eligible.
+     * Posts a month's accrual for everyone in service and eligible, except
+     * those whose monthly leave card HR has imported (`card_managed`): their
+     * months come from HR's workbook, so a month left blank there stays blank
+     * instead of being filled in with the standard 1.25.
      *
      * @param  array<int, int>  $employeeIds  limit to these employees (none: everyone)
-     * @return array{posted: int, already: int, not_eligible: int}
+     * @return array{posted: int, already: int, not_eligible: int, card_managed: int}
      */
     public function accrueMonth(int $year, int $month, ?User $actor = null, array $employeeIds = []): array
     {
         $start = Carbon::create($year, $month, 1);
         $end = $start->copy()->endOfMonth()->startOfDay();
-        $counts = ['posted' => 0, 'already' => 0, 'not_eligible' => 0];
+        $counts = ['posted' => 0, 'already' => 0, 'not_eligible' => 0, 'card_managed' => 0];
 
         $types = LeaveType::query()->active()->whereNotNull('monthly_accrual')->where('monthly_accrual', '>', 0)->get();
+        $cardManaged = DB::table('leave_card_months')->distinct()->pluck('employee_id')->flip();
 
-        DB::transaction(function () use ($types, $start, $end, $year, $month, $actor, $employeeIds, &$counts) {
+        DB::transaction(function () use ($types, $start, $end, $year, $month, $actor, $employeeIds, $cardManaged, &$counts) {
             foreach ($this->inServiceDuring($start, $end, $employeeIds) as $employee) {
+                if ($cardManaged->has($employee->id)) {
+                    $counts['card_managed']++;
+
+                    continue;
+                }
                 foreach ($types as $type) {
                     if (! $this->eligible($employee, $type)) {
                         $counts['not_eligible']++;
@@ -477,6 +494,36 @@ class LeaveCredits
         });
 
         return $counts;
+    }
+
+    /**
+     * Reminds HR (anyone with leave.manage) that people whose leave card was
+     * imported were not accrued for a month, so the next workbook needs
+     * importing for their credits to move. Once per person per month, so
+     * re-running the accrual doesn't repeat it.
+     *
+     * @return int how many people were reminded
+     */
+    public function remindCardImportDue(int $year, int $month, int $people): int
+    {
+        if ($people < 1) {
+            return 0;
+        }
+
+        $label = Carbon::create($year, $month, 1)->format('F Y');
+        $title = "Import the leave card for {$label}";
+        $recipients = User::query()->where('status', 'active')
+            ->whereHas('activeRoles.permissions', fn ($query) => $query->where('name', PermissionName::LeaveManage->value))
+            ->get()
+            ->reject(fn (User $user) => $user->notifications()->where('data->title', $title)->exists());
+
+        Notification::send($recipients, new HrUpdate(
+            $title,
+            "{$people} ".($people === 1 ? 'employee has' : 'employees have')." an imported leave card and were not accrued for {$label}. Import the latest leave card workbook so their credits are up to date.",
+            '/admin/hr/leave/sync',
+        ));
+
+        return $recipients->count();
     }
 
     /**

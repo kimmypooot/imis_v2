@@ -10,12 +10,14 @@ use App\Models\LeaveType;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\HrUpdate;
 use App\Support\HR\Leave\LeaveCardSync;
 use App\Support\HR\Leave\LeaveCardWorkbook;
 use App\Support\HR\Leave\LeaveCredits;
 use Database\Seeders\LeaveTypeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Mockery;
@@ -37,6 +39,21 @@ class LeaveCardSyncTest extends TestCase
 
         $this->seed(LeaveTypeSeeder::class);
         Storage::fake('local');
+    }
+
+    public function test_applying_the_card_tells_each_person_once(): void
+    {
+        Notification::fake();
+        $ana = $this->employee('Ana', 'Reyes');
+        $this->ledger($ana, 'VL', LedgerEntryKind::Opening, 10, '2026-01-31');
+        $this->ledger($ana, 'SL', LedgerEntryKind::Opening, 20, '2026-01-31');
+        $plan = $this->plan(['REYES' => $this->card('ANA B. REYES', 2026, [1 => [10.0, 20.0], 2 => [11.0, 20.5]])]);
+
+        $this->sync()->apply($plan, [$ana->id], $this->hr(), 'cards.xlsx');
+
+        Notification::assertSentToTimes($ana->user, HrUpdate::class, 1);
+        Notification::assertSentTo($ana->user, HrUpdate::class, fn ($notification) => str_contains($notification->toArray($ana->user)['message'], 'through February 2026')
+            && $notification->toArray($ana->user)['url'] === '/my/leave');
     }
 
     public function test_a_difference_at_the_cards_last_month_is_posted_as_one_adjustment_per_type(): void

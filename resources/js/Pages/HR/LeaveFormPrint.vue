@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 
 /**
@@ -33,6 +33,45 @@ const position = (signer) => (signer ? `${signer.position}${signer.acting_for ? 
 const workbookUrl = computed(() => `${window.location.pathname}.xlsx`);
 
 const print = () => window.print();
+
+// Manual nudging of each signature image (screen and print): up/down in inches and size in percent.
+// Kept in this browser for every form, since a printer's offset is the same each time.
+const STORAGE_KEY = 'cs6-signature-adjust';
+const SLOTS = [
+    { key: 'applicant', label: 'Applicant (6.D)' },
+    { key: 'certifier', label: 'HR certifier (7.A)' },
+    { key: 'recommender', label: 'Supervisor (7.B)' },
+    { key: 'approver', label: 'Head of Agency (7.C)' },
+];
+const blank = () => Object.fromEntries(SLOTS.map((slot) => [slot.key, { dx: 0, dy: 0, scale: 100 }]));
+const adjust = ref(blank());
+try {
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
+    if (saved) {
+        for (const slot of SLOTS) {
+            if (saved[slot.key]) adjust.value[slot.key] = { dx: Number(saved[slot.key].dx) || 0, dy: Number(saved[slot.key].dy) || 0, scale: Number(saved[slot.key].scale) || 100 };
+        }
+    }
+} catch {
+    /* private window: keep the defaults */
+}
+watch(adjust, (value) => {
+    try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    } catch {
+        /* not saved */
+    }
+}, { deep: true });
+const nudge = (key, field, by) => {
+    const entry = adjust.value[key];
+    if (field === 'dx' || field === 'dy') entry[field] = Math.round((entry[field] + by) * 100) / 100;
+    else entry.scale = Math.min(200, Math.max(40, entry.scale + by));
+};
+const resetAdjust = () => {
+    adjust.value = blank();
+};
+const hasSignature = (key) => (key === 'applicant' ? !!props.form.applicant_signature : !!signers.value[key]?.signature);
+const imageStyle = (key) => ({ '--dx': `${adjust.value[key].dx}in`, '--dy': `${adjust.value[key].dy}in`, '--scale': adjust.value[key].scale / 100 });
 </script>
 
 <template>
@@ -47,6 +86,39 @@ const print = () => window.print();
             <a :href="workbookUrl" class="cs6-secondary">Download Excel</a>
             <button type="button" @click="print">Print / Save as PDF</button>
         </div>
+    </div>
+
+    <div v-if="SLOTS.some((slot) => hasSignature(slot.key))" class="cs6-adjust">
+        <details>
+            <summary>Adjust signatures</summary>
+            <p>Move a signature left, right, up or down, or make it larger or smaller. Saved in this browser and applied to every form you print here.</p>
+            <div class="adjust-grid">
+                <template v-for="slot in SLOTS" :key="slot.key">
+                    <div v-if="hasSignature(slot.key)" class="adjust-row">
+                        <span class="adjust-name">{{ slot.label }}</span>
+                        <span class="adjust-group">
+                            Left / right
+                            <button type="button" aria-label="Move left" @click="nudge(slot.key, 'dx', -0.02)">◀</button>
+                            <button type="button" aria-label="Move right" @click="nudge(slot.key, 'dx', 0.02)">▶</button>
+                            <output>{{ adjust[slot.key].dx > 0 ? '+' : '' }}{{ adjust[slot.key].dx.toFixed(2) }} in</output>
+                        </span>
+                        <span class="adjust-group">
+                            Up / down
+                            <button type="button" aria-label="Move up" @click="nudge(slot.key, 'dy', -0.02)">▲</button>
+                            <button type="button" aria-label="Move down" @click="nudge(slot.key, 'dy', 0.02)">▼</button>
+                            <output>{{ adjust[slot.key].dy > 0 ? '+' : '' }}{{ adjust[slot.key].dy.toFixed(2) }} in</output>
+                        </span>
+                        <span class="adjust-group">
+                            Size
+                            <button type="button" aria-label="Smaller" @click="nudge(slot.key, 'scale', -10)">−</button>
+                            <button type="button" aria-label="Larger" @click="nudge(slot.key, 'scale', 10)">+</button>
+                            <output>{{ adjust[slot.key].scale }}%</output>
+                        </span>
+                    </div>
+                </template>
+            </div>
+            <button type="button" class="cs6-secondary adjust-reset" @click="resetAdjust">Reset</button>
+        </details>
     </div>
 
     <main class="cs6">
@@ -145,6 +217,7 @@ const print = () => window.print();
                             <p class="check"><span class="box">{{ box(!form.commutation_requested) }}</span>Not Requested</p>
                             <p class="check"><span class="box">{{ box(form.commutation_requested) }}</span>Requested</p>
                             <div class="signature">
+                                <img v-if="form.applicant_signature" :src="form.applicant_signature" :style="imageStyle('applicant')" alt="" class="esign" />
                                 <p class="name"></p>
                                 <p class="caption">(Signature of Applicant)</p>
                             </div>
@@ -169,6 +242,7 @@ const print = () => window.print();
                                 </tbody>
                             </table>
                             <div class="signature">
+                                <img v-if="signers.certifier?.signature" :src="signers.certifier.signature" :style="imageStyle('certifier')" alt="" class="esign" />
                                 <p class="name">{{ signers.certifier?.name }}</p>
                                 <p class="position">{{ position(signers.certifier) }}</p>
                                 <p class="caption">(Authorized Officer)</p>
@@ -185,6 +259,7 @@ const print = () => window.print();
                             <p class="check"><u class="grow"></u></p>
                             <p v-if="!form.recommendation_required" class="check note">Not required for this type of leave.</p>
                             <div class="signature">
+                                <img v-if="signers.recommender?.signature" :src="signers.recommender.signature" :style="imageStyle('recommender')" alt="" class="esign" />
                                 <p class="name">{{ signers.recommender?.name }}</p>
                                 <p class="position">{{ position(signers.recommender) }}</p>
                                 <p class="caption">(Authorized Officer)</p>
@@ -209,10 +284,12 @@ const print = () => window.print();
                     </div>
                     <div class="official-row">
                         <div class="signature official">
+                            <img v-if="signers.approver?.signature" :src="signers.approver.signature" :style="imageStyle('approver')" alt="" class="esign" />
                             <p class="name">{{ signers.approver?.name }}</p>
                             <p class="position">{{ position(signers.approver) }}</p>
                             <p class="caption">(Authorized Official)</p>
                         </div>
+                        <p v-if="form.head_note" class="head-note"><strong>Note:</strong> {{ form.head_note }}</p>
                         <p class="decided">{{ form.decided_at }}</p>
                     </div>
                 </div>
@@ -238,6 +315,16 @@ const print = () => window.print();
 .cs6-toolbar button { background: var(--color-primary); color: #fff; }
 .cs6-secondary { border: 1px solid var(--color-border); color: var(--color-text); background: var(--color-surface); }
 .cs6 { background: var(--color-surface-muted); padding: 0.3in 0; overflow-x: auto; }
+.cs6-adjust { padding: 0.5rem 1rem; background: var(--color-surface); border-bottom: 1px solid var(--color-border); font: 13px/1.4 system-ui, sans-serif; color: var(--color-text); }
+.cs6-adjust summary { cursor: pointer; font-weight: 600; }
+.cs6-adjust p { margin: 0.4rem 0; color: var(--color-text-muted); }
+.adjust-grid { display: grid; gap: 0.4rem; }
+.adjust-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; }
+.adjust-name { min-width: 11rem; font-weight: 600; }
+.adjust-group { display: inline-flex; align-items: center; gap: 0.35rem; }
+.adjust-group button { width: 1.8rem; height: 1.8rem; border: 1px solid var(--color-border); border-radius: 0.375rem; background: var(--color-surface); color: var(--color-text); }
+.adjust-group output { min-width: 4.2rem; text-align: center; font-variant-numeric: tabular-nums; }
+.adjust-reset { margin-top: 0.5rem; }
 
 /* The paper: one Folio sheet, always black on white like the printed form. */
 .sheet {
@@ -332,8 +419,14 @@ u.grow { flex: 1; min-width: 0; }
 .credits tbody th { background: #e6e6e6; }
 .credits tr.italic td, .credits tr.italic th { font-style: italic; }
 
-.signature { align-self: center; width: 85%; margin: auto 0 0 calc(-1 * var(--indent)); padding-top: var(--sign); text-align: center; }
+.signature { --room: var(--sign); position: relative; align-self: center; width: 85%; margin: auto 0 0 calc(-1 * var(--indent)); padding-top: var(--room); text-align: center; }
 .signature .name { font-weight: 700; min-height: 1.25em; }
+/* The e-signature image rests on the name, inside the room left above it (--room). --dx, --dy and --scale are the manual adjustments. */
+.signature .esign {
+    position: absolute; left: 50%; bottom: calc(100% - var(--room) - 0.02in);
+    height: calc(var(--room) + 0.04in); max-width: 80%; object-fit: contain; object-position: center bottom;
+    transform: translateX(calc(-50% + var(--dx, 0in))) translateY(var(--dy, 0in)) scale(var(--scale, 1)); transform-origin: center bottom;
+}
 .signature .position { font-size: 8pt; min-height: 1.2em; }
 .signature .caption { border-top: var(--rule); padding-top: 2px; }
 
@@ -343,14 +436,20 @@ u.grow { flex: 1; min-width: 0; }
 .decision .cell { gap: 0; }
 .decision .cell .check { padding-left: var(--indent); }
 .official-row { flex: none; position: relative; padding-bottom: var(--pad-y); }
-.signature.official { width: 3.2in; margin: 0 auto; padding-top: 0.28in; }
+.signature.official { --room: 0.28in; width: 3.2in; margin: 0 auto; }
+/* The Head's note: lower right, under 7.D, above the time of decision (at most four lines). */
+.head-note {
+    position: absolute; right: var(--pad-x); bottom: calc(var(--pad-y) + 0.2in); width: 2.1in;
+    font-size: 7.5pt; line-height: 1.2; text-align: left; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+}
 .decided { position: absolute; right: var(--pad-x); bottom: var(--pad-y); font-size: 8pt; }
 .foot { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; padding-top: 3px; font-size: 7pt; }
 .foot span:last-child { text-align: right; }
 
 @media print {
     @page { size: 8.5in 13in; margin: 0; }
-    .cs6-toolbar { display: none; }
+    .cs6-toolbar, .cs6-adjust { display: none; }
     .cs6 { background: none; padding: 0; overflow: visible; }
     .sheet { box-shadow: none; margin: 0; break-after: avoid; }
 }

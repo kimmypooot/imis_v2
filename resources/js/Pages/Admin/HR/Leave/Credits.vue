@@ -8,6 +8,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
@@ -28,18 +29,28 @@ const props = defineProps({
 const showSeparated = ref(false);
 const office = ref('');
 const offices = computed(() => [...new Set(props.employees.map((employee) => employee.office).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
+const onlyNoSupervisor = ref(false);
 const shown = computed(() =>
-    props.employees.filter((employee) => (showSeparated.value || !employee.separated) && (!office.value || employee.office === office.value)),
+    props.employees.filter(
+        (employee) =>
+            (showSeparated.value || !employee.separated) &&
+            (!office.value || employee.office === office.value) &&
+            (!onlyNoSupervisor.value || (!employee.separated && !employee.supervisor)),
+    ),
 );
 const showRuns = ref(false);
 const separatedCount = computed(() => props.employees.filter((employee) => employee.separated).length);
-const noSupervisor = computed(() => props.employees.filter((employee) => !employee.separated && !employee.supervisor).length);
+const withoutSupervisor = computed(() => props.employees.filter((employee) => !employee.separated && !employee.supervisor));
+const noSupervisor = computed(() => withoutSupervisor.value.length);
+// Up to this many are named in the warning, each a link straight to their supervisor setting.
+const NAMED = 8;
+const settingsLink = (employee) => `/admin/hr/employees/${employee.id}/leave?settings=1`;
 const pdsSoloParents = computed(() => props.employees.filter((employee) => !employee.separated && employee.pds_solo_parent).length);
 
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
 const columns = computed(() => [
-    { key: 'name', label: 'Employee' },
+    { key: 'name', label: 'Employee', value: (row) => [row.name, row.position].filter(Boolean).join(' — ') },
     { key: 'office', label: 'Office', value: (row) => row.office ?? '' },
     { key: 'status', label: 'Status' },
     ...props.types.map((type) => ({ key: `type_${type.id}`, label: type.code, align: 'right', value: (row) => row.balances[type.id] ?? 0 })),
@@ -79,9 +90,26 @@ const runYearStart = async () => {
     </PageHeader>
 
     <div class="space-y-6">
-        <p v-if="noSupervisor" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
-            {{ noSupervisor }} {{ noSupervisor === 1 ? 'person has' : 'people have' }} no immediate supervisor. Supervisors follow position and office (the Chief Human Resource Specialist for Regional Support Unit staff, the Director II for Field Office staff, the Director IV for ORD staff, the Director III, the Chief Human Resource Specialists and the Attorney VI); set the rest on their leave page before leave filing opens.
-        </p>
+        <div v-if="noSupervisor" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
+            <p>
+                {{ noSupervisor }} {{ noSupervisor === 1 ? 'person has' : 'people have' }} no immediate supervisor. Supervisors follow position and office (the Chief Human Resource Specialist for Regional Support Unit staff, the Director II for Field Office staff, the Director IV for ORD staff, the Director III, the Chief Human Resource Specialists and the Attorney VI); set the rest before leave filing opens.
+            </p>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+                <template v-if="canManage">
+                    <Link
+                        v-for="employee in withoutSupervisor.slice(0, NAMED)"
+                        :key="employee.id"
+                        :href="settingsLink(employee)"
+                        class="inline-flex items-center rounded-md border border-warning-border bg-surface px-2.5 py-1 font-medium text-link hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    >
+                        Set supervisor: {{ employee.name }}
+                    </Link>
+                </template>
+                <Button v-if="noSupervisor > NAMED || !canManage" variant="secondary" size="sm" icon="funnel" @click="onlyNoSupervisor = !onlyNoSupervisor">
+                    {{ onlyNoSupervisor ? 'Show everyone' : `Show only these ${noSupervisor}` }}
+                </Button>
+            </div>
+        </div>
         <p v-if="pdsSoloParents" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
             {{ pdsSoloParents }} {{ pdsSoloParents === 1 ? 'person says' : 'people say' }} on the PDS that they are a solo parent but {{ pdsSoloParents === 1 ? 'is' : 'are' }} not marked one in leave settings, so Solo Parent Leave is hidden from them.
             Check their Solo Parent ID, then mark them on their leave card (Leave settings). They're noted under their names below.
@@ -102,8 +130,14 @@ const runYearStart = async () => {
 
             <DataTable :columns="columns" :rows="shown" caption="Leave balances" export-name="imis-leave-balances">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
-                    <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
+                    <div class="flex items-center gap-3">
+                        <UserAvatar :name="row.name" :photo-url="row.photo_url" size="sm" />
+                        <div class="min-w-0">
+                            <Link :href="`/admin/hr/employees/${row.id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
+                            <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
+                            <div v-if="row.position" class="truncate text-xs text-text-muted">{{ row.position }}</div>
+                        </div>
+                    </div>
                     <span v-if="row.pds_solo_parent" class="block text-xs text-warning-fg">Solo parent on the PDS — not marked in leave settings</span>
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>

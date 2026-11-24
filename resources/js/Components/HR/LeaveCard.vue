@@ -54,7 +54,10 @@ const figure = (value) => (value === null || value === undefined ? '—' : days(
 // A month with nothing used shows a dash, so the real deductions stand out.
 const usedFigure = (value) => (!value ? '—' : days(value));
 const hasSystemMonths = computed(() => props.monthly?.months?.some((month) => month.source === 'ledger') ?? false);
-const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + (month[key]?.[field] ?? 0), 0);
+// Months the paper card doesn't cover ("system") are left blank: figures worked out from the ledger,
+// like an assumed 1.250 earned, are not put on the card. The Ledger view still lists every entry.
+const isSystem = (month) => month.source === 'ledger';
+const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + (isSystem(month) ? 0 : month[key]?.[field] ?? 0), 0);
 </script>
 
 <template>
@@ -151,17 +154,17 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                                 </td>
                                 <td class="py-2 pr-4 align-top text-text-muted">{{ month.particulars }}</td>
                                 <template v-for="group in ['vl', 'sl']" :key="group">
-                                    <td class="border-l border-border px-3 py-2 text-right align-top tabular-nums">{{ figure(month[group].earned) }}</td>
-                                    <td class="px-3 py-2 text-right align-top tabular-nums" :class="month[group].used > 0 ? 'text-danger-fg' : 'text-text-muted'">{{ usedFigure(month[group].used) }}</td>
+                                    <td class="border-l border-border px-3 py-2 text-right align-top tabular-nums">{{ isSystem(month) ? '' : figure(month[group].earned) }}</td>
+                                    <td class="px-3 py-2 text-right align-top tabular-nums" :class="month[group].used > 0 ? 'text-danger-fg' : 'text-text-muted'">{{ isSystem(month) ? '' : usedFigure(month[group].used) }}</td>
                                     <td class="px-3 py-2 text-right align-top font-medium tabular-nums">
-                                        {{ figure(month[group].balance) }}
+                                        <template v-if="!isSystem(month)">{{ figure(month[group].balance) }}</template>
                                         <div v-if="month[group].adjusted && month.source === 'card'" class="text-xs font-normal text-text-muted" title="Posted by HR in IMIS; not in the card's balance, but in today's balances">
                                             {{ signed(month[group].adjusted) }} adjusted in IMIS
                                         </div>
-                                        <div v-else-if="month[group].adjusted" class="text-xs font-normal text-text-muted">{{ signed(month[group].adjusted) }} adjusted</div>
+                                        <div v-else-if="month[group].adjusted && !isSystem(month)" class="text-xs font-normal text-text-muted">{{ signed(month[group].adjusted) }} adjusted</div>
                                     </td>
                                 </template>
-                                <td class="border-l border-border py-2 pl-3 align-top text-xs text-text-muted">{{ month.applications }}</td>
+                                <td class="border-l border-border py-2 pl-3 align-top text-xs text-text-muted">{{ isSystem(month) ? '' : month.applications }}</td>
                                 <td v-if="canReverse" class="py-2 pl-3 text-right align-top">
                                     <ActionButton v-if="month.source === 'card'" icon="pencil" :label="`Correct ${month.label} ${year}`" @click="emit('correct-month', month)" />
                                 </td>
@@ -182,12 +185,11 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
                     </table>
                 </div>
                 <p v-if="hasSystemMonths" class="mt-3 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-warning-fg" role="note">
-                    Months marked "system" do not yet include leave that was filed on paper after the card's last month, or undertime. If you took leave
-                    in those months, ask the HR office to add it; until then your balance there may read higher than it really is.
+                    Months marked "system" are not on the paper leave card yet, so their figures are left blank until HR adds them. Your current balances above
+                    always come from the credit ledger.
                 </p>
                 <p class="mt-3 text-xs text-text-muted">
-                    Months from the paper leave card are shown as HR recorded them. Months marked "system" are worked out from the credit ledger
-                    (accruals as earned, leave taken as used). Balances always come from the ledger. Used includes absences and undertime with pay.
+                    Months from the paper leave card are shown as HR recorded them. Months marked "system" are not on the card and are left blank here. Balances always come from the credit ledger. Used includes absences and undertime with pay.
                     Applications are listed where HR noted them on the card, which is not always the month the leave was taken.
                 </p>
             </template>

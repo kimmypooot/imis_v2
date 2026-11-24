@@ -27,7 +27,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
     'name', 'honorific', 'first_name', 'middle_name', 'last_name', 'name_extension', 'sex', 'birthday', 'position', 'organizational_unit_id',
     'office_designation', 'username', 'email', 'password', 'status',
 ])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'signature_path'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */

@@ -46,6 +46,7 @@ class LeaveApplication extends Model
             'status' => LeaveApplicationStatus::class,
             'current_step' => 'integer',
             'submitted_at' => 'datetime',
+            'signed_at' => 'datetime',
             'decided_at' => 'datetime',
         ];
     }

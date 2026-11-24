@@ -58,13 +58,20 @@ const breadcrumbs = computed(() => [
     <Head :title="employee.user.name" />
 
     <PageHeader :title="employee.user.name" :breadcrumbs="breadcrumbs">
-        <template v-if="employee.can.update || employee.can.viewPds || employee.can.viewDocuments || employee.can.viewLd || employee.can.viewServiceRecord || employee.can.viewLeave" #actions>
+        <template v-if="employee.can.update || employee.can.viewPds || employee.can.viewDocuments || employee.can.viewLd || employee.can.viewServiceRecord || employee.can.viewLeave || employee.can.viewDtr" #actions>
             <Link
                 v-if="employee.can.viewLeave"
                 :href="`/admin/hr/employees/${employee.id}/leave`"
                 class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
             >
                 <Icon name="calendar" size="sm" />Leave
+            </Link>
+            <Link
+                v-if="employee.can.viewDtr"
+                :href="`/admin/hr/employees/${employee.id}/dtr`"
+                class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
+            >
+                <Icon name="clock" size="sm" />DTR
             </Link>
             <Link
                 v-if="employee.can.viewServiceRecord"
@@ -131,6 +138,7 @@ const breadcrumbs = computed(() => [
         :open="editOpen"
         noun="Employment"
         :record="employee"
+        :label="employee.user?.name"
         :fields="employeeFields(employmentStatusOptions)"
         :defaults="employeeDefaults"
         :nullable="employeeNullable"

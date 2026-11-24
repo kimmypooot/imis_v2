@@ -9,6 +9,7 @@ import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
@@ -26,15 +27,16 @@ const props = defineProps({
     steps: { type: Array, required: true },
     isOwn: { type: Boolean, required: true },
     canUpdate: { type: Boolean, required: true },
+    hasSignature: { type: Boolean, default: false },
     action: { type: Object, default: null },
 });
 
 const rounds = computed(() => [...new Set(props.steps.map((step) => step.round))].sort((a, b) => b - a));
 const stepsOf = (round) => props.steps.filter((step) => step.round === round);
 
-const form = useForm({ action: props.action?.options[0]?.value ?? '', remarks: '', days_with_pay: '' });
+const form = useForm({ action: props.action?.options[0]?.value ?? '', remarks: '', days_with_pay: '', sign: false, password: '' });
 const chosen = computed(() => props.action?.options.find((option) => option.value === form.action) ?? null);
-const submit = () => form.post(`/leave/approvals/steps/${props.action.step_id}`, { preserveScroll: true });
+const submit = () => form.post(`/leave/approvals/steps/${props.action.step_id}`, { preserveScroll: true, onFinish: () => form.reset('password') });
 
 const cancel = async () => {
     if (await confirm({ title: `Cancel ${props.application.reference_number}?`, text: 'It is withdrawn; you can file a new one.', tone: 'danger', confirmText: 'Cancel application' })) {
@@ -96,7 +98,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <dt class="text-text-muted">Clearance (money, property and work accountabilities)</dt>
                         <dd class="mt-0.5"><a :href="`/leave/applications/${application.id}/clearance`" target="_blank" rel="noopener" class="text-link hover:underline">{{ application.clearance_name }}</a></dd>
                     </div>
-                    <div><dt class="text-text-muted">Submitted</dt><dd class="mt-0.5 text-text">{{ application.submitted_at ? formatDateTime(application.submitted_at) : '—' }}</dd></div>
+                    <div><dt class="text-text-muted">Submitted</dt><dd class="mt-0.5 text-text">{{ application.submitted_at ? formatDateTime(application.submitted_at) : '—' }}<span v-if="application.signed_at" class="mt-1 block text-xs font-medium text-success-fg">Signed electronically by the applicant · {{ formatDateTime(application.signed_at) }}</span></dd></div>
                     <div v-if="application.decided_at"><dt class="text-text-muted">Decided</dt><dd class="mt-0.5 text-text">{{ formatDateTime(application.decided_at) }}</dd></div>
                 </dl>
             </Card>
@@ -132,6 +134,21 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <Textarea id="act-remarks" v-model="form.remarks" class="mt-1" :required="chosen?.needs_remarks" :invalid="!!form.errors.remarks" />
                         <InputError :message="form.errors.remarks" />
                     </div>
+                    <div class="rounded-md border border-border bg-surface-muted px-3 py-3">
+                        <label class="flex items-start gap-2 text-sm font-medium text-text">
+                            <input v-model="form.sign" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
+                            <span>Sign electronically <span class="font-normal text-text-muted">(optional)</span></span>
+                        </label>
+                        <template v-if="form.sign">
+                            <p v-if="hasSignature" class="mt-1 pl-6 text-xs text-success-fg">Your saved signature will be placed on the form.</p>
+                            <p v-else class="mt-1 pl-6 text-xs text-text-muted">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</p>
+                        </template>
+                        <div v-if="form.sign" class="mt-3">
+                            <PasswordInput id="act-sign-password" v-model="form.password" label="Your IMIS password" autocomplete="current-password" required :invalid="!!form.errors.password" />
+                            <p class="mt-1 text-xs text-text-muted">Re-entering your password is your electronic signature. It is recorded with the date and time.</p>
+                            <InputError :message="form.errors.password" />
+                        </div>
+                    </div>
                     <div class="flex justify-end">
                         <Button type="submit" :variant="['disapproved', 'insufficient_credits', 'returned', 'not_recommended'].includes(form.action) ? 'danger' : 'success'" :loading="form.processing">
                             Record: {{ chosen?.label }}
@@ -154,6 +171,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <p v-if="step.acted_by" class="mt-1 text-xs text-text-muted">
                             {{ step.acted_by }}<template v-if="step.acted_for"> (OIC for {{ step.acted_for }})</template> · {{ formatDateTime(step.acted_at) }}
                         </p>
+                        <p v-if="step.signed_at" class="mt-1 text-xs font-medium text-success-fg">Signed electronically · {{ formatDateTime(step.signed_at) }}</p>
                         <p v-if="step.remarks" class="mt-1 whitespace-pre-line text-sm text-text">{{ step.remarks }}</p>
                         <p v-if="step.certified_credits" class="mt-1 text-xs text-text-muted">
                             Credits certified: <span v-for="(balance, code) in step.certified_credits" :key="code" class="mr-2">{{ code }} {{ days(balance) }}</span>

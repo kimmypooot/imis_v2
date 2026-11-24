@@ -165,6 +165,12 @@ enum PermissionName: string
     case LeaveCertify = 'leave.certify';
     case LeaveApprove = 'leave.approve';
 
+    // HR DTR (Daily Time Record from biometric logs). `view` reads punches
+    // and device ID mappings; `manage` uploads logs and maps IDs. Everyone
+    // will read their own DTR with no permission.
+    case DtrView = 'dtr.view';
+    case DtrManage = 'dtr.manage';
+
     // HR-8 payroll. `view` reads payrolls, pay profiles, loans, payslips
     // and payslip requests (monitoring); `manage` also maintains pay
     // components, pay profiles and loans, and drafts, adjusts, finalizes

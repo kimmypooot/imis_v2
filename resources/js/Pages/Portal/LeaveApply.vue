@@ -11,6 +11,7 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -26,6 +27,7 @@ const props = defineProps({
     detailOptions: { type: Object, required: true },
     balances: { type: Array, required: true },
     supervisor: { type: String, default: null },
+    hasSignature: { type: Boolean, default: false },
     resubmitting: { type: Object, default: null },
     preview: { type: Object, default: null },
     maxChosenDates: { type: Number, default: 60 },
@@ -54,6 +56,9 @@ const form = useForm({
     late_reason: source.late_reason ?? '',
     event_date: source.event_date ?? '',
     clearance: null,
+    // Optional e-signature (item 6.C): ticked, it needs the account password.
+    sign: false,
+    password: '',
 });
 
 const type = computed(() => props.types.find((option) => option.id === Number(form.leave_type_id)) ?? null);
@@ -121,11 +126,11 @@ const submit = () => {
     missingDates.value = chosen.value && (!form.dates.length || pickedDates.value.length < form.dates.length);
     if (missingDates.value) return;
 
-    const options = { preserveScroll: true, forceFormData: true };
+    const options = { preserveScroll: true, forceFormData: true, onFinish: () => form.reset('password') };
     const dates = (values) => (values.date_mode === 'chosen'
         ? { dates: values.dates.filter(Boolean), date_from: '', date_to: '' }
         : { dates: [] });
-    const data = ({ date_mode, day_count, ...values }) => ({ ...values, ...dates({ ...values, date_mode }), is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, is_emergency: values.is_emergency && type.value?.allows_emergency_filing ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
+    const data = ({ date_mode, day_count, ...values }) => ({ ...values, ...dates({ ...values, date_mode }), is_half_day: values.is_half_day ? 1 : 0, commutation_requested: values.commutation_requested ? 1 : 0, is_emergency: values.is_emergency && type.value?.allows_emergency_filing ? 1 : 0, sign: values.sign ? 1 : 0, ...(props.resubmitting ? { _method: 'put' } : {}) });
 
     form.transform(data).post(props.resubmitting ? `/my/leave/applications/${props.resubmitting.id}` : '/my/leave/applications', options);
 };
@@ -318,6 +323,22 @@ const field = 'mt-1 block w-full';
                         hint="Needed for leave of 30 calendar days or more (CSC MC No. 2, s. 1985). PDF, JPG or PNG."
                     />
                     <InputError :message="form.errors.clearance || issues.clearance" />
+                </div>
+
+                <div class="rounded-md border border-border bg-surface-muted px-3 py-3 sm:col-span-2">
+                    <label class="flex items-start gap-2 text-sm font-medium text-text">
+                        <input v-model="form.sign" type="checkbox" class="mt-0.5 h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
+                        <span>Sign electronically <span class="font-normal text-text-muted">(optional)</span></span>
+                    </label>
+                    <template v-if="form.sign">
+                        <p v-if="hasSignature" class="mt-1 pl-6 text-xs text-success-fg">Your saved signature will be placed on the form.</p>
+                        <p v-else class="mt-1 pl-6 text-xs text-text-muted">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</p>
+                    </template>
+                    <div v-if="form.sign" class="mt-3 max-w-sm">
+                        <PasswordInput id="apply-sign-password" v-model="form.password" label="Your IMIS password" autocomplete="current-password" required :invalid="!!form.errors.password" />
+                        <p class="mt-1 text-xs text-text-muted">Re-entering your password is your electronic signature as applicant. It is recorded with the date and time.</p>
+                        <InputError :message="form.errors.password" />
+                    </div>
                 </div>
             </form>
 

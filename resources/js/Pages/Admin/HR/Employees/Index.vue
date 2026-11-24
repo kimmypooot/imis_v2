@@ -37,6 +37,7 @@ const bulkOpen = ref(false);
 const columns = [
     { key: 'name', label: 'Employee', value: (employee) => employee.user.list_name },
     { key: 'employee_number', label: 'Employee no.' },
+    { key: 'biometric_id', label: 'Biometric ID' },
     {
         key: 'unit',
         label: 'Office',
@@ -169,6 +170,10 @@ const visible = computed(() =>
                 </div>
             </template>
             <template #cell-employee_number="{ row }">{{ row.employee_number || '—' }}</template>
+            <template #cell-biometric_id="{ row }">
+                <span v-if="row.biometric_id" class="tabular-nums">{{ row.biometric_id }}</span>
+                <span v-else class="text-text-muted">Not set</span>
+            </template>
             <template #cell-unit="{ row }">
                 {{ row.user.unit || '—' }}
                 <div v-if="row.user.concurrent_units.length" class="text-xs text-text-muted">{{ row.user.concurrent_units.map((unit) => `${unit.capacity} of ${unit.office}`).join(', ') }}</div>

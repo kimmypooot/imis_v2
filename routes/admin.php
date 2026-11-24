@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\ApplicationRoleController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BiometricImportController;
 use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\ChangelogController;
 use App\Http\Controllers\Admin\CommitteeController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\EmployeeAssignmentController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmployeeDocumentController;
+use App\Http\Controllers\Admin\EmployeeDtrController;
 use App\Http\Controllers\Admin\EmployeeLearningDevelopmentController;
 use App\Http\Controllers\Admin\EmployeeLeaveController;
 use App\Http\Controllers\Admin\EmployeePdsController;
@@ -40,6 +42,7 @@ use App\Http\Controllers\Admin\LeaveMonetizationController;
 use App\Http\Controllers\Admin\LeaveReportController;
 use App\Http\Controllers\Admin\LeaveTypeController;
 use App\Http\Controllers\Admin\NonPlantillaController;
+use App\Http\Controllers\Admin\OfficeDtrExportController;
 use App\Http\Controllers\Admin\OrganizationalUnitController as AdminOrganizationalUnitController;
 use App\Http\Controllers\Admin\PayComponentController;
 use App\Http\Controllers\Admin\PayProfileController;
@@ -60,7 +63,9 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StaffingController;
 use App\Http\Controllers\Admin\SystemAccessController;
 use App\Http\Controllers\Admin\SystemHealthController;
+use App\Http\Controllers\Admin\TardinessController;
 use App\Http\Controllers\Admin\UserAccessController;
+use App\Http\Controllers\Admin\WorkScheduleController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthorizationDemoController;
 use App\Http\Controllers\PdsPhotoController;
@@ -343,12 +348,42 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/hr/leave/flexible-work', [FlexibleWorkController::class, 'index'])->name('admin.hr.leave.fwa');
         Route::get('admin/hr/leave/reports', [LeaveReportController::class, 'index'])->name('admin.hr.leave.reports');
         Route::get('admin/hr/leave/calendar', [LeaveCalendarController::class, 'index'])->name('admin.hr.leave.calendar');
+        // DTR: a month's tardiness and undertime, charged to leave credits (CSC Table IV).
+        Route::get('admin/hr/leave/tardiness', [TardinessController::class, 'index'])->name('admin.hr.leave.tardiness');
+        Route::get('admin/hr/leave/calendar/{application}', [LeaveCalendarController::class, 'show'])->name('admin.hr.leave.calendar.show');
         Route::get('admin/hr/employees/{employee}/leave', [EmployeeLeaveController::class, 'show'])->name('admin.hr.employees.leave');
+    });
+
+    // DTR: biometric logs uploaded by HRD. `dtr.manage` also reads.
+    Route::middleware('permission:dtr.view,dtr.manage')->group(function () {
+        Route::get('admin/hr/dtr/import', [BiometricImportController::class, 'show'])->name('admin.hr.dtr.import');
+        Route::get('admin/hr/dtr/schedules', [WorkScheduleController::class, 'show'])->name('admin.hr.dtr.schedules');
+        Route::get('admin/hr/employees/{employee}/dtr', [EmployeeDtrController::class, 'show'])->name('admin.hr.employees.dtr');
+        Route::get('admin/hr/employees/{employee}/dtr/print', [EmployeeDtrController::class, 'print'])->name('admin.hr.employees.dtr.print');
+        Route::get('admin/hr/employees/{employee}/dtr/export', [EmployeeDtrController::class, 'export'])->middleware('throttle:30,1')->name('admin.hr.employees.dtr.export');
+        Route::get('admin/hr/dtr/export', OfficeDtrExportController::class)->middleware('throttle:6,1')->name('admin.hr.dtr.export');
+    });
+
+    Route::middleware('permission:dtr.manage')->group(function () {
+        Route::post('admin/hr/dtr/import', [BiometricImportController::class, 'store'])->name('admin.hr.dtr.import.store');
+        Route::delete('admin/hr/dtr/import/ids', [BiometricImportController::class, 'clearIds'])->name('admin.hr.dtr.import.clear-ids');
+        Route::post('admin/hr/employees/{employee}/dtr/adjustments', [EmployeeDtrController::class, 'store'])->name('admin.hr.employees.dtr.adjustments.store');
+        Route::delete('admin/hr/employees/{employee}/dtr/adjustments/{adjustment}', [EmployeeDtrController::class, 'destroy'])->name('admin.hr.employees.dtr.adjustments.destroy');
+        Route::post('admin/hr/dtr/schedules', [WorkScheduleController::class, 'store'])->name('admin.hr.dtr.schedules.store');
+        Route::post('admin/hr/dtr/schedules/assign', [WorkScheduleController::class, 'assign'])->name('admin.hr.dtr.schedules.assign');
+        Route::post('admin/hr/dtr/schedules/assign-many', [WorkScheduleController::class, 'assignMany'])->middleware('throttle:20,1')->name('admin.hr.dtr.schedules.assign-many');
+        Route::put('admin/hr/dtr/schedules/{schedule}', [WorkScheduleController::class, 'update'])->name('admin.hr.dtr.schedules.update');
+        Route::patch('admin/hr/dtr/schedules/assignments/{assignment}', [WorkScheduleController::class, 'end'])->name('admin.hr.dtr.schedules.assignments.end');
+        Route::post('admin/hr/dtr/schedules/assignments/end-many', [WorkScheduleController::class, 'endMany'])->middleware('throttle:20,1')->name('admin.hr.dtr.schedules.assignments.end-many');
+        Route::post('admin/hr/dtr/schedules/assignments/remove-many', [WorkScheduleController::class, 'destroyMany'])->middleware('throttle:20,1')->name('admin.hr.dtr.schedules.assignments.remove-many');
+        Route::delete('admin/hr/dtr/schedules/assignments/{assignment}', [WorkScheduleController::class, 'destroy'])->name('admin.hr.dtr.schedules.assignments.destroy');
     });
 
     Route::middleware('permission:leave.manage')->scopeBindings()->group(function () {
         // HR-7: what is left before the legacy LMS and ldms are retired.
         Route::get('admin/hr/readiness', [HrReadinessController::class, 'index'])->name('admin.hr.readiness');
+        Route::post('admin/hr/leave/tardiness', [TardinessController::class, 'store'])->name('admin.hr.leave.tardiness.store');
+        Route::post('admin/hr/leave/tardiness/{deduction}/reverse', [TardinessController::class, 'reverse'])->name('admin.hr.leave.tardiness.reverse');
         Route::post('admin/hr/leave/accrual', [LeaveCreditController::class, 'accrue'])->name('admin.hr.leave.accrue');
         Route::post('admin/hr/leave/year-start', [LeaveCreditController::class, 'startYear'])->name('admin.hr.leave.year-start');
         // Syncing with HR's leave card workbook (the master file): upload, review, apply.

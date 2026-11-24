@@ -33,6 +33,9 @@ class OfficeHeads
     /** @var ?array<int, array{user: User, capacity: ?HeadCapacity}> */
     private ?array $heads = null;
 
+    /** @var ?array<int, array{user: User, capacity: ?HeadCapacity}> */
+    private ?array $regularHeads = null;
+
     /**
      * @return array<int, array{user: User, capacity: ?HeadCapacity}> keyed by office id; `capacity` is null for the regular head
      */
@@ -42,6 +45,32 @@ class OfficeHeads
             return $this->heads;
         }
 
+        $heads = $this->regular();
+
+        // The latest designation of an office wins.
+        EmployeeAssignment::query()->headingOn()->with('employee.user')->orderBy('effective_date')->orderBy('id')->get()
+            ->each(function (EmployeeAssignment $designation) use (&$heads) {
+                if ($designation->to_unit_id && $designation->employee?->user?->isActive()) {
+                    $heads[$designation->to_unit_id] = ['user' => $designation->employee->user, 'capacity' => $designation->capacity()];
+                }
+            });
+
+        return $this->heads = $heads;
+    }
+
+    /**
+     * The regular head of each office (the person holding the head's
+     * position), ignoring any officer-in-charge designation running today.
+     * For a record about a past date, where today's designation doesn't apply.
+     *
+     * @return array<int, array{user: User, capacity: ?HeadCapacity}> keyed by office id
+     */
+    public function regular(): array
+    {
+        if ($this->regularHeads !== null) {
+            return $this->regularHeads;
+        }
+
         $titles = collect(self::TITLES)->flatten()->unique()->values();
         $candidates = User::query()->where('status', 'active')->with('organizationalUnit')
             ->whereNotNull('organizational_unit_id')
@@ -49,7 +78,7 @@ class OfficeHeads
             ->get()
             ->groupBy('organizational_unit_id');
 
-        $heads = $candidates->map(function (Collection $people) {
+        return $this->regularHeads = $candidates->map(function (Collection $people) {
             $order = self::TITLES[$people->first()->organizationalUnit->unit_type?->value] ?? [];
 
             foreach ($order as $title) {
@@ -64,16 +93,6 @@ class OfficeHeads
 
             return null;
         })->filter()->all();
-
-        // The latest designation of an office wins.
-        EmployeeAssignment::query()->headingOn()->with('employee.user')->orderBy('effective_date')->orderBy('id')->get()
-            ->each(function (EmployeeAssignment $designation) use (&$heads) {
-                if ($designation->to_unit_id && $designation->employee?->user?->isActive()) {
-                    $heads[$designation->to_unit_id] = ['user' => $designation->employee->user, 'capacity' => $designation->capacity()];
-                }
-            });
-
-        return $this->heads = $heads;
     }
 
     public function of(?int $officeId): ?User

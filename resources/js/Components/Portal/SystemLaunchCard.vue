@@ -33,8 +33,11 @@ const state = computed(() => {
 
 const launchable = computed(() => state.value.kind === 'launch' || state.value.kind === 'bypass');
 
+// flex-wrap: a long role badge ("Super Administrator") in a narrow card —
+// e.g. more columns once the sidebar collapses — drops to a second line
+// instead of running out of the card, since nowrap text cannot shrink.
 const button =
-    'flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium whitespace-nowrap';
+    'flex min-h-11 w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-lg px-4 py-2.5 text-sm font-medium whitespace-nowrap';
 </script>
 
 <template>
@@ -73,7 +76,8 @@ const button =
                     {{ state.kind === 'bypass' ? 'Access' : 'Access System' }}
                     <span
                         v-if="state.badge"
-                        class="rounded-full bg-white/20 px-2 py-px text-xs leading-snug font-semibold tracking-wide uppercase"
+                        class="max-w-full truncate rounded-full bg-white/20 px-2 py-px text-xs leading-snug font-semibold tracking-wide uppercase"
+                        :title="state.badge"
                     >
                         {{ state.badge }}
                     </span>

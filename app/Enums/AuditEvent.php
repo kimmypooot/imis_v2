@@ -130,6 +130,21 @@ enum AuditEvent: string
     case LeaveAccrualRun = 'leave_credit.accrual_run';
     case LeaveYearStartRun = 'leave_credit.year_start_run';
     case LeaveCardViewed = 'leave_card.viewed';
+    // DTR: biometric logs and device ID mappings.
+    case BiometricLogImported = 'biometric_log.imported';
+    case BiometricIdMapped = 'biometric_id.mapped';
+    case BiometricPunchesCleared = 'biometric_punches.cleared';
+    case BiometricIdUnmapped = 'biometric_id.unmapped';
+    case WorkScheduleSaved = 'work_schedule.saved';
+    case WorkScheduleAssigned = 'work_schedule.assigned';
+    case DtrViewed = 'dtr.viewed';
+    case DtrPrinted = 'dtr.printed';
+    case DtrExported = 'dtr.exported';
+    case DtrSigned = 'dtr.signed';
+    case DtrLeaveDeducted = 'dtr_leave.deducted';
+    case DtrLeaveDeductionReversed = 'dtr_leave.reversed';
+    case DtrAdjustmentSaved = 'dtr_adjustment.saved';
+    case DtrAdjustmentRemoved = 'dtr_adjustment.removed';
     // HR-6b leave applications.
     case LeaveApplicationFiled = 'leave_application.filed';
     case LeaveApplicationResubmitted = 'leave_application.resubmitted';
@@ -274,7 +289,7 @@ enum AuditEvent: string
     {
         return [
             self::EmployeeViewed, self::ServiceRecordViewed, self::ServiceRecordPrinted,
-            self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed,
+            self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed, self::DtrViewed, self::DtrPrinted, self::DtrExported,
             self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed,
             self::LdCertificateViewed, self::LdLogViewed, self::LdReportViewed,
             self::RecruitmentPdsRead, self::RecruitmentDocumentRead,

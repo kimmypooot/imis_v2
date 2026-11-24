@@ -6,6 +6,7 @@ use App\Enums\EmploymentStatus;
 use App\Enums\LeaveApplicationStatus;
 use App\Models\Employee;
 use App\Models\LeaveApplication;
+use App\Models\LeaveApplicationStep;
 use App\Models\LeaveDesignation;
 use App\Models\LeaveType;
 use App\Models\Permission;
@@ -121,7 +122,10 @@ class LeaveApplicationTest extends TestCase
         $this->assertEquals(10, $certified['VL']);
         $this->assertEquals(10, $certified['SL']);
 
-        $this->act($this->head, $application, 'approved')->assertSessionHasNoErrors();
+        $this->act($this->head, $application, 'approved', 'Enjoy your vacation.')->assertSessionHasNoErrors();
+
+        // The Head's note prints on the form (lower right, under 7.D).
+        $this->assertSame('Enjoy your vacation.', app(LeaveForm::class)->present($application->fresh(), $this->employee->user)['head_note']);
 
         $application->refresh();
         $this->assertSame(LeaveApplicationStatus::Approved, $application->status);
@@ -132,6 +136,134 @@ class LeaveApplicationTest extends TestCase
         $this->assertSame('2026-06-01', $this->employee->leaveLedger()->where('kind', 'deduction')->sole()->entry_date->toDateString());
         Notification::assertSentTo($this->employee->user, LeaveApplicationUpdate::class);
         $this->assertDatabaseHas('audit_logs', ['event' => 'leave_application.acted', 'target_id' => $application->id]);
+    }
+
+    public function test_the_applicant_may_sign_when_filing_but_need_not(): void
+    {
+        $this->credit('VL', 10);
+
+        // Unsigned: filed as before.
+        $this->actingAs($this->employee->user)->post('/my/leave/applications', $this->vacation())->assertSessionHasNoErrors();
+        $this->assertNull(LeaveApplication::query()->latest('id')->first()->signed_at);
+
+        // Signing with the wrong password files nothing.
+        $before = LeaveApplication::query()->count();
+        $this->actingAs($this->employee->user)->post('/my/leave/applications', $this->vacation(['date_from' => '2026-06-22', 'date_to' => '2026-06-22', 'sign' => true, 'password' => 'wrong']))->assertSessionHasErrors('password');
+        $this->assertSame($before, LeaveApplication::query()->count());
+
+        // The right password signs it, with the time and IP.
+        $this->actingAs($this->employee->user)->post('/my/leave/applications', $this->vacation(['date_from' => '2026-06-23', 'date_to' => '2026-06-23', 'sign' => true, 'password' => 'password']))->assertSessionHasNoErrors();
+        $signed = LeaveApplication::query()->latest('id')->first();
+        $this->assertNotNull($signed->signed_at);
+        $this->assertNotNull($signed->signed_ip);
+    }
+
+    public function test_a_saved_signature_is_cleaned_private_and_replaceable(): void
+    {
+        Storage::fake('local');
+        $user = $this->employee->user;
+
+        // Nothing saved yet.
+        $this->actingAs($user)->get('/my/signature')->assertNotFound();
+
+        // Drawn on screen: a PNG data URL, stored cleaned (cropped, clear background).
+        $this->actingAs($user)->post('/my/signature', ['signature' => $this->drawnSignature()])->assertSessionHasNoErrors();
+        $first = $user->fresh()->signature_path;
+        $this->assertNotNull($first);
+        Storage::disk('local')->assertExists($first);
+        $size = getimagesizefromstring(Storage::disk('local')->get($first));
+        $this->assertLessThan(200, $size[0], 'cropped to the ink, not the whole box');
+        $this->actingAs($user)->get('/my/signature')->assertOk()->assertHeader('Content-Type', 'image/png');
+
+        // Only the owner's: someone else has none of their own.
+        $this->actingAs($this->supervisor)->get('/my/signature')->assertNotFound();
+
+        // A blank pad is refused; replacing deletes the old file; removing clears it.
+        $this->actingAs($user)->post('/my/signature', ['signature' => $this->drawnSignature(blank: true)])->assertSessionHasErrors('signature');
+        $this->actingAs($user)->post('/my/signature', ['signature' => $this->drawnSignature()])->assertSessionHasNoErrors();
+        Storage::disk('local')->assertMissing($first);
+        $this->actingAs($user)->delete('/my/signature');
+        $this->assertNull($user->fresh()->signature_path);
+    }
+
+    public function test_signing_keeps_a_copy_of_the_signature_for_the_form(): void
+    {
+        Storage::fake('local');
+        $this->credit('VL', 10);
+        $user = $this->employee->user;
+        $this->actingAs($user)->post('/my/signature', ['signature' => $this->drawnSignature()]);
+
+        $this->actingAs($user)->post('/my/leave/applications', $this->vacation(['sign' => true, 'password' => 'password']))->assertSessionHasNoErrors();
+        $application = LeaveApplication::query()->latest('id')->firstOrFail();
+        $copy = $application->signature_path;
+        $this->assertNotNull($copy);
+        $this->assertNotSame($user->fresh()->signature_path, $copy);
+
+        // Changing the saved signature later leaves the signed copy alone.
+        $this->actingAs($user)->post('/my/signature', ['signature' => $this->drawnSignature()]);
+        Storage::disk('local')->assertExists($copy);
+
+        // The printed form points at it; the applicant and those on the chain can fetch it, others can't.
+        $form = app(LeaveForm::class)->present($application, $user);
+        $this->assertSame("/leave/applications/{$application->id}/signature/applicant", $form['applicant_signature']);
+        $this->actingAs($user)->get($form['applicant_signature'])->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->actingAs($this->supervisor)->get($form['applicant_signature'])->assertOk();
+        $this->actingAs(User::factory()->create())->get($form['applicant_signature'])->assertForbidden();
+
+        // Unsigned filings carry no image.
+        $unsigned = $this->file($this->employee, $this->vacation(['date_from' => '2026-06-29', 'date_to' => '2026-06-29']));
+        $this->assertNull(app(LeaveForm::class)->present($unsigned, $user)['applicant_signature']);
+    }
+
+    public function test_notifications_mention_signatures_and_carry_the_heads_note(): void
+    {
+        Notification::fake();
+        $this->credit('VL', 10);
+
+        // The applicant signs: the supervisor is told.
+        $application = $this->file($this->employee, $this->vacation(['sign' => true, 'password' => 'password']));
+        Notification::assertSentTo($this->supervisor, LeaveApplicationUpdate::class,
+            fn ($notification) => str_contains($notification->toArray($this->supervisor)['message'], 'Signed electronically by the applicant'));
+
+        $this->act($this->supervisor, $application, 'recommended');
+        $this->act($this->hr, $application, 'certified');
+
+        // The Head signs and leaves a note: the employee gets both.
+        $step = $application->fresh()->pendingStep();
+        $this->actingAs($this->head)->post("/leave/approvals/steps/{$step->id}", ['action' => 'approved', 'remarks' => 'Enjoy your vacation.', 'sign' => true, 'password' => 'password'])
+            ->assertSessionHasNoErrors();
+        Notification::assertSentTo($this->employee->user, LeaveApplicationUpdate::class, function ($notification) {
+            $message = $notification->toArray($this->employee->user)['message'];
+
+            return str_contains($message, 'was approved')
+                && str_contains($message, 'Note from the Head: Enjoy your vacation.')
+                && str_contains($message, 'Signed electronically by '.$this->head->name);
+        });
+    }
+
+    public function test_signing_an_approval_step_is_optional_and_needs_the_password(): void
+    {
+        $this->credit('VL', 10);
+        $application = $this->file();
+        $stepId = $application->fresh()->pendingStep()->id;
+
+        // Unsigned works as before.
+        $this->act($this->supervisor, $application, 'recommended')->assertSessionHasNoErrors();
+        $this->assertNull(LeaveApplicationStep::query()->find($stepId)->signed_at);
+
+        // Signing with the wrong password is refused and nothing is recorded.
+        $hrStep = $application->fresh()->pendingStep();
+        $hr = $this->userWith(['leave.certify']);
+        $this->actingAs($hr)->post("/leave/approvals/steps/{$hrStep->id}", ['action' => 'certified', 'sign' => true, 'password' => 'wrong'])
+            ->assertSessionHasErrors('password');
+        $this->assertNull($hrStep->fresh()->signed_at);
+        $this->assertSame('pending', $hrStep->fresh()->action->value);
+
+        // The right password records the signature, with the time and IP.
+        $this->actingAs($hr)->post("/leave/approvals/steps/{$hrStep->id}", ['action' => 'certified', 'sign' => true, 'password' => 'password'])
+            ->assertSessionHasNoErrors();
+        $this->assertNotNull($hrStep->fresh()->signed_at);
+        $this->assertNotNull($hrStep->fresh()->signed_ip);
     }
 
     public function test_only_the_waiting_actor_can_act_and_never_on_their_own(): void
@@ -522,6 +654,26 @@ class LeaveApplicationTest extends TestCase
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
+    /** A PNG data URL of a squiggle on a transparent 400×160 box (or nothing at all). */
+    private function drawnSignature(bool $blank = false): string
+    {
+        $image = imagecreatetruecolor(400, 160);
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+        imagefill($image, 0, 0, imagecolorallocatealpha($image, 255, 255, 255, 127));
+        if (! $blank) {
+            imagesetthickness($image, 3);
+            $ink = imagecolorallocate($image, 12, 18, 60);
+            imageline($image, 120, 90, 160, 50, $ink);
+            imageline($image, 160, 50, 200, 100, $ink);
+            imageline($image, 200, 100, 260, 60, $ink);
+        }
+        ob_start();
+        imagepng($image);
+
+        return 'data:image/png;base64,'.base64_encode((string) ob_get_clean());
+    }
+
     private function vacation(array $overrides = []): array
     {
         return ['leave_type_id' => $this->type('VL')->id, 'date_from' => '2026-06-15', 'date_to' => '2026-06-19', 'detail' => 'within_ph', ...$overrides];

@@ -27,6 +27,7 @@ class EmployeeResource extends JsonResource
         return [
             'id' => $this->id,
             'employee_number' => $this->employee_number,
+            'biometric_id' => $this->biometric_id,
             'employment_status' => $this->employment_status?->value,
             'employment_status_label' => $this->employment_status?->label() ?? 'Not Set',
             'original_appointment_date' => $this->original_appointment_date?->toDateString(),
@@ -63,6 +64,7 @@ class EmployeeResource extends JsonResource
                 'viewLd' => $request->user()?->can('viewLd', $this->resource) ?? false,
                 'reassign' => $request->user()?->can('reassign', $this->resource) ?? false,
                 'viewServiceRecord' => $request->user()?->can('viewServiceRecord', $this->resource) ?? false,
+                'viewDtr' => $request->user()?->can('viewDtr', $this->resource) ?? false,
                 'viewLeave' => $request->user()?->can('viewLeave', $this->resource) ?? false,
             ],
         ];

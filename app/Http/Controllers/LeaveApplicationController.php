@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Leave\LeaveForm;
 use App\Support\HR\Leave\LeaveFormWorkbook;
+use App\Support\HR\Signatures;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
@@ -39,6 +40,7 @@ class LeaveApplicationController extends Controller
             'steps' => $applications->presentSteps($application),
             'isOwn' => $application->employee->user_id === $viewer->id,
             'canUpdate' => $viewer->can('update', $application),
+            'hasSignature' => $viewer->signature_path !== null,
             // The step waiting for this viewer, with what they may do.
             'action' => $authority['can'] ? [
                 'step_id' => $step->id,
@@ -71,6 +73,23 @@ class LeaveApplicationController extends Controller
         return response($workbook->build($form->present($application, $request->user())), 200, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="CS Form No. 6 - '.$application->reference_number.'.xlsx"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    /** The e-signature image kept with the applicant's filing or an approval step. */
+    public function signature(Request $request, LeaveApplication $application, string $signer): StreamedResponse
+    {
+        $this->authorize('view', $application);
+
+        $path = $signer === 'applicant'
+            ? $application->signature_path
+            : $application->steps()->whereKey((int) $signer)->value('signature_path');
+        abort_unless(Signatures::exists($path), 404);
+
+        return Storage::disk(Signatures::DISK)->response($path, null, [
+            'Content-Type' => 'image/png',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);

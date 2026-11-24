@@ -51,6 +51,10 @@ const date = (value) => (value ? formatCalendarDate(value) : '—');
                     <dd class="mt-0.5 font-medium text-text">{{ show(employee.employee_number) }}</dd>
                 </div>
                 <div>
+                    <dt class="text-text-muted">Biometric ID</dt>
+                    <dd class="mt-0.5 font-medium text-text">{{ show(employee.biometric_id) }}</dd>
+                </div>
+                <div>
                     <dt class="text-text-muted">Employment status</dt>
                     <dd class="mt-0.5 font-medium text-text">{{ employee.employment_status_label }}</dd>
                 </div>

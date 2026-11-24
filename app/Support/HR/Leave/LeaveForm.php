@@ -96,6 +96,7 @@ class LeaveForm
             'is_emergency' => $application->is_emergency,
             'commutation_requested' => $application->commutation_requested,
             'applicant' => Str::upper((string) $user->name),
+            'applicant_signature' => $application->signature_path ? "/leave/applications/{$application->id}/signature/applicant" : null,
             'credits' => $hr && $hr->action === LeaveStepAction::Certified ? $this->credits($application, $hr) : null,
             'certifier' => $this->signer($hr),
             'recommendation_required' => $steps->has('supervisor'),
@@ -116,6 +117,8 @@ class LeaveForm
                 $hr?->action === LeaveStepAction::InsufficientCredits => (string) $hr->remarks,
                 default => '',
             },
+            // The Head's own note (a disapproval's reason already prints in 7.D), at the lower right under 7.D.
+            'head_note' => $head && $head->action !== LeaveStepAction::Disapproved ? trim((string) $head->remarks) : '',
             'approver' => $this->signer($head),
             // When the head (or OIC) decided, printed at the foot of 7.C/7.D.
             'decided_at' => $head?->acted_at ? $this->local($head->acted_at)->format('m/d/Y h:i A') : '',
@@ -248,6 +251,7 @@ class LeaveForm
             'position' => Str::upper((string) $step->actor?->position),
             'acting_for' => Str::upper((string) $step->actingFor?->name),
             'acted_on' => $step->acted_at ? $this->local($step->acted_at)->format('m/d/Y') : '',
+            'signature' => $step->signature_path ? "/leave/applications/{$step->leave_application_id}/signature/{$step->id}" : null,
         ];
     }
 

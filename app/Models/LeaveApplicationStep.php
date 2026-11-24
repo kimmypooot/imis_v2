@@ -22,6 +22,7 @@ class LeaveApplicationStep extends Model
             'step' => 'integer',
             'action' => LeaveStepAction::class,
             'acted_at' => 'datetime',
+            'signed_at' => 'datetime',
             'certified_credits' => 'array',
         ];
     }

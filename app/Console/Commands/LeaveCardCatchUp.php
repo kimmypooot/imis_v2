@@ -19,6 +19,9 @@ use Illuminate\Support\Carbon;
  * last month, for only the people imported from the workbook. Months
  * already accrued are skipped, so re-running is safe.
  *
+ * People whose monthly card history was imported are left out: their months
+ * come from HR's workbook, so a blank month stays blank.
+ *
  * An opening that already covers a month with an accrual (the monthly run
  * went ahead of the import) would count that month twice; those people
  * are listed to be corrected by hand, never changed here.
@@ -43,10 +46,16 @@ class LeaveCardCatchUp extends Command
         $employees = Employee::query()->with('user')->whereIn('id', $openings->keys())->get()->keyBy('id');
         $plan = [];
         $double = [];
+        $skipped = 0;
 
         foreach ($openings as $employeeId => $openedOn) {
             $employee = $employees->get($employeeId);
             if ($employee->isSeparated()) {
+                continue;
+            }
+            if ($employee->leaveCardMonths()->exists()) {
+                $skipped++;
+
                 continue;
             }
             $openedOn = Carbon::parse($openedOn);
@@ -77,6 +86,9 @@ class LeaveCardCatchUp extends Command
             $this->warn("! {$line} Reverse the extra accrual from the leave card page.");
         }
 
+        if ($skipped > 0) {
+            $this->line("{$skipped} people have their monthly leave card imported and are left to it.");
+        }
         $total = collect($plan)->sum(fn (array $months) => count($months));
         $this->newLine();
         $this->line(sprintf('%d people with %d months to accrue; %d with a month counted twice.', count($plan), $total, count($double)));

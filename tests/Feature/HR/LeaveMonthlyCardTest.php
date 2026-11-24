@@ -88,7 +88,9 @@ class LeaveMonthlyCardTest extends TestCase
         // The balance as of February 28 was carried into the ledger; March accrues and VL is taken.
         $this->ledger($ana, $vl, LedgerEntryKind::Opening, 12.25, '2026-02-28');
         $this->ledger($ana, $sl, LedgerEntryKind::Opening, 22.5, '2026-02-28');
-        $credits->accrueMonth(2026, 3, null, [$ana->id]);
+        // (HR posts March by hand: the automatic run leaves people with an imported card alone.)
+        $this->ledger($ana, $vl, LedgerEntryKind::Accrual, 1.25, '2026-03-31');
+        $this->ledger($ana, $sl, LedgerEntryKind::Accrual, 1.25, '2026-03-31');
         $this->ledger($ana, $vl, LedgerEntryKind::Deduction, -2.0, '2026-03-12', 'VL 2 March 11-12, 2026');
 
         $card = $credits->monthlyCard($ana, 2026);
@@ -100,6 +102,25 @@ class LeaveMonthlyCardTest extends TestCase
         $this->assertSame(['earned' => 1.25, 'used' => 2.0, 'adjusted' => 0.0, 'balance' => 11.5], $march['vl']);
         $this->assertSame(23.75, $march['sl']['balance']);
         $this->assertStringContainsString('VL 2 March 11-12, 2026', $march['applications']);
+    }
+
+    public function test_the_automatic_accrual_leaves_people_with_an_imported_card_alone(): void
+    {
+        $carded = $this->employee();
+        $plain = $this->employee();
+        LeaveCardMonth::factory()->for($carded)->create(['year' => 2026, 'month' => 1]);
+        $credits = app(LeaveCredits::class);
+
+        $result = $credits->accrueMonth(2026, 3);
+
+        // A month the workbook leaves blank stays blank: nothing is filled in with 1.25.
+        $this->assertSame(1, $result['card_managed']);
+        $this->assertSame(0, $carded->leaveLedger()->count());
+        // Everyone else accrues as before.
+        $this->assertGreaterThan(0, $plain->leaveLedger()->where('kind', LedgerEntryKind::Accrual)->count());
+        // Asking for that person by name doesn't change it.
+        $this->assertSame(1, $credits->accrueMonth(2026, 4, null, [$carded->id])['card_managed']);
+        $this->assertSame(0, $carded->leaveLedger()->count());
     }
 
     public function test_a_person_with_no_card_history_or_entries_has_an_empty_monthly_card(): void

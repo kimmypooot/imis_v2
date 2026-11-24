@@ -1,6 +1,6 @@
 <script setup>
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
@@ -112,10 +112,26 @@ const openSettings = () => {
     settingsForm.clearErrors();
     settingsOpen.value = true;
 };
+// Opened from Leave Cards' "set the supervisor" links (?settings=1): the dialog opens
+// straight away, and saving goes back to the list for the next person.
+const fromCards = new URLSearchParams(window.location.search).get('settings') === '1';
+onMounted(() => {
+    if (fromCards && props.canManage) {
+        openSettings();
+    }
+});
 const submitSettings = () =>
     settingsForm
         .transform((data) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value === '' ? null : value])))
-        .put(`${base.value}/settings`, { preserveScroll: true, onSuccess: () => (settingsOpen.value = false) });
+        .put(`${base.value}/settings`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                settingsOpen.value = false;
+                if (fromCards) {
+                    router.visit('/admin/hr/leave');
+                }
+            },
+        });
 
 const field = 'mt-1 block w-full';
 </script>

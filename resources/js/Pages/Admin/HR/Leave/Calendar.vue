@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import BusyRegion from '@cscro8/ui/Components/UI/BusyRegion.vue';
 import { useBusy } from '../../../../Composables/useBusy';
@@ -9,6 +9,8 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import Tooltip from '@cscro8/ui/Components/UI/Tooltip.vue';
+import LeaveDetailsModal from '../../../../Components/HR/LeaveDetailsModal.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { leaveDates, leaveStatusTones } from '../../../../Components/HR/leaveStatus';
 
@@ -87,6 +89,9 @@ watch(() => props.month, () => { selected.value = defaultDay(); });
 const selectedLeave = computed(() => (selected.value ? byDate.value[selected.value] ?? [] : []));
 const selectedHoliday = computed(() => props.holidays.find((holiday) => holiday.date === selected.value));
 
+// The application whose details are open in the modal.
+const details = ref(null);
+
 const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white' : 'border border-warning text-warning-fg');
 
 </script>
@@ -154,17 +159,20 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
                                     <span>{{ date.getDate() }}</span>
                                     <span v-if="leaveOn(date).length" class="rounded-full bg-primary px-1.5 text-2xs font-medium text-white">{{ leaveOn(date).length }}</span>
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
-                                <Link
-                                    v-for="item in leaveOn(date).slice(0, MAX_PER_DAY)"
-                                    :key="item.id"
-                                    :href="`/leave/applications/${item.id}`"
-                                    class="mt-0.5 block truncate rounded-sm px-1 text-2xs"
-                                    :class="chipClass(item)"
-                                    :title="`${item.name} — ${item.type_name} (${item.status_label})`"
-                                >
-                                    {{ item.surname }} · {{ item.type_code }}<template v-if="item.is_half_day"> ½</template>
-                                </Link>
+                                <Tooltip v-if="holidayOn(date)" :label="holidayOn(date).name" class="mt-0.5 w-full">
+                                    <div class="min-w-0 flex-1 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg">{{ holidayOn(date).name }}</div>
+                                </Tooltip>
+                                <Tooltip v-for="item in leaveOn(date).slice(0, MAX_PER_DAY)" :key="item.id" :label="`${item.name} — ${item.type_name} (${item.status_label})`" class="mt-0.5 w-full">
+                                    <button
+                                        type="button"
+                                        class="block min-w-0 flex-1 truncate rounded-sm px-1 text-left text-2xs"
+                                        :class="chipClass(item)"
+                                        :aria-label="`${item.name} — ${item.type_name} (${item.status_label})`"
+                                        @click="details = item.id"
+                                    >
+                                        {{ item.surname }} · {{ item.type_code }}<template v-if="item.is_half_day"> ½</template>
+                                    </button>
+                                </Tooltip>
                                 <button
                                     v-if="leaveOn(date).length > MAX_PER_DAY"
                                     type="button"
@@ -192,7 +200,7 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
         <ul v-else class="divide-y divide-border">
             <li v-for="item in selectedLeave" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                    <Link :href="`/leave/applications/${item.id}`" class="font-medium text-link hover:underline">{{ item.name }}</Link>
+                    <button type="button" class="font-medium text-link hover:underline" @click="details = item.id">{{ item.name }}</button>
                     <span v-if="item.office" class="ml-2 text-xs text-text-muted">{{ item.office }}</span>
                     <div class="text-xs text-text-muted">{{ item.type_name }} · {{ leaveDates(item, formatCalendarDate) }}</div>
                 </div>
@@ -200,4 +208,11 @@ const chipClass = (item) => (item.status === 'approved' ? 'bg-success text-white
             </li>
         </ul>
     </Card>
+
+    <LeaveDetailsModal
+        :open="details !== null"
+        :url="details ? `/admin/hr/leave/calendar/${details}` : null"
+        :page-url="details ? `/leave/applications/${details}` : null"
+        @close="details = null"
+    />
 </template>

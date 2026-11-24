@@ -8,8 +8,10 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Tooltip from '@cscro8/ui/Components/UI/Tooltip.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import LeaveDetailsModal from '../../Components/HR/LeaveDetailsModal.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 import { leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
 
@@ -76,6 +78,10 @@ const selected = ref(props.month === today.slice(0, 7) ? today : null);
 const selectedColleagues = computed(() => (selected.value ? colleaguesByDate.value[selected.value] ?? [] : []));
 
 const pending = (item) => item.status !== 'approved';
+const colleagueLabel = (item) => `${item.name}${item.type_name ? ' — ' + item.type_name : ''} (${pending(item) ? 'filed, not yet approved' : 'approved'})`;
+
+// The application open in the details modal; anyone may open a colleague's (HR and Top Management in full, co-workers a limited view).
+const details = ref(null);
 </script>
 
 <template>
@@ -124,26 +130,30 @@ const pending = (item) => item.status !== 'approved';
                                 >
                                     {{ date.getDate() }}
                                 </button>
-                                <div v-if="holidayOn(date)" class="mt-0.5 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg" :title="holidayOn(date).name">{{ holidayOn(date).name }}</div>
-                                <Link
-                                    v-for="item in leaveOn(date)"
-                                    :key="item.id"
-                                    :href="`/leave/applications/${item.id}`"
-                                    class="mt-0.5 block truncate rounded-sm px-1 text-2xs"
-                                    :class="pending(item) ? 'border border-warning text-warning-fg' : 'bg-success text-white'"
-                                    :title="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`"
-                                >
-                                    {{ item.code }}<template v-if="item.is_half_day"> ½ {{ item.half_day_period }}</template>
-                                </Link>
-                                <div
-                                    v-for="item in colleaguesOn(date).slice(0, MAX_COLLEAGUES_PER_DAY)"
-                                    :key="`c${item.id}`"
-                                    class="mt-0.5 truncate rounded-sm px-1 text-2xs"
-                                    :class="pending(item) ? 'border border-primary text-link' : 'bg-primary text-white'"
-                                    :title="`${item.name} (${pending(item) ? 'filed, not yet approved' : 'approved'})`"
-                                >
-                                    {{ item.surname }}<template v-if="item.is_half_day"> ½</template>
-                                </div>
+                                <Tooltip v-if="holidayOn(date)" :label="holidayOn(date).name" class="mt-0.5 w-full">
+                                    <div class="min-w-0 flex-1 truncate rounded-sm bg-info-bg px-1 text-2xs text-info-fg">{{ holidayOn(date).name }}</div>
+                                </Tooltip>
+                                <Tooltip v-for="item in leaveOn(date)" :key="item.id" :label="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`" class="mt-0.5 w-full">
+                                    <Link
+                                        :href="`/leave/applications/${item.id}`"
+                                        class="block min-w-0 flex-1 truncate rounded-sm px-1 text-2xs"
+                                        :class="pending(item) ? 'border border-warning text-warning-fg' : 'bg-success text-white'"
+                                        :aria-label="`${item.name} (${pending(item) ? 'not yet approved' : 'approved'})`"
+                                    >
+                                        {{ item.code }}<template v-if="item.is_half_day"> ½ {{ item.half_day_period }}</template>
+                                    </Link>
+                                </Tooltip>
+                                <Tooltip v-for="item in colleaguesOn(date).slice(0, MAX_COLLEAGUES_PER_DAY)" :key="`c${item.id}`" :label="colleagueLabel(item)" class="mt-0.5 w-full">
+                                    <button
+                                        type="button"
+                                        class="block min-w-0 flex-1 truncate rounded-sm px-1 text-left text-2xs"
+                                        :class="pending(item) ? 'border border-primary text-link' : 'bg-primary text-white'"
+                                        :aria-label="colleagueLabel(item)"
+                                        @click="details = item.id"
+                                    >
+                                        {{ item.surname }}<template v-if="item.type_code"> · {{ item.type_code }}</template><template v-if="item.is_half_day"> ½</template>
+                                    </button>
+                                </Tooltip>
                                 <button
                                     v-if="colleaguesOn(date).length > MAX_COLLEAGUES_PER_DAY"
                                     type="button"
@@ -159,7 +169,7 @@ const pending = (item) => item.status !== 'approved';
             </table>
         </div>
         <p class="mt-3 text-xs text-text-muted">
-            Green: your leave. <template v-if="seesEveryone">Blue: colleagues in every office. </template><template v-else-if="division">Blue: co-workers in {{ division }}. </template>Outlined: under review or returned. Light blue: holiday.
+            Green: your leave. <template v-if="seesEveryone">Blue: colleagues in every office. </template><template v-else-if="division">Blue: co-workers in {{ division }}. </template>Click one for details. Outlined: under review or returned. Light blue: holiday.
         </p>
     </Card>
     </BusyRegion>
@@ -169,11 +179,14 @@ const pending = (item) => item.status !== 'approved';
         <ul v-else class="divide-y divide-border">
             <li v-for="item in selectedColleagues" :key="item.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                    <div class="font-medium text-text">{{ item.name }}<span v-if="seesEveryone && item.office" class="ml-2 text-xs font-normal text-text-muted">{{ item.office }}</span></div>
-                    <div class="text-xs text-text-muted">{{ leaveDates(item, formatCalendarDate) }}</div>
+                    <div class="font-medium text-text">
+                        <button type="button" class="text-link hover:underline" @click="details = item.id">{{ item.name }}</button><span v-if="seesEveryone && item.office" class="ml-2 text-xs font-normal text-text-muted">{{ item.office }}</span></div>
+                    <div class="text-xs text-text-muted"><template v-if="item.type_name">{{ item.type_name }} · </template>{{ leaveDates(item, formatCalendarDate) }}</div>
                 </div>
                 <StatusBadge :status="leaveStatusTones[item.status]" :label="item.status_label" />
             </li>
         </ul>
     </Card>
+
+    <LeaveDetailsModal :open="details !== null" :url="details ? `/my/leave/calendar/${details}` : null" @close="details = null" />
 </template>

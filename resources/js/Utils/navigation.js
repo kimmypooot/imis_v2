@@ -58,6 +58,8 @@ export const hrAccessPermissions = [
     'leave.manage',
     'payroll.view',
     'payroll.manage',
+    'dtr.view',
+    'dtr.manage',
 ];
 
 /**
@@ -91,6 +93,7 @@ export const portalNavItems = [
                     { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText' },
                     { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
                     { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
+                    { label: 'My DTR', href: '/my/dtr', icon: 'clock' },
                     { label: 'My Learning & Development', href: '/my/learning-development', icon: 'activity' },
                 ],
             },
@@ -251,6 +254,7 @@ export const hrNavItems = [
             { label: 'Calendar', href: '/admin/hr/leave/calendar', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
             { label: 'Leave Cards', href: '/admin/hr/leave', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
             { label: 'Flexible Work', href: '/admin/hr/leave/flexible-work', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
+            { label: 'Tardiness & Undertime', href: '/admin/hr/leave/tardiness', icon: 'clock', permission: ['leave.view', 'leave.manage'] },
             { label: 'Monetization', href: '/admin/hr/leave/monetization', icon: 'database', permission: ['leave.view', 'leave.manage'] },
             { label: 'Reports', href: '/admin/hr/leave/reports', icon: 'printer', permission: ['leave.view', 'leave.manage'] },
         ],
@@ -262,6 +266,14 @@ export const hrNavItems = [
             { label: 'OIC Designations', href: '/admin/hr/leave/designations', icon: 'users', permission: ['leave.view', 'leave.manage'] },
             { label: 'Leave Types', href: '/admin/hr/leave/types', icon: 'clipboard', permission: ['leave.view', 'leave.manage'] },
             { label: 'Holidays', href: '/admin/hr/leave/holidays', icon: 'calendar', permission: ['leave.view', 'leave.manage'] },
+        ],
+    },
+    {
+        group: 'Time Records',
+        icon: 'clock',
+        items: [
+            { label: 'Biometric Logs', href: '/admin/hr/dtr/import', icon: 'download', permission: ['dtr.view', 'dtr.manage'] },
+            { label: 'Work Schedules', href: '/admin/hr/dtr/schedules', icon: 'clock', permission: ['dtr.view', 'dtr.manage'] },
         ],
     },
     {

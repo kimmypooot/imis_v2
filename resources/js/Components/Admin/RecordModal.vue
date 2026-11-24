@@ -15,6 +15,8 @@ const props = defineProps({
     open: { type: Boolean, required: true },
     noun: { type: String, required: true /** e.g. "Office" */ },
     record: { type: Object, default: null },
+    /** Shown after the noun when editing; defaults to `record.name`. */
+    label: { type: String, default: null },
     fields: { type: Array, required: true },
     defaults: { type: Object, required: true },
     storeUrl: { type: String, required: true },
@@ -60,7 +62,7 @@ const submit = () => {
 <template>
     <Modal
         :open="open"
-        :title="isNew ? `Add New ${noun}` : `Edit ${noun} — ${record.name}`"
+        :title="isNew ? `Add New ${noun}` : `Edit ${noun} — ${label ?? record.name}`"
         :tone="isNew ? 'success' : 'primary'"
         :icon="isNew ? 'plus' : 'pencil'"
         :size="size"

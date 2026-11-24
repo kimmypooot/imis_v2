@@ -33,7 +33,13 @@ class LeaveAccrual extends Command
 
         $result = $credits->accrueMonth($year, $month);
         $audit->recordFor(null, AuditEvent::LeaveAccrualRun, 'Ran leave accrual for '.Carbon::create($year, $month, 1)->format('F Y').' (scheduled)', null, compact('year', 'month') + $result);
-        $this->info("Accrual {$year}-{$month}: {$result['posted']} credited, {$result['already']} already done, {$result['not_eligible']} not eligible.");
+        $this->info("Accrual {$year}-{$month}: {$result['posted']} credited, {$result['already']} already done, {$result['not_eligible']} not eligible, {$result['card_managed']} left to their imported leave card.");
+
+        // People with an imported card aren't accrued: remind HR to import the next workbook.
+        $reminded = $credits->remindCardImportDue($year, $month, $result['card_managed']);
+        if ($reminded > 0) {
+            $this->info("Reminded {$reminded} HR user(s) to import the latest leave card.");
+        }
 
         // The first run of a new year also starts the year.
         if (! $this->option('year') && today()->month === 1) {
