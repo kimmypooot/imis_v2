@@ -27,9 +27,18 @@ const inputType = computed(
 
 const text = computed(() => (props.modelValue === null || props.modelValue === undefined ? '' : String(props.modelValue)));
 
-const control =
-    'mt-1 block w-full rounded-md border bg-surface px-3 py-2 text-sm text-text shadow-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted';
-const border = computed(() => (props.error ? 'border-danger' : 'border-border'));
+const control = 'block w-full form-control px-3 py-2';
+const spaced = 'mt-1';
+
+// Numbers are typed, not nudged: no spinner arrows, digits line up.
+const numeric = computed(() => props.field.type === 'number' || props.field.type === 'year');
+const numericClass = '[appearance:textfield] tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
+const inputMode = computed(() => {
+    if (props.field.type === 'idnumber' || props.field.type === 'year') return 'numeric';
+    if (props.field.type === 'number') return props.field.step && Number(props.field.step) >= 1 ? 'numeric' : 'decimal';
+
+    return undefined;
+});
 </script>
 
 <template>
@@ -82,7 +91,7 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
             :required="field.required"
             :aria-invalid="!!error"
             :aria-describedby="describedBy"
-            :class="[control, border]"
+            :class="[control, spaced]"
             @change="emit('update:modelValue', $event.target.value)"
         >
             <option value="">— Select —</option>
@@ -98,17 +107,23 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
             :disabled="disabled"
             :aria-invalid="!!error"
             :aria-describedby="describedBy"
-            :class="[control, border]"
+            :class="[control, spaced]"
             @input="emit('update:modelValue', $event.target.value)"
         />
 
-        <template v-else>
+        <div v-else class="relative mt-1">
+            <span
+                v-if="field.prefix"
+                class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-text-muted"
+                aria-hidden="true"
+            >{{ field.prefix }}</span>
             <input
                 :id="id"
                 :type="inputType"
                 :value="text"
                 :list="field.suggestions ? `${id}-suggestions` : undefined"
-                :inputmode="field.type === 'idnumber' ? 'numeric' : undefined"
+                :inputmode="inputMode"
+                :placeholder="field.placeholder"
                 :step="field.type === 'number' ? (field.step ?? 'any') : field.type === 'year' ? 1 : undefined"
                 :min="field.type === 'number' ? field.min : field.type === 'year' ? 1900 : undefined"
                 :max="field.type === 'number' ? field.max : undefined"
@@ -118,13 +133,18 @@ const border = computed(() => (props.error ? 'border-danger' : 'border-border'))
                 autocomplete="off"
                 :aria-invalid="!!error"
                 :aria-describedby="describedBy"
-                :class="[control, border]"
+                :class="[control, numeric && numericClass, field.prefix && 'pl-7', field.unit && 'pr-12']"
                 @input="emit('update:modelValue', $event.target.value)"
             />
+            <span
+                v-if="field.unit"
+                class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-medium text-text-muted"
+                aria-hidden="true"
+            >{{ field.unit }}</span>
             <datalist v-if="field.suggestions" :id="`${id}-suggestions`">
                 <option v-for="suggestion in field.suggestions" :key="suggestion" :value="suggestion" />
             </datalist>
-        </template>
+        </div>
 
         <p v-if="field.help && !error" :id="helpId" class="mt-1 text-xs text-text-muted">{{ field.help }}</p>
         <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger-fg">{{ error }}</p>

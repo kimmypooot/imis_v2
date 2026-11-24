@@ -30,7 +30,10 @@ use InvalidArgumentException;
  * the person.
  *
  * Field: { key, label, type, required?, options?, when?, span?, max?,
- *          min?, help?, suggestions?, target? }
+ *          min?, help?, suggestions?, target?, width?, unit?, prefix?,
+ *          placeholder? }
+ * `width` (xs, sm, md, lg, xl, full) is a layout hint: how much of the row
+ * the field needs. Without it the editor sizes the field by its type.
  * `when` is ['field' => ..., 'is' => value] — the field only applies (is
  * shown, validated and kept) while that other field has that value.
  */
@@ -68,15 +71,15 @@ final class PdsSchema
                 'label' => 'Personal information',
                 'help' => 'Your name, sex at birth and date of birth come from your IMIS account. Ask HR to correct them.',
                 'fields' => [
-                    self::field('name_extension', 'Name extension (Jr., Sr., III)', max: 10, target: 'user'),
-                    self::field('place_of_birth', '4. Place of birth', span: 'full'),
-                    self::field('civil_status', '6. Civil status', 'select', options: self::options([
+                    self::field('name_extension', 'Name extension (Jr., Sr., III)', max: 10, target: 'user', width: 'md'),
+                    self::field('place_of_birth', '4. Place of birth', width: 'xl'),
+                    self::field('civil_status', '6. Civil status', 'select', width: 'sm', options: self::options([
                         'single' => 'Single', 'married' => 'Married', 'widowed' => 'Widowed', 'separated' => 'Separated', 'other' => 'Other/s',
                     ])),
-                    self::field('civil_status_other', 'Other civil status (specify)', max: 50, when: ['field' => 'civil_status', 'is' => 'other'], required: true),
-                    self::field('height_m', '7. Height (m)', 'number', min: 0.5, max: 2.5, step: '0.01'),
-                    self::field('weight_kg', '8. Weight (kg)', 'number', min: 1, max: 400, step: '0.1'),
-                    self::field('blood_type', '9. Blood type', 'select', options: self::options(array_combine(
+                    self::field('civil_status_other', 'Other civil status (specify)', max: 50, when: ['field' => 'civil_status', 'is' => 'other'], required: true, width: 'sm'),
+                    self::field('height_m', '7. Height (m)', 'number', min: 0.5, max: 2.5, step: '0.01', unit: 'm', placeholder: '1.65', width: 'sm'),
+                    self::field('weight_kg', '8. Weight (kg)', 'number', min: 1, max: 400, step: '0.1', unit: 'kg', placeholder: '60', width: 'sm'),
+                    self::field('blood_type', '9. Blood type', 'select', width: 'sm', options: self::options(array_combine(
                         $types = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], $types,
                     ))),
                     self::heading('Identification numbers'),
@@ -103,7 +106,7 @@ final class PdsSchema
                     self::heading('Contact'),
                     self::field('telephone_no', '19. Telephone no.', max: 50),
                     self::field('mobile_no', '20. Mobile no.', max: 50),
-                    self::field('email', '21. E-mail address (if any)', 'email', span: 'full'),
+                    self::field('email', '21. E-mail address (if any)', 'email', width: 'md'),
                 ],
             ],
 
@@ -112,23 +115,23 @@ final class PdsSchema
                 'label' => 'Family background',
                 'fields' => [
                     self::heading('22. Spouse'),
-                    self::field('spouse_surname', 'Surname', max: 100),
-                    self::field('spouse_first_name', 'First name', max: 100),
-                    self::field('spouse_middle_name', 'Middle name', max: 100),
-                    self::field('spouse_name_extension', 'Name extension', max: 10),
-                    self::field('spouse_occupation', 'Occupation', max: 150),
-                    self::field('spouse_employer', 'Employer/business name'),
-                    self::field('spouse_business_address', 'Business address', span: 'full'),
-                    self::field('spouse_telephone_no', 'Telephone no.', max: 50),
+                    self::field('spouse_surname', 'Surname', max: 100, width: 'sm'),
+                    self::field('spouse_first_name', 'First name', max: 100, width: 'sm'),
+                    self::field('spouse_middle_name', 'Middle name', max: 100, width: 'sm'),
+                    self::field('spouse_name_extension', 'Name extension', max: 10, width: 'sm'),
+                    self::field('spouse_occupation', 'Occupation', max: 150, width: 'md'),
+                    self::field('spouse_employer', 'Employer/business name', width: 'xl'),
+                    self::field('spouse_business_address', 'Business address', width: 'xl'),
+                    self::field('spouse_telephone_no', 'Telephone no.', max: 50, width: 'md'),
                     self::heading("24. Father's name"),
-                    self::field('father_surname', 'Surname', max: 100),
-                    self::field('father_first_name', 'First name', max: 100),
-                    self::field('father_middle_name', 'Middle name', max: 100),
-                    self::field('father_name_extension', 'Name extension', max: 10),
+                    self::field('father_surname', 'Surname', max: 100, width: 'sm'),
+                    self::field('father_first_name', 'First name', max: 100, width: 'sm'),
+                    self::field('father_middle_name', 'Middle name', max: 100, width: 'sm'),
+                    self::field('father_name_extension', 'Name extension', max: 10, width: 'sm'),
                     self::heading("25. Mother's maiden name"),
-                    self::field('mother_surname', 'Surname', max: 100),
-                    self::field('mother_first_name', 'First name', max: 100),
-                    self::field('mother_middle_name', 'Middle name', max: 100),
+                    self::field('mother_surname', 'Surname', max: 100, width: 'sm'),
+                    self::field('mother_first_name', 'First name', max: 100, width: 'sm'),
+                    self::field('mother_middle_name', 'Middle name', max: 100, width: 'sm'),
                 ],
             ],
 
@@ -139,8 +142,8 @@ final class PdsSchema
                 'model' => PdsChild::class,
                 'noun' => 'child',
                 'fields' => [
-                    self::field('full_name', 'Full name', required: true, span: 'full'),
-                    self::field('date_of_birth', 'Date of birth', 'date', past: true),
+                    self::field('full_name', 'Full name', required: true, width: 'xl'),
+                    self::field('date_of_birth', 'Date of birth', 'date', past: true, width: 'md'),
                 ],
             ],
 
@@ -150,17 +153,17 @@ final class PdsSchema
                 'model' => PdsEducation::class,
                 'noun' => 'school',
                 'fields' => [
-                    self::field('level', 'Level', 'select', required: true, options: self::options([
+                    self::field('level', 'Level', 'select', required: true, width: 'md', options: self::options([
                         'elementary' => 'Elementary', 'secondary' => 'Secondary', 'vocational' => 'Vocational / Trade Course',
                         'college' => 'College', 'graduate' => 'Graduate Studies',
                     ])),
-                    self::field('school', 'Name of school (write in full)', required: true),
+                    self::field('school', 'Name of school (write in full)', required: true, width: 'xl'),
                     self::field('degree', 'Basic education/degree/course (write in full)', span: 'full'),
-                    self::field('attendance_from', 'Attended from (year)', 'year'),
-                    self::field('attendance_to', 'Attended to (year)', 'year'),
-                    self::field('highest_level_units', 'Highest level/units earned (if not graduated)', max: 100),
-                    self::field('year_graduated', 'Year graduated', 'year'),
-                    self::field('honors', 'Scholarship/academic honors received', span: 'full'),
+                    self::field('attendance_from', 'Attended from (year)', 'year', placeholder: 'YYYY'),
+                    self::field('attendance_to', 'Attended to (year)', 'year', placeholder: 'YYYY'),
+                    self::field('highest_level_units', 'Highest level/units earned (if not graduated)', max: 100, width: 'lg'),
+                    self::field('year_graduated', 'Year graduated', 'year', placeholder: 'YYYY'),
+                    self::field('honors', 'Scholarship/academic honors received', width: 'full'),
                 ],
             ],
 
@@ -173,11 +176,11 @@ final class PdsSchema
                 'fields' => [
                     self::field('eligibility', 'Eligibility', required: true, span: 'full',
                         help: 'Career Service, RA 1080 (Board/Bar), under special laws, CES/CSEE, Category II/IV, uniformed personnel, barangay eligibility, driver\'s license…'),
-                    self::field('rating', 'Rating (if applicable)', max: 20),
-                    self::field('exam_date', 'Date of examination/conferment', 'date', past: true),
-                    self::field('exam_place', 'Place of examination/conferment', span: 'full'),
-                    self::field('license_number', 'License number (if applicable)', max: 50),
-                    self::field('license_valid_until', 'License valid until', 'date'),
+                    self::field('rating', 'Rating (if applicable)', max: 20, width: 'sm'),
+                    self::field('exam_date', 'Date of examination/conferment', 'date', past: true, width: 'sm'),
+                    self::field('exam_place', 'Place of examination/conferment', width: 'lg'),
+                    self::field('license_number', 'License number (if applicable)', max: 50, width: 'md'),
+                    self::field('license_valid_until', 'License valid until', 'date', width: 'sm'),
                 ],
             ],
 
@@ -190,13 +193,13 @@ final class PdsSchema
                 'fields' => [
                     self::field('date_from', 'From', 'date', required: true, past: true),
                     self::field('date_to', 'To (leave blank if present)', 'date'),
-                    self::field('position_title', 'Position title (write in full)', required: true, span: 'full'),
+                    self::field('position_title', 'Position title (write in full)', required: true, width: 'lg'),
                     self::field('agency', 'Department/agency/office/company (write in full)', required: true, span: 'full'),
-                    self::field('monthly_salary', 'Monthly salary', 'number', min: 0, max: 9999999, step: '0.01'),
-                    self::field('salary_grade', 'Salary/job/pay grade & step (format "00-0")', max: 10, pattern: '/^\d{1,2}-\d{1,2}$/'),
-                    self::field('appointment_status', 'Status of appointment', max: 50,
+                    self::field('monthly_salary', 'Monthly salary', 'number', min: 0, max: 9999999, step: '0.01', prefix: '₱', placeholder: '0.00', width: 'sm'),
+                    self::field('salary_grade', 'Salary/job/pay grade & step (format "00-0")', max: 10, pattern: '/^\d{1,2}-\d{1,2}$/', placeholder: '00-0', width: 'sm'),
+                    self::field('appointment_status', 'Status of appointment', max: 50, width: 'lg',
                         suggestions: array_map(fn (EmploymentStatus $status) => $status->label(), EmploymentStatus::cases())),
-                    self::field('is_government', 'Government service', 'checkbox'),
+                    self::field('is_government', 'Government service', 'checkbox', width: 'full'),
                 ],
             ],
 
@@ -230,8 +233,8 @@ final class PdsSchema
                     self::field('organization', 'Name & address of organization (write in full)', required: true, max: 512, span: 'full'),
                     self::field('date_from', 'From', 'date'),
                     self::field('date_to', 'To', 'date'),
-                    self::field('hours', 'Number of hours', 'number', min: 0, max: 99999, step: '0.5'),
-                    self::field('position', 'Position/nature of work'),
+                    self::field('hours', 'Number of hours', 'number', min: 0, max: 99999, step: '0.5', unit: 'hrs', width: 'sm'),
+                    self::field('position', 'Position/nature of work', width: 'sm'),
                 ],
             ],
 
@@ -250,8 +253,8 @@ final class PdsSchema
                     self::details('q35a_details', 'q35a'),
                     self::question('q35b', 'b. Have you been criminally charged before any court?'),
                     self::details('q35b_details', 'q35b'),
-                    self::field('q35b_date_filed', 'Date filed', 'date', past: true, when: ['field' => 'q35b', 'is' => true]),
-                    self::field('q35b_case_status', 'Status of case/s', max: 255, when: ['field' => 'q35b', 'is' => true]),
+                    self::field('q35b_date_filed', 'Date filed', 'date', past: true, width: 'md', when: ['field' => 'q35b', 'is' => true]),
+                    self::field('q35b_case_status', 'Status of case/s', max: 255, width: 'xl', when: ['field' => 'q35b', 'is' => true]),
                     self::question('q36', '36. Have you ever been convicted of any crime or violation of any law, decree, ordinance or regulation by any court or tribunal?'),
                     self::details('q36_details', 'q36'),
                     self::question('q37', '37. Have you ever been separated from the service in any of the following modes: resignation, retirement, dropped from the rolls, dismissal, termination, end of term, finished contract or phased out (abolition) in the public or private sector?'),
@@ -279,8 +282,8 @@ final class PdsSchema
                 'noun' => 'reference',
                 'max_rows' => 3,
                 'fields' => [
-                    self::field('name', 'Name', required: true),
-                    self::field('contact', 'Contact no. and/or email'),
+                    self::field('name', 'Name', required: true, width: 'md'),
+                    self::field('contact', 'Contact no. and/or email', width: 'md'),
                     self::field('address', 'Office/residential address', span: 'full'),
                 ],
             ],
@@ -290,9 +293,9 @@ final class PdsSchema
                 'label' => 'Government-issued ID',
                 'help' => 'E.g. passport, GSIS, SSS, PRC, driver\'s license.',
                 'fields' => [
-                    self::field('government_id_type', 'Government-issued ID', max: 100),
+                    self::field('government_id_type', 'Government-issued ID', max: 100, width: 'md'),
                     self::field('government_id_number', 'ID/license/passport no.', 'idnumber'),
-                    self::field('government_id_issuance', 'Date/place of issuance', span: 'full'),
+                    self::field('government_id_issuance', 'Date/place of issuance', width: 'md'),
                 ],
             ],
         ];
@@ -488,9 +491,13 @@ final class PdsSchema
         ?array $suggestions = null,
         ?string $pattern = null,
         ?string $target = null,
+        ?string $width = null,
+        ?string $unit = null,
+        ?string $prefix = null,
+        ?string $placeholder = null,
     ): array {
         return array_filter(
-            compact('key', 'label', 'type', 'required', 'options', 'when', 'span', 'max', 'min', 'step', 'past', 'help', 'suggestions', 'pattern', 'target'),
+            compact('key', 'label', 'type', 'required', 'options', 'when', 'span', 'max', 'min', 'step', 'past', 'help', 'suggestions', 'pattern', 'target', 'width', 'unit', 'prefix', 'placeholder'),
             fn ($value) => $value !== null && $value !== false,
         );
     }

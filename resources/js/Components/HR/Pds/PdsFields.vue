@@ -22,28 +22,69 @@ const applies = (field) => {
     return typeof field.when.is === 'boolean' ? !!actual === field.when.is : actual === field.when.is;
 };
 
-const spanClass = (field) =>
-    field.type === 'heading' || field.type === 'yesno' || field.type === 'textarea' || field.span === 'full' ? 'sm:col-span-2' : '';
+/**
+ * How much of a row a field needs. The server may say (`width`); otherwise
+ * it follows from the type, so a year or a height never gets a half-row
+ * box. Classes are written out in full so Tailwind can see them, and use
+ * container queries: the form narrows with the sidebar and the tab panel,
+ * not just with the screen.
+ */
+const widths = {
+    xs: 'col-span-6 @xl:col-span-3 @3xl:col-span-2',
+    sm: 'col-span-6 @xl:col-span-4 @3xl:col-span-3',
+    md: 'col-span-12 @xl:col-span-6 @3xl:col-span-4',
+    lg: 'col-span-12 @xl:col-span-6',
+    xl: 'col-span-12 @3xl:col-span-8',
+    full: 'col-span-12',
+};
+
+const widthOf = (field) => {
+    if (field.width) return field.width;
+    if (field.span === 'full') return 'full';
+
+    switch (field.type) {
+        case 'heading':
+        case 'yesno':
+        case 'textarea':
+        case 'checkbox':
+            return 'full';
+        case 'year':
+            return 'xs';
+        case 'number':
+        case 'date':
+            return 'sm';
+        case 'select':
+        case 'idnumber':
+            return 'md';
+        default:
+            return !field.max ? 'lg' : field.max <= 10 ? 'xs' : field.max <= 100 ? 'md' : 'lg';
+    }
+};
+
+const spanClass = (field) => widths[widthOf(field)];
 </script>
 
 <template>
-    <div class="grid gap-4 sm:grid-cols-2">
-        <template v-for="field in fields" :key="field.key">
-            <h4
-                v-if="field.type === 'heading'"
-                class="mt-2 border-b border-border pb-1 text-xs font-bold tracking-wide text-link uppercase sm:col-span-2"
-            >
-                {{ field.label }}
-            </h4>
-            <div v-else-if="applies(field)" :class="spanClass(field)">
-                <PdsField
-                    v-model="values[field.key]"
-                    :field="field"
-                    :id="`${idPrefix}-${field.key}`"
-                    :error="errors[`${errorPrefix}${field.key}`]"
-                    :disabled="disabled"
-                />
-            </div>
-        </template>
+    <div class="@container">
+        <div class="grid grid-cols-12 gap-x-4 gap-y-5">
+            <template v-for="field in fields" :key="field.key">
+                <h4
+                    v-if="field.type === 'heading'"
+                    class="col-span-12 mt-3 flex items-center gap-3 text-xs font-bold tracking-wide text-link uppercase first:mt-0"
+                >
+                    <span>{{ field.label }}</span>
+                    <span class="h-px flex-1 bg-border" aria-hidden="true" />
+                </h4>
+                <div v-else-if="applies(field)" :class="spanClass(field)">
+                    <PdsField
+                        v-model="values[field.key]"
+                        :field="field"
+                        :id="`${idPrefix}-${field.key}`"
+                        :error="errors[`${errorPrefix}${field.key}`]"
+                        :disabled="disabled"
+                    />
+                </div>
+            </template>
+        </div>
     </div>
 </template>
