@@ -26,7 +26,13 @@ const props = defineProps({
 const emit = defineEmits(['adjust', 'punches']);
 
 const hm = (minutes) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
-const time = (value) => value ?? '';
+// "13:05" reads as "1:05 PM", matching the confirmation dialog.
+const time = (value) => {
+    if (!value) return '';
+    const [h, m] = value.split(':').map(Number);
+
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+};
 // A day being edited shows what it would count as; every other day shows the record.
 const shown = (row) => (props.editing && props.previews[row.date] ? { ...row, ...props.previews[row.date] } : row);
 const dayName = (date) => new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short' });
@@ -93,20 +99,20 @@ const summary = [
                             <span class="ml-1 text-xs text-text-muted">{{ dayName(row.date) }}</span>
                         </td>
                         <td class="px-3 py-1.5 tabular-nums">
-                            <input v-if="editable(row)" v-model="drafts[row.date].in" type="time" class="filter-control w-28" :aria-label="`Time in for ${formatCalendarDate(row.date)}`" />
+                            <input v-if="editable(row)" v-model="drafts[row.date].in" type="time" class="filter-control w-36" :aria-label="`Time in for ${formatCalendarDate(row.date)}`" />
                             <template v-else>{{ time(row.in) }}</template>
                         </td>
                         <td class="px-3 py-1.5 tabular-nums">{{ time(row.break_out) }}</td>
                         <td class="px-3 py-1.5 tabular-nums">{{ time(row.break_in) }}</td>
                         <td class="px-3 py-1.5 tabular-nums">
-                            <input v-if="editable(row)" v-model="drafts[row.date].out" type="time" class="filter-control w-28" :aria-label="`Time out for ${formatCalendarDate(row.date)}`" />
+                            <input v-if="editable(row)" v-model="drafts[row.date].out" type="time" class="filter-control w-36" :aria-label="`Time out for ${formatCalendarDate(row.date)}`" />
                             <template v-else>{{ time(row.out) }}</template>
                         </td>
                         <td class="px-3 py-1.5 text-right tabular-nums">{{ shown(row).minutes ? hm(shown(row).minutes) : '' }}</td>
                         <td class="px-3 py-1.5">
                             <input v-if="editable(row)" v-model="drafts[row.date].remark" type="text" maxlength="255" placeholder="Reason, if you change the times" class="filter-control mb-1 w-full min-w-48" :aria-label="`Reason for ${formatCalendarDate(row.date)}`" />
-                            <span v-if="statuses[row.status]" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statuses[row.status]">{{ badge(row) }}</span>
-                            <template v-else>{{ label(row) }}</template>
+                            <span v-if="statuses[shown(row).status]" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statuses[shown(row).status]">{{ badge(shown(row)) }}</span>
+                            <template v-else>{{ label(shown(row)) }}</template>
                             <span v-if="row.flags.includes('adjusted') && row.adjustment?.by_employee" class="ml-2 text-xs font-medium text-link">Entered by the employee{{ row.adjustment.verified ? ', verified' : ', not verified yet' }}</span>
                             <span v-else-if="row.flags.includes('adjusted')" class="ml-2 text-xs font-medium text-link">Adjusted by HRD{{ editing ? ' (locked)' : '' }}</span>
                             <span v-if="row.flags.includes('worked_day_off')" class="ml-2 text-xs text-warning-fg">Punched on a day off</span>

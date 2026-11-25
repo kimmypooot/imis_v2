@@ -183,7 +183,10 @@ class DailyTimeRecord
         return $row($result['status'], $result['minutes'], $remark, $result['late_minutes'], $result['undertime_minutes']);
     }
 
-    private function remark(string $status): string
+    /**
+     * The usual remark for a day with this status (an employee or HRD reason replaces it on the sheet).
+     */
+    public function remark(string $status): string
     {
         return match ($status) {
             'present' => 'OK',

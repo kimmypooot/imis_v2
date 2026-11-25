@@ -165,13 +165,13 @@ class DailyTimeRecordTest extends TestCase
     public function test_a_times_adjustment_replaces_the_punches_for_that_day(): void
     {
         $this->punch('2026-10-06', '07:45', null);
-        DtrAdjustment::factory()->create(['employee_id' => $this->employee->id, 'date' => '2026-10-06', 'kind' => 'times', 'time_in' => '07:45:00', 'time_out' => '18:00:00', 'remark' => 'Forgot to punch out']);
+        DtrAdjustment::factory()->create(['employee_id' => $this->employee->id, 'date' => '2026-10-06', 'kind' => 'times', 'time_in' => '07:45:00', 'time_out' => '18:45:00', 'remark' => 'Forgot to punch out']);
 
         $row = $this->record('2026-10-06', '2026-10-06')['days'][0];
 
-        $this->assertSame(['present', 600, ['adjusted'], '07:45', '18:00'], [$row['status'], $row['minutes'], $row['flags'], $row['in'], $row['out']]);
+        $this->assertSame(['present', 600, ['adjusted'], '07:45', '18:45'], [$row['status'], $row['minutes'], $row['flags'], $row['in'], $row['out']]);
         $this->assertSame('Forgot to punch out', $row['remark']);
-        $this->assertSame(['kind' => 'times', 'time_in' => '07:45', 'time_out' => '18:00', 'remark' => 'Forgot to punch out'], collect($row['adjustment'])->only(['kind', 'time_in', 'time_out', 'remark'])->all());
+        $this->assertSame(['kind' => 'times', 'time_in' => '07:45', 'time_out' => '18:45', 'remark' => 'Forgot to punch out'], collect($row['adjustment'])->only(['kind', 'time_in', 'time_out', 'remark'])->all());
     }
 
     public function test_a_lone_punch_becomes_the_time_out_when_hrd_supplies_the_missing_time_in(): void
@@ -181,7 +181,7 @@ class DailyTimeRecordTest extends TestCase
 
         $row = $this->record('2026-10-06', '2026-10-06')['days'][0];
 
-        $this->assertSame(['07:45', '17:30', 585, 15], [$row['in'], $row['out'], $row['minutes'], $row['undertime_minutes']]);
+        $this->assertSame(['07:45', '17:30', 525, 75], [$row['in'], $row['out'], $row['minutes'], $row['undertime_minutes']]);
     }
 
     public function test_a_times_adjustment_with_only_a_time_out_keeps_the_real_time_in(): void

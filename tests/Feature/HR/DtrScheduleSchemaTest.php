@@ -24,7 +24,7 @@ class DtrScheduleSchemaTest extends TestCase
         $cww = WorkSchedule::query()->where('name', 'like', 'Compressed Work Week%')->firstOrFail();
         $regular = WorkSchedule::query()->where('name', 'like', 'Regular%')->firstOrFail();
 
-        $this->assertSame([600, [5], null, 0], [$cww->required_minutes, $cww->rest_weekdays, $cww->break_start, $cww->break_minutes]);
+        $this->assertSame([600, [5], '12:00', 60], [$cww->required_minutes, $cww->rest_weekdays, substr($cww->break_start, 0, 5), $cww->break_minutes]);
         $this->assertSame(['07:00', '08:00'], [substr($cww->start_time, 0, 5), substr($cww->latest_arrival, 0, 5)]);
         $this->assertSame([480, [], '12:00', 60], [$regular->required_minutes, $regular->rest_weekdays, substr($regular->break_start, 0, 5), $regular->break_minutes]);
         $this->assertSame(['08:00', '08:00'], [substr($regular->start_time, 0, 5), substr($regular->latest_arrival, 0, 5)]);
@@ -38,7 +38,8 @@ class DtrScheduleSchemaTest extends TestCase
 
         $this->assertSame('2026-10-06 08:00:00', $cww->latestArrivalAt($day)->format('Y-m-d H:i:s'));
         $this->assertSame('2026-10-06 07:00:00', $cww->startsAt($day)->format('Y-m-d H:i:s'));
-        $this->assertNull($cww->breakWindow($day));
+        [$from, $to] = $cww->breakWindow($day);
+        $this->assertSame(['12:00', '13:00'], [$from->format('H:i'), $to->format('H:i')]);
         [$from, $to] = $regular->breakWindow($day);
         $this->assertSame(['12:00', '13:00'], [$from->format('H:i'), $to->format('H:i')]);
         $this->assertTrue($cww->isRestWeekday(Carbon::parse('2026-10-09')));

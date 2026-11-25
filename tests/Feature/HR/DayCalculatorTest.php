@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 /**
  * Rule B for one working day. CWW: work starts 07:00, late after 08:00,
- * a full day is 600 minutes, no break. Regular: 08:00, 08:00, 480 minutes,
+ * a full day is 600 minutes, with the 12:00 to 1:00 break. Regular: 08:00, 08:00, 480 minutes,
  * a 60-minute break from 12:00.
  */
 class DayCalculatorTest extends TestCase
@@ -34,18 +34,18 @@ class DayCalculatorTest extends TestCase
 
     public function test_leaving_early_is_undertime_not_late(): void
     {
-        $this->assertSame([490, 0, 110, 'undertime'], $this->cww('07:50', '16:00'));
-        $this->assertSame([600, 0, 0, 'present'], $this->cww('07:45', '17:50'));
+        $this->assertSame([430, 0, 170, 'undertime'], $this->cww('07:50', '16:00'));
+        $this->assertSame([600, 0, 0, 'present'], $this->cww('07:45', '18:50'));
     }
 
     public function test_time_before_the_schedule_start_does_not_count(): void
     {
-        $this->assertSame([545, 0, 55, 'undertime'], $this->cww('06:21', '16:05'));
+        $this->assertSame([485, 0, 115, 'undertime'], $this->cww('06:21', '16:05'));
     }
 
     public function test_late_and_short_is_not_double_counted(): void
     {
-        $this->assertSame([469, 11, 120, 'late'], $this->cww('08:11', '16:00'));
+        $this->assertSame([409, 11, 180, 'late'], $this->cww('08:11', '16:00'));
     }
 
     public function test_one_punch_is_incomplete_and_credits_nothing(): void
@@ -111,7 +111,7 @@ class DayCalculatorTest extends TestCase
     private function schedule(string $kind): WorkSchedule
     {
         return (new WorkSchedule)->forceFill($kind === 'cww'
-            ? ['start_time' => '07:00:00', 'latest_arrival' => '08:00:00', 'required_minutes' => 600, 'break_start' => null, 'break_minutes' => 0, 'rest_weekdays' => [5]]
+            ? ['start_time' => '07:00:00', 'latest_arrival' => '08:00:00', 'required_minutes' => 600, 'break_start' => '12:00:00', 'break_minutes' => 60, 'rest_weekdays' => [5]]
             : ['start_time' => '08:00:00', 'latest_arrival' => '08:00:00', 'required_minutes' => 480, 'break_start' => '12:00:00', 'break_minutes' => 60, 'rest_weekdays' => []]);
     }
 }

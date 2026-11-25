@@ -32,7 +32,7 @@ use Tests\TestCase;
  * (Omnibus Rules on Leave, Rule XVI Sec. 34). HR reviews, then posts.
  *
  * Fixture: October 2026, Compressed Work Week. Oct 6: 11 minutes late. Oct 7:
- * 19 late. Oct 8: leaves 1h50 short. So 30 late + 110 undertime = 140 minutes
+ * 19 late. Oct 8: leaves 1h50 short (07:50 to 17:00 less the noon break). So 30 late + 110 undertime = 140 minutes
  * = 2h20m = .250 + .042 = .292 day.
  */
 class TardinessDeductionsTest extends TestCase
@@ -54,10 +54,10 @@ class TardinessDeductionsTest extends TestCase
         EmployeeWorkSchedule::factory()->create(['employee_id' => $this->employee->id, 'work_schedule_id' => WorkSchedule::query()->where('name', 'like', 'Compressed%')->value('id'), 'valid_from' => '2026-01-01']);
         $this->credit('VL', 10);
         $this->credit('SL', 10);
-        $this->punch('2026-10-05', '07:45', '18:00');
+        $this->punch('2026-10-05', '07:45', '18:45');
         $this->punch('2026-10-06', '08:11', '19:20');
         $this->punch('2026-10-07', '08:19', '19:30');
-        $this->punch('2026-10-08', '07:50', '16:00');
+        $this->punch('2026-10-08', '07:50', '17:00');
     }
 
     protected function tearDown(): void

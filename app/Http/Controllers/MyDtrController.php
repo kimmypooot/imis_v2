@@ -96,7 +96,7 @@ class MyDtrController extends Controller
             $built = $record->build($employee, Carbon::parse(min($dates)), Carbon::parse(max($dates)), $overrides)['days']->keyBy('date');
             foreach ($dates as $date) {
                 $row = $built[$date];
-                $days[$date] = ['minutes' => $row['minutes'], 'late_minutes' => $row['late_minutes'], 'undertime_minutes' => $row['undertime_minutes'], 'status' => $row['status']];
+                $days[$date] = ['minutes' => $row['minutes'], 'late_minutes' => $row['late_minutes'], 'undertime_minutes' => $row['undertime_minutes'], 'status' => $row['status'], 'remark' => $record->remark($row['status'])];
             }
         }
 

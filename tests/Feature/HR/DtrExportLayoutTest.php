@@ -173,6 +173,8 @@ class DtrExportLayoutTest extends TestCase
         $this->assertSame(0, $days['2026-11-10']['late_minutes']);
         $this->assertGreaterThan(0, $days['2026-11-11']['late_minutes']);
         $this->assertLessThan(480, $days['2026-11-11']['minutes']);
+        $this->assertSame('OK', $days['2026-11-10']['remark']);
+        $this->assertSame('Late', $days['2026-11-11']['remark']);
         $this->assertArrayNotHasKey('2026-11-12', $days);
         $this->assertSame(0, DtrAdjustment::query()->count());
     }
