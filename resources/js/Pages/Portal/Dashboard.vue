@@ -148,7 +148,7 @@ const greeting = computed(() => {
     </div>
 
     <Modal v-if="whatsNew" :open="whatsNewOpen" title="What's New in IMIS" size="lg" @close="dismissWhatsNew">
-        <ReleaseNotes :release="whatsNew" />
+        <ReleaseNotes :release="whatsNew" :limit="8" />
 
         <template #footer>
             <Link href="/whats-new" class="mr-auto self-center text-sm font-medium text-link hover:text-primary-hover">

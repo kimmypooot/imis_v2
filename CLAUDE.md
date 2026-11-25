@@ -91,13 +91,13 @@ particular:
   yet: the built-in figures are starters and targets are data. JPortal
   (`../jportal`), GAD Corner, TIMS (`../csc-tims`) and PROCTAD
   (`../proctad`; both connected locally 2026-11-21) serve a feed; no other system does yet. Exec-4 (legacy PHP systems, CTS) is next.
-- Released versions are tracked in What's New notes (latest 3.7.1, 2026-11-24;
-  3.6.0 added a dark theme, phone install, the Executive dashboard revamp and
-  a refreshed look (error pages, solid-blue dialog headers, button icons, a
-  flat progress bar/spinner, count-up figures); 3.5.x added ETTS and CARES hub APIs, richer branded emails with a live
-  Email Templates preview, payslip approvals / my payslips / my earnings
-  pages, PDS import from the CSC Excel form, monthly leave cards imported
-  from HR's workbook, and the security hardening below).
+- Versions are tracked in What's New notes. IMIS 3 is in development until
+  its 2027 launch as 3.0.0 (the legacy IMIS ended at 2.7.0), so 2026 work is
+  one pre-release per month: 3.0.0-beta.1 (October 2026, published) and
+  3.0.0-beta.2 (November 2026, a draft published at month end). Add new work
+  to the current month's draft; don't create a new version per feature. The
+  former 3.0.0–3.7.1 development notes were folded into these betas. After
+  launch: one MINOR per month, PATCH for fixes only.
 - Hub systems: ETTS (ESD Transactions Tracking System), TIMS (signs out
   with IMIS, see `docs/sso-logout.md`), CARES (directory API and roles) and
   HUMANS are registered alongside JPortal, GAD Corner, IPCRS and ICT SRTS.

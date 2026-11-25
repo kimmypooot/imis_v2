@@ -35,7 +35,7 @@ class ChangelogRequest extends FormRequest
             ],
             'title' => ['required', 'string', 'max:150'],
             'release_date' => ['nullable', 'date'],
-            'items' => ['required', 'array', 'min:1', 'max:50'],
+            'items' => ['required', 'array', 'min:1', 'max:100'],
             'items.*.type' => ['required', new Enum(ChangelogItemType::class)],
             'items.*.description' => ['required', 'string', 'max:500'],
         ];

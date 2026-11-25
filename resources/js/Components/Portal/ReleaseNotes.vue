@@ -1,24 +1,33 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { formatDate } from '../../Utils/datetime';
+import { isPreRelease } from './imisHistory';
 
 /**
  * One release note: version, title, date, and its entries grouped by
- * kind (New / Improved / Fixed). Shared by the dashboard pop-up and the
- * What's New history page.
+ * kind (New / Improved / Fixed). Used by the dashboard pop-up and the
+ * Changelogs admin preview. With `limit`, only that many entries are
+ * listed (new features first) and the rest are left to What's New, so a
+ * month's release doesn't fill the pop-up.
  */
 const props = defineProps({
     release: { type: Object, required: true },
     headingLevel: { type: String, default: 'h3' },
+    limit: { type: Number, default: 0 },
 });
 
 const tones = { feature: 'success', improvement: 'info', fix: 'warning' };
 const order = ['feature', 'improvement', 'fix'];
 
+const ordered = computed(() => order.flatMap((type) => props.release.items.filter((item) => item.type === type)));
+const listed = computed(() => (props.limit ? ordered.value.slice(0, props.limit) : ordered.value));
+const hidden = computed(() => ordered.value.length - listed.value.length);
+
 const groups = computed(() =>
     order
-        .map((type) => ({ type, items: props.release.items.filter((item) => item.type === type) }))
+        .map((type) => ({ type, items: listed.value.filter((item) => item.type === type) }))
         .filter((group) => group.items.length),
 );
 </script>
@@ -27,7 +36,8 @@ const groups = computed(() =>
     <article>
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <component :is="headingLevel" class="text-base font-semibold text-text">{{ release.title }}</component>
-            <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-link">v{{ release.version }}</span>
+            <Badge tone="info" pill>v{{ release.version }}</Badge>
+            <Badge v-if="isPreRelease(release.version)" tone="neutral" pill>Development build</Badge>
             <time v-if="release.release_date" :datetime="release.release_date" class="text-xs text-text-muted">
                 {{ formatDate(release.release_date) }}
             </time>
@@ -43,5 +53,10 @@ const groups = computed(() =>
                 </ul>
             </section>
         </div>
+
+        <p v-if="hidden" class="mt-4 text-sm text-text-muted">
+            And {{ hidden }} more {{ hidden === 1 ? 'change' : 'changes' }}.
+            <Link href="/whats-new" class="font-medium text-link hover:text-primary-hover">See them all in What's New</Link>
+        </p>
     </article>
 </template>

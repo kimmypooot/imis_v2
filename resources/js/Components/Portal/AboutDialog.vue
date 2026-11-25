@@ -5,12 +5,13 @@ import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useBranding } from '../../Composables/useBranding';
+import { imisHistory as history } from './imisHistory';
 
 /**
  * "About IMIS" — the legacy About pop-up, rewritten for the rebuilt
- * platform: what IMIS is, its mission, what it does today, and the stack
- * it now runs on. Static copy apart from the version (config) so it never
- * claims a number the system can't back up.
+ * platform: what IMIS is, its mission, what it does today, and its story
+ * from v1.0.0 to the stack it now runs on. Static copy apart from the
+ * version (config) so it never claims a number the system can't back up.
  */
 defineProps({
     open: { type: Boolean, required: true },
@@ -86,21 +87,32 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
                 </ul>
             </section>
 
-            <section class="rounded-lg bg-surface-muted p-4">
-                <h3 class="text-sm font-semibold text-text">Rebuilt on a modern stack</h3>
-                <p class="mt-1 text-sm text-text-muted">
-                    IMIS 2 replaces the original PHP site with a single-page application: pages switch instantly
-                    without full reloads, and security, access rules, and data handling are enforced on the server.
-                </p>
-                <ul class="mt-3 flex flex-wrap gap-2" aria-label="Technologies">
-                    <li
-                        v-for="item in stack"
-                        :key="item"
-                        class="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-text"
-                    >
-                        {{ item }}
+            <section>
+                <h3 class="text-sm font-semibold text-text">Our story</h3>
+                <ol class="relative mt-4 ml-1.5 space-y-5 border-l-2 border-border pl-6">
+                    <li v-for="milestone in history" :key="milestone.version" class="relative">
+                        <span
+                            class="absolute top-1 -left-[calc(1.5rem+0.4375rem)] h-3 w-3 rounded-full border-2 border-surface ring-2"
+                            :class="milestone.current ? 'bg-accent ring-accent/30' : 'bg-primary ring-border-strong'"
+                            aria-hidden="true"
+                        />
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-link">v{{ milestone.version }}</span>
+                            <span class="text-sm font-medium text-text">{{ milestone.title }}</span>
+                            <span v-if="milestone.when" class="text-xs text-text-muted">· {{ milestone.when }}</span>
+                        </div>
+                        <p class="mt-1 text-sm leading-relaxed text-text-muted">{{ milestone.text }}</p>
+                        <ul v-if="milestone.current" class="mt-3 flex flex-wrap gap-2" aria-label="Technologies">
+                            <li
+                                v-for="item in stack"
+                                :key="item"
+                                class="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-text"
+                            >
+                                {{ item }}
+                            </li>
+                        </ul>
                     </li>
-                </ul>
+                </ol>
             </section>
 
             <dl class="grid gap-4 border-t border-border pt-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
