@@ -7,6 +7,7 @@ import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { useTheme } from '../../Composables/useTheme';
+import { useInstallApp } from '../../Composables/useInstallApp';
 import { greetingName, useSplash } from '../../Composables/useSplash';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -38,6 +39,18 @@ const { show: showSplash, hide: hideSplash } = useSplash();
 const openFeedback = (close) => {
     close();
     emit('feedback');
+};
+
+// Install IMIS as an app: the browser's prompt, or on iPhone/iPad how to.
+const { canInstall, needsHomeScreen, install } = useInstallApp();
+const showingHomeScreenHelp = ref(false);
+const installApp = async (close) => {
+    close();
+    if (canInstall.value) {
+        await install();
+    } else {
+        showingHomeScreenHelp.value = true;
+    }
 };
 
 const confirmingLogout = ref(false);
@@ -134,6 +147,14 @@ const groupClass = 'border-b border-border py-1';
                 </div>
             </div>
 
+            <!-- Shown only where installing is possible and IMIS isn't installed yet. -->
+            <div v-if="canInstall || needsHomeScreen" :class="groupClass">
+                <button type="button" :class="itemClass" @click="installApp(close)">
+                    <Icon name="download" size="sm" />
+                    Install IMIS app
+                </button>
+            </div>
+
             <div class="pt-1">
                 <button type="button" :class="itemClass" @click="requestLogout(close)">
                     <Icon name="logout" size="sm" />
@@ -142,6 +163,18 @@ const groupClass = 'border-b border-border py-1';
             </div>
             </template>
         </Dropdown>
+
+        <!-- iPhone and iPad: Safari installs from the Share menu, not a prompt. -->
+        <Modal :open="showingHomeScreenHelp" title="Install IMIS on this device" icon="download" size="sm" @close="showingHomeScreenHelp = false">
+            <ol class="list-decimal space-y-2 pl-5 text-sm text-text">
+                <li>Tap the <strong>Share</strong> button in Safari (the square with an arrow).</li>
+                <li>Choose <strong>Add to Home Screen</strong>.</li>
+                <li>Tap <strong>Add</strong>. IMIS then opens from its own icon, like an app.</li>
+            </ol>
+            <template #footer>
+                <Button variant="primary" @click="showingHomeScreenHelp = false">Got it</Button>
+            </template>
+        </Modal>
 
         <Modal :open="confirmingLogout" title="Sign out of IMIS?" icon="logout" size="sm" @close="confirmingLogout = false">
             <div class="flex flex-col items-center text-center">

@@ -9,6 +9,7 @@ import ReleaseNotes from '../../Components/Portal/ReleaseNotes.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import { formatDateTime } from '../../Utils/datetime';
 import { greetingName } from '../../Composables/useSplash';
+import { useInstallApp } from '../../Composables/useInstallApp';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
@@ -32,6 +33,20 @@ const props = defineProps({
     // The user's division, shown as a badge beside the greeting.
     userDivision: { type: String, default: null },
 });
+
+// Install IMIS as an app: offered once per device, where the browser can.
+// "Not now" (or installing) hides the card for good on this device.
+const INSTALL_DISMISSED_KEY = 'imis-install-offer-dismissed';
+const { canInstall, install } = useInstallApp();
+const installDismissed = ref(typeof localStorage !== 'undefined' && localStorage.getItem(INSTALL_DISMISSED_KEY) === '1');
+const offerInstall = computed(() => canInstall.value && !installDismissed.value);
+const dismissInstall = () => {
+    installDismissed.value = true;
+    localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+};
+const installFromCard = async () => {
+    if (await install()) dismissInstall();
+};
 
 // "What's New": pops up once for the latest unseen release. Closing it
 // in any way (button, Escape, backdrop) marks it seen server-side.
@@ -73,6 +88,24 @@ const greeting = computed(() => {
             :version="page.props.app?.version"
             :message="welcomeMessage"
         />
+
+        <!-- Once per device: offer to install IMIS as an app, where the browser can. -->
+        <div
+            v-if="offerInstall"
+            class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center"
+            role="region"
+            aria-label="Install IMIS"
+        >
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-info-bg text-link" aria-hidden="true"><Icon name="download" /></span>
+            <div class="min-w-0 flex-1">
+                <p class="font-semibold text-text">Install IMIS on this computer</p>
+                <p class="text-sm text-text-muted">Open IMIS from your desktop or Start menu in its own window, like any other app.</p>
+            </div>
+            <div class="flex gap-2">
+                <Button variant="ghost" size="sm" @click="dismissInstall">Not now</Button>
+                <Button variant="primary" size="sm" icon="download" @click="installFromCard">Install</Button>
+            </div>
+        </div>
 
         <!-- At a glance: your own figures, loaded just after the page appears. -->
         <Deferred data="glance">

@@ -5,8 +5,13 @@ import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import TransitionSplash from './Components/Feedback/TransitionSplash.vue';
 import DialogHost from '@cscro8/ui/Components/Feedback/DialogHost.vue';
+import { listenForInstall } from './Composables/useInstallApp';
 
 const appName = import.meta.env.VITE_APP_NAME || 'CSC RO VIII IMIS';
+
+// The browser's "install this app" offer comes once, early; keep it for the
+// user menu's "Install IMIS app" and the Dashboard card.
+listenForInstall();
 
 // Boot preloader timing. SHOW_DELAY must match the fade-in delay in
 // resources/css/boot.css (.imis-preloader).
