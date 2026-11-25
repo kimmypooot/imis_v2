@@ -81,6 +81,12 @@ particular:
   sent to the Accountant III for withholding tax and returned to HRD to
   finalize, payslips requested by staff and approved by
   the head of HRD) is done; it has no legacy counterpart.
+  SALN (2025 SALN Form, CSC Res. No. 2500632) is done: staff encode it,
+  print it on the official form (Word's rendering of the CSC files as the
+  page background, entries placed by measured coordinates), HRD receives
+  the hard copy, the SALN Committee (`saln.review`) clears or returns it,
+  the Regional Director administers the oath, and the signed scan goes to
+  the 201 File. Statements are encrypted with `APP_KEY` too.
   Progress and next steps: `docs/hr-checkpoint.md`.
 - GAD Corner (`../gad-corner-v2`, a separate app under the hub like JPortal)
   replaces the legacy GAD Corner panel (`../gad-corner`, reference only).

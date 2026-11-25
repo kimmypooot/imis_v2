@@ -122,6 +122,14 @@ enum PermissionName: string
     case EmployeeDocumentsView = 'employee_documents.view';
     case EmployeeDocumentsManage = 'employee_documents.manage';
 
+    // SALN (RA 6713 §8). Everyone encodes and prints their own with no
+    // permission. `review` is the SALN Committee (clear or return a SALN
+    // HRD has received); `manage` is HRD: receive hard copies, decide
+    // (overriding the Committee), file scans, exemptions, compliance, and
+    // encoding on someone's behalf. Nobody decides their own SALN.
+    case SalnReview = 'saln.review';
+    case SalnManage = 'saln.manage';
+
     // HR-3 Learning & Development. Everyone keeps their own log with no
     // permission. `view` is HRD seeing everyone's records and certificates
     // (HR-3b adds managing and approving).

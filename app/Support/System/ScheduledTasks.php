@@ -45,6 +45,7 @@ class ScheduledTasks
         'imis:notify-loan-endings' => 'Tells employees when a recurring deduction (loan) is nearly completed.',
         'imis:check-plantilla-titles' => 'Tells HR when someone\'s account position title differs from the plantilla item they hold, e.g. a promotion not yet recorded.',
         'imis:remind-tardiness-sync' => 'Reminds HR, once a month, to sync last month\'s tardiness and undertime with leave credits.',
+        'imis:saln-reminders' => 'Reminds employees of a SALN they still have to file: when it falls due, a week before the deadline, and on the deadline.',
         'queue:work' => 'Sends the emails and notifications waiting in the queue, so pages stay quick. Pausing it holds those emails until it is resumed.',
         'imis:executive-digest' => 'Sends top management the weekly summary. Skipped while it is turned off.',
     ];

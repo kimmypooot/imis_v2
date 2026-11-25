@@ -5133,3 +5133,108 @@ BMIS; the contract is in `docs/bmis-feed.md`. Integration Tokens
 (`/admin/api-tokens`) default to a one-year expiry and flag tokens that
 expire within 14 days (`ApiToken::expiresSoon()`); last use (time and IP)
 is shown per token.
+
+## Human Resources: SALN — IMPLEMENTED
+
+The Sworn Statement of Assets, Liabilities and Net Worth (RA 6713 §8) on the
+**2025 SALN Form** (CSC Resolution No. 2500632 / MC No. 14, s. 2025, "Updated
+Form as of 3 February 2026"; mandatory from 1 January 2026). Design:
+`docs/superpowers/specs/2026-11-25-saln-design.md`.
+
+### Process
+1. The employee encodes the SALN at **My SALN** (`/my/saln`): entry
+   (within 30 days of assumption), annual (as of December 31, due April 30)
+   or exit (within 30 days of separation). It starts from the account, the
+   office and the PDS family background (`SalnPrefill`), or from their last
+   filed SALN.
+2. **Save and prepare printout** freezes the statement into a numbered,
+   immutable version (`saln_versions`) and opens the print page. The
+   employee signs every page and hands the hard copy to HRD.
+3. HRD **receives** it by the reference printed on each page
+   (`SALN-2025-00042 v2`). Only the latest printout can be received, so an
+   outdated paper copy is refused. Editing is locked from then on.
+4. The **SALN Committee** (`saln.review`) clears it for the oath or returns
+   it with remarks (the employee corrects, prints again, hands in the new
+   copy). HRD (`saln.manage`) can decide instead, recorded as an override.
+   **Nobody decides their own SALN.**
+5. The declarant swears before the **Regional Director** (the head of ORD
+   from `OfficeHeads`, an OIC included; name and title captured on the
+   version), or a notary outside the office. The RD's own SALN can't name
+   themselves: notary or another named officer.
+6. The signed scan is uploaded by the employee or HRD; it is filed in the
+   **201 File** (`EmployeeDocumentType::Saln`) and the SALN is `filed`.
+
+Spouses always file separately (the form prints "Separate Filing" when the
+spouse is in government, else "Not Applicable"). Only new SALNs are filed in
+IMIS; nothing is imported.
+
+### Data
+- `salns`: employee, type, reckoning date, status (`draft`, `generated`,
+  `received`, `returned`, `cleared`, `filed`), current and received version,
+  oath mode and other officer, the 201 document, and the **statement**
+  (`encrypted:array`, APP_KEY). Unique per employee, type and date.
+- `saln_versions`: each printout, immutable (the model refuses updates):
+  the encrypted statement with totals, the oath mode and officer.
+- `saln_events`: the timeline (who, when, remarks, override).
+- `saln_exemptions`: HRD's per-year exemptions with a reason.
+- `SalnFilings` is the only writer; `SalnStatement` validates the shape and
+  computes totals in centavos (net worth may be negative); `SalnPolicy`
+  decides access.
+
+### Who must file (`SalnObligations`)
+- Permanent, temporary, coterminous and contractual staff, by their status
+  on the reckoning date (appointment or non-plantilla contract that day,
+  else the employee record). Casual, job order and contract of service
+  don't; HRD can exempt anyone else for a year.
+- Entry and exit SALNs are tracked from `config('saln.go_live')`
+  (`SALN_GO_LIVE`, default 2026-12-01); annual years due before go-live
+  were filed on paper and aren't tracked.
+- `imis:saln-reminders` (daily 08:20) reminds employees through the bell
+  once a SALN is due, a week before the deadline and on it; each once.
+
+### Printing (`Pages/HR/SalnPrint.vue`)
+- Each page **is** the official form: Word's own 300 dpi rendering of the
+  blank CSC Word files (`docs/reference/saln`, rendered to
+  `public/images/saln/2025-saln-*.png`), with the entries written onto its
+  blanks at positions measured from that rendering
+  (`Components/HR/Saln/salnFormGeometry.js`). Margins, spacing and lines are
+  therefore identical to the CSC form on every computer; entries shrink to
+  fit and never get cut off.
+- Rows per table follow the form: children 3, real properties 4, personal
+  properties 6, liabilities 4, business interests 3, relatives 5
+  (`SalnSheets::ROWS`). The declarant's overflow goes to **AS-1** sheets;
+  the spouse's exclusive and the children's property to **AS-2**; children
+  and relatives past the form's lines to a continuation sheet.
+- Print on 8.5 × 13 in paper, margins None, scale 100%. Bookman Old Style
+  (Microsoft Office) is the entries' typeface; elsewhere a serif stands in.
+- **If CSC revises the form:** replace the Word files, render the blank
+  pages again (Word → PDF → 300 dpi PNG), re-measure the blanks into
+  `salnFormGeometry.js`, and adjust `SalnSheets::ROWS`.
+
+### Access and audit
+| Who | Can |
+|---|---|
+| The employee | Their own SALNs while their account is active; upload the signed copy once cleared |
+| `saln.review` (the SALN Committee; given to no role by default) | See SALNs HRD has received; clear or return them |
+| `saln.manage` (HR Staff) | Everything above, plus compliance, exemptions, receiving, filing and encoding on someone's behalf (e.g. a separated employee whose account is off) |
+
+Audit: `saln.generated`, `received`, `returned`, `cleared`, `filed`,
+`exempted`, and `saln.viewed` / `saln.printed` for anyone other than the
+employee (personal-data access trail). Pages: Admin → Human Resources →
+**SALN Compliance** and **SALN Review** (badge: received SALNs awaiting
+review, `HrQueues::salnReviews`).
+
+### Not built
+The transmittal to the repository agency (October 30) and CSC's Summary
+List of Filers; third-party requests for copies and redaction (Rule X);
+electronic signing and online oaths.
+
+### Deploying
+1. `php artisan migrate`
+2. `php artisan db:seed --class=RolePermissionSeeder` and
+   `php artisan db:seed --class=HrRoleSeeder` (adds `saln.manage` to HR
+   Staff), then give `saln.review` to the SALN Committee's members.
+3. Set `SALN_GO_LIVE` if entry/exit tracking starts on another date.
+
+### Tests
+`tests/Feature/HR/Saln*Test.php`.

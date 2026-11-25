@@ -59,6 +59,7 @@ use App\Http\Controllers\Admin\PlantillaSheetController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ReassignmentReportController;
 use App\Http\Controllers\Admin\SalaryScheduleController;
+use App\Http\Controllers\Admin\SalnController;
 use App\Http\Controllers\Admin\ScheduledTaskController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
@@ -574,6 +575,29 @@ Route::middleware('auth')->group(function () {
     // pds.verify — see PdsSubmissionPolicy) and the verification queue.
     Route::middleware('permission:pds.view,pds.verify')->group(function () {
         Route::get('admin/hr/pds-verifications/{submission}', [PdsVerificationController::class, 'show'])->name('admin.hr.pds-verifications.show');
+    });
+
+    // SALN: HRD's compliance list, exemptions, receiving, filing and encoding
+    // on someone's behalf (`saln.manage`); the queue and review are shared
+    // with the SALN Committee (`saln.review`). SalnPolicy decides each SALN,
+    // and nobody decides their own.
+    Route::middleware('permission:saln.manage')->group(function () {
+        Route::get('admin/hr/saln', [SalnController::class, 'index'])->name('admin.hr.saln.index');
+        Route::post('admin/hr/saln', [SalnController::class, 'open'])->name('admin.hr.saln.open');
+        Route::post('admin/hr/saln/exemptions', [SalnController::class, 'exempt'])->name('admin.hr.saln.exempt');
+        Route::post('admin/hr/saln/settings', [SalnController::class, 'settings'])->name('admin.hr.saln.settings');
+        Route::post('admin/hr/saln/receive', [SalnController::class, 'receive'])->middleware('throttle:60,1')->name('admin.hr.saln.receive');
+        Route::get('admin/hr/saln/{saln}/edit', [SalnController::class, 'edit'])->whereNumber('saln')->name('admin.hr.saln.edit');
+        Route::put('admin/hr/saln/{saln}', [SalnController::class, 'update'])->whereNumber('saln')->name('admin.hr.saln.update');
+        Route::post('admin/hr/saln/{saln}/generate', [SalnController::class, 'generate'])->whereNumber('saln')->name('admin.hr.saln.generate');
+        Route::post('admin/hr/saln/{saln}/file', [SalnController::class, 'file'])->whereNumber('saln')->middleware('throttle:30,1')->name('admin.hr.saln.file');
+    });
+
+    Route::middleware('permission:saln.review,saln.manage')->group(function () {
+        Route::get('admin/hr/saln/queue', [SalnController::class, 'queue'])->name('admin.hr.saln.queue');
+        Route::get('admin/hr/saln/{saln}', [SalnController::class, 'show'])->whereNumber('saln')->name('admin.hr.saln.show');
+        Route::get('admin/hr/saln/{saln}/versions/{version}/print', [SalnController::class, 'print'])->whereNumber(['saln', 'version'])->name('admin.hr.saln.print');
+        Route::post('admin/hr/saln/{saln}/decide', [SalnController::class, 'decide'])->whereNumber('saln')->middleware('throttle:60,1')->name('admin.hr.saln.decide');
     });
 
     Route::middleware('permission:data_corrections.review')->group(function () {

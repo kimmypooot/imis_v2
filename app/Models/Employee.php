@@ -161,6 +161,19 @@ class Employee extends Model
     /**
      * HR-2c: the documents in this person's 201 file (incl. archived).
      */
+    /**
+     * SALN filings (entry, annual, exit).
+     */
+    public function salns(): HasMany
+    {
+        return $this->hasMany(Saln::class);
+    }
+
+    public function salnExemptions(): HasMany
+    {
+        return $this->hasMany(SalnExemption::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(EmployeeDocument::class);

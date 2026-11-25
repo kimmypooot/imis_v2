@@ -61,6 +61,8 @@ export const hrAccessPermissions = [
     'payroll.tax',
     'dtr.view',
     'dtr.manage',
+    'saln.review',
+    'saln.manage',
 ];
 
 /**
@@ -93,6 +95,7 @@ export const portalNavItems = [
                     { label: 'My Corrections', href: '/my/corrections', icon: 'clipboard' },
                     { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText' },
                     { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
+                    { label: 'My SALN', href: '/my/saln', icon: 'chartBar' },
                     { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
                     { label: 'My DTR', href: '/my/dtr', icon: 'clock' },
                     { label: 'DTR Entries to Verify', href: '/dtr/entries', icon: 'checkCircle', flag: 'dtrVerifier' },
@@ -236,6 +239,8 @@ export const hrNavItems = [
             { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
             { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify', badge: 'pdsVerifications' },
             { label: 'Record Corrections', href: '/admin/hr/corrections', icon: 'clipboard', permission: 'data_corrections.review', badge: 'dataCorrections' },
+            { label: 'SALN Compliance', href: '/admin/hr/saln', icon: 'chartBar', permission: 'saln.manage' },
+            { label: 'SALN Review', href: '/admin/hr/saln/queue', icon: 'checkCircle', permission: ['saln.review', 'saln.manage'], badge: 'salnReviews' },
         ],
     },
     {

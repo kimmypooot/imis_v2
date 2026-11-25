@@ -3,10 +3,12 @@
 namespace Tests\Feature\HR;
 
 use App\Enums\LdApprovalStatus;
+use App\Enums\SalnStatus;
 use App\Models\Employee;
 use App\Models\Pds\PdsLearningDevelopment;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Saln;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -35,6 +37,16 @@ class HrQueueBadgesTest extends TestCase
 
         $this->actingAs($viewer)->get('/admin/hr')
             ->assertInertia(fn (Assert $page) => $page->where('badges.ldReviews', 0));
+    }
+
+    public function test_the_saln_committee_sees_how_many_received_salns_await_review(): void
+    {
+        Cache::flush();
+        Saln::factory()->create(['status' => SalnStatus::Received]);
+        Saln::factory()->create(['status' => SalnStatus::Generated]);
+
+        $this->actingAs($this->userWith(['saln.review']))->get('/admin/hr')
+            ->assertInertia(fn (Assert $page) => $page->where('badges.salnReviews', 1));
     }
 
     private function pendingTraining(): void

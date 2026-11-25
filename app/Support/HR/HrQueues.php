@@ -9,12 +9,14 @@ use App\Enums\PayrollRunStatus;
 use App\Enums\PayslipRequestStatus;
 use App\Enums\PdsSubmissionStatus;
 use App\Enums\PermissionName;
+use App\Enums\SalnStatus;
 use App\Models\DataCorrectionRequest;
 use App\Models\LeaveApplication;
 use App\Models\PayrollRun;
 use App\Models\PayslipRequest;
 use App\Models\Pds\PdsLearningDevelopment;
 use App\Models\Pds\PdsSubmission;
+use App\Models\Saln;
 use App\Models\User;
 use App\Support\HR\Payroll\PayrollAccounting;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +30,7 @@ use Illuminate\Support\Facades\Cache;
 final class HrQueues
 {
     /**
-     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, dataCorrections: int, payslipRequests: int, payrolls: int, payrollTaxReviews: int}
+     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, dataCorrections: int, payslipRequests: int, payrolls: int, payrollTaxReviews: int, salnReviews: int}
      */
     public static function countsFor(User $user): array
     {
@@ -43,6 +45,9 @@ final class HrQueues
             // Payrolls waiting for Accounting's withholding tax (the Accountant III, or `payroll.tax`).
             'payrollTaxReviews' => app(PayrollAccounting::class)->isReviewer($user)
                 ? PayrollRun::query()->where('status', PayrollRunStatus::WithAccounting)->count() : 0,
+            // SALN hard copies HRD received, for the SALN Committee (or HRD) to review; never one's own.
+            'salnReviews' => $user->hasAnyPermission([PermissionName::SalnReview->value, PermissionName::SalnManage->value])
+                ? Saln::query()->where('status', SalnStatus::Received)->whereDoesntHave('employee', fn ($query) => $query->where('user_id', $user->id))->count() : 0,
         ]);
     }
 

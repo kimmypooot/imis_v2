@@ -32,6 +32,7 @@ a new session. Read it together with `CLAUDE.md` and the HR sections of
 | HR-6c | Monetization/terminal leave, FWA and FAR, reports, calendar, Wellness Leave (CSC MC No. 01, s. 2026) | ✅ Done |
 | **HR-7** | Data migration and cutover | ✅ Tools built (`imis:import-legacy-leave`, Cutover Readiness, `imis:retire-legacy-hr`); migrated locally. ⏳ **The import has not been run on real data**: the `lms_*` tables are only on the live server. Its columns come from the legacy code, so check them with a `--dry-run` first. |
 | HR-8 | Payroll and payslips: pay components, pay profiles, loans, monthly payrolls (whole month, released at month end), payslip requests approved by the head of HRD | ✅ Done. Rates seeded from current law: HR should verify them. Not run on real data yet. |
+| SALN | Statement of Assets, Liabilities and Net Worth on the 2025 SALN Form: encode, print on the official form, HRD receipt, SALN Committee review, oath before the Regional Director, signed copy to the 201 File; compliance and reminders | ✅ Done. Give `saln.review` to the SALN Committee once it is formed. |
 
 **Tests:** the suite has 768 tests, all passing. HR tests are in
 `tests/Feature/HR/`.

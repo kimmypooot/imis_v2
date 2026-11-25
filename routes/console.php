@@ -54,6 +54,10 @@ Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/
 // item (a promotion not yet recorded); each difference once.
 Schedule::command('imis:check-plantilla-titles')->dailyAt('08:10')->timezone('Asia/Manila')->withoutOverlapping();
 
+// SALN: employees are reminded of a SALN they still have to file (when due,
+// a week before the deadline, and on it).
+Schedule::command('imis:saln-reminders')->dailyAt('08:20')->timezone('Asia/Manila')->withoutOverlapping();
+
 // DTR: HR is reminded once a month ends that its tardiness still has to be
 // synced to leave credits (from the 2nd, once the biometric logs are in).
 Schedule::command('imis:remind-tardiness-sync')->dailyAt('08:15')->timezone('Asia/Manila')->withoutOverlapping();

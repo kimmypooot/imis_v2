@@ -194,6 +194,16 @@ final class SettingRegistry
                 'default' => null,
                 'constraints' => ['max' => 150],
             ],
+            // SALN: the 2025 form's multiple-marriages lines apply only where
+            // the law allows more than one marriage; HRD switches the question
+            // on from SALN Compliance. Off, the form prints "Not Applicable".
+            'saln_multiple_marriages' => [
+                'type' => SettingType::Boolean,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'SALN: ask about multiple marriages',
+                'description' => 'Show the "multiple marriages" part of the SALN to employees. Off, it is hidden and the form prints "Not Applicable".',
+                'default' => false,
+            ],
             // HR-6: the Director IV's supervisor (Supervisors), outside IMIS.
             'hr_csc_chairperson' => [
                 'type' => SettingType::String,

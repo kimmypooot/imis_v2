@@ -229,6 +229,17 @@ enum AuditEvent: string
     case EmployeeDocumentViewed = 'employee_document.viewed';
     case EmployeeDocumentArchived = 'employee_document.archived';
     case EmployeeDocumentRestored = 'employee_document.restored';
+    // SALN. `viewed` and `printed` are recorded each time someone other than
+    // the employee opens or prints their SALN.
+    case SalnGenerated = 'saln.generated';
+    case SalnReceived = 'saln.received';
+    case SalnReturned = 'saln.returned';
+    case SalnCleared = 'saln.cleared';
+    case SalnUpdated = 'saln.updated';
+    case SalnFiled = 'saln.filed';
+    case SalnExempted = 'saln.exempted';
+    case SalnViewed = 'saln.viewed';
+    case SalnPrinted = 'saln.printed';
     // HR-3. `certificate_viewed` is recorded when someone other than the
     // employee opens a training certificate.
     case LdRecordCreated = 'ld_record.created';
@@ -302,7 +313,7 @@ enum AuditEvent: string
         return [
             self::EmployeeViewed, self::ServiceRecordViewed, self::ServiceRecordPrinted,
             self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed, self::DtrViewed, self::DtrPrinted, self::DtrExported,
-            self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed,
+            self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed, self::SalnViewed, self::SalnPrinted,
             self::LdCertificateViewed, self::LdLogViewed, self::LdReportViewed,
             self::RecruitmentPdsRead, self::RecruitmentDocumentRead,
         ];

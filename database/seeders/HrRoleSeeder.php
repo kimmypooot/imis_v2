@@ -35,7 +35,7 @@ class HrRoleSeeder extends Seeder
                 'permissions' => [
                     P::EmployeesView, P::EmployeesCreate, P::EmployeesUpdate, P::EmployeesReassign,
                     P::PdsView, P::PdsUpdate, P::PdsVerify,
-                    P::EmployeeDocumentsView, P::EmployeeDocumentsManage,
+                    P::EmployeeDocumentsView, P::EmployeeDocumentsManage, P::SalnManage,
                     P::LdView, P::LdManage, P::LdApprove,
                     P::PlantillaView, P::PlantillaManage, P::PlantillaCorrect,
                     P::ServiceRecordsView, P::ServiceRecordsManage,

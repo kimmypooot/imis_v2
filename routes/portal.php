@@ -31,6 +31,7 @@ use App\Http\Controllers\MyMonetizationController;
 use App\Http\Controllers\MyPayslipController;
 use App\Http\Controllers\MyPdsController;
 use App\Http\Controllers\MyRecordAccessController;
+use App\Http\Controllers\MySalnController;
 use App\Http\Controllers\MyServiceRecordController;
 use App\Http\Controllers\MySignatureController;
 use App\Http\Controllers\NotificationController;
@@ -116,6 +117,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('my.pds.submit');
     Route::get('my/pds/submissions/{submission}', [MyPdsController::class, 'submission'])->name('my.pds.submission');
+
+    // SALN self-service: encode, print on the 2025 form, and file the signed
+    // copy once cleared (only your own; SalnPolicy and the controller check).
+    Route::get('my/saln', [MySalnController::class, 'index'])->name('my.saln');
+    Route::post('my/saln', [MySalnController::class, 'open'])->middleware('throttle:20,1')->name('my.saln.open');
+    Route::get('my/saln/{saln}', [MySalnController::class, 'edit'])->whereNumber('saln')->name('my.saln.edit');
+    Route::put('my/saln/{saln}', [MySalnController::class, 'update'])->whereNumber('saln')->name('my.saln.update');
+    Route::post('my/saln/{saln}/generate', [MySalnController::class, 'generate'])->whereNumber('saln')->middleware('throttle:20,1')->name('my.saln.generate');
+    Route::get('my/saln/{saln}/versions/{version}/print', [MySalnController::class, 'print'])->whereNumber(['saln', 'version'])->name('my.saln.print');
+    Route::post('my/saln/{saln}/file', [MySalnController::class, 'file'])->whereNumber('saln')->middleware('throttle:10,1')->name('my.saln.file');
     // Your saved e-signature image (drawn or uploaded), used when you choose to sign.
     Route::get('my/signature', [MySignatureController::class, 'show'])->name('my.signature');
     Route::post('my/signature', [MySignatureController::class, 'store'])->middleware('throttle:20,1')->name('my.signature.store');

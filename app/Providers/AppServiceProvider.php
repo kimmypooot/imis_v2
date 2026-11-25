@@ -37,6 +37,7 @@ use App\Models\PlantillaItem;
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\SalarySchedule;
+use App\Models\Saln;
 use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
@@ -95,7 +96,7 @@ class AppServiceProvider extends ServiceProvider
         'employees.view', 'employees.view_unit', 'pds.view', 'pds.verify', 'employee_documents.view',
         'ld.view', 'ld.manage', 'ld.approve', 'plantilla.view', 'plantilla.manage',
         'service_records.view', 'leave.view', 'leave.manage', 'payroll.view', 'payroll.manage', 'payroll.tax', 'data_corrections.review',
-        'dtr.view', 'dtr.manage',
+        'dtr.view', 'dtr.manage', 'saln.review', 'saln.manage',
     ];
 
     /**
@@ -180,6 +181,7 @@ class AppServiceProvider extends ServiceProvider
             'feedback' => Feedback::class,
             'employee' => Employee::class,
             'employee_document' => EmployeeDocument::class,
+            'saln' => Saln::class,
             'employee_assignment' => EmployeeAssignment::class,
             'plantilla_item' => PlantillaItem::class,
             'position' => Position::class,
