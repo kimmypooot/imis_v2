@@ -125,7 +125,6 @@ const historyColumns = [
                             <Icon v-if="change.amount !== 0" :name="change.amount > 0 ? 'chevronUp' : 'chevronDown'" size="sm" />
                             {{ change.amount === 0 ? 'Same as' : `${change.percent}% ${change.amount > 0 ? 'more' : 'less'} than` }} {{ change.previous }}
                         </p>
-                        <p class="mt-1 text-xs text-text-muted tabular-nums">1st quincena {{ formatPeso(latest.first_half) }} · 2nd quincena {{ formatPeso(latest.second_half) }}</p>
                     </div>
                 </div>
                 <div v-if="latest.total_earnings > 0" class="mt-4">
@@ -169,10 +168,6 @@ const historyColumns = [
                     <tfoot><tr><th scope="row" class="pt-2 text-left font-semibold text-text">Total deductions</th><td class="pt-2 text-right font-semibold tabular-nums">{{ formatPeso(latest.total_deductions) }}</td></tr></tfoot>
                 </table>
                 <p class="mt-4 flex justify-between border-t-2 border-border pt-2 text-base font-semibold text-text"><span>Net pay</span><span class="tabular-nums">{{ formatPeso(latest.net_pay) }}</span></p>
-                <dl class="mt-2 space-y-1 text-sm text-text-muted">
-                    <div class="flex justify-between"><dt>1st quincena (15th)</dt><dd class="tabular-nums">{{ formatPeso(latest.first_half) }}</dd></div>
-                    <div class="flex justify-between"><dt>2nd quincena (30th)</dt><dd class="tabular-nums">{{ formatPeso(latest.second_half) }}</dd></div>
-                </dl>
             </Card>
         </div>
     </template>

@@ -8,6 +8,7 @@ use App\Models\PayrollEntry;
 use App\Models\PayrollRun;
 use App\Models\PayslipRequest;
 use App\Models\User;
+use App\Support\HR\Payroll\PayrollAccounting;
 
 /**
  * HR-8 payroll: payrolls, pay components, pay profiles, loans, payslips.
@@ -18,12 +19,23 @@ class PayrollRunPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission([PermissionName::PayrollView->value, PermissionName::PayrollManage->value]);
+        return $user->hasAnyPermission([PermissionName::PayrollView->value, PermissionName::PayrollManage->value, PermissionName::PayrollTax->value]);
     }
 
+    /**
+     * Accounting: reviewing submitted payrolls, entering withholding tax,
+     * returning them to HRD — the Accountant III on the Plantilla, or
+     * anyone with `payroll.tax` (PayrollAccounting).
+     */
+    public function enterTax(User $user): bool
+    {
+        return app(PayrollAccounting::class)->isReviewer($user);
+    }
+
+    /** One payroll (its page, General Payroll, remittances): payroll staff and Accounting. */
     public function view(User $user, PayrollRun $run): bool
     {
-        return $this->viewAny($user);
+        return $this->viewAny($user) || $this->enterTax($user);
     }
 
     /** Pay components, and creating, generating, finalizing or reopening payrolls. */

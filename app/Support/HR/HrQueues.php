@@ -5,15 +5,18 @@ namespace App\Support\HR;
 use App\Enums\DataCorrectionStatus;
 use App\Enums\LdApprovalStatus;
 use App\Enums\LeaveApplicationStatus;
+use App\Enums\PayrollRunStatus;
 use App\Enums\PayslipRequestStatus;
 use App\Enums\PdsSubmissionStatus;
 use App\Enums\PermissionName;
 use App\Models\DataCorrectionRequest;
 use App\Models\LeaveApplication;
+use App\Models\PayrollRun;
 use App\Models\PayslipRequest;
 use App\Models\Pds\PdsLearningDevelopment;
 use App\Models\Pds\PdsSubmission;
 use App\Models\User;
+use App\Support\HR\Payroll\PayrollAccounting;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -25,7 +28,7 @@ use Illuminate\Support\Facades\Cache;
 final class HrQueues
 {
     /**
-     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, dataCorrections: int, payslipRequests: int}
+     * @return array{pdsVerifications: int, ldReviews: int, leaveApplications: int, dataCorrections: int, payslipRequests: int, payrolls: int, payrollTaxReviews: int}
      */
     public static function countsFor(User $user): array
     {
@@ -35,7 +38,25 @@ final class HrQueues
             'leaveApplications' => self::when($user, PermissionName::LeaveManage, fn () => LeaveApplication::query()->where('status', LeaveApplicationStatus::ForReview)->count()),
             'dataCorrections' => self::when($user, PermissionName::DataCorrectionsReview, fn () => DataCorrectionRequest::query()->where('status', DataCorrectionStatus::Pending)->count()),
             'payslipRequests' => self::when($user, PermissionName::PayrollManage, fn () => PayslipRequest::query()->where('status', PayslipRequestStatus::Pending)->count()),
+            // Payrolls back from Accounting, waiting for HRD to finalize.
+            'payrolls' => self::when($user, PermissionName::PayrollManage, fn () => PayrollRun::query()->where('status', PayrollRunStatus::Returned)->count()),
+            // Payrolls waiting for Accounting's withholding tax (the Accountant III, or `payroll.tax`).
+            'payrollTaxReviews' => app(PayrollAccounting::class)->isReviewer($user)
+                ? PayrollRun::query()->where('status', PayrollRunStatus::WithAccounting)->count() : 0,
         ]);
+    }
+
+    /**
+     * Drops these people's cached counts, so a hand-off shows on their
+     * menu at once.
+     *
+     * @param  iterable<int, User>  $users
+     */
+    public static function forget(iterable $users): void
+    {
+        foreach ($users as $user) {
+            Cache::forget("hr-queues:{$user->id}");
+        }
     }
 
     /**

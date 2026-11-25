@@ -53,8 +53,7 @@ class PayslipController extends Controller
             'entry' => $this->forViewer($payrolls->presentEntry($entry, withLines: true), $request),
             'run' => [
                 'period' => $entry->run->period,
-                'first_release_on' => $entry->run->first_release_on?->toDateString(),
-                'second_release_on' => $entry->run->second_release_on?->toDateString(),
+                'release_on' => $entry->run->release_on?->toDateString(),
                 'finalized' => $entry->run->isFinalized(),
             ],
             'request' => $approved ? [

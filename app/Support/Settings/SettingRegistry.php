@@ -185,6 +185,15 @@ final class SettingRegistry
                 'default' => null,
                 'constraints' => ['options' => array_keys(CertifyingOfficer::POSITIONS)],
             ],
+            // HR-8: the accountant signs the General Payroll (the Chiefs of HRD and MSD and the Director IV come from the offices).
+            'payroll_accountant' => [
+                'type' => SettingType::String,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'Payroll: accountant',
+                'description' => 'Signs the General Payroll to certify that funds are available.',
+                'default' => null,
+                'constraints' => ['max' => 150],
+            ],
             // HR-6: the Director IV's supervisor (Supervisors), outside IMIS.
             'hr_csc_chairperson' => [
                 'type' => SettingType::String,

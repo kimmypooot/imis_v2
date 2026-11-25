@@ -58,6 +58,7 @@ export const hrAccessPermissions = [
     'leave.manage',
     'payroll.view',
     'payroll.manage',
+    'payroll.tax',
     'dtr.view',
     'dtr.manage',
 ];
@@ -118,6 +119,7 @@ export const portalNavItems = [
                     { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar' },
                     { label: 'My Payslips', href: '/my/payslips', icon: 'documentText' },
                     { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
+                    { label: 'Payroll Tax Review', href: '/payroll/tax-review', icon: 'checkCircle', flag: 'payrollTaxReviewer', badge: 'payrollTaxReviews' },
                 ],
             },
         ],
@@ -282,7 +284,7 @@ export const hrNavItems = [
         group: 'Payroll',
         icon: 'database',
         items: [
-            { label: 'Payrolls', href: '/admin/hr/payroll', icon: 'database', permission: ['payroll.view', 'payroll.manage'] },
+            { label: 'Payrolls', href: '/admin/hr/payroll', icon: 'database', permission: ['payroll.view', 'payroll.manage', 'payroll.tax'], badge: 'payrolls' },
             { label: 'Pay Profiles', href: '/admin/hr/payroll/profiles', icon: 'users', permission: ['payroll.view', 'payroll.manage'] },
             { label: 'Loans', href: '/admin/hr/payroll/loans', icon: 'key', permission: ['payroll.view', 'payroll.manage'] },
             { label: 'Payslip Requests', href: '/admin/hr/payroll/requests', icon: 'clipboard', permission: ['payroll.view', 'payroll.manage'], badge: 'payslipRequests' },

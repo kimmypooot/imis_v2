@@ -92,7 +92,7 @@ class EarningsDeductionsTest extends TestCase
         $run = $this->payroll('2026-10', $hr);
         $this->assertSame('reflected', $rows()['2026-10']['status']);
 
-        app(Payrolls::class)->finalize($run, $hr);
+        $this->finalizeRun($run, $hr);
         $this->assertSame('confirmed', $rows()['2026-10']['status']);
         $this->assertSame('scheduled', $rows()['2026-11']['status'], 'the months after follow on');
 
@@ -155,7 +155,7 @@ class EarningsDeductionsTest extends TestCase
 
         $this->actingAs($hr)->post("{$base}/{$loan->id}/resume");
         $run = $this->payroll('2026-10', $hr);
-        app(Payrolls::class)->finalize($run, $hr);
+        $this->finalizeRun($run, $hr);
         app(DeductionNotices::class)->afterFinalize($run);
         Notification::assertSentTo($employee->user, HrUpdate::class, fn ($n) => $n->toArray($employee->user)['title'] === 'Deduction reflected in your payslip');
     }
@@ -179,7 +179,7 @@ class EarningsDeductionsTest extends TestCase
         $hr = $this->hr();
         $run = $this->payroll('2026-10', $hr);
         $entry = $run->entries()->sole();
-        app(Payrolls::class)->finalize($run, $hr);
+        $this->finalizeRun($run, $hr);
         $this->assertSame(2000.0, app(Loans::class)->balance($loan));
 
         $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/entries/{$entry->id}/cancel", [])->assertSessionHasErrors('reason');
@@ -198,7 +198,7 @@ class EarningsDeductionsTest extends TestCase
         $this->staff();
         $hr = $this->hr();
         $run = $this->payroll('2026-10', $hr);
-        app(Payrolls::class)->finalize($run, $hr);
+        $this->finalizeRun($run, $hr);
 
         $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/reopen", [])->assertSessionHasErrors('reason');
         $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/reopen", ['reason' => 'Wrong tax'])->assertRedirect();
@@ -219,7 +219,7 @@ class EarningsDeductionsTest extends TestCase
         $this->actingAs($employee->user)->get('/my/earnings')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Portal/MyEarnings')->where('latest', null)->has('loans', 1)->has('history', 0));
 
-        app(Payrolls::class)->finalize($run, $hr);
+        $this->finalizeRun($run, $hr);
 
         $this->actingAs($employee->user)->get('/my/earnings')->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -322,6 +322,17 @@ class EarningsDeductionsTest extends TestCase
             'start_month' => $start,
             'paid_before' => 0,
         ]);
+    }
+
+    /** HRD submits, Accounting returns it, HRD finalizes. */
+    private function finalizeRun(PayrollRun $run, User $hr): void
+    {
+        $payrolls = app(Payrolls::class);
+        if ($run->fresh()->status->value === 'draft') {
+            $payrolls->submitToAccounting($run, $hr);
+            $payrolls->returnToHrd($run, $hr);
+        }
+        $payrolls->finalize($run, $hr);
     }
 
     private function hr(): User

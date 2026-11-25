@@ -58,7 +58,7 @@ class PayrollTest extends TestCase
     public function test_a_payroll_computes_basic_pay_automatic_items_the_profile_and_loans(): void
     {
         $employee = $this->staff('Administrative Officer IV', 15);
-        $this->profileItem($employee, 'WTAX', 1234.56);
+        $this->profileItem($employee, 'WTAX', 1234.56); // ignored: Accounting enters the tax
         $loan = $this->loan($employee, total: 3000, amortization: 1000, paidBefore: 1500);
 
         $entry = $this->payroll('2026-10')->entries()->sole();
@@ -69,19 +69,17 @@ class PayrollTest extends TestCase
             ['deduction', 'GSIS Personal Share', 2700.0],   // 9% of 30,000
             ['deduction', 'PhilHealth', 750.0],             // 2.5% of 30,000
             ['deduction', 'Pag-IBIG', 200.0],               // 2% of at most 10,000
-            ['deduction', 'Withholding Tax', 1234.56],      // from the profile
             ['deduction', 'GSIS Consolidated Loan', 1000.0], // the amortization
         ], $entry->lines->map(fn ($line) => [$line->kind, $line->label, (float) $line->amount])->all());
 
         $this->assertSame(32000.0, (float) $entry->gross_pay);
-        $this->assertSame(5884.56, (float) $entry->total_deductions);
-        $this->assertSame(26115.44, (float) $entry->net_pay);
-        $this->assertSame(13057.72, (float) $entry->first_half);
-        $this->assertSame(13057.72, (float) $entry->second_half);
+        $this->assertSame(4650.0, (float) $entry->total_deductions);
+        $this->assertSame(27350.0, (float) $entry->net_pay);
+        $this->assertSame('2026-10-31', $entry->run->release_on->toDateString(), 'one release, at the end of the month');
         $this->assertSame(1500.0, app(Loans::class)->balance($loan), 'a draft pays nothing yet');
     }
 
-    public function test_percent_items_respect_the_floor_and_ceiling_and_halves_share_an_odd_centavo(): void
+    public function test_percent_items_respect_the_floor_and_ceiling(): void
     {
         $low = $this->staff('Utility Worker', 1);      // 8,000: PhilHealth on the 10,000 floor
         $high = $this->staff('Chief Human Resource Specialist', 24); // 110,000: on the 100,000 ceiling
@@ -93,14 +91,6 @@ class PayrollTest extends TestCase
         $this->assertSame(160.0, $lines($low)['Pag-IBIG'], '2% of 8,000, under the cap');
         $this->assertSame(2500.0, $lines($high)['PhilHealth']);
         $this->assertSame(200.0, $lines($high)['Pag-IBIG']);
-
-        // Net 8,000 + 2,000 − 720 − 250 − 160 = 8,870.00; add a centavo to make it odd.
-        $entry = $run->entries()->where('employee_id', $low->id)->sole();
-        app(Payrolls::class)->addLine($entry, ['kind' => 'earning', 'label' => 'Rounding', 'amount' => 0.01], $this->hr());
-        $entry->refresh();
-        $this->assertSame(8870.01, (float) $entry->net_pay);
-        $this->assertSame(4435.0, (float) $entry->first_half);
-        $this->assertSame(4435.01, (float) $entry->second_half);
     }
 
     public function test_a_philhealth_premium_that_splits_to_a_half_centavo_gives_the_employee_the_lower_half(): void
@@ -114,17 +104,11 @@ class PayrollTest extends TestCase
         $this->assertSame(1832.57, (float) $entry->lines->firstWhere('label', 'PhilHealth')->amount);
     }
 
-    public function test_my_earnings_shows_the_net_pay_as_released_in_the_two_quincenas(): void
+    public function test_a_payroll_covers_the_whole_month_with_one_release_on_its_last_day(): void
     {
-        $employee = $this->staff('Administrative Officer IV', 15);
-        $run = $this->payroll('2026-10');
-        $entry = $run->entries()->sole();
-        app(Payrolls::class)->finalize($run, $this->hr());
+        $this->staff('Administrative Officer IV', 15);
 
-        $this->actingAs($employee->user)->get('/my/earnings')->assertInertia(fn (Assert $page) => $page
-            ->component('Portal/MyEarnings')
-            ->where('latest.first_half', fn ($net) => abs($net - (float) $entry->first_half) < 0.001)
-            ->where('latest.second_half', fn ($net) => abs($net - (float) $entry->second_half) < 0.001));
+        $this->assertSame('2027-02-28', $this->payroll('2027-02')->release_on->toDateString());
     }
 
     public function test_a_profile_amount_overrides_an_automatic_item_and_zero_exempts(): void
@@ -147,12 +131,12 @@ class PayrollTest extends TestCase
         $payrolls = app(Payrolls::class);
 
         $october = $this->payroll('2026-10');
-        $payrolls->finalize($october, $hr);
+        $this->finalizeRun($october, $hr);
         $this->assertSame(500.0, app(Loans::class)->balance($loan));
 
         $november = $this->payroll('2026-11');
         $this->assertSame(500.0, (float) $november->entries()->sole()->lines->firstWhere('employee_loan_id', $loan->id)->amount, 'only what is left');
-        $payrolls->finalize($november, $hr);
+        $this->finalizeRun($november, $hr);
         $this->assertSame(0.0, app(Loans::class)->balance($loan));
 
         $december = $this->payroll('2026-12');
@@ -194,11 +178,106 @@ class PayrollTest extends TestCase
         $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/entries/{$own->id}/lines", ['kind' => 'earning', 'label' => 'Bonus', 'amount' => 99999])
             ->assertForbidden();
 
-        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/finalize")->assertRedirect();
+        $this->finalizeRun($run, $hr);
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/finalize")->assertSessionHasErrors('run');
         $line = $entry->fresh()->lines->first();
         $this->actingAs($hr)->put("/admin/hr/payroll/runs/{$run->id}/entries/{$entry->id}/lines/{$line->id}", ['amount' => 1])
             ->assertSessionHasErrors('run');
-        $this->assertTrue(AuditLog::query()->where('event', AuditEvent::PayrollFinalized->value)->exists());
+    }
+
+    public function test_hrd_submits_the_payroll_to_accounting_for_withholding_tax_and_finalizes_it_once_returned(): void
+    {
+        Notification::fake();
+        $employee = $this->staff('Administrative Officer IV', 15);
+        $hr = $this->hr();
+        $accountant = $this->userWith(['payroll.tax']);
+        $accountantEmployee = Employee::factory()->for($accountant)->create();
+        $this->appoint($accountantEmployee, 'Accountant III', 15);
+        $run = $this->payroll('2026-10');
+        $entry = $run->entries()->where('employee_id', $employee->id)->sole();
+        $own = $run->entries()->where('employee_id', $accountantEmployee->id)->sole();
+        $this->assertSame(28350.0, (float) $entry->net_pay, 'no withholding tax yet');
+
+        // Not straight from the draft: Accounting puts the tax in first.
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/finalize")->assertSessionHasErrors('run');
+        $this->actingAs($accountant)->put("/admin/hr/payroll/runs/{$run->id}/withholding-tax", ['taxes' => [$entry->id => 1500]])->assertSessionHasErrors('run');
+
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/submit")->assertRedirect();
+        $this->assertSame('with_accounting', $run->fresh()->status->value);
+        Notification::assertSentTo($accountant, HrUpdate::class);
+
+        // While it is with Accounting, HRD can't change it, and only Accounting enters tax.
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/entries/{$entry->id}/lines", ['kind' => 'deduction', 'label' => 'Absences', 'amount' => 100])
+            ->assertSessionHasErrors('run');
+        $this->actingAs($hr)->put("/admin/hr/payroll/runs/{$run->id}/withholding-tax", ['taxes' => [$entry->id => 1]])->assertForbidden();
+        $this->actingAs($accountant)->post("/admin/hr/payroll/runs/{$run->id}/finalize")->assertForbidden();
+        $this->actingAs($accountant)->get("/admin/hr/payroll/runs/{$run->id}")->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('canEnterTax', true)->where('canManage', false));
+        $this->actingAs($accountant)->get("/admin/hr/payroll/profiles/{$employee->id}")->assertForbidden();
+
+        $this->actingAs($accountant)->put("/admin/hr/payroll/runs/{$run->id}/withholding-tax", ['taxes' => [$entry->id => 1500.5, $own->id => 1]])
+            ->assertRedirect();
+        $this->assertSame(26849.5, (float) $entry->fresh()->net_pay);
+        $this->assertSame([1500.5], $entry->fresh()->lines->where('label', 'Withholding Tax')->pluck('amount')->map(fn ($amount) => (float) $amount)->values()->all());
+        $this->assertNull($own->fresh()->lines->firstWhere('label', 'Withholding Tax'), 'never their own');
+
+        $this->actingAs($accountant)->post("/admin/hr/payroll/runs/{$run->id}/return", ['note' => 'Tax per BIR 2316'])->assertRedirect();
+        $run->refresh();
+        $this->assertSame('returned', $run->status->value);
+        $this->assertSame('Tax per BIR 2316', $run->accounting_note);
+        Notification::assertSentTo($hr, HrUpdate::class);
+
+        // Rebuilding from the profiles keeps Accounting's tax.
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/regenerate")->assertRedirect();
+        $this->assertSame(26849.5, (float) $entry->fresh()->net_pay);
+
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/finalize")->assertRedirect();
+        $this->assertTrue($run->fresh()->isFinalized());
+        foreach ([AuditEvent::PayrollSubmitted, AuditEvent::PayrollTaxEntered, AuditEvent::PayrollReturned, AuditEvent::PayrollFinalized] as $event) {
+            $this->assertTrue(AuditLog::query()->where('event', $event->value)->exists(), $event->value);
+        }
+
+        // Reopening sends it back to HRD with the tax kept.
+        app(Payrolls::class)->reopen($run->fresh(), 'Wrong allowance');
+        $this->assertSame('returned', $run->fresh()->status->value);
+        $this->assertSame(26849.5, (float) $entry->fresh()->net_pay);
+    }
+
+    public function test_the_accountant_iii_on_the_plantilla_reviews_payrolls_with_no_role(): void
+    {
+        Notification::fake();
+        $employee = $this->staff('Administrative Officer IV', 15);
+        $accountant = User::factory()->create();
+        $this->appoint(Employee::factory()->for($accountant)->create(), 'Accountant III', 15);
+        $hr = $this->hr();
+        $run = $this->payroll('2026-10');
+        $entry = $run->entries()->where('employee_id', $employee->id)->sole();
+
+        $this->actingAs($accountant)->get('/payroll/tax-review')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Portal/PayrollTaxReview')->has('waiting', 0)->where('flags.payrollTaxReviewer', true));
+
+        $this->actingAs($hr)->post("/admin/hr/payroll/runs/{$run->id}/submit")->assertSessionHas('status', fn ($status) => str_contains($status, $accountant->name));
+        Notification::assertSentTo($accountant, HrUpdate::class);
+
+        $this->actingAs($accountant)->get('/payroll/tax-review')->assertInertia(fn (Assert $page) => $page->has('waiting', 1)->where('badges.payrollTaxReviews', 1));
+        $this->actingAs($accountant)->get("/admin/hr/payroll/runs/{$run->id}")->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('canEnterTax', true)->where('canViewAll', false));
+        $this->actingAs($accountant)->put("/admin/hr/payroll/runs/{$run->id}/withholding-tax", ['taxes' => [$entry->id => 1000]])->assertRedirect();
+        $this->assertSame(27350.0, (float) $entry->fresh()->net_pay);
+
+        // Only the payroll itself: not the list, pay profiles or anyone else's queue.
+        $this->actingAs($accountant)->get('/admin/hr/payroll')->assertForbidden();
+        $this->actingAs($accountant)->get("/admin/hr/payroll/profiles/{$employee->id}")->assertForbidden();
+        $this->actingAs(User::factory()->create())->get('/payroll/tax-review')->assertForbidden();
+        $this->actingAs(User::factory()->create())->get("/admin/hr/payroll/runs/{$run->id}")->assertForbidden();
+    }
+
+    public function test_hrd_is_warned_when_nobody_in_accounting_can_receive_the_payroll(): void
+    {
+        $this->staff('Administrative Officer IV', 15);
+        $run = $this->payroll('2026-10');
+
+        $this->actingAs($this->hr())->post("/admin/hr/payroll/runs/{$run->id}/submit")->assertSessionHas('error');
     }
 
     public function test_payroll_pages_need_payroll_permissions(): void
@@ -223,12 +302,12 @@ class PayrollTest extends TestCase
 
         $this->actingAs($hr)->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Admin/HR/Payroll/GeneralPayroll')
-            ->has('payroll.groups', 1)
-            ->where('payroll.groups.0.office', 'HRD')
-            ->has('payroll.groups.0.rows', 2)
-            ->where('payroll.columns.0.label', 'GSIS Personal Share')
-            ->where('payroll.totals.basic', 38000)
-            ->where('payroll.totals.net', fn ($net) => (float) $net === (float) $run->entries()->whereNull('cancelled_at')->sum('net_pay')));
+            ->has('sheet.pages', 1)
+            ->where('sheet.pages.0.office', 'HRD')
+            ->has('sheet.pages.0.rows', 2)
+            ->where('sheet.pages.0.rows.0.surname', fn ($surname) => str_ends_with($surname, ','))
+            ->where('sheet.totals.basic', 38000)
+            ->where('sheet.totals.net', fn ($net) => (float) $net === (float) $run->entries()->whereNull('cancelled_at')->sum('net_pay')));
 
         $this->actingAs($this->userWith(['payroll.view']))->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertOk();
         $this->actingAs(User::factory()->create())->get("/admin/hr/payroll/runs/{$run->id}/general-payroll")->assertForbidden();
@@ -308,7 +387,7 @@ class PayrollTest extends TestCase
 
         // Not before the payroll is final.
         $this->actingAs($employee->user)->post('/my/payslips', ['payroll_entry_id' => $entry->id])->assertSessionHasErrors('payroll_entry_id');
-        app(Payrolls::class)->finalize($run, $this->hr());
+        $this->finalizeRun($run, $this->hr());
 
         $this->actingAs($employee->user)->post('/my/payslips', ['payroll_entry_id' => $entry->id, 'purpose' => 'Bank loan'])->assertRedirect();
         $request = PayslipRequest::query()->sole();
@@ -346,7 +425,7 @@ class PayrollTest extends TestCase
             'effective_date' => '2026-10-01', 'end_date' => '2026-10-31',
         ]);
         $run = $this->payroll('2026-10');
-        app(Payrolls::class)->finalize($run, $this->hr());
+        $this->finalizeRun($run, $this->hr());
         $entry = $run->entries()->where('employee_id', $employee->id)->sole();
         $this->actingAs($employee->user)->post('/my/payslips', ['payroll_entry_id' => $entry->id]);
         $request = PayslipRequest::query()->sole();
@@ -406,6 +485,17 @@ class PayrollTest extends TestCase
             'start_month' => '2026-01-01',
             'paid_before' => $paidBefore,
         ]);
+    }
+
+    /** HRD submits, Accounting returns it, HRD finalizes. */
+    private function finalizeRun(PayrollRun $run, User $hr): void
+    {
+        $payrolls = app(Payrolls::class);
+        if ($run->fresh()->status->value === 'draft') {
+            $payrolls->submitToAccounting($run, $hr);
+            $payrolls->returnToHrd($run, $hr);
+        }
+        $payrolls->finalize($run, $hr);
     }
 
     private function hr(): User

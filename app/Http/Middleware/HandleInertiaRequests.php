@@ -11,6 +11,7 @@ use App\Support\Branding\Branding;
 use App\Support\HR\Dtr\DtrEntryVerification;
 use App\Support\HR\HrQueues;
 use App\Support\HR\Leave\LeaveApplications;
+use App\Support\HR\Payroll\PayrollAccounting;
 use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\Security\SessionLimits;
 use App\Support\Settings\Settings;
@@ -92,6 +93,8 @@ class HandleInertiaRequests extends Middleware
                 'dtrVerifier' => app(DtrEntryVerification::class)->employeeIdsFor($user)->isNotEmpty(),
                 // HR-8: the head of HRD, or someone designated head of HRD.
                 'payslipApprover' => app(PayslipApprovers::class)->isApprover($user),
+                // HR-8: the Accountant III (or `payroll.tax`), who enters withholding tax on payrolls.
+                'payrollTaxReviewer' => app(PayrollAccounting::class)->isReviewer($user),
                 // Settings → Portal: the Services directory is switched on.
                 'services' => (bool) Settings::get('portal_services_enabled'),
             ] : [],

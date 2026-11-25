@@ -3,34 +3,78 @@ import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 
 /**
- * HR-8: the General Payroll for a month, laid out as the accounting office
- * signs it: landscape on long bond paper (13 × 8.5 in), people grouped by
- * office, one column per deduction anyone has, and a column to sign for the
- * amount received. Print or "Save as PDF" from the browser. No app layout.
- * The employer's shares (GSIS, PhilHealth, Pag-IBIG) are not payroll lines
- * in IMIS, so they are not shown.
+ * HR-8: the General Payroll for a month, copied cell for cell from the
+ * accounting office's "Final Payroll" sheet: the same columns and widths,
+ * the same 59 rows to a page (agency lines, title, acknowledgement, three
+ * header rows, the project line, six people on four rows each, the total,
+ * the four certifications) and gridlines all over, as the workbook prints
+ * them. Everything is scaled together so the page fits 13 × 8.5 in landscape.
+ * The workbook's row-number column (AE) and check columns (AF onward) are
+ * left out, so AMOUNT RECEIVED is the last column. No app layout.
  */
 const props = defineProps({
     run: { type: Object, required: true },
-    payroll: { type: Object, required: true },
-    organization: { type: String, default: null },
-    address: { type: String, default: null },
+    sheet: { type: Object, required: true },
 });
 
-const money = (value) => Number(value ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const cell = (amounts, key) => (amounts?.[key] ? money(amounts[key]) : '');
-const quincena = (value) => (value ? new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString('en-PH', { month: 'long', day: 'numeric' }) : '');
+/** Column widths of the workbook, in its own units (Z is "Other deductions", shown only when someone has any). */
+const WIDTHS = {
+    A: 0.89, B: 44.22, C: 25.44, D: 27.44, E: 25.89, F: 23.22, G: 23.22, H: 19.33, I: 27.89, J: 21.22, K: 19.78, L: 21.22, M: 21.66,
+    N: 24.78, O: 21.22, P: 21.22, Q: 19.22, R: 21, S: 26.22, T: 25.44, U: 21.22, V: 21.22, W: 25.11, X: 22.66, Y: 25.33, Z: 25.78,
+    AD: 34.22,
+};
+const FIRST_LINE = ['I', 'J', 'K', 'L', 'M', 'P', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+const SECOND_LINE = ['I', 'J', 'K', 'L', 'M', 'P', 'S', 'T', 'V', 'W', 'X'];
+/** The columns that hold a figure of their own on the PERA row. */
+const FIELDS = { F: 'gsis_ps', G: 'gsis_gov', H: 'ecc', N: 'phic_ps', O: 'phic_gov', Q: 'hdmf_ps', R: 'hdmf_er' };
+/** Rows a person takes on a page: a page holds six, with the workbook's blank row after each. */
+const BLOCK_ROWS = 4;
+const PER_PAGE = 6;
 
-const columnCount = computed(() => props.payroll.columns.length);
-const printed = new Date().toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-let counter = 0;
-const numbered = (groups) => groups.map((group) => ({ ...group, rows: group.rows.map((row) => ({ ...row, no: ++counter })) }));
-const groups = computed(() => {
-    counter = 0;
+const columns = computed(() => Object.keys(WIDTHS).filter((key) => key !== 'Z' || props.sheet.has_other));
+const dataColumns = computed(() => columns.value.filter((key) => !['A', 'B', 'C', 'D', 'E', 'AD'].includes(key)));
+const widthTotal = computed(() => columns.value.reduce((total, key) => total + WIDTHS[key], 0));
+const width = (key) => `${((WIDTHS[key] / widthTotal.value) * 100).toFixed(3)}%`;
+/** How many printed columns lie from one workbook column to another, inclusive (for the merged cells). */
+const span = (from, to) => columns.value.indexOf(to) - columns.value.indexOf(from) + 1;
+/** The columns after this one, to finish a row. */
+const after = (key) => columns.value.length - columns.value.indexOf(key) - 1;
+/** Excel's column width in points (7 px a unit plus 5 px padding, at 96 dpi), so the whole sheet scales by one factor. */
+const scale = computed(() => (12.5 * 72) / columns.value.reduce((total, key) => total + 0.75 * (7 * WIDTHS[key] + 5), 0));
 
-    return numbered(props.payroll.groups);
-});
+/** The workbook's accounting format: two decimals, a dash for zero. */
+const money = (value) => {
+    const number = Number(value ?? 0);
+
+    return Math.abs(number) < 0.005 ? '-' : number.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const upper = (value) => (value || '').toString().toUpperCase();
+const pageCount = computed(() => props.sheet.pages.length + 1);
 const print = () => window.print();
+
+const inPeraRow = (row, key) => {
+    if (FIELDS[key]) {
+        return money(row[FIELDS[key]]);
+    }
+    if (FIRST_LINE.includes(key)) {
+        return money(row.first[key]);
+    }
+
+    return key === 'Z' ? money(row.other) : '';
+};
+const inLoanRow = (row, key) => (SECOND_LINE.includes(key) ? money(row.second[key]) : '');
+const inTotals = (totals, key) => {
+    if (FIELDS[key]) {
+        return money(totals[FIELDS[key]]);
+    }
+    if (FIRST_LINE.includes(key)) {
+        return money(totals.columns[key]);
+    }
+
+    return key === 'Z' ? money(totals.other) : '';
+};
+/** Blank rows between the last person and the total row (row 40). */
+const padding = (rows) => Math.max(0, (PER_PAGE - rows.length) * BLOCK_ROWS) + 1;
 </script>
 
 <template>
@@ -38,114 +82,217 @@ const print = () => window.print();
 
     <div class="gp-toolbar">
         <p>
-            <strong>General Payroll</strong> — {{ run.period }}. Print on long bond paper, landscape; choose “Save as PDF” to keep a copy.
+            <strong>General Payroll</strong> — {{ run.period }}. Print on long bond paper, landscape, at 100% scale with no margins; choose “Save as PDF” to keep a copy.
+            <span v-if="run.status !== 'finalized'" class="draft-note">{{ run.status_label }}: the payroll is not final.</span>
         </p>
         <button type="button" @click="print">Print</button>
     </div>
 
-    <main class="gp">
-        <section class="sheet" aria-label="General Payroll">
-            <header class="agency">
-                <p>Republic of the Philippines</p>
-                <p class="agency-name">{{ (organization || '').toUpperCase() }}</p>
-                <p v-if="address">{{ address }}</p>
-                <h1>GENERAL PAYROLL</h1>
-                <p>
-                    We hereby acknowledge to have received the sums herein specified opposite our respective names, being full compensation for our
-                    services for the period <strong>{{ run.period }}</strong>, except as noted otherwise in the Remarks column.
-                </p>
-                <p v-if="run.status !== 'finalized'" class="draft">DRAFT — NOT FINAL</p>
-            </header>
-
-            <table class="register">
-                <thead>
+    <main class="gp" :style="{ '--k': scale }">
+        <section v-for="(page, index) in [...sheet.pages, null]" :key="index" class="sheet" aria-label="General Payroll">
+            <table class="grid">
+                <colgroup>
+                    <col v-for="key in columns" :key="key" :style="{ width: width(key) }" />
+                </colgroup>
+                <tbody>
+                    <!-- rows 1-3: the agency -->
+                    <tr><td :colspan="columns.length" class="agency">Republic of the Philippines</td></tr>
+                    <tr><td :colspan="columns.length" class="agency">CIVIL SERVICE COMMISSION RO VIII</td></tr>
+                    <tr><td :colspan="columns.length" class="agency">Candahug, Palo, Leyte</td></tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                    <!-- row 5: the title -->
                     <tr>
-                        <th rowspan="2" class="no">No.</th>
-                        <th rowspan="2" class="name">Name / Designation</th>
-                        <th rowspan="2">Salary per month</th>
-                        <th rowspan="2">PERA &amp; allowances</th>
-                        <th rowspan="2">Gross amount</th>
-                        <th v-if="columnCount" :colspan="columnCount">Deductions</th>
-                        <th rowspan="2">Total deductions</th>
-                        <th rowspan="2">Net amount</th>
-                        <th colspan="2">Net, released</th>
-                        <th rowspan="2" class="sign">Signature of payee</th>
+                        <td :colspan="columns.length" class="agency title">G E N E R A L &nbsp;&nbsp; P A Y R O L L</td>
                     </tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                    <!-- rows 7-8: the acknowledgement -->
                     <tr>
-                        <th v-for="column in payroll.columns" :key="column.key" class="deduction">{{ column.label }}</th>
-                        <th>{{ quincena(run.first_release_on) }}</th>
-                        <th>{{ quincena(run.second_release_on) }}</th>
-                    </tr>
-                </thead>
-                <template v-for="group in groups" :key="group.office">
-                    <tbody>
-                        <tr class="office">
-                            <th :colspan="10 + columnCount">{{ group.office }}</th>
-                        </tr>
-                        <tr v-for="row in group.rows" :key="row.no">
-                            <td class="no">{{ row.no }}</td>
-                            <td class="name"><strong>{{ row.name }}</strong><span class="position">{{ row.position }}</span></td>
-                            <td class="num">{{ money(row.basic) }}</td>
-                            <td class="num">{{ money(row.allowances) }}</td>
-                            <td class="num">{{ money(row.gross) }}</td>
-                            <td v-for="column in payroll.columns" :key="column.key" class="num">{{ cell(row.columns, column.key) }}</td>
-                            <td class="num">{{ money(row.deductions) }}</td>
-                            <td class="num strong">{{ money(row.net) }}</td>
-                            <td class="num">{{ money(row.first_half) }}</td>
-                            <td class="num">{{ money(row.second_half) }}</td>
-                            <td class="sign"></td>
-                        </tr>
-                        <tr class="subtotal">
-                            <th colspan="2">Total, {{ group.office }}</th>
-                            <td class="num">{{ money(group.totals.basic) }}</td>
-                            <td class="num">{{ money(group.totals.allowances) }}</td>
-                            <td class="num">{{ money(group.totals.gross) }}</td>
-                            <td v-for="column in payroll.columns" :key="column.key" class="num">{{ cell(group.totals.columns, column.key) }}</td>
-                            <td class="num">{{ money(group.totals.deductions) }}</td>
-                            <td class="num">{{ money(group.totals.net) }}</td>
-                            <td class="num">{{ money(group.totals.first_half) }}</td>
-                            <td class="num">{{ money(group.totals.second_half) }}</td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                </template>
-                <tfoot>
-                    <tr class="grand">
-                        <th colspan="2">GRAND TOTAL</th>
-                        <td class="num">{{ money(payroll.totals.basic) }}</td>
-                        <td class="num">{{ money(payroll.totals.allowances) }}</td>
-                        <td class="num">{{ money(payroll.totals.gross) }}</td>
-                        <td v-for="column in payroll.columns" :key="column.key" class="num">{{ cell(payroll.totals.columns, column.key) }}</td>
-                        <td class="num">{{ money(payroll.totals.deductions) }}</td>
-                        <td class="num">{{ money(payroll.totals.net) }}</td>
-                        <td class="num">{{ money(payroll.totals.first_half) }}</td>
-                        <td class="num">{{ money(payroll.totals.second_half) }}</td>
                         <td></td>
+                        <td :colspan="span('B', 'E')" class="text run">WE HEREBY ACKNOWLEDGE to have received from</td>
+                        <td :colspan="span('F', 'I')" class="text under strong centered">{{ upper(sheet.signatories.paying_officer) }}</td>
+                        <td :colspan="span('J', 'V')" class="text">the sums herein specified opposite our respective names being full compensation for our services for the period</td>
+                        <td :colspan="span('W', 'Y')" class="centered under">{{ sheet.period }}</td>
+                        <td :colspan="after('Y')"></td>
                     </tr>
-                </tfoot>
+                    <tr>
+                        <td></td><td></td>
+                        <td :colspan="span('C', 'M')" class="text">except as noted otherwise in the Remarks column.</td>
+                        <td :colspan="after('M')"></td>
+                    </tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+
+                    <!-- rows 10-12: the column headings -->
+                    <tr class="head">
+                        <td rowspan="3"></td>
+                        <th rowspan="3">NAME</th>
+                        <th rowspan="3">DESIGNATION</th>
+                        <th rowspan="2">Salary per Month</th>
+                        <th rowspan="3">TOTAL AMOUNT</th>
+                        <th rowspan="3">GSIS<br />Personal Share</th>
+                        <th rowspan="3" class="employer">GSIS<br />Government Share</th>
+                        <th rowspan="3" class="employer">GSIS ECC</th>
+                        <th rowspan="2">GSIS<br />Consol. Loan</th>
+                        <th rowspan="2">GSIS<br />Regular Policy Loan</th>
+                        <th rowspan="2">GSIS SOLAR LOAN</th>
+                        <th rowspan="2">GSIS MPL_LITE</th>
+                        <th rowspan="3">GSIS<br />Multi Purpose Loan (MPL)</th>
+                        <th rowspan="3">PHIC<br />Personal Share</th>
+                        <th rowspan="3" class="employer">PHIC<br />Government Share</th>
+                        <th rowspan="2">GSIS<br />HELP</th>
+                        <th rowspan="3">HDMF<br />Personal Share</th>
+                        <th rowspan="3" class="employer">HDMF<br />Employer Share</th>
+                        <th rowspan="2">HDMF HOUSING LOAN</th>
+                        <th rowspan="2">HDMF MP2EF</th>
+                        <th rowspan="3">Withholding Tax</th>
+                        <th rowspan="2">GSIS<br />EAL/FLEXI</th>
+                        <th colspan="2" class="strong">WELFARE FUND</th>
+                        <th></th>
+                        <th v-if="sheet.has_other" rowspan="3">Other deductions</th>
+                        <th rowspan="3" class="strong">AMOUNT RECEIVED</th>
+                    </tr>
+                    <tr class="head tall">
+                        <th>Contribution</th>
+                        <th>CSC PAL</th>
+                        <th>PINTIG</th>
+                    </tr>
+                    <tr class="head taller">
+                        <th>PERA</th>
+                        <th>GSIS Real Estate Loan</th>
+                        <th>Emerg Loan</th>
+                        <th>CPL</th>
+                        <th>OPT_LIFE</th>
+                        <th>CEAP</th>
+                        <th>MP LOAN</th>
+                        <th>SAFE LOAN</th>
+                        <th>eCA</th>
+                        <th>MPL</th>
+                        <th>GPL</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+
+                    <template v-if="page">
+                        <!-- row 13: the project; row 14 blank -->
+                        <tr class="data">
+                            <td></td>
+                            <td class="text strong project">Project {{ page.office }}</td>
+                            <td v-for="key in columns.slice(2)" :key="key"></td>
+                        </tr>
+                        <tr class="data"><td v-for="key in columns" :key="key"></td></tr>
+                        <template v-for="row in page.rows" :key="row.no">
+                            <tr class="data">
+                                <td></td>
+                                <td class="text">{{ row.surname }}</td>
+                                <td class="text position">{{ row.position }}</td>
+                                <td class="num">{{ money(row.basic) }}</td>
+                                <td></td>
+                                <td v-for="key in dataColumns" :key="key"></td>
+                                <td></td>
+                            </tr>
+                            <tr class="data">
+                                <td></td>
+                                <td class="text">{{ row.given }}</td>
+                                <td></td>
+                                <td class="num">{{ money(row.pera) }}</td>
+                                <td class="num">{{ money(row.gross) }}</td>
+                                <td v-for="key in dataColumns" :key="key" class="num">{{ inPeraRow(row, key) }}</td>
+                                <td class="num strong">{{ money(row.net) }}</td>
+                            </tr>
+                            <tr class="data">
+                                <td></td><td></td><td></td><td></td><td></td>
+                                <td v-for="key in dataColumns" :key="key" class="num">{{ inLoanRow(row, key) }}</td>
+                                <td></td>
+                            </tr>
+                            <tr class="data"><td v-for="key in columns" :key="key"></td></tr>
+                        </template>
+                        <tr v-for="n in padding(page.rows)" :key="`pad${n}`" class="data"><td v-for="key in columns" :key="key"></td></tr>
+                        <tr class="data total">
+                            <td></td>
+                            <td class="text centered">T O T A L</td>
+                            <td></td>
+                            <td class="num">{{ money(page.totals.basic + page.totals.pera) }}</td>
+                            <td class="num">{{ money(page.totals.gross) }}</td>
+                            <td v-for="key in dataColumns" :key="key" class="num">{{ inTotals(page.totals, key) }}</td>
+                            <td class="num">{{ money(page.totals.net) }}</td>
+                        </tr>
+                    </template>
+                    <template v-else>
+                        <!-- the last page: a recap of every office, three rows apiece -->
+                        <tr class="data"><td v-for="key in columns" :key="key"></td></tr>
+                        <template v-for="item in sheet.recap" :key="item.office">
+                            <tr class="data">
+                                <td></td>
+                                <td class="text strong">{{ item.office }}</td>
+                                <td></td>
+                                <td class="num">{{ money(item.totals.basic + item.totals.pera) }}</td>
+                                <td class="num">{{ money(item.totals.gross) }}</td>
+                                <td v-for="key in dataColumns" :key="key" class="num">{{ inTotals(item.totals, key) }}</td>
+                                <td class="num strong">{{ money(item.totals.net) }}</td>
+                            </tr>
+                            <tr class="data"><td v-for="key in columns" :key="key"></td></tr>
+                            <tr class="data"><td v-for="key in columns" :key="key"></td></tr>
+                        </template>
+                        <tr class="data total">
+                            <td></td>
+                            <td class="text centered">T O T A L</td>
+                            <td></td>
+                            <td class="num">{{ money(sheet.totals.basic + sheet.totals.pera) }}</td>
+                            <td class="num">{{ money(sheet.totals.gross) }}</td>
+                            <td v-for="key in dataColumns" :key="key" class="num">{{ inTotals(sheet.totals, key) }}</td>
+                            <td class="num">{{ money(sheet.totals.net) }}</td>
+                        </tr>
+                    </template>
+
+                    <!-- rows 41-59: the certifications -->
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                    <tr>
+                        <td></td>
+                        <td :colspan="span('B', 'P')" class="text run">(1) I CERTIFY on my official oath that the above Payroll is correct.</td>
+                        <td :colspan="span('Q', 'W')" class="text">(3) I CERTIFY that funds are available in the amount of</td>
+                        <td :colspan="span('X', 'Y')" class="num">{{ money(page ? page.totals.gross : sheet.totals.gross) }}</td>
+                        <td :colspan="after('Y')"></td>
+                    </tr>
+                    <tr v-for="n in 5" :key="`c${n}`"><td v-for="key in columns" :key="key"></td></tr>
+                    <tr>
+                        <td :colspan="span('A', 'C')"></td>
+                        <td :colspan="span('D', 'I')" class="centered strong">{{ upper(sheet.signatories.certifier) }}</td>
+                        <td :colspan="span('J', 'T')"></td>
+                        <td :colspan="span('U', 'AD')" class="centered strong">{{ upper(sheet.signatories.accountant) }}</td>
+                    </tr>
+                    <tr>
+                        <td :colspan="span('A', 'C')"></td>
+                        <td :colspan="span('D', 'I')" class="centered">Chief PS (Chief HRS)</td>
+                        <td :colspan="span('J', 'T')"></td>
+                        <td :colspan="span('U', 'AD')" class="centered">Accountant III</td>
+                    </tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                    <tr>
+                        <td></td>
+                        <td :colspan="span('B', 'P')" class="text">(2) APPROVED payable from appropriation for</td>
+                        <td :colspan="after('P')" class="text">(4) I CERTIFY on my official oath that I have paid each employee whose name appears on the</td>
+                    </tr>
+                    <tr>
+                        <td :colspan="span('A', 'P')"></td>
+                        <td :colspan="after('P')" class="text">above roll the amount set opposite his/her name.</td>
+                    </tr>
+                    <tr v-for="n in 3" :key="`d${n}`"><td v-for="key in columns" :key="key"></td></tr>
+                    <tr>
+                        <td :colspan="span('A', 'C')"></td>
+                        <td :colspan="span('D', 'I')" class="centered strong">{{ upper(sheet.signatories.approver) }}</td>
+                        <td :colspan="span('J', 'T')"></td>
+                        <td :colspan="span('U', 'AD')" class="centered strong">{{ upper(sheet.signatories.paying_officer) }}</td>
+                    </tr>
+                    <tr>
+                        <td :colspan="span('A', 'C')"></td>
+                        <td :colspan="span('D', 'I')" class="centered">Director IV</td>
+                        <td :colspan="span('J', 'T')"></td>
+                        <td :colspan="span('U', 'AD')" class="centered">Chief PS (Chief HRS)</td>
+                    </tr>
+                    <tr><td v-for="key in columns" :key="key"></td></tr>
+                </tbody>
             </table>
-
-            <section class="certifications">
-                <div>
-                    <p><strong>(1)</strong> I CERTIFY on my official oath that the above Payroll is correct.</p>
-                    <p class="line"></p>
-                    <p class="caption">Head, Human Resource Division / Certifying Officer</p>
-                </div>
-                <div>
-                    <p><strong>(2)</strong> APPROVED for payment.</p>
-                    <p class="line"></p>
-                    <p class="caption">Head of Office</p>
-                </div>
-                <div>
-                    <p><strong>(3)</strong> I CERTIFY that funds are available in the amount of <strong>₱{{ money(payroll.totals.gross) }}</strong>.</p>
-                    <p class="line"></p>
-                    <p class="caption">Accountant</p>
-                </div>
-            </section>
-
-            <footer class="foot">
-                <p>Printed {{ printed }} from IMIS. {{ payroll.groups.reduce((total, group) => total + group.rows.length, 0) }} payees. Cancelled payslips are not listed.</p>
-            </footer>
+            <p class="foot">Page {{ index + 1 }} of {{ pageCount }}<span v-if="run.status !== 'finalized'"> · DRAFT — NOT FINAL</span></p>
         </section>
     </main>
 </template>
@@ -158,42 +305,44 @@ const print = () => window.print();
     font: 13px/1.4 system-ui, sans-serif; color: var(--color-text);
 }
 .gp-toolbar button { padding: 0.4rem 1rem; border-radius: 0.375rem; background: var(--color-primary); color: #fff; font-weight: 600; }
+.draft-note { margin-left: 0.5rem; font-weight: 600; color: var(--color-danger-fg, #b00); }
 .gp { background: var(--color-surface-muted); padding: 0.3in 0; min-height: 100vh; }
+
+/* One printed page: 13 × 8.5 in landscape. Every size below is the workbook's, times --k. */
 .sheet {
-    width: 13in; margin: 0 auto; padding: 0.3in; box-sizing: border-box;
-    background: #fff; color: #000; font: 7.5pt/1.25 Arial, Helvetica, sans-serif; border: 1px solid #ccc;
+    position: relative; width: 13in; height: 8.5in; margin: 0 auto 0.3in; padding: 0.25in 0.25in 0; box-sizing: border-box; overflow: hidden;
+    background: #fff; color: #000; border: 1px solid #ccc;
+    font: calc(22pt * var(--k) * 1.2) / 1.1 Arial, Helvetica, sans-serif;
 }
-.agency { text-align: center; margin-bottom: 0.1in; }
-.agency p { margin: 0; }
-.agency-name { font-weight: 700; font-size: 10pt; }
-h1 { font-size: 12pt; letter-spacing: 0.25em; margin: 0.06in 0; }
-.draft { font-weight: 700; color: #b00; letter-spacing: 0.05em; }
-table { border-collapse: collapse; width: 100%; }
-.register th, .register td { border: 1px solid #000; padding: 1px 3px; vertical-align: middle; }
-.register thead th { text-align: center; font-weight: 700; background: #f2f2f2; }
-.register th.deduction { font-weight: 600; font-size: 6.5pt; }
-.name { text-align: left; min-width: 1.7in; }
-.name .position { display: block; font-size: 6.5pt; color: #333; }
-.no { width: 0.3in; text-align: center; }
-.sign { min-width: 1.1in; }
-.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.strong { font-weight: 700; }
-.office th { text-align: left; background: #e8e8e8; font-weight: 700; }
-.subtotal th, .subtotal td { font-weight: 700; background: #f7f7f7; }
-.grand th, .grand td { font-weight: 700; border-top: 2px solid #000; }
-.certifications { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3in; margin-top: 0.2in; break-inside: avoid; }
-.certifications p { margin: 0; }
-.line { border-bottom: 1px solid #000; margin-top: 0.35in !important; }
-.caption { text-align: center; font-size: 6.5pt; }
-.foot { margin-top: 0.15in; font-size: 6.5pt; color: #333; }
-.foot p { margin: 0; }
-thead { display: table-header-group; }
-tr { break-inside: avoid; }
+.grid { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.grid td, .grid th {
+    height: calc(35.1pt * var(--k)); padding: 0 calc(3pt * var(--k)); border: 0; overflow: hidden; white-space: nowrap;
+    font-size: inherit; font-weight: 400; vertical-align: middle;
+}
+.grid .agency { border: 0; text-align: center; }
+.grid .title { font-weight: 700; }
+.grid .head th { border: 0.6px solid #000; text-align: center; white-space: normal; line-height: 1.05; }
+.grid .head.tall th { height: calc(51pt * var(--k)); }
+.grid .head.taller th { height: calc(61.5pt * var(--k)); }
+.grid .head th.strong { font-weight: 700; }
+.grid .head th.employer { background: #ffff00; font-weight: 700; }
+.grid .data td:not(:first-child) { border-left: 0.6px solid #000; border-right: 0.6px solid #000; }
+.grid .data .project { overflow: visible; }
+.grid .data .position { font-size: 0.8em; white-space: normal; line-height: 1; }
+.grid .total td:not(:first-child) { border-top: 0.6px solid #000; border-bottom: 0.6px solid #000; }
+.text { text-align: left; }
+.grid .run { overflow: visible; }
+.num { text-align: right; font-variant-numeric: tabular-nums; padding-right: calc(10pt * var(--k)) !important; }
+.centered { text-align: center; }
+.strong { font-weight: 700 !important; }
+.under { border: 0 !important; border-bottom: 0.8px solid #000 !important; }
+.foot { position: absolute; left: 0; right: 0; bottom: 0.08in; margin: 0; text-align: center; font: 7pt Arial, sans-serif; color: #333; }
 
 @media print {
-    @page { size: 13in 8.5in; margin: 0.25in; }
+    @page { size: 13in 8.5in; margin: 0; }
     .gp-toolbar { display: none; }
     .gp { background: none; padding: 0; min-height: 0; }
-    .sheet { border: 0; margin: 0; padding: 0; width: auto; }
+    .sheet { border: 0; margin: 0; break-after: page; page-break-after: always; }
+    .sheet:last-child { break-after: auto; page-break-after: auto; }
 }
 </style>

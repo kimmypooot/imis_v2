@@ -184,6 +184,10 @@ enum PermissionName: string
 
     case PayrollView = 'payroll.view';
     case PayrollManage = 'payroll.manage';
+    // Accounting (the Accountant III at MSD): reviews payrolls HRD submits,
+    // enters each person's withholding tax (never their own) and returns
+    // them to HRD. Also reads payrolls.
+    case PayrollTax = 'payroll.tax';
 
     // Executive Dashboard (Exec-1 to Exec-3): `view` is top management
     // seeing every module's and system's figures in one place — totals

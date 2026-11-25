@@ -65,6 +65,13 @@ class HrRoleSeeder extends Seeder
                 'description' => 'Regional Director: final approval of leave applications (CS Form No. 6, Parts C/D).',
                 'permissions' => [P::LeaveApprove],
             ],
+            // The Accountant III at MSD: HRD submits each month's payroll
+            // here for review and withholding tax, then gets it back.
+            'payroll-accountant' => [
+                'display_name' => 'Accountant',
+                'description' => 'Accountant III (MSD): reviews the payrolls HRD submits, enters each person\'s withholding tax and returns them to HRD.',
+                'permissions' => [P::PayrollTax],
+            ],
             'supervisor' => [
                 'display_name' => 'Supervisor',
                 'description' => 'Office head or supervisor: sees the employee records of their own office (never PDS or 201 files).',

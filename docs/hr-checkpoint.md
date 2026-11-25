@@ -31,7 +31,7 @@ a new session. Read it together with `CLAUDE.md` and the HR sections of
 | HR-6b | Filing (CS Form 6), supervisor → HR → head approval, OIC designations, notifications, printable form, LWOP | ✅ Done |
 | HR-6c | Monetization/terminal leave, FWA and FAR, reports, calendar, Wellness Leave (CSC MC No. 01, s. 2026) | ✅ Done |
 | **HR-7** | Data migration and cutover | ✅ Tools built (`imis:import-legacy-leave`, Cutover Readiness, `imis:retire-legacy-hr`); migrated locally. ⏳ **The import has not been run on real data**: the `lms_*` tables are only on the live server. Its columns come from the legacy code, so check them with a `--dry-run` first. |
-| HR-8 | Payroll and payslips: pay components, pay profiles, loans, monthly payrolls (15th/30th), payslip requests approved by the head of HRD | ✅ Done. Rates seeded from current law: HR should verify them. Not run on real data yet. |
+| HR-8 | Payroll and payslips: pay components, pay profiles, loans, monthly payrolls (whole month, released at month end), payslip requests approved by the head of HRD | ✅ Done. Rates seeded from current law: HR should verify them. Not run on real data yet. |
 
 **Tests:** the suite has 768 tests, all passing. HR tests are in
 `tests/Feature/HR/`.

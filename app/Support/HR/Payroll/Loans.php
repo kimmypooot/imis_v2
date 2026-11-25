@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
  * - confirmed: on a finalized payroll;
  * - paid: HR marked it remitted (`remitted_on`);
  * - overdue: confirmed, but not marked paid within OVERDUE_AFTER_DAYS of
- *   the payroll's last release.
+ *   the payroll's release.
  */
 class Loans
 {
@@ -119,7 +119,7 @@ class Loans
         return match (true) {
             ! $run->isFinalized() => 'reflected',
             $line->remitted_on !== null => 'paid',
-            $run->second_release_on && $run->second_release_on->copy()->addDays(self::OVERDUE_AFTER_DAYS)->lt(today()) => 'overdue',
+            $run->release_on && $run->release_on->copy()->addDays(self::OVERDUE_AFTER_DAYS)->lt(today()) => 'overdue',
             default => 'confirmed',
         };
     }

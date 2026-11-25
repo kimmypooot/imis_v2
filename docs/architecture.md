@@ -4413,8 +4413,12 @@ tables.
 
 Built from scratch (the legacy IMIS has no payroll). Decisions (user,
 2026-10-04): IMIS computes each month and HR adjusts; one monthly payroll
-with net pay released on the 15th and the 30th; withholding tax is entered
-per employee (Accounting computes it), not computed; payslip requests are
+covering the whole month (as the General Payroll does) with net pay
+released once, on its last day (until 2026-11-25 it was split between the
+15th and the 30th; `2027_03_26_090000_release_payroll_once_a_month`
+dropped the halves); withholding tax is entered
+per employee by the Accountant III after HRD submits the payroll (see
+below), not computed; payslip requests are
 approved by the head of HRD or whoever is designated head of HRD.
 
 ### Data (`2026_11_02_090000_create_payroll_tables`)
@@ -4437,7 +4441,7 @@ approved by the head of HRD or whoever is designated head of HRD.
   reopened payroll can't leave a balance wrong.
 - `payroll_runs` → `payroll_entries` → `payroll_lines`: one month (unique),
   each person's snapshot (name, position, item, SG/step, office), basic
-  salary, totals and the two releases, and their lines (`adjusted` marks
+  salary, totals and net pay (the run keeps its one `release_on`), and their lines (`adjusted` marks
   HR's changes).
 - `payslip_requests` (`PayslipRequest`, `PS-YYYY-NNNNN`): pending,
   approved, rejected or cancelled; who decided and whom they acted for.
@@ -4449,17 +4453,33 @@ approved by the head of HRD or whoever is designated head of HRD.
   under "Not on this payroll" with the reason.
 - **Lines:** automatic components, the profile's items in effect, and each
   loan's amortization (or what's left). Earnings first, then deductions.
-- **Releases:** the first half is net ÷ 2 rounded down to the centavo
-  (integer centavos), the second takes the rest. Releases on the 15th and
-  the 30th (the last day in February). They are called the **1st quincena**
-  (15th) and **2nd quincena** (30th) and shown after the net pay on the
-  payroll page, the payslip and My Earnings; earnings and deductions are
-  not broken down per quincena.
+- **Release:** once a month, on the last day of the month, for the whole
+  month. There are no quincena halves.
 - **Net pay below ₱5,000** (the GAA floor) is flagged, not blocked.
-- **Draft:** HR changes, adds or removes lines, rebuilds one entry, or
-  regenerates everything (discarding adjustments). **Finalized:** locked;
-  loans count it as paid; payslips can be requested. **Reopen** returns it
-  to a draft. A draft with no payslip requests can be deleted.
+- **HRD → Accounting → HRD** (user, 2026-11-25; `PayrollRunStatus`,
+  `2027_03_27_090000_route_payroll_through_accounting`). Withholding tax
+  (`WTAX`) is never generated, not even from a pay profile item:
+  1. **Draft** — HRD prepares the payroll with every other deduction:
+     changes, adds or removes lines, rebuilds one entry, or regenerates
+     everything (discarding adjustments).
+  2. **With Accounting** — HRD submits it to MSD; HRD can't change it. The
+     Accountant III reviews it: whoever holds that Plantilla item (no role
+     needed, like the head of HRD for payslips), plus anyone given
+     `payroll.tax` (starter role "Accountant"; Super Administrators are not
+     counted). Their queue is "Payroll Tax Review" (`/payroll/tax-review`,
+     menu badge `payrollTaxReviews`); the payroll page and tax routes are
+     guarded by `PayrollRunPolicy` alone. They review it,
+     enters each person's withholding tax on one form (last finalized
+     month's tax shown as a guide; never their own), and returns it with
+     an optional note.
+  3. **Returned** — back with HRD, who can still adjust lines (rebuilding
+     keeps Accounting's tax), send it to Accounting again, or finalize.
+  4. **Finalized** — locked; loans count it as paid; payslips can be
+     requested. **Reopen** returns it to *Returned*, tax kept.
+  Each hand-off is audited and announced under the bell (`PayrollAccounting`):
+  submitting tells the reviewers (HRD is warned if there are none),
+  returning tells HRD's `payroll.manage` staff; the Payrolls menu badge counts runs waiting on
+  you. Only a never-submitted draft with no payslip requests can be deleted.
 - Nobody adjusts their own pay, profile or loans (`PayrollRunPolicy::managePayOf`).
 
 ### Payslips (`PayslipRequests`, `PayslipApprovers`)

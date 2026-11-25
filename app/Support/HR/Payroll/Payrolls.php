@@ -34,19 +34,28 @@ use Illuminate\Validation\ValidationException;
  * Their lines: every automatic component (PERA, GSIS, PhilHealth,
  * Pag-IBIG), every item on their pay profile in effect that month (an
  * amount there overrides the component's; 0 exempts them), and each loan's
- * amortization (or what's left of it). Net pay is released in two halves:
- * the 15th and the 30th (the last day in February); the first half is
- * rounded down to the centavo, the second takes the rest.
+ * amortization (or what's left of it). A payroll covers the whole month,
+ * as the General Payroll does, and its net pay is released once, on the
+ * last day of the month.
  *
- * While a payroll is a draft HR can change, add and remove lines (marked
- * "adjusted") or rebuild an entry from the profile; finalizing locks it
- * (loans count its lines as paid, payslips can be requested); reopening
- * unlocks it. Nobody adjusts their own pay.
+ * Withholding tax is not generated: HRD prepares the payroll with every
+ * other deduction (Draft), submits it to MSD where the Accountant III
+ * reviews it and enters each person's tax (With Accounting), and gets it
+ * back (Returned) to finalize. While it is with HRD, HR can change, add and
+ * remove lines (marked "adjusted") or rebuild entries from the profile;
+ * rebuilding keeps the tax Accounting entered. Finalizing locks it (loans
+ * count its lines as paid, payslips can be requested); reopening returns
+ * it to HRD. Nobody adjusts their own pay or enters their own tax.
  */
 class Payrolls
 {
     /** The General Appropriations Act's floor on monthly net take-home pay. */
     public const MINIMUM_NET_PAY = 5000;
+
+    /** The pay component Accounting fills in: withholding tax. */
+    public const TAX_CODE = 'WTAX';
+
+    private ?int $taxComponentId = null;
 
     public function __construct(
         private readonly SalarySchedules $schedules,
@@ -77,8 +86,7 @@ class Payrolls
                 'year' => $start->year,
                 'month' => $start->month,
                 'status' => PayrollRunStatus::Draft,
-                'first_release_on' => $start->copy()->day(15),
-                'second_release_on' => $start->copy()->day(min(30, $start->daysInMonth)),
+                'release_on' => $start->copy()->endOfMonth()->startOfDay(),
                 'created_by' => $actor->id,
                 'remarks' => $remarks,
             ]);
@@ -96,7 +104,7 @@ class Payrolls
      */
     public function generate(PayrollRun $run): void
     {
-        $this->ensureDraft($run);
+        $this->ensureWithHrd($run);
 
         DB::transaction(function () use ($run) {
             $eligible = $this->eligible($run->month());
@@ -114,7 +122,7 @@ class Payrolls
     /** Rebuilds one entry from the pay profile, discarding its adjustments. */
     public function regenerateEntry(PayrollEntry $entry): void
     {
-        $this->ensureDraft($entry->run);
+        $this->ensureWithHrd($entry->run);
         $this->ensureNotCancelled($entry);
 
         $period = $this->eligible($entry->run->month())->get($entry->employee_id);
@@ -171,7 +179,7 @@ class Payrolls
      */
     public function addLine(PayrollEntry $entry, array $data, User $actor): PayrollLine
     {
-        $this->ensureDraft($entry->run);
+        $this->ensureWithHrd($entry->run);
         $this->ensureNotCancelled($entry);
         $component = isset($data['pay_component_id']) ? PayComponent::query()->find($data['pay_component_id']) : null;
 
@@ -200,7 +208,7 @@ class Payrolls
      */
     public function updateLine(PayrollLine $line, float $amount, User $actor, ?string $reason = null): void
     {
-        $this->ensureDraft($line->entry->run);
+        $this->ensureWithHrd($line->entry->run);
         $this->ensureNotCancelled($line->entry);
 
         DB::transaction(function () use ($line, $amount, $actor, $reason) {
@@ -222,7 +230,7 @@ class Payrolls
 
     public function removeLine(PayrollLine $line): void
     {
-        $this->ensureDraft($line->entry->run);
+        $this->ensureWithHrd($line->entry->run);
         $this->ensureNotCancelled($line->entry);
 
         DB::transaction(function () use ($line) {
@@ -232,9 +240,106 @@ class Payrolls
         });
     }
 
+    /** HRD sends the payroll to MSD, for the Accountant III to review and enter withholding tax. */
+    public function submitToAccounting(PayrollRun $run, User $actor): void
+    {
+        $this->ensureWithHrd($run);
+        if (! $run->entries()->exists()) {
+            throw ValidationException::withMessages(['run' => 'The payroll has no one on it.']);
+        }
+
+        $run->forceFill(['status' => PayrollRunStatus::WithAccounting, 'submitted_at' => now(), 'submitted_by' => $actor->id])->save();
+    }
+
+    /**
+     * Accounting enters withholding tax, by entry id; a blank or zero
+     * removes it. Cancelled payslips and the accountant's own pay are left
+     * alone. Returns how many entries changed.
+     *
+     * @param  array<int|string, float|int|string|null>  $taxes
+     */
+    public function enterWithholdingTax(PayrollRun $run, array $taxes, User $actor): int
+    {
+        $this->ensureWithAccounting($run);
+        $component = PayComponent::query()->where('code', self::TAX_CODE)->first();
+        if (! $component) {
+            throw ValidationException::withMessages(['taxes' => 'There is no withholding tax pay component (code '.self::TAX_CODE.'); add it under Pay Components.']);
+        }
+
+        return DB::transaction(function () use ($run, $taxes, $actor, $component) {
+            $changed = 0;
+            $entries = $run->entries()->with(['employee', 'lines'])->whereNull('cancelled_at')->whereIn('id', array_keys($taxes))->get();
+            foreach ($entries as $entry) {
+                if ($entry->employee->user_id === $actor->id) {
+                    continue;
+                }
+
+                $amount = round((float) ($taxes[$entry->id] ?? 0), 2);
+                $current = $entry->lines->where('pay_component_id', $component->id);
+                if ($current->count() <= 1 && round((float) $current->sum('amount'), 2) === $amount) {
+                    continue;
+                }
+
+                $entry->lines()->where('pay_component_id', $component->id)->delete();
+                if ($amount > 0) {
+                    $entry->lines()->create([
+                        'kind' => 'deduction',
+                        'pay_component_id' => $component->id,
+                        'label' => $component->name,
+                        'amount' => $amount,
+                        'adjusted_by' => $actor->id,
+                        'adjusted_at' => now(),
+                        'sort_order' => ($entry->lines->max('sort_order') ?? 0) + 1,
+                    ]);
+                }
+                $this->total($entry);
+                $changed++;
+            }
+
+            return $changed;
+        });
+    }
+
+    /**
+     * The withholding tax on the latest finalized payroll before this one,
+     * by employee id: a guide for Accounting, never copied in.
+     *
+     * @return array<int, float>
+     */
+    public function previousWithholdingTax(PayrollRun $run): array
+    {
+        $previous = PayrollRun::query()->where('status', PayrollRunStatus::Finalized)
+            ->where(fn ($query) => $query->where('year', '<', $run->year)->orWhere(fn ($query) => $query->where('year', $run->year)->where('month', '<', $run->month)))
+            ->orderByDesc('year')->orderByDesc('month')->first();
+        if (! $previous || ! $this->taxComponentId()) {
+            return [];
+        }
+
+        return PayrollLine::query()->join('payroll_entries', 'payroll_entries.id', '=', 'payroll_lines.payroll_entry_id')
+            ->where('payroll_entries.payroll_run_id', $previous->id)->whereNull('payroll_entries.cancelled_at')
+            ->where('payroll_lines.pay_component_id', $this->taxComponentId())
+            ->groupBy('payroll_entries.employee_id')
+            ->selectRaw('payroll_entries.employee_id, SUM(payroll_lines.amount) as tax')
+            ->pluck('tax', 'employee_id')->map(fn ($tax) => round((float) $tax, 2))->all();
+    }
+
+    /** Accounting sends the payroll back to HRD, with an optional note. */
+    public function returnToHrd(PayrollRun $run, User $actor, ?string $note = null): void
+    {
+        $this->ensureWithAccounting($run);
+
+        $run->forceFill(['status' => PayrollRunStatus::Returned, 'returned_at' => now(), 'returned_by' => $actor->id, 'accounting_note' => $note])->save();
+    }
+
     public function finalize(PayrollRun $run, User $actor): void
     {
-        $this->ensureDraft($run);
+        if ($run->status !== PayrollRunStatus::Returned) {
+            throw ValidationException::withMessages(['run' => match ($run->status) {
+                PayrollRunStatus::Draft => 'Submit the payroll to Accounting for withholding tax first.',
+                PayrollRunStatus::WithAccounting => 'The payroll is still with Accounting.',
+                default => "The payroll for {$run->period} is already finalized.",
+            }]);
+        }
         if (! $run->entries()->exists()) {
             throw ValidationException::withMessages(['run' => 'The payroll has no one on it.']);
         }
@@ -242,14 +347,18 @@ class Payrolls
         $run->forceFill(['status' => PayrollRunStatus::Finalized, 'finalized_at' => now(), 'finalized_by' => $actor->id])->save();
     }
 
-    /** Correcting a finalized payroll starts here, so it always has a reason. */
+    /**
+     * Correcting a finalized payroll starts here, so it always has a reason.
+     * It goes back to HRD with Accounting's tax kept; HRD sends it to
+     * Accounting again if the tax should change.
+     */
     public function reopen(PayrollRun $run, ?string $reason = null): void
     {
         if (! $run->isFinalized()) {
-            throw ValidationException::withMessages(['run' => 'The payroll is still a draft.']);
+            throw ValidationException::withMessages(['run' => 'The payroll is not finalized.']);
         }
 
-        $run->forceFill(['status' => PayrollRunStatus::Draft, 'finalized_at' => null, 'finalized_by' => null, 'reopen_reason' => $reason])->save();
+        $run->forceFill(['status' => PayrollRunStatus::Returned, 'finalized_at' => null, 'finalized_by' => null, 'reopen_reason' => $reason])->save();
     }
 
     /**
@@ -270,7 +379,9 @@ class Payrolls
 
     public function delete(PayrollRun $run): void
     {
-        $this->ensureDraft($run);
+        if ($run->status !== PayrollRunStatus::Draft) {
+            throw ValidationException::withMessages(['run' => 'Only a draft payroll that was never submitted can be deleted.']);
+        }
         if (DB::table('payslip_requests')->whereIn('payroll_entry_id', $run->entries()->select('id'))->exists()) {
             throw ValidationException::withMessages(['run' => 'Payslips were requested from this payroll; correct it instead of deleting it.']);
         }
@@ -292,80 +403,7 @@ class Payrolls
             'basic' => round((float) (clone $entries)->sum('basic_salary'), 2),
             'gross' => round((float) (clone $entries)->sum('gross_pay'), 2),
             'deductions' => round((float) (clone $entries)->sum('total_deductions'), 2),
-            'net' => round((float) (clone $entries)->sum('net_pay'), 2),
-            'first_half' => round((float) (clone $entries)->sum('first_half'), 2),
-            'second_half' => round((float) (clone $entries)->sum('second_half'), 2),
-        ];
-    }
-
-    /**
-     * The General Payroll as the accounting office signs it: one row per
-     * person (cancelled payslips left out), grouped by office, with a
-     * column for each deduction that someone actually has (components in
-     * their configured order, one-off lines last) and totals per office
-     * and overall.
-     *
-     * @return array{columns: array<int, array{key: string, label: string}>, groups: array<int, array<string, mixed>>, totals: array<string, mixed>}
-     */
-    public function generalPayroll(PayrollRun $run): array
-    {
-        $entries = $run->entries()->whereNull('cancelled_at')->with('lines.component')->orderBy('office')->orderBy('name')->get();
-
-        $columns = [];
-        foreach ($entries as $entry) {
-            foreach ($entry->lines->where('kind', 'deduction') as $line) {
-                if ((float) $line->amount > 0) {
-                    $key = $line->pay_component_id ? "c{$line->pay_component_id}" : 'l:'.$line->label;
-                    $columns[$key] ??= ['key' => $key, 'label' => $line->component?->name ?? $line->label, 'sort' => $line->component?->sort_order ?? 99999];
-                }
-            }
-        }
-        uasort($columns, fn (array $a, array $b) => [$a['sort'], $a['label']] <=> [$b['sort'], $b['label']]);
-        $columns = array_values(array_map(fn (array $column) => ['key' => $column['key'], 'label' => $column['label']], $columns));
-
-        $blank = fn () => ['basic' => 0.0, 'allowances' => 0.0, 'gross' => 0.0, 'deductions' => 0.0, 'net' => 0.0, 'first_half' => 0.0, 'second_half' => 0.0, 'columns' => []];
-        $add = function (array $total, array $row) {
-            foreach (['basic', 'allowances', 'gross', 'deductions', 'net', 'first_half', 'second_half'] as $field) {
-                $total[$field] = round($total[$field] + $row[$field], 2);
-            }
-            foreach ($row['columns'] as $key => $amount) {
-                $total['columns'][$key] = round(($total['columns'][$key] ?? 0.0) + $amount, 2);
-            }
-
-            return $total;
-        };
-
-        $grand = $blank();
-        $groups = [];
-        foreach ($entries->groupBy(fn (PayrollEntry $entry) => $entry->office ?: 'No office') as $office => $members) {
-            $rows = [];
-            $subtotal = $blank();
-            foreach ($members as $entry) {
-                $amounts = [];
-                foreach ($entry->lines->where('kind', 'deduction') as $line) {
-                    $key = $line->pay_component_id ? "c{$line->pay_component_id}" : 'l:'.$line->label;
-                    $amounts[$key] = round(($amounts[$key] ?? 0.0) + (float) $line->amount, 2);
-                }
-                $row = [
-                    'name' => $entry->name,
-                    'position' => $entry->position,
-                    'basic' => (float) $entry->basic_salary,
-                    'allowances' => round($entry->lines->where('kind', 'earning')->sum(fn ($line) => (float) $line->amount), 2),
-                    'gross' => (float) $entry->gross_pay,
-                    'deductions' => (float) $entry->total_deductions,
-                    'net' => (float) $entry->net_pay,
-                    'first_half' => (float) $entry->first_half,
-                    'second_half' => (float) $entry->second_half,
-                    'columns' => $amounts,
-                ];
-                $rows[] = $row;
-                $subtotal = $add($subtotal, $row);
-                $grand = $add($grand, $row);
-            }
-            $groups[] = ['office' => (string) $office, 'rows' => $rows, 'totals' => $subtotal];
-        }
-
-        return ['columns' => $columns, 'groups' => $groups, 'totals' => $grand];
+            'net' => round((float) (clone $entries)->sum('net_pay'), 2),        ];
     }
 
     /**
@@ -379,9 +417,13 @@ class Payrolls
             'month' => $run->month()->format('Y-m'),
             'status' => $run->status->value,
             'status_label' => $run->status->label(),
-            'first_release_on' => $run->first_release_on?->toDateString(),
-            'second_release_on' => $run->second_release_on?->toDateString(),
+            'release_on' => $run->release_on?->toDateString(),
             'created_by' => $run->creator?->name,
+            'submitted_at' => $run->submitted_at?->toIso8601String(),
+            'submitted_by' => $run->submitter?->name,
+            'returned_at' => $run->returned_at?->toIso8601String(),
+            'returned_by' => $run->returner?->name,
+            'accounting_note' => $run->accounting_note,
             'finalized_at' => $run->finalized_at?->toIso8601String(),
             'finalized_by' => $run->finalizer?->name,
             'remarks' => $run->remarks,
@@ -409,8 +451,8 @@ class Payrolls
             'gross_pay' => (float) $entry->gross_pay,
             'total_deductions' => (float) $entry->total_deductions,
             'net_pay' => $net,
-            'first_half' => (float) $entry->first_half,
-            'second_half' => (float) $entry->second_half,
+            'withholding_tax' => round((float) ($entry->relationLoaded('lines') ? $entry->lines : $entry->lines()->get())
+                ->where('pay_component_id', $this->taxComponentId())->sum('amount'), 2),
             'below_minimum' => $net < self::MINIMUM_NET_PAY,
             'cancelled' => $entry->isCancelled(),
             'cancel_reason' => $entry->cancel_reason,
@@ -510,7 +552,8 @@ class Payrolls
             'basic_salary' => $basic,
         ])->save();
 
-        $entry->lines()->delete();
+        // Accounting's withholding tax stays; everything else is rebuilt.
+        $entry->lines()->where(fn ($query) => $query->whereNull('pay_component_id')->orWhere('pay_component_id', '!=', $this->taxComponentId() ?? 0))->delete();
         foreach ($this->linesFor($employee, $basic, $month, $run->id) as $order => $line) {
             $entry->lines()->create([...$line, 'sort_order' => $order]);
         }
@@ -530,6 +573,7 @@ class Payrolls
 
         $components = PayComponent::query()->active()->ordered()
             ->where('kind', '!=', PayComponentKind::Loan->value)
+            ->where('code', '!=', self::TAX_CODE) // entered by Accounting
             ->where(fn ($query) => $query->where('automatic', true)->orWhereIn('id', $items->keys()))
             ->get();
 
@@ -590,15 +634,11 @@ class Payrolls
         $deductions = round($lines->where('kind', 'deduction')->sum(fn ($line) => (float) $line->amount), 2);
         $gross = round((float) $entry->basic_salary + $earnings, 2);
         $net = round($gross - $deductions, 2);
-        // Split whole centavos, so floating point can't lose or add one.
-        $first = intdiv((int) round($net * 100), 2) / 100;
 
         $entry->forceFill([
             'gross_pay' => $gross,
             'total_deductions' => $deductions,
             'net_pay' => $net,
-            'first_half' => $first,
-            'second_half' => round($net - $first, 2),
         ])->save();
     }
 
@@ -609,10 +649,24 @@ class Payrolls
         }
     }
 
-    private function ensureDraft(PayrollRun $run): void
+    private function ensureWithHrd(PayrollRun $run): void
     {
-        if ($run->isFinalized()) {
-            throw ValidationException::withMessages(['run' => "The payroll for {$run->period} is finalized; reopen it to make changes."]);
+        if (! $run->status->isWithHrd()) {
+            throw ValidationException::withMessages(['run' => $run->isFinalized()
+                ? "The payroll for {$run->period} is finalized; reopen it to make changes."
+                : "The payroll for {$run->period} is with Accounting; it can be changed once it is returned."]);
         }
+    }
+
+    private function ensureWithAccounting(PayrollRun $run): void
+    {
+        if ($run->status !== PayrollRunStatus::WithAccounting) {
+            throw ValidationException::withMessages(['run' => "The payroll for {$run->period} is not with Accounting."]);
+        }
+    }
+
+    private function taxComponentId(): ?int
+    {
+        return $this->taxComponentId ??= PayComponent::query()->where('code', self::TAX_CODE)->value('id');
     }
 }

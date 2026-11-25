@@ -56,6 +56,26 @@ class Remittances
     }
 
     /**
+     * The employer's shares for one person, given the employee's own
+     * (nothing is owed where the employee pays nothing): GSIS with its ECC,
+     * PhilHealth and Pag-IBIG. They sit beside the net pay on the General
+     * Payroll but are not payroll lines.
+     *
+     * @return array{gsis: float, ecc: float, phic: float, hdmf: float}
+     */
+    public function employerShares(PayrollEntry $entry, float $gsis, float $phic, float $hdmf): array
+    {
+        $components = PayComponent::query()->whereIn('code', ['PHIC', 'HDMF'])->get()->keyBy('code');
+
+        return [
+            'gsis' => $gsis > 0 ? round((float) $entry->basic_salary * self::GSIS_EMPLOYER_RATE / 100, 2) : 0.0,
+            'ecc' => $gsis > 0 ? (float) self::GSIS_ECC : 0.0,
+            'phic' => $phic > 0 ? $this->philhealthEmployer($entry, $phic, $components->get('PHIC')) : 0.0,
+            'hdmf' => $hdmf > 0 ? $this->pagibigEmployer($entry, $components->get('HDMF')) : 0.0,
+        ];
+    }
+
+    /**
      * One row per person with the employee's share and the employer's.
      *
      * @param  Collection<int, PayrollEntry>  $entries

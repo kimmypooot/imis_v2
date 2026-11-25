@@ -22,9 +22,11 @@ import { formatPeso } from '../../../../Utils/money';
 defineOptions({ layout: AdminLayout });
 
 /**
- * HR-8: one month's payroll. While it's a draft HR reviews each person's
- * pay and adjusts lines (absences, a one-time allowance…); finalizing
- * locks it, counts its loan lines as paid, and lets staff request their
+ * HR-8: one month's payroll. HRD prepares it with every deduction but
+ * withholding tax and adjusts lines (absences, a one-time allowance…),
+ * then submits it to MSD; the Accountant III reviews it, enters each
+ * person's withholding tax and returns it; HRD finalizes it, which locks
+ * it, counts its loan lines as paid, and lets staff request their
  * payslips. The table is the payroll register (CSV / print).
  */
 const props = defineProps({
@@ -32,12 +34,21 @@ const props = defineProps({
     entries: { type: Array, required: true },
     leftOut: { type: Array, required: true },
     canManage: { type: Boolean, required: true },
+    canEnterTax: { type: Boolean, default: false },
+    canViewAll: { type: Boolean, default: true },
+    reviewers: { type: Array, default: () => [] },
+    previousTax: { type: Object, default: () => ({}) },
     components: { type: Array, required: true },
     minimumNet: { type: Number, required: true },
 });
 
 const isDraft = computed(() => props.run.status === 'draft');
-const editable = computed(() => props.canManage && isDraft.value);
+const isReturned = computed(() => props.run.status === 'returned');
+const withHrd = computed(() => isDraft.value || isReturned.value);
+const withAccounting = computed(() => props.run.status === 'with_accounting');
+const isFinalized = computed(() => props.run.status === 'finalized');
+const editable = computed(() => props.canManage && withHrd.value);
+const statusTone = { draft: 'draft', with_accounting: 'warning', returned: 'info', finalized: 'active' };
 const belowMinimum = computed(() => props.entries.filter((entry) => entry.below_minimum));
 
 const base = `/admin/hr/payroll/runs/${props.run.id}`;
@@ -66,6 +77,26 @@ const submitReason = () => {
     const url = reasonDialog.value === 'reopen' ? `${base}/reopen` : `${base}/entries/${entry.value.id}/cancel`;
     reasonForm.post(url, { preserveScroll: true, onSuccess: () => (reasonDialog.value = null) });
 };
+const submitToAccounting = async () => {
+    const text = isReturned.value
+        ? 'It goes back to Accounting to check the withholding tax again; HRD can’t change it until it is returned.'
+        : 'The Accountant III reviews it and enters the withholding tax, then returns it to HRD to finalize. HRD can’t change it meanwhile.';
+    if (await confirm({ title: `Submit the payroll for ${props.run.period} to Accounting?`, text, confirmText: 'Submit' })) {
+        post('/submit');
+    }
+};
+
+// Accounting: withholding tax for everyone at once, then back to HRD.
+const taxRows = computed(() => props.entries.filter((item) => !item.cancelled));
+const taxForm = useForm({ taxes: Object.fromEntries(taxRows.value.map((item) => [item.id, item.withholding_tax || ''])) });
+const taxNet = (row) => row.net_pay + row.withholding_tax - Number(taxForm.taxes[row.id] || 0);
+const taxTotal = computed(() => taxRows.value.reduce((total, row) => total + Number(taxForm.taxes[row.id] || 0), 0));
+const saveTaxes = () => taxForm.put(`${base}/withholding-tax`, { preserveScroll: true, onSuccess: () => taxForm.defaults() });
+const returnDialog = ref(false);
+const returnForm = useForm({ note: '' });
+const missingTax = computed(() => taxRows.value.filter((row) => !row.own && !Number(taxForm.taxes[row.id] || 0)).length);
+const sendBack = () => returnForm.post(`${base}/return`, { preserveScroll: true, onSuccess: () => (returnDialog.value = false) });
+
 const destroy = async () => {
     if (await confirm({ title: `Delete the draft for ${props.run.period}?`, tone: 'danger', confirmText: 'Delete' })) {
         router.delete(base);
@@ -115,10 +146,9 @@ const columns = [
     { key: 'office', label: 'Office' },
     { key: 'basic_salary', label: 'Basic', align: 'right' },
     { key: 'gross_pay', label: 'Gross', align: 'right' },
+    { key: 'withholding_tax', label: 'W/Tax', align: 'right' },
     { key: 'total_deductions', label: 'Deductions', align: 'right' },
     { key: 'net_pay', label: 'Net pay', align: 'right' },
-    { key: 'first_half', label: '1st Quincena', align: 'right' },
-    { key: 'second_half', label: '2nd Quincena', align: 'right' },
     { key: 'actions', label: '', sortable: false, export: false },
 ];
 </script>
@@ -128,32 +158,38 @@ const columns = [
 
     <PageHeader
         :title="`Payroll — ${run.period}`"
-        :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Payroll', href: '/admin/hr/payroll' }, { label: run.period }]"
+        :breadcrumbs="canViewAll ? [{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Payroll', href: '/admin/hr/payroll' }, { label: run.period }] : [{ label: 'Payroll Tax Review', href: '/payroll/tax-review' }, { label: run.period }]"
     >
         <template #actions>
             <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/general-payroll`" external><Icon name="printer" size="sm" />General Payroll</Button>
             <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/remittances`"><Icon name="database" size="sm" />Remittances</Button>
-            <Button variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/reconciliation`"><Icon name="clipboard" size="sm" />Compare with workbook</Button>
+            <Button v-if="canViewAll" variant="secondary" :href="`/admin/hr/payroll/runs/${run.id}/reconciliation`"><Icon name="clipboard" size="sm" />Compare with workbook</Button>
             <template v-if="canManage">
-                <template v-if="isDraft">
+                <template v-if="withHrd">
                     <Button variant="secondary" @click="regenerate"><Icon name="refresh" size="sm" />Regenerate</Button>
-                    <Button variant="secondary" @click="destroy" icon="trash">Delete draft</Button>
-                    <Button variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
+                    <Button v-if="isDraft" variant="secondary" @click="destroy" icon="trash">Delete draft</Button>
+                    <Button :variant="isDraft ? 'primary' : 'secondary'" @click="submitToAccounting"><Icon name="arrowRight" size="sm" />{{ isDraft ? 'Submit to Accounting' : 'Send to Accounting again' }}</Button>
+                    <Button v-if="isReturned" variant="success" @click="finalize"><Icon name="checkCircle" size="sm" />Finalize</Button>
                 </template>
-                <Button v-else variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
+                <Button v-else-if="isFinalized" variant="secondary" @click="askReason('reopen')">Reopen to correct</Button>
             </template>
+            <Button v-if="canEnterTax && withAccounting" variant="success" @click="returnDialog = true"><Icon name="arrowLeft" size="sm" />Return to HRD</Button>
         </template>
     </PageHeader>
 
     <div class="mb-6 grid gap-4 lg:grid-cols-3">
         <Card title="Status" icon="clipboard">
             <dl class="space-y-2 text-sm">
-                <div class="flex justify-between gap-3"><dt class="text-text-muted">Status</dt><dd><StatusBadge :status="isDraft ? 'draft' : 'active'" :label="run.status_label" /></dd></div>
-                <div class="flex justify-between gap-3"><dt class="text-text-muted">Releases</dt><dd class="text-right text-text">{{ formatCalendarDate(run.first_release_on) }} · {{ formatCalendarDate(run.second_release_on) }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-text-muted">Status</dt><dd><StatusBadge :status="statusTone[run.status]" :label="run.status_label" /></dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-text-muted">Release</dt><dd class="text-right text-text">{{ formatCalendarDate(run.release_on) }}</dd></div>
+                <div v-if="run.submitted_at" class="flex justify-between gap-3"><dt class="text-text-muted">To Accounting</dt><dd class="text-right text-text">{{ formatDateTime(run.submitted_at) }}<span v-if="run.submitted_by"> by {{ run.submitted_by }}</span></dd></div>
+                <div v-if="withAccounting && reviewers.length" class="flex justify-between gap-3"><dt class="text-text-muted">Waiting on</dt><dd class="text-right text-text">{{ reviewers.join(", ") }}</dd></div>
+                <div v-if="run.returned_at" class="flex justify-between gap-3"><dt class="text-text-muted">Returned</dt><dd class="text-right text-text">{{ formatDateTime(run.returned_at) }}<span v-if="run.returned_by"> by {{ run.returned_by }}</span></dd></div>
                 <div v-if="run.finalized_at" class="flex justify-between gap-3"><dt class="text-text-muted">Finalized</dt><dd class="text-right text-text">{{ formatDateTime(run.finalized_at) }}<span v-if="run.finalized_by"> by {{ run.finalized_by }}</span></dd></div>
                 <div v-if="run.created_by" class="flex justify-between gap-3"><dt class="text-text-muted">Drafted by</dt><dd class="text-right text-text">{{ run.created_by }}</dd></div>
             </dl>
             <p v-if="run.remarks" class="mt-3 border-t border-border pt-3 text-sm text-text">{{ run.remarks }}</p>
+            <p v-if="run.accounting_note" class="mt-3 border-t border-border pt-3 text-sm text-text">Accounting: {{ run.accounting_note }}</p>
             <p v-if="run.reopen_reason" class="mt-3 border-t border-border pt-3 text-sm text-text-muted">Last reopened: {{ run.reopen_reason }}</p>
         </Card>
         <Card title="Totals" icon="database" class="lg:col-span-2">
@@ -162,18 +198,87 @@ const columns = [
                 <div><dt class="text-text-muted">Gross</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.gross) }}</dd></div>
                 <div><dt class="text-text-muted">Deductions</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.deductions) }}</dd></div>
                 <div><dt class="text-text-muted">Net pay</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ formatPeso(run.totals.net) }}</dd></div>
-                <div><dt class="text-text-muted">1st quincena (15th)</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.first_half) }}</dd></div>
-                <div><dt class="text-text-muted">2nd quincena (30th)</dt><dd class="tabular-nums text-text">{{ formatPeso(run.totals.second_half) }}</dd></div>
             </dl>
         </Card>
     </div>
+
+    <Alert v-if="canManage && !isFinalized && !reviewers.length" tone="danger" title="Nobody in Accounting can receive this payroll" class="mb-6">
+        No one holds the Accountant III item on the Plantilla, and no one has the Accountant role. Fill the item or give someone the role in Roles &amp; Permissions.
+    </Alert>
+    <Alert v-if="isDraft" tone="info" title="Prepared by HRD" class="mb-6">
+        Review everyone’s pay and deductions. Withholding tax is left blank: submit the payroll to Accounting, where the Accountant III enters it and returns the payroll to HRD to finalize.
+    </Alert>
+    <Alert v-else-if="withAccounting" tone="warning" title="With Accounting" class="mb-6">
+        <template v-if="canEnterTax">Enter each person’s withholding tax below and save, then return the payroll to HRD.</template>
+        <template v-else>The Accountant III is reviewing this payroll and entering the withholding tax. It can be changed again once it is returned to HRD.</template>
+    </Alert>
+    <Alert v-else-if="isReturned && canManage" tone="info" title="Returned by Accounting" class="mb-6">
+        The withholding tax is in. Check the payroll, then finalize it, or send it to Accounting again if the tax needs another look.
+    </Alert>
+
+    <Card v-if="canEnterTax && withAccounting" title="Withholding tax" icon="clipboard" class="mb-6" description="Leave blank or 0 for no tax. Last month’s tax is shown as a guide.">
+        <form id="tax-form" @submit.prevent="saveTaxes">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <caption class="sr-only">Withholding tax for {{ run.period }}</caption>
+                    <thead>
+                        <tr class="border-b border-border text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                            <th scope="col" class="py-2 pr-3">Name</th>
+                            <th scope="col" class="py-2 pr-3 text-right">Gross</th>
+                            <th scope="col" class="py-2 pr-3 text-right">Other deductions</th>
+                            <th scope="col" class="py-2 pr-3 text-right">Last month</th>
+                            <th scope="col" class="py-2 pr-3 text-right">Withholding tax</th>
+                            <th scope="col" class="py-2 text-right">Net pay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="row in taxRows" :key="row.id" class="border-b border-border last:border-0">
+                            <td class="py-1.5 pr-3">
+                                <span class="font-medium text-text">{{ row.name }}</span>
+                                <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></div>
+                            </td>
+                            <td class="py-1.5 pr-3 text-right tabular-nums">{{ formatPeso(row.gross_pay) }}</td>
+                            <td class="py-1.5 pr-3 text-right tabular-nums">{{ formatPeso(row.total_deductions - row.withholding_tax) }}</td>
+                            <td class="py-1.5 pr-3 text-right text-text-muted tabular-nums">{{ previousTax[row.employee_id] != null ? formatPeso(previousTax[row.employee_id]) : '—' }}</td>
+                            <td class="py-1.5 pr-3 text-right">
+                                <label :for="`tax-${row.id}`" class="sr-only">Withholding tax of {{ row.name }}</label>
+                                <input
+                                    :id="`tax-${row.id}`"
+                                    v-model="taxForm.taxes[row.id]"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    :disabled="row.own"
+                                    :title="row.own ? 'Your own: someone else enters it' : null"
+                                    class="form-control w-32 px-2 py-1 text-right"
+                                />
+                                <InputError :message="taxForm.errors[`taxes.${row.id}`]" />
+                            </td>
+                            <td class="py-1.5 text-right font-medium tabular-nums">{{ formatPeso(taxNet(row)) }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-border">
+                            <th scope="row" colspan="4" class="pt-2 text-left font-semibold text-text">Total withholding tax</th>
+                            <td class="pt-2 pr-3 text-right font-semibold tabular-nums">{{ formatPeso(taxTotal) }}</td>
+                            <td />
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <InputError :message="taxForm.errors.taxes || taxForm.errors.run" />
+        </form>
+        <template #footer>
+            <Button type="submit" form="tax-form" variant="success" :loading="taxForm.processing" :disabled="!taxForm.isDirty" icon="check">Save withholding tax</Button>
+        </template>
+    </Card>
 
     <Alert v-if="belowMinimum.length" tone="warning" title="Net pay below the GAA minimum" class="mb-6">
         {{ belowMinimum.map((item) => item.name).join(', ') }}: net take-home pay under {{ formatPeso(minimumNet) }} a month.
         Check their deductions before finalizing.
     </Alert>
 
-    <Card title="Payroll register" icon="users" :description="isDraft ? 'Open a row to see and adjust that person’s pay.' : 'Open a row to see that person’s pay, or their payslip.'">
+    <Card title="Payroll register" icon="users" :description="editable ? 'Open a row to see and adjust that person’s pay.' : isFinalized ? 'Open a row to see that person’s pay, or their payslip.' : 'Open a row to see that person’s pay.'">
         <DataTable :columns="columns" :rows="entries" :caption="`Payroll register, ${run.period}`" :export-name="`imis-payroll-${run.month}`" numbered>
             <template #cell-name="{ row }">
                 <button type="button" class="text-left font-medium text-text hover:text-link" @click="openId = row.id">{{ row.name }}</button>
@@ -187,14 +292,13 @@ const columns = [
             <template #cell-office="{ row }">{{ row.office || '—' }}</template>
             <template #cell-basic_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.basic_salary) }}</span></template>
             <template #cell-gross_pay="{ row }"><span class="tabular-nums">{{ formatPeso(row.gross_pay) }}</span></template>
+            <template #cell-withholding_tax="{ row }"><span class="tabular-nums" :class="row.withholding_tax ? '' : 'text-text-muted'">{{ row.withholding_tax ? formatPeso(row.withholding_tax) : '—' }}</span></template>
             <template #cell-total_deductions="{ row }"><span class="tabular-nums">{{ formatPeso(row.total_deductions) }}</span></template>
             <template #cell-net_pay="{ row }"><span class="font-semibold tabular-nums">{{ formatPeso(row.net_pay) }}</span></template>
-            <template #cell-first_half="{ row }"><span class="tabular-nums">{{ formatPeso(row.first_half) }}</span></template>
-            <template #cell-second_half="{ row }"><span class="tabular-nums">{{ formatPeso(row.second_half) }}</span></template>
             <template #cell-actions="{ row }">
                 <div class="flex justify-end gap-1">
                     <ActionButton icon="eye" tone="neutral" :label="`Details of ${row.name}`" @click="openId = row.id" />
-                    <ActionButton v-if="!isDraft" icon="printer" :label="`Payslip of ${row.name}`" :href="`/payslips/${row.id}`" external />
+                    <ActionButton v-if="isFinalized" icon="printer" :label="`Payslip of ${row.name}`" :href="`/payslips/${row.id}`" external />
                 </div>
             </template>
         </DataTable>
@@ -277,8 +381,6 @@ const columns = [
                     <tr><th scope="row" class="pt-2 text-left font-medium text-text">Gross pay</th><td class="pt-2 text-right tabular-nums">{{ formatPeso(entry.gross_pay) }}</td><td v-if="canAdjust" /></tr>
                     <tr><th scope="row" class="text-left font-medium text-text">Total deductions</th><td class="text-right tabular-nums">{{ formatPeso(entry.total_deductions) }}</td><td v-if="canAdjust" /></tr>
                     <tr><th scope="row" class="pt-1 text-left font-semibold text-text">Net pay</th><td class="pt-1 text-right font-semibold tabular-nums">{{ formatPeso(entry.net_pay) }}</td><td v-if="canAdjust" /></tr>
-                    <tr class="text-text-muted"><th scope="row" class="pt-1 text-left text-xs font-normal">1st quincena (15th)</th><td class="pt-1 text-right text-xs tabular-nums">{{ formatPeso(entry.first_half) }}</td><td v-if="canAdjust" /></tr>
-                    <tr class="text-text-muted"><th scope="row" class="text-left text-xs font-normal">2nd quincena (30th)</th><td class="text-right text-xs tabular-nums">{{ formatPeso(entry.second_half) }}</td><td v-if="canAdjust" /></tr>
                 </tfoot>
             </table>
 
@@ -315,7 +417,7 @@ const columns = [
         <template #footer>
             <Button v-if="canAdjust" variant="ghost" @click="rebuild"><Icon name="refresh" size="sm" />Rebuild from profile</Button>
             <Button v-if="canCancel" variant="ghost" class="mr-auto" @click="askReason('cancel')" icon="close">Cancel payslip</Button>
-            <Button v-if="entry && !isDraft" variant="secondary" :href="`/payslips/${entry.id}`" external><Icon name="printer" size="sm" />Payslip</Button>
+            <Button v-if="entry && isFinalized" variant="secondary" :href="`/payslips/${entry.id}`" external><Icon name="printer" size="sm" />Payslip</Button>
             <Button v-if="entry" variant="secondary" :href="`/admin/hr/payroll/profiles/${entry.employee_id}`">Pay profile</Button>
             <Button @click="openId = null" icon="close">Close</Button>
         </template>
@@ -324,7 +426,7 @@ const columns = [
     <Modal :open="reasonDialog !== null" :title="reasonDialog === 'reopen' ? `Reopen ${run.period} to correct it` : `Cancel ${entry?.name ?? ''}’s payslip`" size="sm" @close="reasonDialog = null">
         <form id="reason-form" @submit.prevent="submitReason">
             <p class="mb-3 text-sm text-text-muted">
-                <template v-if="reasonDialog === 'reopen'">The payroll becomes a draft again and its loan payments stop counting until it is finalized. The reason is kept in the audit trail.</template>
+                <template v-if="reasonDialog === 'reopen'">The payroll goes back to HRD, with the withholding tax kept, and its loan payments stop counting until it is finalized again. The reason is kept in the audit trail.</template>
                 <template v-else>The payslip stays on the payroll for the record but counts toward no total or loan balance, and any payslip request for it is closed.</template>
             </p>
             <InputLabel for="reason">Reason</InputLabel>
@@ -334,6 +436,22 @@ const columns = [
         <template #footer>
             <Button variant="ghost" @click="reasonDialog = null" icon="arrowLeft">Back</Button>
             <Button type="submit" form="reason-form" variant="danger" :loading="reasonForm.processing">{{ reasonDialog === 'reopen' ? 'Reopen' : 'Cancel payslip' }}</Button>
+        </template>
+    </Modal>
+
+    <Modal :open="returnDialog" :title="`Return ${run.period} to HRD`" size="sm" @close="returnDialog = false">
+        <form id="return-form" @submit.prevent="sendBack">
+            <p class="mb-3 text-sm text-text-muted">
+                HRD finalizes the payroll with the withholding tax saved above. Save any changes first.
+                <template v-if="missingTax"> {{ missingTax }} {{ missingTax === 1 ? 'person has' : 'people have' }} no withholding tax.</template>
+            </p>
+            <InputLabel for="return-note">Note to HRD (optional)</InputLabel>
+            <textarea id="return-note" v-model="returnForm.note" rows="3" maxlength="1000" class="block w-full form-control mt-1 px-3 py-2" />
+            <InputError :message="returnForm.errors.note || returnForm.errors.run" />
+        </form>
+        <template #footer>
+            <Button variant="ghost" @click="returnDialog = false" icon="arrowLeft">Back</Button>
+            <Button type="submit" form="return-form" variant="success" :loading="returnForm.processing" :disabled="taxForm.isDirty">Return to HRD</Button>
         </template>
     </Modal>
 </template>

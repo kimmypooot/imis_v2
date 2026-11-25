@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * HR-8: one month's payroll, released in two halves (the 15th and the
- * 30th). Written only by App\Support\HR\Payroll\Payrolls.
+ * HR-8: one month's payroll, covering the whole month as the General
+ * Payroll does and released once, on the last day of the month. Written
+ * only by App\Support\HR\Payroll\Payrolls.
  */
 class PayrollRun extends Model
 {
@@ -23,8 +24,9 @@ class PayrollRun extends Model
             'year' => 'integer',
             'month' => 'integer',
             'status' => PayrollRunStatus::class,
-            'first_release_on' => 'date:Y-m-d',
-            'second_release_on' => 'date:Y-m-d',
+            'release_on' => 'date:Y-m-d',
+            'submitted_at' => 'datetime',
+            'returned_at' => 'datetime',
             'finalized_at' => 'datetime',
         ];
     }
@@ -42,6 +44,16 @@ class PayrollRun extends Model
     public function finalizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'finalized_by');
+    }
+
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function returner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by');
     }
 
     public function isFinalized(): bool

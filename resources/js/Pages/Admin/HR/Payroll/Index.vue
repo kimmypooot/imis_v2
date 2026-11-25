@@ -54,7 +54,7 @@ const columns = [
     { key: 'gross', label: 'Gross', align: 'right', value: (row) => row.totals.gross },
     { key: 'deductions', label: 'Deductions', align: 'right', value: (row) => row.totals.deductions },
     { key: 'net', label: 'Net pay', align: 'right', value: (row) => row.totals.net },
-    { key: 'releases', label: 'Releases', sortable: false },
+    { key: 'releases', label: 'Release', sortable: false },
     { key: 'actions', label: '', sortable: false, export: false },
 ];
 </script>
@@ -64,7 +64,7 @@ const columns = [
 
     <PageHeader
         title="Payroll"
-        description="Monthly payrolls from the plantilla, pay profiles and loans, released on the 15th and the 30th."
+        description="Monthly payrolls from the plantilla, pay profiles and loans, covering the whole month and released at its end."
         :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Payroll' }]"
     >
         <template v-if="canManage" #actions>
@@ -96,13 +96,13 @@ const columns = [
                 <template #cell-period="{ row }">
                     <Link :href="`/admin/hr/payroll/runs/${row.id}`" class="font-medium text-text hover:text-link">{{ row.period }}</Link>
                 </template>
-                <template #cell-status="{ row }"><StatusBadge :status="row.status === 'finalized' ? 'active' : 'draft'" :label="row.status_label" /></template>
+                <template #cell-status="{ row }"><StatusBadge :status="{ draft: 'draft', with_accounting: 'warning', returned: 'info', finalized: 'active' }[row.status]" :label="row.status_label" /></template>
                 <template #cell-people="{ row }"><span class="tabular-nums">{{ row.totals.people }}</span></template>
                 <template #cell-gross="{ row }"><span class="tabular-nums">{{ formatPeso(row.totals.gross) }}</span></template>
                 <template #cell-deductions="{ row }"><span class="tabular-nums">{{ formatPeso(row.totals.deductions) }}</span></template>
                 <template #cell-net="{ row }"><span class="font-medium tabular-nums">{{ formatPeso(row.totals.net) }}</span></template>
                 <template #cell-releases="{ row }">
-                    <span class="text-xs whitespace-nowrap text-text-muted">{{ formatCalendarDate(row.first_release_on) }} · {{ formatCalendarDate(row.second_release_on) }}</span>
+                    <span class="text-xs whitespace-nowrap text-text-muted">{{ formatCalendarDate(row.release_on) }}</span>
                 </template>
                 <template #cell-actions="{ row }">
                     <Button variant="link" size="sm" @click="open(row)">Open<span class="sr-only"> {{ row.period }}</span></Button>

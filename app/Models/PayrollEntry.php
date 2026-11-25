@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * HR-8: one person's pay in a monthly payroll — a snapshot of who they
  * were then (name, position, item, grade/step, office), their earnings
- * and deductions (lines), and the totals, with net pay split between the
- * two releases. What a payslip prints.
+ * and deductions (lines), and the totals, released once at the end of the
+ * month. What a payslip prints.
  */
 class PayrollEntry extends Model
 {
@@ -26,8 +26,6 @@ class PayrollEntry extends Model
             'gross_pay' => 'decimal:2',
             'total_deductions' => 'decimal:2',
             'net_pay' => 'decimal:2',
-            'first_half' => 'decimal:2',
-            'second_half' => 'decimal:2',
             'cancelled_at' => 'datetime',
         ];
     }

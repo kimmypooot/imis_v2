@@ -37,7 +37,7 @@ class PayrollSource implements MetricSource
         $state = match (true) {
             $run === null => 'Not yet drafted',
             $run->status === PayrollRunStatus::Finalized => 'Finalized',
-            default => 'Draft — not final',
+            default => $run->status->label().' — not final',
         };
         $link = ['href' => '/admin/hr/payroll', 'permission' => PermissionName::PayrollView->value];
 

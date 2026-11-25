@@ -198,6 +198,9 @@ enum AuditEvent: string
     case PayrollCreated = 'payroll_run.created';
     case PayrollRegenerated = 'payroll_run.regenerated';
     case PayrollAdjusted = 'payroll_entry.adjusted';
+    case PayrollSubmitted = 'payroll_run.submitted_to_accounting';
+    case PayrollTaxEntered = 'payroll_run.withholding_tax_entered';
+    case PayrollReturned = 'payroll_run.returned_to_hrd';
     case PayrollFinalized = 'payroll_run.finalized';
     case PayrollReopened = 'payroll_run.reopened';
     case PayrollDeleted = 'payroll_run.deleted';

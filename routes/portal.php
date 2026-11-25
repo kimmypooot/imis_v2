@@ -34,6 +34,7 @@ use App\Http\Controllers\MyServiceRecordController;
 use App\Http\Controllers\MySignatureController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationalUnitController;
+use App\Http\Controllers\PayrollTaxReviewController;
 use App\Http\Controllers\PayslipApprovalController;
 use App\Http\Controllers\PayslipController;
 use App\Http\Controllers\PdsPhotoController;
@@ -174,6 +175,8 @@ Route::middleware('auth')->group(function () {
     Route::get('payslips/approvals', [PayslipApprovalController::class, 'index'])->name('payslips.approvals');
     Route::post('payslips/approvals/{payslipRequest}', [PayslipApprovalController::class, 'decide'])->middleware('throttle:60,1')->name('payslips.approvals.decide');
     Route::get('payslips/{entry}', [PayslipController::class, 'show'])->name('payslips.show');
+    // Accounting's queue of payrolls waiting for withholding tax (the Accountant III, or `payroll.tax`; PayrollRunPolicy).
+    Route::get('payroll/tax-review', [PayrollTaxReviewController::class, 'index'])->name('payroll.tax-review');
 
     // Your notifications (the top-bar bell).
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

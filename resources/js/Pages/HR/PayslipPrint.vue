@@ -65,8 +65,8 @@ const print = () => window.print();
                     <tr>
                         <th scope="row">Office</th>
                         <td>{{ entry.office || '—' }}</td>
-                        <th scope="row">Releases</th>
-                        <td>{{ longDate(run.first_release_on) }} · {{ longDate(run.second_release_on) }}</td>
+                        <th scope="row">Release</th>
+                        <td>{{ longDate(run.release_on) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -94,8 +94,6 @@ const print = () => window.print();
             <table class="net">
                 <tbody>
                     <tr class="total"><th scope="row">NET PAY</th><td class="right">₱ {{ money(entry.net_pay) }}</td></tr>
-                    <tr><th scope="row">1st quincena (15th)</th><td class="right">{{ money(entry.first_half) }}</td></tr>
-                    <tr><th scope="row">2nd quincena (30th)</th><td class="right">{{ money(entry.second_half) }}</td></tr>
                 </tbody>
             </table>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AuditEvent;
 use App\Enums\PayComponentKind;
 use App\Enums\PayslipRequestStatus;
+use App\Enums\PermissionName;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeLoan;
 use App\Models\PayComponent;
@@ -13,7 +14,9 @@ use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Models\PayslipRequest;
 use App\Support\HR\Payroll\DeductionNotices;
+use App\Support\HR\Payroll\GeneralPayrollSheet;
 use App\Support\HR\Payroll\Loans;
+use App\Support\HR\Payroll\PayrollAccounting;
 use App\Support\HR\Payroll\Payrolls;
 use App\Support\HR\Payroll\PayslipApprovers;
 use App\Support\HR\Payroll\Remittances;
@@ -68,8 +71,9 @@ class PayrollController extends Controller
     public function show(Request $request, PayrollRun $run, Payrolls $payrolls): Response
     {
         $this->authorize('view', $run);
-        $run->load(['creator', 'finalizer']);
+        $run->load(['creator', 'finalizer', 'submitter', 'returner']);
         $canManage = $request->user()->can('manage', PayrollRun::class);
+        $canEnterTax = $request->user()->can('enterTax', PayrollRun::class);
 
         return Inertia::render('Admin/HR/Payroll/Show', [
             'run' => $payrolls->presentRun($run),
@@ -80,6 +84,12 @@ class PayrollController extends Controller
                 ]),
             'leftOut' => $payrolls->leftOut($run),
             'canManage' => $canManage,
+            'canEnterTax' => $canEnterTax,
+            // Whether the payroll list, profiles and workbook check are open to them (Accounting may only have this page).
+            'canViewAll' => $request->user()->hasAnyPermission([PermissionName::PayrollView->value, PermissionName::PayrollManage->value]),
+            'reviewers' => app(PayrollAccounting::class)->reviewers()->pluck('name'),
+            // Last month's withholding tax per employee, as a guide for Accounting.
+            'previousTax' => $canEnterTax ? $payrolls->previousWithholdingTax($run) : (object) [],
             'components' => $canManage ? PayComponent::query()->active()->ordered()->where('kind', '!=', PayComponentKind::Loan->value)->get()
                 ->map(fn (PayComponent $component) => ['value' => $component->id, 'label' => $component->name, 'kind' => $component->kind->isDeduction() ? 'deduction' : 'earning'])
                 : [],
@@ -99,14 +109,14 @@ class PayrollController extends Controller
     }
 
     /** The General Payroll for signing and printing (landscape, long bond). */
-    public function generalPayroll(PayrollRun $run, Payrolls $payrolls): Response
+    public function generalPayroll(PayrollRun $run, Payrolls $payrolls, GeneralPayrollSheet $sheet): Response
     {
         $this->authorize('view', $run);
         $run->load(['creator', 'finalizer']);
 
         return Inertia::render('Admin/HR/Payroll/GeneralPayroll', [
             'run' => $payrolls->presentRun($run),
-            'payroll' => $payrolls->generalPayroll($run),
+            'sheet' => $sheet->build($run),
             'organization' => Settings::get('organization_name'),
             'address' => Settings::get('office_address'),
         ]);
@@ -120,6 +130,52 @@ class PayrollController extends Controller
         $this->audit()->record(AuditEvent::PayrollRegenerated, "Regenerated the {$run->label}", $run, ['entries' => $run->entries()->count()]);
 
         return back()->with('status', "Payroll for {$run->period} regenerated from pay profiles.");
+    }
+
+    /** HRD → MSD: the Accountant III reviews it and enters withholding tax. */
+    public function submit(Request $request, PayrollRun $run, Payrolls $payrolls, PayrollAccounting $accounting): RedirectResponse
+    {
+        $this->authorize('manage', PayrollRun::class);
+
+        $payrolls->submitToAccounting($run, $request->user());
+        $this->audit()->record(AuditEvent::PayrollSubmitted, "Submitted the {$run->label} to Accounting", $run);
+        $told = $accounting->notifySubmitted($run, $request->user());
+
+        $names = $accounting->reviewers()->pluck('name');
+        if ($told === 0) {
+            return back()->with('error', "Payroll for {$run->period} submitted, but nobody in Accounting can receive it: no one holds the ".PayrollAccounting::ACCOUNTANT_TITLE.' item on the Plantilla, and no one has the Accountant role.');
+        }
+
+        return back()->with('status', "Payroll for {$run->period} submitted to Accounting ({$names->join(', ', ' and ')}) for review and withholding tax.");
+    }
+
+    public function withholdingTax(Request $request, PayrollRun $run, Payrolls $payrolls): RedirectResponse
+    {
+        $this->authorize('enterTax', PayrollRun::class);
+        $data = $request->validate([
+            'taxes' => ['required', 'array'],
+            'taxes.*' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
+        ]);
+
+        $changed = $payrolls->enterWithholdingTax($run, $data['taxes'], $request->user());
+        if ($changed > 0) {
+            $this->audit()->record(AuditEvent::PayrollTaxEntered, "Entered withholding tax on the {$run->label}", $run, ['entries' => $changed]);
+        }
+
+        return back()->with('status', $changed > 0 ? "Withholding tax saved for {$changed} ".str('person')->plural($changed).'.' : 'No withholding tax changed.');
+    }
+
+    /** MSD → HRD, to finalize. */
+    public function returnToHrd(Request $request, PayrollRun $run, Payrolls $payrolls, PayrollAccounting $accounting): RedirectResponse
+    {
+        $this->authorize('enterTax', PayrollRun::class);
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:1000']]);
+
+        $payrolls->returnToHrd($run, $request->user(), $data['note'] ?? null);
+        $this->audit()->record(AuditEvent::PayrollReturned, "Returned the {$run->label} to HRD", $run, ['with_note' => filled($data['note'] ?? null)]);
+        $accounting->notifyReturned($run, $request->user());
+
+        return back()->with('status', "Payroll for {$run->period} returned to HRD.");
     }
 
     public function finalize(Request $request, PayrollRun $run, Payrolls $payrolls, DeductionNotices $notices): RedirectResponse
@@ -143,7 +199,7 @@ class PayrollController extends Controller
             ->where('status', PayslipRequestStatus::Approved)->count();
         $this->audit()->record(AuditEvent::PayrollReopened, "Reopened the {$run->label}: {$data['reason']}", $run, ['approved_payslips' => $approved, 'reason' => $data['reason']]);
 
-        return back()->with('status', "Payroll for {$run->period} reopened as a draft.".($approved ? " {$approved} approved payslip(s) will show the corrected figures once it's finalized again." : ''));
+        return back()->with('status', "Payroll for {$run->period} reopened; it is back with HRD, withholding tax kept.".($approved ? " {$approved} approved payslip(s) will show the corrected figures once it's finalized again." : ''));
     }
 
     public function destroy(PayrollRun $run, Payrolls $payrolls): RedirectResponse

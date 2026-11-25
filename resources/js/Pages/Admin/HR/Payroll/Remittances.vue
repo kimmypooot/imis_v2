@@ -38,8 +38,8 @@ const slug = (key) => `imis-${key.replace('_', '-')}-${props.run.month}`;
         :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Payroll', href: '/admin/hr/payroll' }, { label: run.period, href: `/admin/hr/payroll/runs/${run.id}` }, { label: 'Remittances' }]"
     />
 
-    <Alert v-if="run.status !== 'finalized'" tone="warning" title="This payroll is still a draft" class="mb-6">
-        The lists below follow the draft and will change if it does. Finalize the payroll before paying anyone.
+    <Alert v-if="run.status !== 'finalized'" tone="warning" title="This payroll is not final yet" class="mb-6">
+        The lists below follow the payroll as it stands (withholding tax comes from Accounting) and will change if it does. Finalize the payroll before paying anyone.
     </Alert>
 
     <div class="space-y-6">

@@ -431,11 +431,22 @@ Route::middleware('auth')->group(function () {
     // HR off their own pay. Payrolls sit under /runs/{run}, clear of the
     // fixed paths. Scoped bindings: an entry only resolves under its run,
     // a line under its entry, a pay item or loan under its employee.
-    Route::middleware('permission:payroll.view,payroll.manage')->scopeBindings()->group(function () {
+    Route::middleware('permission:payroll.view,payroll.manage,payroll.tax')->group(function () {
         Route::get('admin/hr/payroll', [PayrollController::class, 'index'])->name('admin.hr.payroll.index');
-        Route::get('admin/hr/payroll/runs/{run}', [PayrollController::class, 'show'])->name('admin.hr.payroll.show');
-        Route::get('admin/hr/payroll/runs/{run}/general-payroll', [PayrollController::class, 'generalPayroll'])->name('admin.hr.payroll.general');
-        Route::get('admin/hr/payroll/runs/{run}/remittances', [PayrollController::class, 'remittances'])->name('admin.hr.payroll.remittances');
+    });
+
+    // Accounting reads one payroll, enters withholding tax on one HRD
+    // submitted, and returns it to HRD. Like payslip approvals, the
+    // reviewer is who holds the Accountant III item (no role needed) or
+    // anyone with `payroll.tax`, so these are guarded by PayrollRunPolicy
+    // (`view`, `enterTax`) alone.
+    Route::get('admin/hr/payroll/runs/{run}', [PayrollController::class, 'show'])->name('admin.hr.payroll.show');
+    Route::get('admin/hr/payroll/runs/{run}/general-payroll', [PayrollController::class, 'generalPayroll'])->name('admin.hr.payroll.general');
+    Route::get('admin/hr/payroll/runs/{run}/remittances', [PayrollController::class, 'remittances'])->name('admin.hr.payroll.remittances');
+    Route::put('admin/hr/payroll/runs/{run}/withholding-tax', [PayrollController::class, 'withholdingTax'])->name('admin.hr.payroll.tax');
+    Route::post('admin/hr/payroll/runs/{run}/return', [PayrollController::class, 'returnToHrd'])->name('admin.hr.payroll.return');
+
+    Route::middleware('permission:payroll.view,payroll.manage')->scopeBindings()->group(function () {
         Route::get('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'show'])->name('admin.hr.payroll.reconciliation');
         Route::post('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'store'])->middleware('throttle:20,1')->name('admin.hr.payroll.reconciliation.store');
         Route::delete('admin/hr/payroll/runs/{run}/reconciliation', [PayrollReconciliationController::class, 'destroy'])->name('admin.hr.payroll.reconciliation.destroy');
@@ -449,6 +460,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:payroll.manage')->scopeBindings()->group(function () {
         Route::post('admin/hr/payroll/runs', [PayrollController::class, 'store'])->name('admin.hr.payroll.store');
         Route::post('admin/hr/payroll/runs/{run}/regenerate', [PayrollController::class, 'regenerate'])->name('admin.hr.payroll.regenerate');
+        Route::post('admin/hr/payroll/runs/{run}/submit', [PayrollController::class, 'submit'])->name('admin.hr.payroll.submit');
         Route::post('admin/hr/payroll/runs/{run}/finalize', [PayrollController::class, 'finalize'])->name('admin.hr.payroll.finalize');
         Route::post('admin/hr/payroll/runs/{run}/reopen', [PayrollController::class, 'reopen'])->name('admin.hr.payroll.reopen');
         Route::delete('admin/hr/payroll/runs/{run}', [PayrollController::class, 'destroy'])->name('admin.hr.payroll.destroy');

@@ -77,7 +77,9 @@ particular:
   numbers, items 34–40 and signed submissions are encrypted with
   `APP_KEY`, so that key must never be lost or changed carelessly.
   HR-8 (payroll: pay components, pay profiles, loans, monthly payrolls
-  released on the 15th/30th, payslips requested by staff and approved by
+  covering the whole month (one release at month end), prepared by HRD,
+  sent to the Accountant III for withholding tax and returned to HRD to
+  finalize, payslips requested by staff and approved by
   the head of HRD) is done; it has no legacy counterpart.
   Progress and next steps: `docs/hr-checkpoint.md`.
 - GAD Corner (`../gad-corner-v2`, a separate app under the hub like JPortal)
