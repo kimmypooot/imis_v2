@@ -52,11 +52,11 @@ const columns = [
     </PageHeader>
 
     <div class="space-y-6">
-        <Card v-if="canManage" title="Receive a hard copy" icon="documentText" description="Type the reference printed at the foot of each page. Only the latest printout can be received.">
+        <Card v-if="canManage" title="Receive a hard copy" icon="documentText" description="Type the reference printed at the foot of each page. The latest printout is received.">
             <form class="flex flex-wrap items-end gap-3" @submit.prevent="receive">
                 <div class="min-w-64">
                     <InputLabel for="receive-reference">Reference</InputLabel>
-                    <input id="receive-reference" v-model="receiving.reference" required placeholder="SALN-2025-00042 v2" class="form-control mt-1 block w-full px-3 py-2" />
+                    <input id="receive-reference" v-model="receiving.reference" required placeholder="SALN-2025-00042" class="form-control mt-1 block w-full px-3 py-2" />
                     <InputError :message="receiving.errors.reference" />
                 </div>
                 <Button type="submit" :loading="receiving.processing">Receive</Button>

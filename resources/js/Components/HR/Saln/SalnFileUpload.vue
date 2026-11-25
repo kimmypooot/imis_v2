@@ -34,7 +34,7 @@ const submit = () => form.post(props.url, { preserveScroll: true, forceFormData:
                 :hint="`PDF, JPG or PNG, up to ${Math.round(maxKilobytes / 1024)} MB. Filed privately in the 201 File.`"
             />
             <InputError :message="form.errors.file" />
-            <Button type="submit" variant="success" :loading="form.processing">File in the 201 File</Button>
+            <Button type="submit" variant="success" icon="upload" :loading="form.processing" :disabled="!form.file">File in the 201 File</Button>
         </form>
     </Card>
 </template>

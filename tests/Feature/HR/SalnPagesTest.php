@@ -124,7 +124,7 @@ class SalnPagesTest extends TestCase
         $committee = $this->userWith(['saln.review']);
         $saln = $this->saln();
 
-        $this->actingAs($hrd)->post('/admin/hr/saln/receive', ['reference' => $saln->reference().' v1'])->assertSessionHasNoErrors();
+        $this->actingAs($hrd)->post('/admin/hr/saln/receive', ['reference' => 'IMIS '.$saln->reference()])->assertSessionHasNoErrors();
         $this->assertSame(SalnStatus::Received, $saln->fresh()->status);
 
         $this->actingAs($committee)->post("/admin/hr/saln/{$saln->id}/decide", ['decision' => 'return', 'remarks' => ''])->assertSessionHasErrors('remarks');

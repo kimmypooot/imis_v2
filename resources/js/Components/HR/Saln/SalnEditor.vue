@@ -1,9 +1,10 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
@@ -41,6 +42,53 @@ const blank = {
 const start = JSON.parse(JSON.stringify({ ...blank, ...(props.saln.statement ?? {}) }));
 delete start.totals;
 
+// ── Amounts: thousands separators as you type ("1250000" → "1,250,000"),
+// two decimals on leaving the field. N/A is kept for tax-declaration values.
+// The server strips the commas, and the totals preview ignores them.
+const AMOUNT_COLUMNS = ['assessed_value', 'market_value', 'acquisition_cost', 'outstanding_balance'];
+/** "N/A" (or on its way to it): the peso sign steps aside. */
+const isNa = (value) => /^\s*n\s*\/?\s*a?\s*$/i.test(String(value ?? '')) && String(value ?? '').trim() !== '';
+const isAmount = (column) => column.type === 'money' || column.type === 'value';
+const groupDigits = (digits) => digits.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const formatAmount = (raw, finish = false) => {
+    const value = String(raw ?? '');
+    if (/[a-z/]/i.test(value)) return value.trim().toUpperCase().replace(/^NA$/, 'N/A');
+    const clean = value.replace(/[^\d.]/g, '');
+    if (clean === '') return '';
+    const [whole, ...rest] = clean.split('.');
+    const cents = rest.join('').slice(0, 2);
+    const grouped = groupDigits(whole === '' ? '0' : whole);
+    if (finish) return `${grouped}.${cents.padEnd(2, '0')}`;
+    return rest.length ? `${grouped}.${cents}` : grouped;
+};
+const onAmountInput = (event, row, key) => {
+    const input = event.target;
+    const raw = input.value;
+    // Keep the cursor after the same digit once commas move.
+    const digitsBefore = raw.slice(0, input.selectionStart ?? raw.length).replace(/[^\d.]/g, '').length;
+    const formatted = formatAmount(raw);
+    row[key] = formatted;
+    input.value = formatted;
+    if (/[a-z\/]/i.test(formatted)) return;
+    let position = 0;
+    for (let seen = 0; position < formatted.length && seen < digitsBefore; position++) {
+        if (/[\d.]/.test(formatted[position])) seen++;
+    }
+    input.setSelectionRange(position, position);
+};
+const onAmountBlur = (row, key) => {
+    row[key] = formatAmount(row[key], true);
+};
+
+// Show saved amounts with their separators.
+for (const table of ['real_properties', 'personal_properties', 'liabilities']) {
+    for (const row of start[table] ?? []) {
+        for (const key of AMOUNT_COLUMNS) {
+            if (key in row && row[key] !== '' && row[key] !== null) row[key] = formatAmount(row[key], true);
+        }
+    }
+}
+
 const form = useForm({
     statement: start,
     oath_mode: props.saln.oath_mode,
@@ -53,7 +101,7 @@ const err = (path) => form.errors[`statement.${path}`];
 const errorList = computed(() => Object.values(form.errors));
 
 // ── Tables, following the form's columns ───────────────────────────
-const owner = { key: 'owner', label: 'Whose', type: 'owner', width: 'w-44' };
+const owner = { key: 'owner', label: 'Whose', type: 'owner', width: 'w-64' };
 const TABLES = {
     real_properties: [
         owner,
@@ -69,7 +117,7 @@ const TABLES = {
     personal_properties: [
         owner,
         { key: 'description', label: 'Description' },
-        { key: 'acquisition_year', label: 'Year acquired', width: 'w-28' },
+        { key: 'acquisition_year', label: 'Year acquired', width: 'w-36' },
         { key: 'acquisition_cost', label: 'Acquisition cost / amount', type: 'money', width: 'w-36' },
     ],
     liabilities: [
@@ -87,9 +135,9 @@ const TABLES = {
     ],
     relatives: [
         { key: 'name', label: 'Name of relative' },
-        { key: 'relationship', label: 'Relationship' },
+        { key: 'relationship', label: 'Relationship', width: 'w-36' },
         { key: 'position', label: 'Position' },
-        { key: 'agency_and_address', label: 'Agency/office and address' },
+        { key: 'agency_and_address', label: 'Agency/office and address', width: 'w-[22rem]' },
     ],
 };
 const SECTIONS = [
@@ -122,6 +170,24 @@ const spouseJobFields = [
     { key: 'agency', label: 'Agency/office', placeholder: 'e.g. DepEd Leyte Division' },
     { key: 'office_address', label: 'Office address', placeholder: 'e.g. Palo, Leyte' },
 ];
+
+// Filing: Joint or Separate only for a spouse in government; else Not Applicable.
+const FILING_OPTIONS = [
+    { value: 'joint', label: 'Joint Filing' },
+    { value: 'separate', label: 'Separate Filing' },
+    { value: 'not_applicable', label: 'Not Applicable' },
+];
+const spouseInGovernment = computed(() => Boolean(s.spouse?.in_government));
+if (!s.filing_mode) {
+    s.filing_mode = spouseInGovernment.value ? 'separate' : 'not_applicable';
+}
+watch(spouseInGovernment, (inGovernment) => {
+    if (!inGovernment) {
+        s.filing_mode = 'not_applicable';
+    } else if (s.filing_mode === 'not_applicable') {
+        s.filing_mode = 'separate';
+    }
+});
 
 const hasSpouse = computed({
     get: () => s.spouse !== null,
@@ -156,7 +222,7 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
 </script>
 
 <template>
-    <form class="space-y-6" @submit.prevent="save()">
+    <form class="saln-editor space-y-6" @submit.prevent="save()">
         <div v-if="locked" class="flex items-start gap-2 rounded-md border border-info-border bg-info-bg px-4 py-3 text-sm text-text">
             <Icon name="lock" class="mt-0.5 h-4 w-4 shrink-0" />
             <p>This SALN is with HRD ({{ saln.status_label.toLowerCase() }}), so it can't be changed. If HRD returns it, you can correct it and print it again.</p>
@@ -211,15 +277,29 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                         Position, agency and office address are only declared for a spouse in government service; otherwise the form shows N/A.
                     </p>
                 </div>
+
+                <!-- The form's Joint Filing / Separate Filing / Not Applicable boxes: the choice ticks one. -->
+                <div class="mt-4 max-w-sm">
+                    <InputLabel for="filing-mode">Filing</InputLabel>
+                    <select id="filing-mode" v-model="s.filing_mode" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!form.errors['statement.filing_mode']">
+                        <option v-for="mode in FILING_OPTIONS" :key="mode.value" :value="mode.value" :disabled="mode.value === 'not_applicable' ? spouseInGovernment : !spouseInGovernment">
+                            {{ mode.label }}
+                        </option>
+                    </select>
+                    <p class="mt-1 text-xs text-text-muted">
+                        Spouses who are both in government service may file jointly or separately. Otherwise it is “Not Applicable”.
+                    </p>
+                    <InputError :message="form.errors['statement.filing_mode']" />
+                </div>
                 <!-- Shown only when HRD turns the question on (or entries already exist). -->
                 <div v-if="options.multipleMarriages || s.other_spouses.length" class="mt-4">
                     <p class="text-sm font-medium text-text">Multiple marriages</p>
                     <p class="text-xs text-text-muted">Only where allowed by law. Leave empty to print “Not Applicable”.</p>
                     <div v-for="(name, i) in s.other_spouses" :key="i" class="mt-2 flex gap-2">
                         <input v-model="s.other_spouses[i]" class="form-control block w-full px-2 py-1.5" :aria-label="`Other spouse ${i + 1}`" />
-                        <Button variant="ghost" size="sm" :aria-label="`Remove other spouse ${i + 1}`" @click="s.other_spouses.splice(i, 1)"><Icon name="trash" class="h-4 w-4" /></Button>
+                        <ActionButton icon="trash" tone="danger" :label="`Remove other spouse ${i + 1}`" class="self-center" @click="s.other_spouses.splice(i, 1)" />
                     </div>
-                    <Button variant="outline" size="sm" class="mt-2" @click="s.other_spouses.push('')">Add a spouse's name</Button>
+                    <Button variant="outline" size="sm" icon="plus" class="mt-2" @click="s.other_spouses.push('')">Add a spouse's name</Button>
                 </div>
             </Card>
 
@@ -228,9 +308,9 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                     <div><InputLabel :for="`c-name-${i}`">Name</InputLabel><input :id="`c-name-${i}`" v-model="child.name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err(`children.${i}.name`)" /></div>
                     <div><InputLabel :for="`c-born-${i}`">Date of birth</InputLabel><input :id="`c-born-${i}`" :value="child.birth_date" type="date" class="form-control mt-1 block w-full px-3 py-2" @input="setBirthDate(child, $event.target.value)" /></div>
                     <div><InputLabel :for="`c-age-${i}`">Age</InputLabel><input :id="`c-age-${i}`" v-model="child.age" type="number" min="0" max="17" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err(`children.${i}.age`)" /></div>
-                    <Button variant="ghost" size="sm" :aria-label="`Remove ${child.name || 'this child'}`" @click="s.children.splice(i, 1)"><Icon name="trash" class="h-4 w-4" /></Button>
+                    <ActionButton icon="trash" tone="danger" :label="`Remove ${child.name || 'this child'}`" class="mb-1.5" @click="s.children.splice(i, 1)" />
                 </div>
-                <Button variant="outline" size="sm" @click="addChild">Add a child</Button>
+                <Button variant="outline" size="sm" icon="plus" @click="addChild">Add a child</Button>
             </Card>
 
             <Card v-for="section in SECTIONS" :key="section.table" :title="section.title" :icon="section.icon" :description="section.hint">
@@ -244,22 +324,23 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                             <p class="text-sm font-semibold text-text">
                                 Property {{ i + 1 }}<span v-if="row.description" class="font-normal text-text-muted"> — {{ row.description }}</span>
                             </p>
-                            <Button variant="ghost" size="sm" :aria-label="`Remove property ${i + 1}`" @click="removeRow('real_properties', i)">
-                                <Icon name="trash" class="h-4 w-4" /><span class="ml-1">Remove</span>
-                            </Button>
+                            <ActionButton icon="trash" tone="danger" :label="`Remove property ${i + 1}`" @click="removeRow('real_properties', i)" />
                         </div>
 
                         <div class="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-12">
-                            <div class="lg:col-span-3">
+                            <!-- Whose and Description share a row; Whose has the same fixed width as in the tables below. -->
+                            <div class="flex flex-col gap-x-4 gap-y-3 sm:col-span-2 lg:col-span-12 lg:flex-row">
+                            <div class="lg:w-64 lg:shrink-0">
                                 <InputLabel :for="`rp-owner-${i}`">Whose</InputLabel>
                                 <select :id="`rp-owner-${i}`" v-model="row.owner" class="form-control mt-1 block w-full px-3 py-2">
                                     <option v-for="option in options.owners" :key="option.value" :value="option.value">{{ option.label }}</option>
                                 </select>
                             </div>
-                            <div class="sm:col-span-1 lg:col-span-9">
+                            <div class="lg:min-w-0 lg:flex-1">
                                 <InputLabel :for="`rp-description-${i}`">Description</InputLabel>
                                 <input :id="`rp-description-${i}`" v-model="row.description" placeholder="Lot, house and lot, condominium, improvements" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err(`real_properties.${i}.description`)" />
                                 <InputError :message="err(`real_properties.${i}.description`)" />
+                            </div>
                             </div>
 
                             <div class="lg:col-span-4">
@@ -278,19 +359,25 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                 <div class="grid gap-3 sm:grid-cols-2">
                                     <div>
                                         <InputLabel :for="`rp-assessed-${i}`">Assessed value</InputLabel>
-                                        <input :id="`rp-assessed-${i}`" v-model="row.assessed_value" inputmode="decimal" placeholder="0.00" class="form-control mt-1 block w-full px-3 py-2 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.assessed_value`)" />
+                                        <div class="relative mt-1">
+                                            <span v-if="!isNa(row.assessed_value)" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-text-muted" aria-hidden="true">₱</span>
+                                            <input :id="`rp-assessed-${i}`" :value="row.assessed_value" @input="onAmountInput($event, row, 'assessed_value')" @blur="onAmountBlur(row, 'assessed_value')" inputmode="decimal" placeholder="0.00" class="form-control block w-full py-2 pr-3 pl-7 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.assessed_value`)" />
+                                        </div>
                                         <InputError :message="err(`real_properties.${i}.assessed_value`)" />
                                     </div>
                                     <div>
                                         <InputLabel :for="`rp-market-${i}`">Current fair market value</InputLabel>
-                                        <input :id="`rp-market-${i}`" v-model="row.market_value" inputmode="decimal" placeholder="0.00" class="form-control mt-1 block w-full px-3 py-2 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.market_value`)" />
+                                        <div class="relative mt-1">
+                                            <span v-if="!isNa(row.market_value)" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-text-muted" aria-hidden="true">₱</span>
+                                            <input :id="`rp-market-${i}`" :value="row.market_value" @input="onAmountInput($event, row, 'market_value')" @blur="onAmountBlur(row, 'market_value')" inputmode="decimal" placeholder="0.00" class="form-control block w-full py-2 pr-3 pl-7 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.market_value`)" />
+                                        </div>
                                         <InputError :message="err(`real_properties.${i}.market_value`)" />
                                     </div>
                                 </div>
                             </fieldset>
                             <fieldset class="rounded-md border border-border bg-surface p-3 sm:col-span-2 lg:col-span-7">
                                 <legend class="px-1 text-xs font-medium text-text-muted">Acquisition</legend>
-                                <div class="grid gap-3 sm:grid-cols-[6rem_1fr_1fr]">
+                                <div class="grid gap-3 sm:grid-cols-[6rem_minmax(0,1.4fr)_minmax(0,1fr)]">
                                     <div>
                                         <InputLabel :for="`rp-year-${i}`">Year</InputLabel>
                                         <input :id="`rp-year-${i}`" v-model="row.acquisition_year" inputmode="numeric" placeholder="2015" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err(`real_properties.${i}.acquisition_year`)" />
@@ -303,7 +390,10 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                     </div>
                                     <div>
                                         <InputLabel :for="`rp-cost-${i}`">Acquisition cost</InputLabel>
-                                        <input :id="`rp-cost-${i}`" v-model="row.acquisition_cost" inputmode="decimal" placeholder="0.00" class="form-control mt-1 block w-full px-3 py-2 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.acquisition_cost`)" />
+                                        <div class="relative mt-1">
+                                            <span v-if="!isNa(row.acquisition_cost)" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-text-muted" aria-hidden="true">₱</span>
+                                            <input :id="`rp-cost-${i}`" :value="row.acquisition_cost" @input="onAmountInput($event, row, 'acquisition_cost')" @blur="onAmountBlur(row, 'acquisition_cost')" inputmode="decimal" placeholder="0.00" class="form-control block w-full py-2 pr-3 pl-7 text-right tabular-nums" :aria-invalid="!!err(`real_properties.${i}.acquisition_cost`)" />
+                                        </div>
                                         <InputError :message="err(`real_properties.${i}.acquisition_cost`)" />
                                     </div>
                                 </div>
@@ -332,23 +422,27 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                     <select v-if="column.type === 'owner'" v-model="row.owner" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`">
                                         <option v-for="option in options.owners" :key="option.value" :value="option.value">{{ option.label }}</option>
                                     </select>
+                                    <div v-else class="relative">
+                                    <span v-if="isAmount(column) && !isNa(row[column.key])" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-sm text-text-muted" aria-hidden="true">₱</span>
                                     <input
-                                        v-else
-                                        v-model="row[column.key]"
-                                        class="form-control block w-full px-2 py-1.5"
-                                        :class="{ 'text-right tabular-nums': column.type === 'money' || column.type === 'value', 'border-danger': err(`${section.table}.${i}.${column.key}`) }"
+                                        :value="row[column.key]"
+                                        @input="isAmount(column) ? onAmountInput($event, row, column.key) : (row[column.key] = $event.target.value)"
+                                        @blur="isAmount(column) && onAmountBlur(row, column.key)"
+                                        class="form-control block w-full py-1.5 pr-2"
+                                        :class="{ 'pl-6 text-right tabular-nums': isAmount(column), 'pl-2': !isAmount(column), 'border-danger': err(`${section.table}.${i}.${column.key}`) }"
                                         :inputmode="column.type === 'money' ? 'decimal' : undefined"
                                         :aria-label="`${column.label}, row ${i + 1}`"
                                         :title="err(`${section.table}.${i}.${column.key}`)"
                                     />
+                                    </div>
                                 </td>
-                                <td class="py-1"><Button variant="ghost" size="sm" :aria-label="`Remove row ${i + 1}`" @click="removeRow(section.table, i)"><Icon name="trash" class="h-4 w-4" /></Button></td>
+                                <td class="py-1 pl-1 align-middle"><ActionButton icon="trash" tone="danger" :label="`Remove row ${i + 1}`" @click="removeRow(section.table, i)" /></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <Button variant="outline" size="sm" @click="addRow(section.table)">{{ section.table === 'real_properties' ? 'Add a property' : 'Add a row' }}</Button>
+                    <Button variant="outline" size="sm" icon="plus" @click="addRow(section.table)">{{ section.table === 'real_properties' ? 'Add a property' : 'Add a row' }}</Button>
                     <p class="text-sm text-text-muted">
                         <template v-if="section.table === 'real_properties'">Subtotal <strong class="tabular-nums text-text">{{ peso(totals.real) }}</strong></template>
                         <template v-else-if="section.table === 'personal_properties'">Subtotal <strong class="tabular-nums text-text">{{ peso(totals.personal) }}</strong> · Total assets <strong class="tabular-nums text-text">{{ peso(totals.assets) }}</strong></template>
@@ -376,13 +470,13 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                         </select>
                                         <input v-else v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`business_interests.${i}.${column.key}`) }" />
                                     </td>
-                                    <td class="py-1"><Button variant="ghost" size="sm" :aria-label="`Remove row ${i + 1}`" @click="removeRow('business_interests', i)"><Icon name="trash" class="h-4 w-4" /></Button></td>
+                                    <td class="py-1 pl-1 align-middle"><ActionButton icon="trash" tone="danger" :label="`Remove row ${i + 1}`" @click="removeRow('business_interests', i)" /></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <InputError :message="err('business_interests')" />
-                    <Button variant="outline" size="sm" class="mt-2" @click="addRow('business_interests')">Add a row</Button>
+                    <Button variant="outline" size="sm" icon="plus" class="mt-2" @click="addRow('business_interests')">Add a row</Button>
                 </template>
             </Card>
 
@@ -391,19 +485,19 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                 <template v-if="!s.no_relatives">
                     <div class="mt-3 overflow-x-auto">
                         <table class="w-full min-w-[48rem] text-sm">
-                            <thead><tr class="text-left text-xs text-text-muted"><th v-for="column in TABLES.relatives" :key="column.key" class="px-1 pb-1 font-medium">{{ column.label }}</th><th class="w-10"><span class="sr-only">Remove</span></th></tr></thead>
+                            <thead><tr class="text-left text-xs text-text-muted"><th v-for="column in TABLES.relatives" :key="column.key" class="px-1 pb-1 font-medium" :class="column.width">{{ column.label }}</th><th class="w-10"><span class="sr-only">Remove</span></th></tr></thead>
                             <tbody>
                                 <tr v-for="(row, i) in s.relatives" :key="i">
                                     <td v-for="column in TABLES.relatives" :key="column.key" class="px-1 py-1">
                                         <input v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`relatives.${i}.${column.key}`) }" />
                                     </td>
-                                    <td class="py-1"><Button variant="ghost" size="sm" :aria-label="`Remove row ${i + 1}`" @click="removeRow('relatives', i)"><Icon name="trash" class="h-4 w-4" /></Button></td>
+                                    <td class="py-1 pl-1 align-middle"><ActionButton icon="trash" tone="danger" :label="`Remove row ${i + 1}`" @click="removeRow('relatives', i)" /></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <InputError :message="err('relatives')" />
-                    <Button variant="outline" size="sm" class="mt-2" @click="addRow('relatives')">Add a relative</Button>
+                    <Button variant="outline" size="sm" icon="plus" class="mt-2" @click="addRow('relatives')">Add a relative</Button>
                 </template>
             </Card>
 
@@ -429,9 +523,22 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
         </fieldset>
 
         <div v-if="!locked" class="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur">
-            <span v-if="form.isDirty" class="mr-auto text-sm text-text-muted">Unsaved changes</span>
-            <Button type="submit" variant="outline" :loading="form.processing">Save</Button>
-            <Button variant="primary" :loading="form.processing" @click="printNew">Save and prepare printout</Button>
+            <p class="mr-auto text-sm" :class="form.isDirty ? 'text-warning-fg' : 'text-text-muted'" aria-live="polite">
+                {{ form.isDirty ? 'Unsaved changes' : form.recentlySuccessful ? 'Saved' : 'All changes saved' }}
+            </p>
+            <Button type="submit" variant="outline" icon="check" :loading="form.processing" :disabled="!form.isDirty">Save draft</Button>
+            <Button variant="primary" icon="printer" :loading="form.processing" @click="printNew">Save and prepare printout</Button>
         </div>
     </form>
 </template>
+
+<style scoped>
+/* Entries are written in capitals (the server stores them that way too);
+   hints, dates and numbers keep their case. */
+.saln-editor :deep(input:not([type='date']):not([type='number']):not([type='file'])) {
+    text-transform: uppercase;
+}
+.saln-editor :deep(input::placeholder) {
+    text-transform: none;
+}
+</style>

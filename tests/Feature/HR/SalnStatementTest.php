@@ -102,6 +102,54 @@ class SalnStatementTest extends TestCase
         $this->assertSame('separate', SalnStatement::filingMode($statement));
     }
 
+    public function test_entries_are_stored_in_uppercase(): void
+    {
+        $statement = $this->statement(personal: [$this->personal('100.00')]);
+        $statement['declarant']['first_name'] = 'Juan';
+        $statement['government_id'] = ['type' => 'umid', 'number' => 'crn-0111', 'issued_on' => '2020-01-15'];
+
+        $saved = SalnStatement::validate($statement);
+
+        $this->assertSame('JUAN', $saved['declarant']['first_name']);
+        $this->assertSame('LAPTOP', $saved['personal_properties'][0]['description']);
+        $this->assertSame('declarant', $saved['personal_properties'][0]['owner'], 'Choices stay as they are.');
+        $this->assertSame('UMID', $saved['government_id']['type']);
+        $this->assertSame('2020-01-15', $saved['government_id']['issued_on']);
+        $this->assertSame('not_applicable', $saved['filing_mode']);
+    }
+
+    public function test_the_declarant_chooses_joint_or_separate_filing(): void
+    {
+        $statement = $this->statement();
+        $statement['spouse'] = ['family_name' => 'SANTOS', 'first_name' => 'MARIA', 'middle_initial' => 'L', 'in_government' => true, 'position' => 'Teacher III', 'agency' => 'DepEd', 'office_address' => 'Palo'];
+        $statement['filing_mode'] = 'joint';
+
+        $this->assertSame('joint', SalnStatement::validate($statement)['filing_mode']);
+    }
+
+    public function test_joint_or_separate_needs_a_spouse_in_government(): void
+    {
+        $statement = $this->statement();
+        $statement['filing_mode'] = 'joint';
+
+        try {
+            SalnStatement::validate($statement);
+            $this->fail('Joint filing without a spouse in government was accepted.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('filing_mode', $e->errors());
+        }
+    }
+
+    public function test_a_spouse_in_government_needs_joint_or_separate(): void
+    {
+        $statement = $this->statement();
+        $statement['spouse'] = ['family_name' => 'SANTOS', 'first_name' => 'MARIA', 'middle_initial' => 'L', 'in_government' => true, 'position' => 'Teacher III', 'agency' => 'DepEd', 'office_address' => 'Palo'];
+        $statement['filing_mode'] = 'not_applicable';
+
+        $this->expectException(ValidationException::class);
+        SalnStatement::validate($statement);
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $real
      * @param  array<int, array<string, mixed>>  $personal

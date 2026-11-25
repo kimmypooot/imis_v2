@@ -1,6 +1,6 @@
 <script setup>
 import Card from '@cscro8/ui/Components/UI/Card.vue';
-import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 import { formatPeso } from '../../../Utils/money';
 
@@ -33,9 +33,17 @@ const ACTIONS = {
                     <span v-if="version.version !== saln.current_version" class="text-text-muted"> · replaced</span>
                     <span v-if="saln.received_version === version.version" class="text-text-muted"> · the copy HRD received</span>
                 </span>
-                <a :href="`${printBase}/${version.version}/print`" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-link hover:underline">
-                    <Icon name="printer" class="h-4 w-4" /> Open to print
-                </a>
+                <!-- The latest printout is the one to print; older ones stay reachable, quieter. -->
+                <Button
+                    :href="`${printBase}/${version.version}/print`"
+                    external
+                    size="sm"
+                    icon="printer"
+                    :variant="version.version === saln.current_version ? 'primary' : 'ghost'"
+                    :aria-label="`Open ${version.printed_reference} to print (new tab)`"
+                >
+                    {{ version.version === saln.current_version ? 'Print' : 'Open' }}
+                </Button>
             </li>
         </ul>
 

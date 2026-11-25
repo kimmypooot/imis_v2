@@ -129,14 +129,17 @@ class SalnController extends Controller
         ]);
 
         if (filled($data['reference'] ?? null)) {
-            if (! preg_match('/^\s*(?:IMIS\s+)?SALN-(\d{4})-(\d{1,7})\s*v?(\d+)\s*$/i', $data['reference'], $parts)) {
-                return back()->withErrors(['reference' => 'Type the reference printed at the foot of each page, like SALN-2025-00042 v2.']);
+            // As printed at the foot of each page ("IMIS SALN-2025-00042"); a
+            // version, if typed, must be the latest printout's.
+            if (! preg_match('/^\s*(?:IMIS\s+)?SALN-(\d{4})-(\d{1,7})(?:\s+v?(\d+)|v(\d+))?\s*$/i', $data['reference'], $parts)) {
+                return back()->withErrors(['reference' => 'Type the reference printed at the foot of each page, like SALN-2025-00042.']);
             }
             $saln = Saln::query()->find((int) $parts[2]);
-            $version = (int) $parts[3];
             if (! $saln || $saln->reckoning_date->year !== (int) $parts[1]) {
                 return back()->withErrors(['reference' => 'No SALN has that reference.']);
             }
+            $typed = ($parts[3] ?? '') !== '' ? $parts[3] : ($parts[4] ?? '');
+            $version = $typed !== '' ? (int) $typed : $saln->current_version;
         } else {
             $saln = Saln::query()->findOrFail($data['saln_id']);
             $version = (int) ($data['version'] ?? $saln->current_version);

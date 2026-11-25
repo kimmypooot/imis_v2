@@ -22,6 +22,12 @@ class SalnStatement
 
     public const NOT_APPLICABLE = 'N/A';
 
+    /** Keys whose values keep their case: choices, dates and computed fields. */
+    private const KEEP_CASE = ['owner', 'filing_mode', 'birth_date', 'issued_on', 'totals'];
+
+    /** The form's Joint Filing / Separate Filing / Not Applicable boxes. */
+    public const FILING_MODES = ['joint', 'separate', 'not_applicable'];
+
     /**
      * @return array<string, mixed>
      */
@@ -30,6 +36,7 @@ class SalnStatement
         return [
             'declarant' => ['family_name' => null, 'first_name' => null, 'middle_initial' => null, 'position' => null, 'agency' => null, 'office_address' => null],
             'spouse' => null,
+            'filing_mode' => null,
             'other_spouses' => [],
             'children' => [],
             'real_properties' => [],
@@ -74,6 +81,7 @@ class SalnStatement
             'spouse.agency' => ['nullable', 'required_if_accepted:spouse.in_government', 'string', 'max:255'],
             'spouse.office_address' => ['nullable', 'required_if_accepted:spouse.in_government', 'string', 'max:255'],
 
+            'filing_mode' => ['nullable', Rule::in(self::FILING_MODES)],
             'other_spouses' => ['array', 'max:10'],
             'other_spouses.*' => ['required', 'string', 'max:200'],
 
@@ -165,14 +173,25 @@ class SalnStatement
         }
 
         $validator = Validator::make($input, self::rules());
-        $validator->after(function ($validator) use ($ageErrors) {
+        $validator->after(function ($validator) use ($ageErrors, $input) {
             foreach ($ageErrors as $key => $message) {
                 $validator->errors()->add($key, $message);
+            }
+
+            // Joint or separate filing is only for spouses who are both in
+            // government; otherwise it is "Not Applicable" (2025 SALN FAQ).
+            $inGovernment = (bool) ($input['spouse']['in_government'] ?? false);
+            $mode = $input['filing_mode'] ?? null;
+            if ($mode && $inGovernment && $mode === 'not_applicable') {
+                $validator->errors()->add('filing_mode', 'Your spouse is in government service: choose Joint Filing or Separate Filing.');
+            } elseif ($mode && ! $inGovernment && $mode !== 'not_applicable') {
+                $validator->errors()->add('filing_mode', 'Joint or separate filing is only for spouses who are both in government service; choose Not Applicable.');
             }
         });
         $validator->validate();
 
         $statement = array_replace(self::blank(), array_intersect_key($input, self::blank()));
+        $statement['filing_mode'] = self::filingMode($statement);
 
         foreach (['real_properties', 'personal_properties', 'liabilities'] as $table) {
             $statement[$table] = array_values(array_map(fn (array $row) => self::normaliseAmounts($row), $statement[$table]));
@@ -186,7 +205,7 @@ class SalnStatement
             $statement['relatives'] = [];
         }
 
-        return self::withTotals($statement);
+        return self::withTotals(self::uppercase($statement));
     }
 
     /**
@@ -211,13 +230,18 @@ class SalnStatement
     }
 
     /**
-     * "separate" when the spouse is also in government (spouses never file
-     * jointly here), otherwise "not_applicable".
+     * The box ticked on the form: what the declarant chose, or by default
+     * "separate" when the spouse is also in government, else "not_applicable".
      *
      * @param  array<string, mixed>  $statement
      */
     public static function filingMode(array $statement): string
     {
+        $chosen = $statement['filing_mode'] ?? null;
+        if (in_array($chosen, self::FILING_MODES, true)) {
+            return $chosen;
+        }
+
         return ($statement['spouse']['in_government'] ?? false) ? 'separate' : 'not_applicable';
     }
 
@@ -249,6 +273,29 @@ class SalnStatement
     public static function ageOn(CarbonImmutable $born, CarbonImmutable $date): int
     {
         return max(0, (int) floor($born->startOfDay()->diffInYears($date->startOfDay())));
+    }
+
+    /**
+     * Entries are kept in capitals, as forms are filled in. Choices (whose,
+     * filing), dates and the computed fields are left as they are.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private static function uppercase(array $values): array
+    {
+        foreach ($values as $key => $value) {
+            if (in_array($key, self::KEEP_CASE, true)) {
+                continue;
+            }
+            if (is_array($value)) {
+                $values[$key] = self::uppercase($value);
+            } elseif (is_string($value)) {
+                $values[$key] = mb_strtoupper($value);
+            }
+        }
+
+        return $values;
     }
 
     /**

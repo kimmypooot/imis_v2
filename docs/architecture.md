@@ -5174,8 +5174,11 @@ Form as of 3 February 2026"; mandatory from 1 January 2026). Design:
    immutable version (`saln_versions`) and opens the print page. The
    employee signs every page and hands the hard copy to HRD.
 3. HRD **receives** it by the reference printed on each page
-   (`SALN-2025-00042 v2`). Only the latest printout can be received, so an
-   outdated paper copy is refused. Editing is locked from then on.
+   (`IMIS SALN-2025-00042`; no version is printed). That records the latest
+   printout; a version typed by hand must be the latest. Editing after
+   printing voids the printout until it is printed again, and editing is
+   locked once HRD has received it. The paper itself no longer shows which
+   printout it is, so HRD can't spot an older printout handed in.
 4. The **SALN Committee** (`saln.review`) clears it for the oath or returns
    it with remarks (the employee corrects, prints again, hands in the new
    copy). HRD (`saln.manage`) can decide instead, recorded as an override.
@@ -5187,9 +5190,12 @@ Form as of 3 February 2026"; mandatory from 1 January 2026). Design:
 6. The signed scan is uploaded by the employee or HRD; it is filed in the
    **201 File** (`EmployeeDocumentType::Saln`) and the SALN is `filed`.
 
-Spouses always file separately (the form prints "Separate Filing" when the
-spouse is in government, else "Not Applicable"). Only new SALNs are filed in
-IMIS; nothing is imported.
+The declarant picks **Joint Filing**, **Separate Filing** or **Not
+Applicable** (`statement.filing_mode`) and the form ticks that box. Joint or
+separate is only for a spouse also in government; otherwise it is Not
+Applicable (validated). The second "Signature of Declarant" block stays blank
+for the spouse when one is declared. Only new SALNs are filed in IMIS;
+nothing is imported.
 
 ### Data
 - `salns`: employee, type, reckoning date, status (`draft`, `generated`,

@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import SalnEditor from '../../Components/HR/Saln/SalnEditor.vue';
 import SalnHistory from '../../Components/HR/Saln/SalnHistory.vue';
@@ -40,7 +41,19 @@ const NEXT = {
         :description="`As of ${formatCalendarDate(saln.reckoning_date)} · ${saln.reference}`"
         :breadcrumbs="[{ label: 'Home', href: '/dashboard' }, { label: 'My SALN', href: '/my/saln' }, { label: saln.reference }]"
     >
-        <template #actions><StatusBadge :status="tones[saln.status]" :label="saln.status_label" /></template>
+        <template #actions>
+            <StatusBadge :status="tones[saln.status]" :label="saln.status_label" />
+            <Button
+                v-if="saln.current_version && saln.status !== 'draft'"
+                :href="`/my/saln/${saln.id}/versions/${saln.current_version}/print`"
+                external
+                icon="printer"
+                variant="outline"
+                size="sm"
+            >
+                Print v{{ saln.current_version }}
+            </Button>
+        </template>
     </PageHeader>
 
     <div class="mb-6 flex items-start gap-2 rounded-md border border-border bg-surface px-4 py-3 text-sm text-text">

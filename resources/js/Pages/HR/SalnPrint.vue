@@ -29,7 +29,11 @@ const v = (value) => (value === null || value === undefined ? '' : String(value)
 const type = computed(() => props.saln.type);
 const asOf = computed(() => props.saln.reckoning_date);
 const spouseInGovernment = computed(() => Boolean(s.value.spouse?.in_government));
-const reference = computed(() => `IMIS ${props.version.reference} v${props.version.version}`);
+// The reference printed at the foot of each page (no version: HRD receives the latest).
+const reference = computed(() => `IMIS ${props.version.reference}`);
+// Joint Filing / Separate Filing / Not Applicable, as the declarant chose.
+const filingMode = computed(() => s.value.filing_mode ?? (spouseInGovernment.value ? 'separate' : 'not_applicable'));
+const FILING_BOX = { joint: 'joint', separate: 'separate', not_applicable: 'notApplicable' };
 
 const longDate = (value) => {
     if (!value) return '';
@@ -77,7 +81,7 @@ const cell = (cols, rows, c, r, align = 'left', size = 9) => ({
  */
 let measurer = null;
 const splitLines = (text, widthPt, sizePt) => {
-    const value = v(text).trim();
+    const value = v(text).trim().toUpperCase(); // measured as printed: in capitals
     if (!value || typeof document === 'undefined') return [value, ''];
     measurer ??= document.createElement('canvas').getContext('2d');
     measurer.font = `${sizePt}pt "Bookman Old Style", "TeX Gyre Bonum", serif`;
@@ -229,7 +233,7 @@ const print = () => window.print();
                 :style="onLine(P1.right, y, 'center', 8)"
             >{{ spouseInGovernment ? orNa(value) : NA }}</span>
 
-            <span class="tick" :style="tick(spouseInGovernment ? P1.filing.separate : P1.filing.notApplicable)">✓</span>
+            <span class="tick" :style="tick(P1.filing[FILING_BOX[filingMode]])">✓</span>
 
             <!-- Multiple marriages -->
             <span v-if="!s.other_spouses?.length" class="tick" :style="tick(P1.marriages.notApplicable)">✓</span>
@@ -400,6 +404,8 @@ const print = () => window.print();
     white-space: nowrap;
     font-size: var(--size, 9pt);
     line-height: 1.1;
+    /* Entries print in capitals, as the form is filled in. */
+    text-transform: uppercase;
 }
 .saln .v.wrap { white-space: normal; line-height: 1.05; }
 .saln .v.b { font-weight: 700; }
@@ -426,7 +432,7 @@ const print = () => window.print();
 .saln .continuation .name { margin-top: 16pt; font-size: 8pt; }
 .saln .continuation table { width: 100%; border-collapse: collapse; font-size: 9pt; }
 .saln .continuation th { background: #c0c0c0; font-size: 8pt; border: 0.5pt solid #000; padding: 3pt; }
-.saln .continuation td { border: 0.5pt solid #000; padding: 3pt 5pt; height: 12pt; }
+.saln .continuation td { border: 0.5pt solid #000; padding: 3pt 5pt; height: 12pt; text-transform: uppercase; }
 .saln .continuation .age { width: 100pt; }
 .saln .continuation .initial { position: absolute; right: 22pt; bottom: 40pt; width: 120pt; text-align: center; }
 .saln .continuation .initial span { display: block; border-top: 0.5pt solid #000; font-size: 6pt; font-style: italic; }
