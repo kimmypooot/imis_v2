@@ -221,6 +221,7 @@ class Loans
             'id' => $loan->id,
             'employee_id' => $loan->employee_id,
             'employee' => $loan->employee?->user?->name,
+            'photo_url' => $loan->employee?->user?->profile_photo_url,
             'pay_component_id' => $loan->pay_component_id,
             'type' => $loan->component?->name,
             'reference' => $loan->reference,

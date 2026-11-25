@@ -56,6 +56,7 @@ class LearningDevelopmentController extends Controller
                 return [
                     'id' => $employee->id,
                     'name' => $employee->user->name,
+                    'photo_url' => $employee->user->profile_photo_url,
                     'position' => $employee->user->position,
                     'unit' => $employee->user->organizationalUnit?->short_name ?: $employee->user->organizationalUnit?->name,
                     'separated' => $employee->isSeparated(),

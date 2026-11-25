@@ -45,6 +45,7 @@ class PayProfileController extends Controller
             'employees' => $employees->map(fn (Employee $employee) => [
                 'id' => $employee->id,
                 'name' => $employee->user->name,
+                'photo_url' => $employee->user->profile_photo_url,
                 'position' => $employee->user->position,
                 'items' => $employee->items_count,
                 'loans' => $employee->loans_count,

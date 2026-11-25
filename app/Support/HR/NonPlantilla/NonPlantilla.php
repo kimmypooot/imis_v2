@@ -52,6 +52,7 @@ class NonPlantilla
                 return [
                     'employee_id' => $employee->id,
                     'name' => $employee->user->name,
+                    'photo_url' => $employee->user->profile_photo_url,
                     'status' => $employee->employment_status->value,
                     'status_label' => $employee->employment_status->label(),
                     'designation' => $shown?->designation ?: $employee->user->position,

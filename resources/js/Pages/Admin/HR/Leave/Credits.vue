@@ -8,7 +8,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
@@ -130,14 +130,9 @@ const runYearStart = async () => {
 
             <DataTable :columns="columns" :rows="shown" caption="Leave balances" export-name="imis-leave-balances">
                 <template #cell-name="{ row }">
-                    <div class="flex items-center gap-3">
-                        <UserAvatar :name="row.name" :photo-url="row.photo_url" size="sm" />
-                        <div class="min-w-0">
-                            <Link :href="`/admin/hr/employees/${row.id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
-                            <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
-                            <div v-if="row.position" class="truncate text-xs text-text-muted">{{ row.position }}</div>
-                        </div>
-                    </div>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.id}/leave`" :subtitle="row.position">
+                        <StatusBadge v-if="row.separated" status="inactive" label="Separated" />
+                    </PersonCell>
                     <span v-if="row.pds_solo_parent" class="block text-xs text-warning-fg">Solo parent on the PDS — not marked in leave settings</span>
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>

@@ -118,6 +118,7 @@ class LdReports
                 'id' => $record->id,
                 'employee_id' => $record->employee_id,
                 'name' => $this->listName($record->employee->user),
+                'photo_url' => $record->employee->user->profile_photo_url,
                 'sex' => Sex::labelFor($record->employee->user->sex),
                 'position' => $record->employee->user->position,
                 'office' => $this->office($record->employee->user),

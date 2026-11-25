@@ -35,6 +35,7 @@ class PdsVerificationController extends Controller
             ->map(fn (PdsSubmission $submission) => [
                 'id' => $submission->id,
                 'name' => $submission->employee->user->name,
+                'photo_url' => $submission->employee->user->profile_photo_url,
                 'position' => $submission->employee->user->position,
                 'unit' => $submission->employee->user->organizationalUnit?->short_name ?: $submission->employee->user->organizationalUnit?->name,
                 'signed_at' => $submission->signed_at->toIso8601String(),

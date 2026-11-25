@@ -6,7 +6,7 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime, timeAgo } from '../../../Utils/datetime';
 
@@ -80,16 +80,9 @@ const forceLogoutAll = async (session) => {
 
         <DataTable :columns="columns" :rows="props.sessions" row-key="key" caption="Active sessions" export-name="imis-active-sessions" :default-sort="{ key: 'last_activity', direction: 'desc' }">
             <template #cell-user="{ row }">
-                <div class="flex items-center gap-3">
-                    <UserAvatar :name="row.user?.name ?? '?'" :photo-url="row.profile_photo_url" size="sm" />
-                    <div class="min-w-0">
-                        <div class="truncate font-medium text-text">
-                            {{ row.user?.name }}
-                            <span v-if="row.is_current" class="ml-1 rounded-full bg-success-bg px-2 py-0.5 text-xs text-success-fg">You</span>
-                        </div>
-                        <div class="truncate text-xs text-text-muted">@{{ row.user?.username }}</div>
-                    </div>
-                </div>
+                <PersonCell :name="row.user?.name ?? '?'" :photo-url="row.profile_photo_url" :subtitle="`@${row.user?.username}`">
+                    <span v-if="row.is_current" class="rounded-full bg-success-bg px-2 py-0.5 text-xs text-success-fg">You</span>
+                </PersonCell>
             </template>
             <template #cell-browser="{ row }">
                 <span :title="row.user_agent">{{ row.browser }}</span>

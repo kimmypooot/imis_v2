@@ -6,6 +6,7 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -34,8 +35,7 @@ const columns = [
     <Card title="Awaiting Verification" icon="checkCircle" description="Each is the PDS exactly as the employee e-signed it. Opening one is logged.">
         <DataTable :columns="columns" :rows="pending" caption="PDS submissions awaiting verification" export-name="imis-pds-verifications">
             <template #cell-name="{ row }">
-                <div class="font-medium text-text">{{ row.name }}</div>
-                <div v-if="row.position" class="text-xs text-text-muted">{{ row.position }}</div>
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.position" />
             </template>
             <template #cell-unit="{ row }">{{ row.unit || '—' }}</template>
             <template #cell-kind="{ row }">

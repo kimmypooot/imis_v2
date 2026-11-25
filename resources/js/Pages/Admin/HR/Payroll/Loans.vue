@@ -1,12 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatPeso } from '../../../../Utils/money';
 
 defineOptions({ layout: AdminLayout });
@@ -76,7 +77,7 @@ const columns = [
 
         <DataTable :columns="columns" :rows="rows" caption="Loans" :export-name="`imis-loans-${filter}`" empty-text="No loans here.">
             <template #cell-employee="{ row }">
-                <Link :href="`/admin/hr/payroll/profiles/${row.employee_id}`" class="font-medium text-text hover:text-link">{{ row.employee }}</Link>
+                <PersonCell :name="row.employee ?? '—'" :photo-url="row.photo_url" :href="`/admin/hr/payroll/profiles/${row.employee_id}`" />
             </template>
             <template #cell-type="{ row }">
                 {{ row.type }}

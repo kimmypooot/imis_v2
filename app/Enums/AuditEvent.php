@@ -80,6 +80,8 @@ enum AuditEvent: string
     case EmployeeViewed = 'employee.viewed';
     // The HR dashboard analytics (names, birthdays, ages); once a day per viewer.
     case HrDashboardViewed = 'employee.hr_dashboard_viewed';
+    // The Age & Service roster (everyone's birthday and age); once a day per viewer.
+    case AgeAndServiceViewed = 'employee.age_and_service_viewed';
     // HR-1b: assignment history. Metadata names the office move, if any.
     case EmployeeAssignmentRecorded = 'employee_assignment.recorded';
     case EmployeeAssignmentUpdated = 'employee_assignment.updated';

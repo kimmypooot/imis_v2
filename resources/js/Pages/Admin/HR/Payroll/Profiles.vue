@@ -1,10 +1,11 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 
 defineOptions({ layout: AdminLayout });
 
@@ -38,7 +39,7 @@ const columns = [
     <Card title="Staff in service" icon="users">
         <DataTable :columns="columns" :rows="employees" caption="Pay profiles" export-name="imis-pay-profiles" empty-text="No staff in service.">
             <template #cell-name="{ row }">
-                <Link :href="`/admin/hr/payroll/profiles/${row.id}`" class="font-medium text-text hover:text-link">{{ row.name }}</Link>
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/payroll/profiles/${row.id}`" />
             </template>
             <template #cell-position="{ row }">{{ row.position || '—' }}</template>
             <template #cell-items="{ row }"><span class="tabular-nums">{{ row.items }}</span></template>

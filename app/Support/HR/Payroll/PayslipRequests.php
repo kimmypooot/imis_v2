@@ -149,6 +149,7 @@ class PayslipRequests
             'id' => $request->id,
             'reference_number' => $request->reference_number,
             'employee' => $request->employee->user->name,
+            'photo_url' => $request->employee->user->profile_photo_url,
             'position' => $request->entry->position,
             'office' => $request->entry->office,
             'entry_id' => $request->payroll_entry_id,

@@ -9,6 +9,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -68,8 +69,9 @@ const columns = [
     <Card title="Officers-in-charge" icon="users" description="Who acts for the Head of Agency on leave applications, and when.">
         <DataTable :columns="columns" :rows="designations" caption="OIC designations" export-name="imis-oic-designations" empty-text="No designations.">
             <template #cell-name="{ row }">
-                {{ row.name }}
-                <StatusBadge v-if="row.active" status="active" label="On Duty" class="ml-2" />
+                <PersonCell :name="row.name" :photo-url="row.photo_url">
+                    <StatusBadge v-if="row.active" status="active" label="On Duty" />
+                </PersonCell>
             </template>
             <template #cell-acting_for="{ row }">{{ row.acting_for || '—' }}</template>
             <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }} – {{ formatCalendarDate(row.date_to) }}</span></template>

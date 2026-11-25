@@ -237,6 +237,7 @@ export const hrNavItems = [
         items: [
             { label: 'Employees', href: '/admin/hr/employees', icon: 'users', permission: ['employees.view', 'employees.view_unit'] },
             { label: 'Reassignments', href: '/admin/hr/reassignments', icon: 'building', permission: ['employees.view', 'employees.view_unit'] },
+            { label: 'Age & Service', href: '/admin/hr/age-and-service', icon: 'calendar', permission: 'employees.view' },
             { label: 'PDS Verification', href: '/admin/hr/pds-verifications', icon: 'checkCircle', permission: 'pds.verify', badge: 'pdsVerifications' },
             { label: 'Record Corrections', href: '/admin/hr/corrections', icon: 'clipboard', permission: 'data_corrections.review', badge: 'dataCorrections' },
             { label: 'SALN Compliance', href: '/admin/hr/saln', icon: 'chartBar', permission: 'saln.manage' },

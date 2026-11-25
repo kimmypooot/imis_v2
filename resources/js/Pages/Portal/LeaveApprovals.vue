@@ -10,6 +10,7 @@ import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import QueueSummary from '../../Components/Portal/QueueSummary.vue';
 import { daysSince, formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveDates } from '../../Components/HR/leaveStatus';
@@ -87,8 +88,7 @@ const recentColumns = [
                     <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
                 </template>
                 <template #cell-name="{ row }">
-                    {{ row.name }}
-                    <div v-if="row.office" class="text-xs text-text-muted">{{ row.office }}</div>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.office" />
                 </template>
                 <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-waiting_since="{ row }">

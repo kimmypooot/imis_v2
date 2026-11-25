@@ -55,9 +55,12 @@ class HrDashboard
 
     private Carbon $today;
 
+    private AgeAndService $dates;
+
     public function __construct(private readonly User $viewer)
     {
         $this->today = today();
+        $this->dates = new AgeAndService($this->today);
     }
 
     /**
@@ -155,25 +158,14 @@ class HrDashboard
     }
 
     /**
-     * When each person's government service began here: the original
-     * appointment date, else their earliest complete plantilla period.
+     * When each person's government service began here (AgeAndService).
      *
      * @param  Collection<int, Employee>  $staff
      * @return Collection<int, Carbon> keyed by employee id
      */
     private function serviceStarts(Collection $staff): Collection
     {
-        $firstPeriods = PlantillaAppointment::query()->complete()
-            ->whereIn('employee_id', $staff->modelKeys())
-            ->selectRaw('employee_id, MIN(date_from) as first_day')
-            ->groupBy('employee_id')
-            ->pluck('first_day', 'employee_id');
-
-        return $staff->mapWithKeys(function (Employee $employee) use ($firstPeriods) {
-            $start = $employee->original_appointment_date ?? (isset($firstPeriods[$employee->id]) ? Carbon::parse($firstPeriods[$employee->id]) : null);
-
-            return $start ? [$employee->id => $start] : [];
-        });
+        return $this->dates->serviceStarts($staff);
     }
 
     /**
@@ -431,24 +423,14 @@ class HrDashboard
         return ($band[0] === null || $value >= $band[0]) && ($band[1] === null || $value <= $band[1]);
     }
 
-    /** The next time (from today) the date comes round; 29 Feb → 28 Feb in common years. */
     private function nextAnniversary(Carbon $date): Carbon
     {
-        $next = $this->anniversaryIn($date, $this->today->year);
-
-        return $next->lt($this->today) ? $this->anniversaryIn($date, $this->today->year + 1) : $next;
+        return $this->dates->nextAnniversary($date);
     }
 
     private function anniversaryAt(Carbon $birthday, int $age): Carbon
     {
-        return $this->anniversaryIn($birthday, $birthday->year + $age);
-    }
-
-    private function anniversaryIn(Carbon $date, int $year): Carbon
-    {
-        $day = min($date->day, Carbon::create($year, $date->month)->daysInMonth);
-
-        return Carbon::create($year, $date->month, $day)->startOfDay();
+        return $this->dates->anniversaryAt($birthday, $age);
     }
 
     private function office(Employee $employee): ?string

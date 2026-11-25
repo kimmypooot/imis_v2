@@ -378,6 +378,7 @@ class LeaveApplications
             'reference_number' => $application->reference_number,
             'employee_id' => $application->employee_id,
             'name' => $application->employee->user->name,
+            'photo_url' => $application->employee->user->profile_photo_url,
             'office' => $application->employee->user->organizationalUnit?->short_name ?: $application->employee->user->organizationalUnit?->name,
             'leave_type_id' => $application->leave_type_id,
             'type_code' => $application->leaveType->code,

@@ -98,6 +98,15 @@ with a form; `Table` is for small static tables, `DataTable` for searchable,
 sortable, paged lists. Tables that mirror a paper form keep their own
 form-like header.
 
+Lists of people put the person in one column with `PersonCell`: photo
+(or initials), name (a link when there's a page for them) and one muted
+line such as "Position · Office"; badges like "Separated" go in its slot.
+Rows send the photo as `photo_url` (the user's `profile_photo_url`).
+Tables don't scroll sideways: when there are too many figures, stack the
+related ones in one cell with `CellFacts` (each label on its own small
+line above its value), as on Age & Service, and drop the "#" column
+(`:numbered="false"`).
+
 ## Reusing this in other hub systems
 
 Copy, in this order, so the look stays identical: the `@theme` block, `@utility`

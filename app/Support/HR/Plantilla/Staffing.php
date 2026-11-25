@@ -138,6 +138,7 @@ class Staffing
             ])
             ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
+                'photo_url' => $item->incumbency->employee->user->profile_photo_url,
 
         $vacancies = $items
             ->filter(fn (PlantillaItem $item) => $item->incumbency === null)
@@ -200,6 +201,7 @@ class Staffing
                     'home_office_id' => $employee->user->organizational_unit_id,
                     'home_office' => $this->unitName($employee->user->organizationalUnit),
                     'position_title' => $item?->position_title ?? $employee->user->position,
+                    'photo_url' => $employee->user->profile_photo_url,
                     'item_id' => $item?->id,
                     'item' => $item?->reference,
                     'since' => $designation->effective_date->toDateString(),

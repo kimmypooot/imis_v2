@@ -24,10 +24,11 @@ class LeaveDesignationController extends Controller
         $this->authorize('viewAny', LeaveType::class);
 
         return Inertia::render('Admin/HR/Leave/Designations', [
-            'designations' => LeaveDesignation::query()->with(['designee:id,name', 'actingFor:id,name'])->latest('date_from')->get()
+            'designations' => LeaveDesignation::query()->with(['designee:id,name,profile_photo_path', 'actingFor:id,name'])->latest('date_from')->get()
                 ->map(fn (LeaveDesignation $designation) => [
                     'id' => $designation->id,
                     'name' => $designation->designee->name,
+                    'photo_url' => $designation->designee->profile_photo_url,
                     'designee_id' => $designation->designee_id,
                     'acting_for' => $designation->actingFor?->name,
                     'acting_for_id' => $designation->acting_for_id,

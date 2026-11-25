@@ -5,7 +5,7 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import LogFilters from '../../../Components/Admin/LogFilters.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatDateTime, timeAgo } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -60,13 +60,7 @@ const columns = [
                 />
             </template>
             <template #cell-username="{ row }">
-                <div class="flex items-center gap-3">
-                    <UserAvatar :name="row.name ?? row.username ?? '?'" :photo-url="row.profile_photo_url" size="sm" />
-                    <div class="min-w-0">
-                        <div class="truncate font-medium text-text">{{ row.name ?? row.username }}</div>
-                        <div v-if="row.name" class="truncate text-xs text-text-muted">@{{ row.username }}</div>
-                    </div>
-                </div>
+                <PersonCell :name="row.name ?? row.username ?? '?'" :photo-url="row.profile_photo_url" :subtitle="row.name ? `@${row.username}` : null" />
             </template>
             <template #cell-accessed_at="{ row }">
                 <div>{{ formatDateTime(row.accessed_at) }}</div>

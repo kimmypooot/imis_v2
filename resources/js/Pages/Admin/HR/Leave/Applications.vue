@@ -5,6 +5,7 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { leaveDates, leaveStatusTones } from '../../../../Components/HR/leaveStatus';
 
@@ -61,8 +62,7 @@ const columns = [
                 <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
             </template>
             <template #cell-name="{ row }">
-                {{ row.name }}
-                <div v-if="row.office" class="text-xs text-text-muted">{{ row.office }}</div>
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.office" />
             </template>
             <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
             <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>

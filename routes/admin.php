@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AgeAndServiceController;
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\ApplicationAccessController;
@@ -325,6 +326,12 @@ Route::middleware('auth')->group(function () {
     // Scoped bindings: an entry only resolves under its own employee.
     Route::middleware('permission:employees.view,employees.view_unit')->group(function () {
         Route::get('admin/hr/reassignments', [ReassignmentReportController::class, 'index'])->name('admin.hr.reassignments');
+    });
+
+    // Age & Service: the whole roster behind the dashboard's birthday,
+    // retirement and loyalty lists (HR and top management only).
+    Route::middleware('permission:employees.view')->group(function () {
+        Route::get('admin/hr/age-and-service', [AgeAndServiceController::class, 'index'])->name('admin.hr.age-and-service');
     });
 
     // HR-5: someone's Service Record, on screen and printable (HR only;

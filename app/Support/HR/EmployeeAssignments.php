@@ -306,6 +306,7 @@ class EmployeeAssignments
             return [
                 'employee_id' => $employee->id,
                 'name' => $employee->user->name,
+                'photo_url' => $employee->user->profile_photo_url,
                 'position' => $employee->user->position,
                 'office' => $this->unitName($office),
                 'office_id' => $office?->id,

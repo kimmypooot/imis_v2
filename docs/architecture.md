@@ -2356,6 +2356,19 @@ viewer. Chart colors are tokens in `app.css` (`--color-chart-1`, `-2`,
 class names (`bg-chart-1` …) so Tailwind emits them.
 `tests/Feature/HR/HrDashboardTest.php`.
 
+**Age & Service** (`/admin/hr/age-and-service`, `Admin\AgeAndServiceController`,
+`Pages/Admin/HR/AgeAndService/Index.vue`, `employees.view` only) is the
+whole roster behind the birthday, retirement and loyalty cards: everyone
+in service with age, next birthday, length of service in government
+(original appointment, else first complete plantilla period) and in the
+CSC (`LoyaltyAwards`), next loyalty award, and the 60 / 65 retirement
+dates. `?view=` narrows it (`birthdays_month`, `birthdays_30`,
+`retiring_12`, `retirement_age`, `loyalty_year`; the cards' "View all"
+links) and `?office=` filters by office. The date rules live in
+`App\Support\HR\AgeAndService`, which `HrDashboard` also uses. Viewing is
+audited (`employee.age_and_service_viewed`) once a day per viewer.
+`tests/Feature/HR/AgeAndServiceTest.php`.
+
 Charts use **Chart.js 4** (tree-shaken: bar and line only) through
 `Charts/SimpleChart`, following the dataviz method:
 - a single series in the validated `--color-csc-blue-light` (brand navy

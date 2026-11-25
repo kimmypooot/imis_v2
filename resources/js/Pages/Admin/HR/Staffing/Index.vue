@@ -5,6 +5,7 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { formatPeso } from '../../../../Utils/money';
 
@@ -130,7 +131,7 @@ const vacancyColumns = [
                 empty-text="Everyone serves in their item's place of assignment."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
                 </template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title }}
@@ -164,7 +165,7 @@ const vacancyColumns = [
                 empty-text="No office is headed by designation."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
                 </template>
                 <template #cell-home_office="{ row }">{{ row.home_office || '—' }}</template>
                 <template #cell-position_title="{ row }">

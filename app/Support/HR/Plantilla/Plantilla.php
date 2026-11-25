@@ -488,6 +488,7 @@ class Plantilla
                 'appointment_id' => $holder->id,
                 'employee_id' => $holder->employee_id,
                 'name' => $holder->employee->user->name,
+                'photo_url' => $holder->employee->user->profile_photo_url,
                 'step' => $holder->step,
                 'status_label' => $holder->status?->label(),
                 'since' => $holder->date_from?->toDateString(),

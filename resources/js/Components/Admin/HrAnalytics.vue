@@ -20,6 +20,7 @@ const props = defineProps({
 
 const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
 const shortDate = (value) => new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+const dateRange = (from, to) => (from === to ? shortDate(from) : `${shortDate(from)} – ${shortDate(to)}`);
 const when = (days) => (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`);
 const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
 
@@ -124,6 +125,9 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
         <!-- Birthdays and retirement -->
         <div class="grid gap-4 xl:grid-cols-12">
             <Card title="Upcoming birthdays" description="Next 30 days" icon="calendar" class="xl:col-span-5">
+                <template #actions>
+                    <Link href="/admin/hr/age-and-service?view=birthdays_30" class="text-sm font-medium text-link hover:text-primary-hover">View all</Link>
+                </template>
                 <ul class="max-h-80 divide-y divide-border overflow-y-auto">
                     <li v-if="!hr.birthdays.length" class="py-6 text-center text-sm text-text-muted">No birthdays in the next 30 days.</li>
                     <li v-for="person in hr.birthdays" :key="person.employee_id" class="flex items-center gap-3 py-2 text-sm">
@@ -144,6 +148,9 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
             </Card>
 
             <Card title="Upcoming retirees" description="Optional at 60, compulsory at 65 (RA 8291): who reaches either in the next 12 months, and who is already eligible" icon="clock" class="xl:col-span-7">
+                <template #actions>
+                    <Link href="/admin/hr/age-and-service?view=retiring_12" class="text-sm font-medium text-link hover:text-primary-hover">View all</Link>
+                </template>
                 <div class="max-h-80 overflow-auto">
                     <table class="data-table" data-sticky>
                         <caption class="sr-only">Personnel reaching retirement age within 12 months, or already eligible</caption>
@@ -187,7 +194,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                             <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                         </div>
                         <span class="text-right text-xs whitespace-nowrap" :class="item.today ? 'font-semibold text-link' : 'text-text-muted'">
-                            {{ item.dates_label ?? (item.today ? `On leave · until ${shortDate(item.date_to)}` : `${shortDate(item.date_from)} – ${shortDate(item.date_to)}`) }}
+                            {{ item.dates_label ?? (item.today ? `On leave · until ${shortDate(item.date_to)}` : dateRange(item.date_from, item.date_to)) }}
                         </span>
                     </li>
                 </ul>
@@ -216,7 +223,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
                                     <span class="font-medium text-text">{{ item.name }}</span>
                                     <div class="text-xs text-text-muted">{{ item.type || 'Leave' }} · {{ item.days }} {{ item.days === 1 ? 'day' : 'days' }}</div>
                                 </td>
-                                <td class="whitespace-nowrap text-text-muted">{{ item.dates_label ?? `${shortDate(item.date_from)} – ${shortDate(item.date_to)}` }}</td>
+                                <td class="whitespace-nowrap text-text-muted">{{ item.dates_label ?? dateRange(item.date_from, item.date_to) }}</td>
                                 <td class="text-right text-xs font-medium text-text">{{ item.status_label }}</td>
                             </tr>
                         </tbody>
@@ -238,6 +245,9 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
             </Card>
 
             <Card :title="`Loyalty awards, ${hr.loyalty.year}`" description="10 years of service, then every 5 (CSC)" icon="checkCircle" class="xl:col-span-4">
+                <template #actions>
+                    <Link href="/admin/hr/age-and-service?view=loyalty_year" class="text-sm font-medium text-link hover:text-primary-hover">View all</Link>
+                </template>
                 <ul class="max-h-72 divide-y divide-border overflow-y-auto text-sm">
                     <li v-if="!hr.loyalty.withDates" class="py-6 text-center text-text-muted">No appointment dates recorded yet.</li>
                     <li v-else-if="!hr.loyalty.people.length" class="py-6 text-center text-text-muted">No milestones this year.</li>

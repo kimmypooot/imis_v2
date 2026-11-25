@@ -8,8 +8,8 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import BulkSetupModal from '../../../../Components/HR/BulkSetupModal.vue';
 import { employeeDefaults, employeeFields, employeeNullable } from '../../../../Components/HR/employeeFields';
@@ -161,13 +161,7 @@ const visible = computed(() =>
             :empty-text="`No employee records under “${activeLabel}”.`"
         >
             <template #cell-name="{ row }">
-                <div class="flex items-center gap-3">
-                    <UserAvatar :name="row.user.name" :photo-url="row.user.profile_photo_url" size="sm" />
-                    <div class="min-w-0">
-                        <div class="truncate font-medium text-text">{{ row.user.list_name }}</div>
-                        <div v-if="row.user.position" class="truncate text-xs text-text-muted">{{ row.user.position }}</div>
-                    </div>
-                </div>
+                <PersonCell :name="row.user.list_name" :photo-url="row.user.profile_photo_url" :subtitle="row.user.position" />
             </template>
             <template #cell-employee_number="{ row }">{{ row.employee_number || '—' }}</template>
             <template #cell-biometric_id="{ row }">

@@ -61,6 +61,7 @@ class ReassignmentReportController extends Controller
                 ...$assignments->present($entry, $request->user()),
                 'employee_id' => $entry->employee_id,
                 'name' => $entry->employee->user->name,
+                'photo_url' => $entry->employee->user->profile_photo_url,
             ]);
 
         return Inertia::render('Admin/HR/Reassignments/Index', [

@@ -7,9 +7,9 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import AddUserModal from '../../../Components/Admin/AddUserModal.vue';
 import EditUserModal from '../../../Components/Admin/EditUserModal.vue';
@@ -156,13 +156,7 @@ const toggleStatus = async (user) => {
                     </template>
 
                     <template #cell-name="{ row }">
-                        <div class="flex items-center gap-3">
-                            <UserAvatar :name="row.name" :photo-url="row.profile_photo_url" size="sm" />
-                            <div class="min-w-0">
-                                <div class="truncate font-medium text-text">{{ row.name }}</div>
-                                <div class="truncate text-xs text-text-muted">{{ row.email }}</div>
-                            </div>
-                        </div>
+                        <PersonCell :name="row.name" :photo-url="row.profile_photo_url" :subtitle="row.email" />
                     </template>
                     <template #cell-office="{ row }">
                         <span :title="row.office_name">{{ row.office || '—' }}</span>

@@ -1,12 +1,13 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import LdRejectModal from '../../../../Components/HR/LdRejectModal.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
@@ -51,9 +52,12 @@ const approve = (row) => {
     <Card title="Awaiting Review" icon="checkCircle" description="Trainings employees added to their own logs. Check the certificate when there is one.">
         <DataTable :columns="columns" :rows="pending" caption="L&D entries awaiting review" export-name="imis-ld-reviews">
             <template #cell-employee="{ row }">
-                <Link v-if="canViewLogs" :href="`/admin/hr/employees/${row.employee.id}/learning-development`" class="font-medium text-link hover:underline">{{ row.employee.name }}</Link>
-                <span v-else class="font-medium text-text">{{ row.employee.name }}</span>
-                <div class="text-xs text-text-muted">{{ [row.employee.position, row.employee.unit].filter(Boolean).join(' · ') || '—' }}</div>
+                <PersonCell
+                    :name="row.employee.name"
+                    :photo-url="row.employee.photo_url"
+                    :href="canViewLogs ? `/admin/hr/employees/${row.employee.id}/learning-development` : null"
+                    :subtitle="[row.employee.position, row.employee.unit].filter(Boolean).join(' · ') || '—'"
+                />
             </template>
             <template #cell-title="{ row }">
                 <div class="font-medium text-text">{{ row.title }}</div>

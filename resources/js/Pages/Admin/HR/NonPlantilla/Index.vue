@@ -9,6 +9,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import { contractDefaults, contractFields, contractNullable } from '../../../../Components/HR/nonPlantillaFields';
@@ -153,7 +154,7 @@ const remove = async (contract) => {
 
             <DataTable :columns="columns" :rows="shown" caption="Non-plantilla personnel" :export-name="`imis-non-plantilla-${status}`" empty-text="No one here.">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
                 </template>
                 <template #cell-designation="{ row }">{{ row.designation || '—' }}</template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>

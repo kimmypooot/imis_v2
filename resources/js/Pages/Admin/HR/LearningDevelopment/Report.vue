@@ -5,6 +5,7 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -118,7 +119,7 @@ const columns = [
                 empty-text="No approved trainings for this period."
             >
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${filters.year}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/learning-development?year=${filters.year}`" />
                 </template>
                 <template #cell-hours="{ row }"><span class="tabular-nums">{{ hours(row.hours) }}</span></template>
                 <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.date_from) }}</span></template>

@@ -8,8 +8,8 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
-import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import AccessGridModal from '../../../Components/Admin/AccessGridModal.vue';
 
 defineOptions({ layout: AdminLayout });
@@ -106,13 +106,7 @@ const save = (changes) => {
         </p>
         <DataTable :columns="columns" :rows="users" caption="Users and their system access" export-name="imis-user-access" :default-sort="{ key: 'name', direction: 'asc' }">
             <template #cell-name="{ row }">
-                <div class="flex items-center gap-3">
-                    <UserAvatar :name="row.name" :photo-url="row.profile_photo_url" size="sm" />
-                    <div class="min-w-0">
-                        <div class="truncate font-medium text-text">{{ row.name }}</div>
-                        <div class="truncate text-xs text-text-muted">@{{ row.username }}</div>
-                    </div>
-                </div>
+                <PersonCell :name="row.name" :photo-url="row.profile_photo_url" :subtitle="`@${row.username}`" />
             </template>
             <template #cell-office="{ row }">
                 <span :title="row.office_name">{{ row.office || '—' }}</span>

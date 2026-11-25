@@ -9,6 +9,7 @@ import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import LdBulkAddModal from '../../../../Components/HR/LdBulkAddModal.vue';
 
 defineOptions({ layout: AdminLayout });
@@ -106,9 +107,9 @@ const columns = [
 
             <DataTable :columns="columns" :rows="shown" :caption="`L&D per employee, ${year}`" :export-name="`imis-ld-employees-${year}`">
                 <template #cell-name="{ row }">
-                    <Link :href="`/admin/hr/employees/${row.id}/learning-development?year=${year}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
-                    <StatusBadge v-if="row.separated" status="inactive" label="Separated" class="ml-2" />
-                    <div v-if="row.position" class="text-xs text-text-muted">{{ row.position }}</div>
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.id}/learning-development?year=${year}`" :subtitle="row.position">
+                        <StatusBadge v-if="row.separated" status="inactive" label="Separated" />
+                    </PersonCell>
                 </template>
                 <template #cell-unit="{ row }">{{ row.unit || '—' }}</template>
                 <template #cell-trainings="{ row }"><span class="tabular-nums" :class="row.trainings ? '' : 'text-text-muted'">{{ row.trainings }}</span></template>

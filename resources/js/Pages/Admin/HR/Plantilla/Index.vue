@@ -9,6 +9,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import { plantillaItemDefaults, plantillaItemFields, plantillaItemNullable } from '../../../../Components/HR/plantillaFields';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -133,7 +134,7 @@ const columns = [
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-holder="{ row }">
-                    <Link v-if="row.holder" :href="`/admin/hr/employees/${row.holder.employee_id}`" class="text-link hover:underline">{{ row.holder.name }}</Link>
+                    <PersonCell v-if="row.holder" :name="row.holder.name" :photo-url="row.holder.photo_url" :href="`/admin/hr/employees/${row.holder.employee_id}`" />
                     <span v-else class="text-text-muted">—</span>
                     <div v-if="row.serving?.elsewhere" class="text-xs text-info-fg">
                         Serving at {{ row.serving.office }}<template v-if="row.serving.order_number"> ({{ row.serving.order_number }})</template>

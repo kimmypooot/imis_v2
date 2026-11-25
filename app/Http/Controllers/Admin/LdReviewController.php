@@ -36,6 +36,7 @@ class LdReviewController extends Controller
                 'employee' => [
                     'id' => $record->employee->id,
                     'name' => $record->employee->user->name,
+                    'photo_url' => $record->employee->user->profile_photo_url,
                     'position' => $record->employee->user->position,
                     'unit' => $record->employee->user->organizationalUnit?->short_name ?: $record->employee->user->organizationalUnit?->name,
                 ],

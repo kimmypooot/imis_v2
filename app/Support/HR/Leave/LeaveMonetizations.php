@@ -155,6 +155,7 @@ class LeaveMonetizations
             'reference_number' => $request->reference_number,
             'employee_id' => $request->employee_id,
             'name' => $request->employee->user->name,
+            'photo_url' => $request->employee->user->profile_photo_url,
             'kind' => $request->kind,
             'kind_label' => $request->kind === 'terminal' ? 'Terminal leave' : 'Monetization',
             'vl_days' => (float) $request->vl_days,

@@ -4,6 +4,7 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -59,8 +60,7 @@ const columns = [
 
         <DataTable :columns="columns" :rows="requests" caption="Payslip requests" :export-name="`imis-payslip-requests-${status}`" :empty-text="`No ${status} requests.`">
             <template #cell-employee="{ row }">
-                <span class="font-medium text-text">{{ row.employee }}</span>
-                <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></div>
+                <PersonCell :name="row.employee" :photo-url="row.photo_url" :subtitle="[row.position, row.office].filter(Boolean).join(' · ')" />
             </template>
             <template #cell-purpose="{ row }">{{ row.purpose || '—' }}</template>
             <template #cell-requested_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span></template>
