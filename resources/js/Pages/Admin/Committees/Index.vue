@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
@@ -41,8 +41,9 @@ const rows = computed(() => props.committees.filter((item) => item.status === st
 
 const columns = [
     { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description', value: (committee) => committee.description ?? '' },
     { key: 'active_members_count', label: 'Active members', align: 'center' },
-    { key: 'effective', label: 'Effective', value: (committee) => [committee.effective_from, committee.effective_until ?? 'present'].filter(Boolean).join(' – ') },
+    { key: 'effective', label: 'Effective', value: (committee) => (committee.effective_from || committee.effective_until ? `${committee.effective_from ?? '—'} – ${committee.effective_until ?? 'present'}` : 'Standing') },
     { key: 'status', label: 'Status', align: 'center' },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '7rem' },
 ];
@@ -93,8 +94,12 @@ const toggleStatus = async (committee) => {
             :export-name="`imis-committees-${tab.key}`"
         >
             <template #cell-name="{ row }">
-                <div class="font-medium text-text">{{ row.name }}</div>
+                <Link :href="`/admin/committees/${row.id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
                 <div v-if="row.short_name" class="text-xs text-text-muted">{{ row.short_name }}</div>
+            </template>
+            <template #cell-description="{ row }">
+                <p v-if="row.description" class="line-clamp-2 max-w-xl text-sm text-text-muted" :title="row.description">{{ row.description }}</p>
+                <span v-else class="text-text-muted">—</span>
             </template>
             <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
             <template #cell-actions="{ row }">

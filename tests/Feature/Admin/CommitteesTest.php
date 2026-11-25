@@ -3,6 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Committee;
+use App\Models\CommitteeMember;
+use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -146,6 +148,23 @@ class CommitteesTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page->component('Admin/Committees/Show'));
+    }
+
+    public function test_a_committees_page_lists_each_member_with_their_photo_position_and_office(): void
+    {
+        $user = $this->userWithPermission('committees.view');
+        $committee = Committee::factory()->create();
+        $office = OrganizationalUnit::factory()->create(['name' => 'Human Resource Division', 'short_name' => 'HRD']);
+        $member = User::factory()->create(['name' => 'Ana Cruz', 'position' => 'Attorney V', 'organizational_unit_id' => $office->id]);
+        CommitteeMember::factory()->for($committee)->for($member)->create(['position' => 'Chairperson', 'effective_from' => '2026-01-05']);
+
+        $this->actingAs($user)->get("/admin/committees/{$committee->id}")->assertInertia(fn ($page) => $page
+            ->where('members.0.name', 'Ana Cruz')
+            ->where('members.0.subtitle', 'Attorney V · HRD')
+            ->where('members.0.position', 'Chairperson')
+            ->where('members.0.effective_from', '2026-01-05')
+            ->where('members.0.status', 'active')
+            ->has('members.0.photo_url'));
     }
 
     public function test_unauthorized_user_cannot_update_a_committee(): void

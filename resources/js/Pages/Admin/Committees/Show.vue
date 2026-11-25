@@ -1,23 +1,31 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
-import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
-import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
-import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
-import Select from '@cscro8/ui/Components/Forms/Select.vue';
-import ConfirmDialog from '@cscro8/ui/Components/Feedback/ConfirmDialog.vue';
+import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import RecordModal from '../../../Components/Admin/RecordModal.vue';
 import { committeeDefaults, committeeFields, committeeNullable } from '../../../Components/Admin/committeeFields';
 import { useAuthorization } from '../../../Composables/useAuthorization';
+import { confirm } from '@cscro8/ui/Composables/useDialog.js';
+import { formatCalendarDate } from '../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
 
+/**
+ * One committee: what it does, who leads it, and its members, current and
+ * former. Members are added and edited in a modal; ending a membership
+ * keeps it on record under "Former".
+ */
 const props = defineProps({
     committee: { type: Object, required: true },
     members: { type: Array, required: true },
@@ -26,57 +34,76 @@ const props = defineProps({
 });
 
 const { can } = useAuthorization();
+
+// Positions are free text ("Vice-Chairperson (Director II Representative)"):
+// the chair and vice chair lead, then everyone else, then the secretariat.
+const rank = (position) => {
+    const title = position.toLowerCase();
+    if (/vice[\s-]?chair/.test(title)) return 1;
+    if (/^(chair|head)/.test(title)) return 0;
+    if (title.includes('secretariat')) return 3;
+    return 2;
+};
+const isOfficer = (member) => rank(member.position) < 2;
+const ordered = computed(() => [...props.members].sort((a, b) => rank(a.position) - rank(b.position) || a.name.localeCompare(b.name)));
+const current = computed(() => ordered.value.filter((member) => member.status === 'active'));
+const former = computed(() => ordered.value.filter((member) => member.status !== 'active'));
+const officers = computed(() => current.value.filter(isOfficer));
+
+const view = ref('current');
+const views = computed(() => [
+    { key: 'current', label: `Current (${current.value.length})` },
+    { key: 'former', label: `Former (${former.value.length})` },
+]);
+const shown = computed(() => (view.value === 'current' ? current.value : former.value));
+
+const term = (from, until) => (from || until ? `${from ? formatCalendarDate(from) : 'No start date'} – ${until ? formatCalendarDate(until) : 'present'}` : '—');
+
+const columns = [
+    { key: 'name', label: 'Member' },
+    { key: 'position', label: 'Position' },
+    { key: 'term', label: 'Term', value: (member) => term(member.effective_from, member.effective_until) },
+    { key: 'status', label: 'Status', align: 'center' },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '6rem' },
+];
+
+// The committee itself.
 const editingCommittee = ref(false);
 
-const addForm = useForm({
-    user_id: '',
-    position: '',
-    effective_from: '',
-    effective_until: '',
-    status: 'active',
-});
-
+// Add / edit a membership.
+const memberOpen = ref(false);
+const editingMember = ref(null);
+const memberDefaults = { user_id: '', position: '', status: 'active', effective_from: '', effective_until: '' };
+const memberFields = computed(() => [
+    ...(editingMember.value
+        ? []
+        : [{ key: 'user_id', label: 'Person', type: 'select', required: true, span: 'full', options: props.userOptions.map((user) => ({ value: user.id, label: user.name })) }]),
+    { key: 'position', label: 'Position', required: true, help: 'e.g. Chairperson, Vice Chairperson, Member, Secretariat' },
+    { key: 'status', label: 'Status', type: 'select', required: true, options: props.statusOptions },
+    { key: 'effective_from', label: 'Effective from', type: 'date' },
+    { key: 'effective_until', label: 'Effective until', type: 'date' },
+]);
 const addMember = () => {
-    addForm.post(`/admin/committees/${props.committee.id}/members`, {
-        onSuccess: () => addForm.reset(),
+    editingMember.value = null;
+    memberOpen.value = true;
+};
+const editMember = (member) => {
+    editingMember.value = member;
+    memberOpen.value = true;
+};
+
+const toggleMembership = async (member) => {
+    const ending = member.status === 'active';
+    const confirmed = await confirm({
+        title: ending ? `End ${member.name}'s membership?` : `Reactivate ${member.name}'s membership?`,
+        text: ending ? 'They move to Former members; the record is kept.' : 'They move back to Current members.',
+        tone: ending ? 'danger' : 'primary',
+        confirmText: ending ? 'End membership' : 'Reactivate',
     });
-};
 
-const editingMemberId = ref(null);
-const editForm = useForm({ position: '', effective_from: '', effective_until: '', status: 'active' });
-
-const startEdit = (member) => {
-    editingMemberId.value = member.id;
-    editForm.clearErrors();
-    editForm.position = member.position;
-    editForm.effective_from = member.effective_from ?? '';
-    editForm.effective_until = member.effective_until ?? '';
-    editForm.status = member.status;
-};
-
-const cancelEdit = () => {
-    editingMemberId.value = null;
-};
-
-const saveEdit = (member) => {
-    editForm.put(`/admin/committees/${props.committee.id}/members/${member.id}`, {
-        onSuccess: () => (editingMemberId.value = null),
-    });
-};
-
-const confirmTarget = ref(null);
-const statusForm = useForm({ status: '' });
-
-const requestEndMembership = (member) => {
-    confirmTarget.value = member;
-};
-
-const confirmStatusChange = () => {
-    const member = confirmTarget.value;
-    statusForm.status = member.status === 'active' ? 'inactive' : 'active';
-    statusForm.patch(`/admin/committees/${props.committee.id}/members/${member.id}/status`, {
-        onSuccess: () => (confirmTarget.value = null),
-    });
+    if (confirmed) {
+        router.patch(`/admin/committees/${props.committee.id}/members/${member.id}/status`, { status: ending ? 'inactive' : 'active' }, { preserveScroll: true });
+    }
 };
 </script>
 
@@ -88,13 +115,108 @@ const confirmStatusChange = () => {
         :breadcrumbs="[
             { label: 'Home', href: '/admin' },
             { label: 'Committees', href: '/admin/committees' },
-            { label: committee.name },
+            { label: committee.short_name || committee.name },
         ]"
     >
         <template v-if="can('committees.update')" #actions>
-            <Button variant="secondary" @click="editingCommittee = true" icon="pencil">Edit committee</Button>
+            <Button variant="secondary" icon="pencil" @click="editingCommittee = true">Edit committee</Button>
+            <Button variant="success" @click="addMember"><Icon name="plus" size="sm" />Add member</Button>
         </template>
     </PageHeader>
+
+    <div class="space-y-6">
+        <div class="grid gap-4 lg:grid-cols-3">
+            <Card title="About this committee" icon="info" class="lg:col-span-2">
+                <template #actions>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Badge v-if="committee.short_name" tone="info">{{ committee.short_name }}</Badge>
+                        <StatusBadge :status="committee.status" />
+                    </div>
+                </template>
+
+                <p v-if="committee.description" class="text-sm leading-relaxed whitespace-pre-line text-text">{{ committee.description }}</p>
+                <p v-else class="text-sm text-text-muted">
+                    No description yet.
+                    <button v-if="can('committees.update')" type="button" class="font-medium text-link hover:underline" @click="editingCommittee = true">Add one</button>
+                </p>
+
+                <dl class="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-xs font-semibold tracking-wide text-text-muted uppercase">Effective</dt>
+                        <dd class="mt-1 flex items-center gap-2 text-sm text-text">
+                            <Icon name="calendar" size="sm" class="text-text-muted" />
+                            {{ committee.effective_from || committee.effective_until ? term(committee.effective_from, committee.effective_until) : 'Standing committee (no set term)' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold tracking-wide text-text-muted uppercase">Led by</dt>
+                        <dd class="mt-1 space-y-2">
+                            <PersonCell v-for="officer in officers" :key="officer.id" :name="officer.name" :photo-url="officer.photo_url" :subtitle="officer.position" />
+                            <p v-if="!officers.length" class="text-sm text-text-muted">No chairperson named yet.</p>
+                        </dd>
+                    </div>
+                </dl>
+            </Card>
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <StatTile label="Current members" :value="current.length" icon="users" tone="primary">serving now</StatTile>
+                <StatTile label="Former members" :value="former.length" icon="archive" tone="info">kept on record</StatTile>
+            </div>
+        </div>
+
+        <Card title="Members" icon="users">
+            <template v-if="members.length" #actions>
+                <div class="flex flex-wrap gap-1" role="group" aria-label="Members to show">
+                    <button
+                        v-for="tab in views"
+                        :key="tab.key"
+                        type="button"
+                        class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors motion-reduce:transition-none"
+                        :class="view === tab.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
+                        :aria-pressed="view === tab.key"
+                        @click="view = tab.key"
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
+            </template>
+
+            <EmptyState v-if="!members.length" icon="users" title="No members yet" description="Add the people who sit on this committee and their positions.">
+                <template v-if="can('committees.update')" #action>
+                    <Button variant="success" @click="addMember"><Icon name="plus" size="sm" />Add member</Button>
+                </template>
+            </EmptyState>
+
+            <DataTable
+                v-else
+                :columns="columns"
+                :rows="shown"
+                :caption="`${view === 'current' ? 'Current' : 'Former'} members of ${committee.name}`"
+                :export-name="`imis-committee-${committee.short_name || committee.id}-${view}`"
+                :empty-text="view === 'current' ? 'No current members.' : 'No former members.'"
+            >
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.subtitle || null" />
+                </template>
+                <template #cell-position="{ row }">
+                    <Badge :tone="isOfficer(row) ? 'info' : 'neutral'">{{ row.position }}</Badge>
+                </template>
+                <template #cell-term="{ row }"><span class="text-sm">{{ term(row.effective_from, row.effective_until) }}</span></template>
+                <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+                <template #cell-actions="{ row }">
+                    <div v-if="can('committees.update')" class="flex justify-center gap-1">
+                        <ActionButton icon="pencil" :label="`Edit ${row.name}'s membership`" @click="editMember(row)" />
+                        <ActionButton
+                            icon="power"
+                            :tone="row.status === 'active' ? 'danger' : 'success'"
+                            :label="row.status === 'active' ? `End ${row.name}'s membership` : `Reactivate ${row.name}'s membership`"
+                            @click="toggleMembership(row)"
+                        />
+                    </div>
+                </template>
+            </DataTable>
+        </Card>
+    </div>
 
     <RecordModal
         :open="editingCommittee"
@@ -108,149 +230,16 @@ const confirmStatusChange = () => {
         @close="editingCommittee = false"
     />
 
-    <Card class="mb-6 max-w-2xl">
-        <div class="mb-3 flex flex-wrap items-center gap-2">
-            <Badge :tone="committee.status === 'active' ? 'success' : 'neutral'">{{ committee.status }}</Badge>
-            <span v-if="committee.short_name" class="text-sm text-text-muted">{{ committee.short_name }}</span>
-        </div>
-        <p v-if="committee.description" class="text-sm text-text-muted">{{ committee.description }}</p>
-        <p v-if="committee.effective_from || committee.effective_until" class="mt-2 text-sm text-text-muted">
-            Effective {{ committee.effective_from ?? '—' }} to {{ committee.effective_until ?? 'present' }}
-        </p>
-    </Card>
-
-    <h2 class="mb-3 text-sm font-semibold text-text">Members</h2>
-
-    <div class="grid gap-6 lg:grid-cols-3">
-        <div class="space-y-3 lg:col-span-2">
-            <EmptyState v-if="members.length === 0" title="No members yet" description="Add the first member using the form." />
-
-            <Card v-for="member in members" :key="member.id">
-                <div v-if="editingMemberId === member.id" class="space-y-4">
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <TextInput
-                                id="edit-position"
-                                v-model="editForm.position"
-                                label="Position"
-                                required
-                                :error="editForm.errors.position"
-                            />
-                        </div>
-                        <FormGroup id="edit-status" label="Status" required :error="editForm.errors.status">
-                            <Select id="edit-status" v-model="editForm.status" :options="statusOptions" />
-                        </FormGroup>
-                        <div>
-                            <TextInput
-                                id="edit-effective_from"
-                                v-model="editForm.effective_from"
-                                type="date"
-                                label="Effective from"
-                                :error="editForm.errors.effective_from"
-                            />
-                        </div>
-                        <div>
-                            <TextInput
-                                id="edit-effective_until"
-                                v-model="editForm.effective_until"
-                                type="date"
-                                label="Effective until"
-                                :error="editForm.errors.effective_until"
-                            />
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <Button :loading="editForm.processing" @click="saveEdit(member)" icon="check">Save</Button>
-                        <Button variant="secondary" @click="cancelEdit" icon="close">Cancel</Button>
-                    </div>
-                </div>
-
-                <div v-else class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0">
-                        <div class="font-medium text-text">{{ member.user.name }}</div>
-                        <div class="text-sm text-text-muted">{{ member.user.email }}</div>
-                        <div class="mt-1 flex flex-wrap items-center gap-2">
-                            <Badge tone="info">{{ member.position }}</Badge>
-                            <Badge :tone="member.status === 'active' ? 'success' : 'neutral'">{{ member.status }}</Badge>
-                        </div>
-                        <div class="mt-1 text-sm text-text-muted">
-                            {{ member.effective_from ?? 'No start date' }} – {{ member.effective_until ?? 'present' }}
-                        </div>
-                    </div>
-
-                    <div v-if="can('committees.update')" class="flex shrink-0 gap-2">
-                        <Button variant="secondary" @click="startEdit(member)" icon="pencil">Edit</Button>
-                        <Button
-                            :variant="member.status === 'active' ? 'danger' : 'primary'"
-                            @click="requestEndMembership(member)"
-                        >
-                            {{ member.status === 'active' ? 'End membership' : 'Reactivate' }}
-                        </Button>
-                    </div>
-                </div>
-            </Card>
-        </div>
-
-        <Card v-if="can('committees.update')" title="Add member">
-            <form class="space-y-4" @submit.prevent="addMember">
-                <FormGroup id="user_id" label="Person" required :error="addForm.errors.user_id">
-                    <Select
-                        id="user_id"
-                        v-model="addForm.user_id"
-                        placeholder="Select a person"
-                        :options="userOptions.map((user) => ({ value: user.id, label: `${user.name} (${user.email})` }))"
-                    />
-                </FormGroup>
-
-                <div>
-                    <TextInput
-                        id="position"
-                        v-model="addForm.position"
-                        label="Position"
-                        placeholder="e.g. Chairperson"
-                        required
-                        :error="addForm.errors.position"
-                    />
-                </div>
-
-                <div>
-                    <TextInput
-                        id="effective_from"
-                        v-model="addForm.effective_from"
-                        type="date"
-                        label="Effective from"
-                        :error="addForm.errors.effective_from"
-                    />
-                </div>
-
-                <div>
-                    <TextInput
-                        id="effective_until"
-                        v-model="addForm.effective_until"
-                        type="date"
-                        label="Effective until"
-                        :error="addForm.errors.effective_until"
-                    />
-                </div>
-
-                <Button type="submit" :loading="addForm.processing" icon="plus">Add member</Button>
-            </form>
-        </Card>
-    </div>
-
-    <ConfirmDialog
-        :open="!!confirmTarget"
-        :title="confirmTarget?.status === 'active' ? 'End this membership?' : 'Reactivate this membership?'"
-        :danger="confirmTarget?.status === 'active'"
-        :confirm-label="confirmTarget?.status === 'active' ? 'End membership' : 'Reactivate'"
-        :processing="statusForm.processing"
-        @confirm="confirmStatusChange"
-        @cancel="confirmTarget = null"
-    >
-        {{
-            confirmTarget?.status === 'active'
-                ? `${confirmTarget?.user.name}'s membership will be marked inactive.`
-                : `${confirmTarget?.user.name}'s membership will be marked active again.`
-        }}
-    </ConfirmDialog>
+    <RecordModal
+        :open="memberOpen"
+        noun="Member"
+        :record="editingMember"
+        :fields="memberFields"
+        :defaults="memberDefaults"
+        :nullable="['effective_from', 'effective_until']"
+        :store-url="`/admin/committees/${committee.id}/members`"
+        :update-url="(member) => `/admin/committees/${committee.id}/members/${member.id}`"
+        size="md"
+        @close="memberOpen = false"
+    />
 </template>

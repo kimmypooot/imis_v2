@@ -9,6 +9,7 @@ use App\Http\Requests\Committee\StoreCommitteeRequest;
 use App\Http\Requests\Committee\UpdateCommitteeRequest;
 use App\Http\Requests\Committee\UpdateCommitteeStatusRequest;
 use App\Models\Committee;
+use App\Models\CommitteeMember;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,10 +57,16 @@ class CommitteeController extends Controller
         return Inertia::render('Admin/Committees/Show', [
             'committee' => $committee,
             'members' => $committee->members()
-                ->with('user:id,name,email,status')
-                ->orderByDesc('status')
+                ->with('user:id,name,status,position,organizational_unit_id,profile_photo_path', 'user.organizationalUnit:id,name,short_name')
+                ->orderBy('status')
                 ->orderBy('effective_from', 'desc')
-                ->get(),
+                ->get()
+                ->map(fn (CommitteeMember $member) => [
+                    ...collect($member->toArray())->only(['id', 'position', 'status', 'effective_from', 'effective_until'])->all(),
+                    'name' => $member->user->name,
+                    'photo_url' => $member->user->profile_photo_url,
+                    'subtitle' => collect([$member->user->position, $member->user->organizationalUnit?->short_name ?: $member->user->organizationalUnit?->name])->filter()->implode(' · '),
+                ]),
             'userOptions' => User::query()
                 ->where('status', 'active')
                 ->whereNotIn('id', $committee->activeMembers()->pluck('user_id'))
