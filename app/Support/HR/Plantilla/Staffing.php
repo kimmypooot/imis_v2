@@ -21,7 +21,9 @@ use Illuminate\Support\Collection;
  *
  * A holder whose station isn't their item's place of assignment is
  * "serving elsewhere": reassigned out of the item's office, and into the
- * office they serve in.
+ * office they serve in. A **plantilla-only** office (the Leyte field
+ * office, which works as Leyte I and Leyte II) covers its sub-offices: a
+ * holder of its item serving in one of them is at their item's office.
  *
  * Offices **headed by designation** — someone heading them in a concurrent
  * capacity while staying in their own office, for want of an item there
@@ -53,15 +55,17 @@ class Staffing
 
         $employees->load('user.organizationalUnit');
         $stations = $this->assignments->stationsOn($employees, today())->keyBy('employee_id');
+        $subOffices = $this->subOfficesOfPlantillaOnly();
 
-        return $held->mapWithKeys(function (PlantillaItem $item) use ($stations) {
+        return $held->mapWithKeys(function (PlantillaItem $item) use ($stations, $subOffices) {
             $station = $stations[$item->incumbency->employee_id];
             $atId = $station['detailed_to_id'] ?? $station['office_id'];
+            $itemOffices = [$item->organizational_unit_id, ...($subOffices[$item->organizational_unit_id] ?? [])];
 
             return [$item->id => [
                 'office' => $station['detailed_to'] ?? $station['office'],
                 'office_id' => $atId,
-                'elsewhere' => $item->organizational_unit_id !== null && $atId !== null && $atId !== $item->organizational_unit_id,
+                'elsewhere' => $item->organizational_unit_id !== null && $atId !== null && ! in_array($atId, $itemOffices, true),
                 'detail' => $station['detailed_to'] !== null,
                 'kind' => $station['move_kind'],
                 'since' => $station['moved_on'],
@@ -211,6 +215,20 @@ class Staffing
             })
             ->sortBy('office', SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
+    }
+
+    /**
+     * The sub-offices of each plantilla-only office, keyed by its id.
+     *
+     * @return Collection<int, array<int, int>>
+     */
+    private function subOfficesOfPlantillaOnly(): Collection
+    {
+        return OrganizationalUnit::query()
+            ->whereHas('parent', fn ($parent) => $parent->where('plantilla_only', true))
+            ->get(['id', 'parent_id'])
+            ->groupBy('parent_id')
+            ->map(fn (Collection $units) => $units->pluck('id')->all());
     }
 
     private function unitName(?OrganizationalUnit $unit): ?string

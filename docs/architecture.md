@@ -3693,7 +3693,9 @@ pending. Fields can be adjusted once it arrives.
   item's **place of assignment** (its office) and its holder's **station**
   (where they serve today, from the reassignment history: the last
   reassignment, or a running detail). A holder whose station differs is
-  "serving elsewhere".
+  "serving elsewhere" — except that a plantilla-only office's item covers
+  its sub-offices, so a Field Office - Leyte item held by someone in
+  Leyte I or II counts as at its office.
   - per office: plantilla items, filled, vacant, serving elsewhere (out),
     from other offices (in), actually serving here (filled − out + in),
     and in-service staff without an item, counted where they serve
@@ -3741,23 +3743,31 @@ pending. Fields can be adjusted once it arrives.
     one with an employee record in service; the others are reported as
     likely duplicate accounts.
   - **Takes:** item number; place of assignment from the office heading
-    (`PlantillaOfPersonnel::OFFICES`; "FO No. 6 Leyte" is deliberately
-    unmapped until HR decides between the Leyte offices); step, status
+    (`PlantillaOfPersonnel::OFFICES`; "FO No. 6 Leyte" is the plantilla-only
+    Field Office - Leyte, `LFO`); step, status
     and, inferred, nature and start date (a last-promotion date means a
     Promotion from then, or from the assumption date in "6/22/2026
     (A: 7/15/2026)"; "-" means the Original appointment); the original
     appointment date; and the holder's sex, birthday and middle name (the
-    sheet is certified, so it wins). Vacant rows become vacant items under
-    the matching position.
+    sheet is certified, so it wins); and the TIN, into the PDS (encrypted,
+    never printed, audited per employee as `pds.updated`) only where the
+    employee hasn't entered one. The nature and start date are checked
+    against the period the holder's run on the item began with: step
+    increments recorded since are newer than the sheet and kept, and a
+    date inside an earlier item's period is left as is. Vacant rows become
+    vacant items under the matching position. An item number leading a
+    note ("NEW (SVPS-21-2004) Source is ...") is read.
   - **Leaves alone:** IMIS position titles (the sheet's "SENIOR PS (SENIOR
     HRS)" only identifies the position); grades (a different SG is
-    reported for the Positions list); TIN and eligibility (they're the
-    PDS's); and anything unusable: a step past 8, a future or unreadable
-    date, a "NEW" item number. A row whose position isn't the one held in
+    reported for the Positions list); eligibility, and a TIN the employee
+    entered themselves (they're the PDS's); and anything unusable: a step
+    past 8, a future or unreadable date (the original appointment still
+    applies), a bare "NEW" item number. A row whose position isn't the one held in
     IMIS (an unrecorded promotion) gets staff details only.
   - Typed dates are read month first (Excel's US format), day first only
     when the first number can't be a month; each is shown in the preview.
-  - Staff in service in IMIS but not on the sheet are listed at the end.
+  - Staff in service in IMIS but not on the sheet are listed at the end
+    (non-plantilla staff, such as Contract of Service, aren't).
   - Tests: `tests/Feature/HR/ImportPlantillaTest.php`.
 - **Salary Schedules** (`/admin/hr/salary-schedules`):
   - the list, with the one in force marked

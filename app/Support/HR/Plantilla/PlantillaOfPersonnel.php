@@ -6,9 +6,11 @@ use App\Enums\AppointmentNature;
 use App\Enums\EmploymentStatus;
 use App\Models\Employee;
 use App\Models\OrganizationalUnit;
+use App\Models\PlantillaAppointment;
 use App\Models\PlantillaItem;
 use App\Models\Position;
 use App\Models\User;
+use App\Support\HR\Pds\PdsWriter;
 use App\Support\Tables\XlsxReader;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -30,12 +32,19 @@ use RuntimeException;
  *   plantilla changes, only a warning.
  * - Salary grades. They come from the Positions list; a different grade
  *   on the sheet is reported for HR to correct there.
- * - TIN and eligibility. They belong to the employee's own PDS.
+ * - Eligibility. It belongs to the employee's own PDS.
+ * - A TIN the employee already entered on their PDS. The sheet's TIN only
+ *   fills a blank one (encrypted, like every PDS identity number), and is
+ *   never printed.
  *
  * The sheet doesn't give a nature of appointment, so it's inferred: a
  * last-promotion date means a Promotion starting then (on the assumption
  * date when the cell gives one, "6/22/2026 (A: 7/15/2026)"); none ("-")
  * means the Original appointment. Each inference is shown before saving.
+ * It is checked against the period the holder's current run on the item
+ * began with: step increments IMIS recorded since are newer than the sheet
+ * and are kept, and a date that falls in an earlier item's period (a move
+ * the sheet doesn't show yet) is left as is.
  *
  * As with PlantillaSheet, a blank cell never clears a value, and nothing
  * is saved until apply() is given the checked rows.
@@ -95,11 +104,13 @@ class PlantillaOfPersonnel
         'sex' => 'Sex',
         'birthday' => 'Birthday',
         'middle_name' => 'Middle name',
+        'tin_no' => 'TIN',
     ];
 
     public function __construct(
         private readonly Plantilla $plantilla,
         private readonly XlsxReader $reader,
+        private readonly PdsWriter $pds,
     ) {}
 
     /**
@@ -150,7 +161,7 @@ class PlantillaOfPersonnel
      */
     public function check(array $rows): Collection
     {
-        $users = User::query()->with(['employee'])->get();
+        $users = User::query()->with(['employee.pdsProfile', 'employee.plantillaAppointments.item'])->get();
         $offices = OrganizationalUnit::query()->get();
         $positions = Position::query()->get();
         $items = PlantillaItem::query()->with(['position', 'organizationalUnit', 'incumbency'])->get();
@@ -193,7 +204,7 @@ class PlantillaOfPersonnel
      */
     public function apply(Collection $checked): array
     {
-        $touched = ['items_created' => [], 'items_updated' => [], 'appointments_corrected' => [], 'employees_updated' => [], 'accounts_updated' => []];
+        $touched = ['items_created' => [], 'items_updated' => [], 'appointments_corrected' => [], 'employees_updated' => [], 'accounts_updated' => [], 'tins_recorded' => []];
 
         DB::transaction(function () use ($checked, &$touched) {
             foreach ($checked->filter(fn (array $row) => $row['ready']) as $row) {
@@ -210,6 +221,14 @@ class PlantillaOfPersonnel
                     $appointment = PlantillaItem::query()->findOrFail($apply['item_id'])->incumbency;
                     $this->plantilla->correct($appointment, $apply['holder']);
                     $touched['appointments_corrected'][] = $appointment->id;
+                }
+                if (isset($apply['began'])) {
+                    $period = PlantillaAppointment::query()->findOrFail($apply['began_id']);
+                    $this->plantilla->correct($period, $apply['began']);
+                    $touched['appointments_corrected'][] = $period->id;
+                }
+                if (isset($apply['pds']) && $this->pds->recordTin(Employee::query()->findOrFail($apply['employee_id']), $apply['pds']['tin_no'])) {
+                    $touched['tins_recorded'][] = $apply['employee_id'];
                 }
                 if (isset($apply['employee'])) {
                     Employee::query()->findOrFail($apply['employee_id'])->fill($apply['employee'])->save();
@@ -237,7 +256,11 @@ class PlantillaOfPersonnel
     {
         $matched = $checked->pluck('user_id')->filter()->all();
 
+        $nonPlantilla = array_map(fn (EmploymentStatus $status) => $status->value, EmploymentStatus::nonPlantilla());
+
         return Employee::query()->whereNull('separation_date')->whereNotIn('user_id', $matched)
+            // Job orders, contracts of service and the like are never on the plantilla.
+            ->where(fn ($query) => $query->whereNull('employment_status')->orWhereNotIn('employment_status', $nonPlantilla))
             ->with('user')->get()->pluck('user')
             ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values();
     }
@@ -300,6 +323,19 @@ class PlantillaOfPersonnel
             $result['apply']['employee_id'] = $employee->id;
         }
 
+        // The TIN, into the PDS: only where the employee hasn't entered one.
+        $tin = $this->tin($row['tin']);
+        if ($row['tin'] !== '' && $row['tin'] !== '-' && ! $tin) {
+            $result['warnings'][] = 'The TIN cell isn\'t a TIN; left as is.';
+        }
+        $onFile = $employee->pdsProfile?->tin_no;
+        if ($tin && blank($onFile)) {
+            $this->stage($result, 'pds', ['tin_no' => [null, $tin]]);
+            $result['apply']['employee_id'] = $employee->id;
+        } elseif ($tin && preg_replace('/\D/', '', $onFile) !== preg_replace('/\D/', '', $tin)) {
+            $result['warnings'][] = 'The TIN differs from the one on their PDS; their own is kept.';
+        }
+
         // The plantilla: the item they hold in IMIS now.
         $item = $items->first(fn (PlantillaItem $candidate) => $candidate->incumbency?->employee_id === $employee->id);
         $problem = match (true) {
@@ -327,11 +363,14 @@ class PlantillaOfPersonnel
         ]));
 
         $holder = $item->incumbency;
+        $periods = $employee->plantillaAppointments;
+        $began = $this->periodItBegan($holder, $periods);
         $wanted = [];
         $step = filter_var($row['step'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => SalarySchedules::STEPS]]);
-        if ($step !== false) {
+        // A lower step than IMIS's after recorded step increments is the sheet being older.
+        if ($step !== false && ! ($began->isNot($holder) && $step < $holder->step)) {
             $wanted['step'] = $step;
-        } elseif ($row['step'] !== '') {
+        } elseif ($step === false && $row['step'] !== '') {
             $result['warnings'][] = "Step \"{$row['step']}\" isn't 1–".SalarySchedules::STEPS.'; left as is.';
         }
         $status = self::STATUSES[mb_strtoupper($row['status'])] ?? null;
@@ -340,14 +379,72 @@ class PlantillaOfPersonnel
         } elseif ($row['status'] !== '') {
             $result['warnings'][] = "Status \"{$row['status']}\" isn't P, T or C; left as is.";
         }
+        $current = ['step' => $holder->step, 'status' => $holder->status?->value];
+        $this->stage($result, 'holder', $this->differences($wanted, $current));
+
+        // The nature and start date belong to the period the run on this item began with.
         if ($dates['from']) {
-            $wanted['nature'] = $dates['nature']->value;
-            $wanted['date_from'] = $dates['from'];
+            $earlier = $periods->first(fn (PlantillaAppointment $period) => $period->isNot($began)
+                && $period->date_from?->toDateString() <= $dates['from'] && $period->date_to?->toDateString() >= $dates['from']);
+
+            if ($earlier && $dates['from'] < $began->date_from?->toDateString()) {
+                $result['warnings'][] = "Start date {$dates['from']} left as is: IMIS records ".($earlier->item?->item_number ?? $earlier->item?->position_title)
+                    ." until {$earlier->date_to->toDateString()}, and this item from {$began->date_from->toDateString()}.";
+            } else {
+                $part = $began->is($holder) ? 'holder' : 'began';
+                $this->stage($result, $part, $this->differences(
+                    ['nature' => $dates['nature']->value, 'date_from' => $dates['from']],
+                    ['nature' => $began->nature?->value, 'date_from' => $began->date_from?->toDateString()],
+                ));
+                if ($part === 'began' && isset($result['apply']['began'])) {
+                    $result['apply']['began_id'] = $began->id;
+                }
+            }
         }
-        $current = ['step' => $holder->step, 'status' => $holder->status?->value, 'nature' => $holder->nature?->value, 'date_from' => $holder->date_from?->toDateString()];
-        $this->stage($result, 'holder', collect($wanted)->filter(fn ($value, $field) => $value !== $current[$field])->map(fn ($value, $field) => [$current[$field], $value])->all());
 
         return $this->finish($result);
+    }
+
+    /**
+     * The period a holder's current run on their item began with: back
+     * through the step increments that followed it, which are newer than
+     * what the sheet shows.
+     *
+     * @param  Collection<int, PlantillaAppointment>  $periods  the employee's
+     */
+    private function periodItBegan(PlantillaAppointment $holder, Collection $periods): PlantillaAppointment
+    {
+        $period = $periods->firstWhere('id', $holder->id) ?? $holder;
+
+        while ($period->nature === AppointmentNature::StepIncrement && $period->date_from) {
+            $dayBefore = $period->date_from->copy()->subDay()->toDateString();
+            $previous = $periods->first(fn (PlantillaAppointment $candidate) => $candidate->plantilla_item_id === $period->plantilla_item_id
+                && $candidate->date_to?->toDateString() === $dayBefore);
+            if (! $previous) {
+                break;
+            }
+            $period = $previous;
+        }
+
+        return $period;
+    }
+
+    /**
+     * @param  array<string, mixed>  $wanted
+     * @param  array<string, mixed>  $current
+     * @return array<string, array{0: mixed, 1: mixed}>
+     */
+    private function differences(array $wanted, array $current): array
+    {
+        return collect($wanted)->filter(fn ($value, $field) => $value !== $current[$field])->map(fn ($value, $field) => [$current[$field], $value])->all();
+    }
+
+    /** A TIN as ###-###-### (or with the branch code, ###-###-###-###); null if it isn't one. */
+    private function tin(string $cell): ?string
+    {
+        $digits = preg_replace('/\D/', '', $cell);
+
+        return in_array(strlen($digits), [9, 12], true) ? implode('-', str_split($digits, 3)) : null;
     }
 
     /**
@@ -460,7 +557,8 @@ class PlantillaOfPersonnel
             return ['original' => $original, 'from' => $original, 'nature' => AppointmentNature::Original];
         }
 
-        return ['original' => null, 'from' => null, 'nature' => null];
+        // The original appointment stands even when the period can't be worked out.
+        return ['original' => $original, 'from' => null, 'nature' => null];
     }
 
     /**
@@ -535,10 +633,17 @@ class PlantillaOfPersonnel
         }
     }
 
-    /** An item number like CPS-117-2005; null for "NEW" and notes. */
+    /**
+     * An item number like CPS-117-2005, also inside a note that leads with
+     * one ("NEW (SVPS-21-2004) Source is OAC-SAS ..."); null otherwise.
+     */
     private function itemNumber(string $cell): ?string
     {
-        return preg_match('/^[A-Z][A-Z0-9]*-\d+-\d{4}$/i', $cell) ? mb_strtoupper($cell) : null;
+        if (preg_match('/^[A-Z][A-Z0-9]*-\d+-\d{4}$/i', $cell)) {
+            return mb_strtoupper($cell);
+        }
+
+        return preg_match('/^NEW\s*\(([A-Z][A-Z0-9]*-\d+-\d{4})\)/i', $cell, $match) ? mb_strtoupper($match[1]) : null;
     }
 
     /**
@@ -601,7 +706,7 @@ class PlantillaOfPersonnel
     private function cells(array $cells): array
     {
         $columns = ['item_number' => 'A', 'position' => 'B', 'salary_grade' => 'C', 'step' => 'F', 'surname' => 'H', 'first_name' => 'I',
-            'middle_name' => 'J', 'sex' => 'K', 'birthday' => 'L', 'original' => 'N', 'last_promotion' => 'O', 'status' => 'P'];
+            'middle_name' => 'J', 'sex' => 'K', 'birthday' => 'L', 'tin' => 'M', 'original' => 'N', 'last_promotion' => 'O', 'status' => 'P'];
 
         return array_map(fn (string $column) => $cells[$column] ?? '', $columns);
     }
@@ -631,7 +736,8 @@ class PlantillaOfPersonnel
         }
 
         foreach ($changes as $field => [$from, $to]) {
-            $result['changes'][] = ['field' => self::LABELS[$field], 'from' => $this->show($field, $from), 'to' => $this->show($field, $to)];
+            $label = $part === 'began' ? self::LABELS[$field].' (the period before the step increments)' : self::LABELS[$field];
+            $result['changes'][] = ['field' => $label, 'from' => $this->show($field, $from), 'to' => $this->show($field, $to)];
             $result['apply'][$part][$field] = $to;
         }
 
@@ -644,6 +750,8 @@ class PlantillaOfPersonnel
     {
         return match (true) {
             $value === null || $value === '' => '—',
+            // Never printed: it's a PDS identity number.
+            $field === 'tin_no' => 'recorded',
             $field === 'organizational_unit_id' => (string) OrganizationalUnit::query()->find($value)?->short_name,
             $field === 'status' => EmploymentStatus::from($value)->label(),
             $field === 'nature' => AppointmentNature::from($value)->label(),

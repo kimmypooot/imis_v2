@@ -59,6 +59,25 @@ class PdsWriter
     }
 
     /**
+     * Records a TIN HR has on file (the certified plantilla) when the
+     * employee hasn't entered one. Never replaces their own.
+     */
+    public function recordTin(Employee $employee, string $tin): bool
+    {
+        $profile = $employee->pdsProfile()->firstOrNew();
+
+        if (filled($profile->tin_no)) {
+            return false;
+        }
+
+        $profile->tin_no = $tin;
+        $profile->employee()->associate($employee);
+        $profile->save();
+
+        return true;
+    }
+
+    /**
      * @param  array<string, mixed>  $validated
      * @return array{changed: array<int, string>}
      */

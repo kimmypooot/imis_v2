@@ -146,6 +146,31 @@ class StaffingTest extends TestCase
         $this->actingAs($this->userWith([]))->get('/admin/hr/staffing')->assertForbidden();
     }
 
+    public function test_holders_serving_in_a_sub_office_of_a_plantilla_only_office_are_not_serving_elsewhere(): void
+    {
+        $hr = $this->userWith(['plantilla.view']);
+        // The plantilla lists one Leyte field office; the staff work in Leyte I or II.
+        $leyte = OrganizationalUnit::factory()->create(['name' => 'CSC Field Office - Leyte', 'short_name' => 'LFO', 'plantilla_only' => true]);
+        $leyteOne = OrganizationalUnit::factory()->create(['name' => 'CSC Field Office - Leyte I', 'short_name' => 'LFO I', 'parent_id' => $leyte->id]);
+
+        $ana = $this->staff('Ana', 'Director II', $leyteOne);
+        $anaItem = $this->held('DIR2-1', 'Director II', $leyte, $ana);
+        // Ben holds a Leyte item but was reassigned to HRD by an order.
+        $ben = $this->staff('Ben', 'Human Resource Specialist I', $this->hrd);
+        $this->held('HRS1-1', 'Human Resource Specialist I', $leyte, $ben);
+        $this->reassign($ben, $leyteOne, $this->hrd, '2026-03-01', 'RO No. 5');
+
+        $this->actingAs($hr)->get('/admin/hr/staffing')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('totals.elsewhere', 1)
+            ->where('elsewhere.0.name', 'Ben')
+            ->where('offices', fn ($offices) => collect($offices)->firstWhere('id', $leyte->id)['present'] === 1
+                && collect($offices)->firstWhere('id', $leyte->id)['reassigned_out'] === 1
+                && collect($offices)->firstWhere('id', $leyteOne->id) === null));
+
+        $this->actingAs($hr)->get('/admin/hr/plantilla')->assertInertia(fn (Assert $page) => $page
+            ->where('items', fn ($items) => collect($items)->firstWhere('id', $anaItem->id)['serving']['elsewhere'] === false));
+    }
+
     private function staff(string $name, ?string $position, OrganizationalUnit $office, ?EmploymentStatus $status = EmploymentStatus::Permanent): Employee
     {
         $user = User::factory()->create(['name' => $name, 'position' => $position, 'organizational_unit_id' => $office->id]);

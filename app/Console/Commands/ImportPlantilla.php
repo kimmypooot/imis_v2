@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\AuditEvent;
+use App\Models\Employee;
 use App\Support\Audit\AuditLogger;
 use App\Support\HR\Plantilla\PlantillaOfPersonnel;
 use Illuminate\Console\Command;
@@ -87,9 +88,17 @@ class ImportPlantilla extends Command
             ...$touched,
         ]);
 
-        $this->info(sprintf('Saved: %d items created, %d items updated, %d appointments corrected, %d employee records and %d accounts updated.',
+        // PDS data: each employee's record shows who wrote to it.
+        foreach (Employee::query()->with('user')->findMany($touched['tins_recorded']) as $employee) {
+            $audit->recordFor(null, AuditEvent::PdsUpdated, "Recorded the TIN of {$employee->user->name} from the Plantilla of Personnel workbook", $employee, [
+                'changed' => ['tin_no'],
+                'file' => basename($file),
+            ]);
+        }
+
+        $this->info(sprintf('Saved: %d items created, %d items updated, %d appointments corrected, %d employee records and %d accounts updated, %d TINs recorded.',
             count($touched['items_created']), count($touched['items_updated']), count($touched['appointments_corrected']),
-            count($touched['employees_updated']), count($touched['accounts_updated'])));
+            count($touched['employees_updated']), count($touched['accounts_updated']), count($touched['tins_recorded'])));
 
         return self::SUCCESS;
     }

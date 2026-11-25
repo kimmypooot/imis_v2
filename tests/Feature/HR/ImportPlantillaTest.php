@@ -149,6 +149,7 @@ class ImportPlantillaTest extends TestCase
         $this->assertNull($period->step);
         $this->assertNull($period->nature, 'an unusable promotion date is not read as no promotion');
         $this->assertNull($period->date_from);
+        $this->assertSame('2017-01-03', $future->fresh()->original_appointment_date?->toDateString(), 'the original appointment still applies');
     }
 
     public function test_a_duplicate_account_without_an_employee_record_is_passed_over_and_named(): void
@@ -166,6 +167,92 @@ class ImportPlantillaTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame('SRPS-5-2005', PlantillaAppointment::query()->where('employee_id', $holder->id)->sole()->item->item_number);
+    }
+
+    public function test_the_tin_goes_to_the_pds_encrypted_without_being_shown_and_never_replaces_the_employees_own(): void
+    {
+        $holder = $this->holder('Santos', 'Maria', 'Senior Human Resource Specialist', $this->hrd);
+        $own = $this->holder('Reyes', 'Juan', 'Administrative Officer IV', $this->hrd);
+        $own->pdsProfile()->create(['tin_no' => '111-222-333']);
+
+        $this->workbook([
+            ['B' => '29.0004 HUMAN RESOURCE DIVISION (HRD)'],
+            ['A' => 'SRPS-1-2005', 'B' => 'SENIOR PS (SENIOR HRS)', 'C' => '19', 'H' => 'SANTOS', 'I' => 'MARIA', 'M' => '123-456-789', 'P' => 'P'],
+            ['A' => 'ADOF4-1-2005', 'B' => 'ADMIN. OFFICER IV', 'C' => '15', 'H' => 'REYES', 'I' => 'JUAN', 'M' => '999-888-777', 'P' => 'P'],
+        ]);
+
+        $this->artisan('imis:import-plantilla', ['file' => $this->file, '--apply' => true])
+            ->doesntExpectOutputToContain('123-456-789')
+            ->expectsOutputToContain('TIN: — -> recorded')
+            ->expectsOutputToContain('The TIN differs from the one on their PDS; their own is kept.')
+            ->assertSuccessful();
+
+        $this->assertSame('123-456-789', $holder->fresh()->pdsProfile->tin_no);
+        $this->assertNotSame('123-456-789', $holder->fresh()->pdsProfile->getRawOriginal('tin_no'), 'stored encrypted');
+        $this->assertSame('111-222-333', $own->fresh()->pdsProfile->tin_no);
+        $this->assertTrue(AuditLog::query()->where('event', AuditEvent::PdsUpdated->value)->where('target_id', $holder->id)->exists());
+    }
+
+    public function test_a_later_step_increment_is_kept_and_the_promotion_is_checked_on_the_period_it_began(): void
+    {
+        $holder = $this->holder('Garcia', 'Eleonor', 'Senior Human Resource Specialist', $this->hrd);
+        $promotion = PlantillaAppointment::query()->where('employee_id', $holder->id)->sole();
+        $promotion->forceFill(['step' => 7, 'status' => 'permanent', 'nature' => 'promotion', 'date_from' => '2005-01-01', 'date_to' => '2026-09-30'])->save();
+        $increment = (new PlantillaAppointment)->forceFill(['plantilla_item_id' => $promotion->plantilla_item_id, 'employee_id' => $holder->id,
+            'step' => 8, 'status' => 'permanent', 'nature' => 'step_increment', 'date_from' => '2026-10-01']);
+        $increment->save();
+
+        $this->workbook([
+            ['B' => '29.0004 HUMAN RESOURCE DIVISION (HRD)'],
+            // As of before the increment: step 7, promoted on 2005-01-02 (IMIS has 2005-01-01).
+            ['A' => 'SRPS-1-2005', 'B' => 'SENIOR PS (SENIOR HRS)', 'C' => '19', 'F' => '7', 'H' => 'GARCIA', 'I' => 'ELEONOR', 'N' => '34152', 'O' => '38354', 'P' => 'P'],
+        ]);
+
+        $this->artisan('imis:import-plantilla', ['file' => $this->file, '--apply' => true])->assertSuccessful();
+
+        $increment->refresh();
+        $this->assertSame(8, $increment->step);
+        $this->assertSame(AppointmentNature::StepIncrement, $increment->nature);
+        $this->assertSame('2026-10-01', $increment->date_from->toDateString());
+        $this->assertSame('2005-01-02', $promotion->fresh()->date_from->toDateString());
+    }
+
+    public function test_a_promotion_already_recorded_on_an_earlier_item_is_not_moved_onto_the_current_one(): void
+    {
+        $holder = $this->holder('Banal', 'Kim', 'Senior Human Resource Specialist', $this->hrd);
+        $current = PlantillaAppointment::query()->where('employee_id', $holder->id)->sole();
+        $current->forceFill(['step' => 1, 'status' => 'permanent', 'nature' => 'promotion', 'date_from' => '2026-09-01'])->save();
+        $earlier = PlantillaItem::query()->create(['item_number' => 'ADAS2-1-2005', 'position_title' => 'Administrative Assistant II']);
+        (new PlantillaAppointment)->forceFill(['plantilla_item_id' => $earlier->id, 'employee_id' => $holder->id,
+            'step' => 1, 'status' => 'permanent', 'nature' => 'promotion', 'date_from' => '2025-01-02', 'date_to' => '2026-08-31'])->save();
+
+        $this->workbook([
+            ['B' => '29.0004 HUMAN RESOURCE DIVISION (HRD)'],
+            ['A' => 'SRPS-1-2005', 'B' => 'SENIOR PS (SENIOR HRS)', 'C' => '19', 'F' => '1', 'H' => 'BANAL', 'I' => 'KIM', 'O' => '45659', 'P' => 'P'],
+        ]);
+
+        $this->artisan('imis:import-plantilla', ['file' => $this->file, '--apply' => true])
+            ->expectsOutputToContain('IMIS records ADAS2-1-2005 until 2026-08-31')
+            ->assertSuccessful();
+
+        $this->assertSame('2026-09-01', $current->fresh()->date_from->toDateString());
+    }
+
+    public function test_an_item_number_inside_a_note_is_read_and_contract_of_service_staff_are_not_missing(): void
+    {
+        $holder = $this->holder('Cadiz', 'Marjorie', 'Senior Human Resource Specialist', $this->hrd);
+        $contract = Employee::factory()->create(['employment_status' => EmploymentStatus::ContractOfService]);
+
+        $this->workbook([
+            ['B' => '29.0004 HUMAN RESOURCE DIVISION (HRD)'],
+            ['A' => 'NEW (SRPS-21-2004) Source is OAC-SAS per OHRMD Memo 721,s. 2023)', 'B' => 'SENIOR PS (SENIOR HRS)', 'C' => '19', 'H' => 'CADIZ', 'I' => 'MARJORIE', 'P' => 'P'],
+        ]);
+
+        $this->artisan('imis:import-plantilla', ['file' => $this->file, '--apply' => true])
+            ->doesntExpectOutputToContain($contract->user->name)
+            ->assertSuccessful();
+
+        $this->assertSame('SRPS-21-2004', PlantillaAppointment::query()->where('employee_id', $holder->id)->sole()->item->item_number);
     }
 
     public function test_a_workbook_without_the_plantilla_heading_is_refused(): void
