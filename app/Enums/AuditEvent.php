@@ -242,6 +242,11 @@ enum AuditEvent: string
     case SalnExempted = 'saln.exempted';
     case SalnViewed = 'saln.viewed';
     case SalnPrinted = 'saln.printed';
+    // Notices of Salary Adjustment / Step Increment.
+    case SalaryNoticeGenerated = 'salary_notice.generated';
+    case SalaryNoticeDeleted = 'salary_notice.deleted';
+    case SalaryNoticeFiled = 'salary_notice.filed';
+    case SalaryNoticePrinted = 'salary_notice.printed';
     // HR-3. `certificate_viewed` is recorded when someone other than the
     // employee opens a training certificate.
     case LdRecordCreated = 'ld_record.created';
@@ -315,7 +320,7 @@ enum AuditEvent: string
         return [
             self::EmployeeViewed, self::ServiceRecordViewed, self::ServiceRecordPrinted,
             self::LeaveCardViewed, self::LeaveApplicationViewed, self::LeaveAttachmentViewed, self::DtrViewed, self::DtrPrinted, self::DtrExported,
-            self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed, self::SalnViewed, self::SalnPrinted,
+            self::PayslipViewed, self::PdsViewed, self::PdsPrinted, self::EmployeeDocumentViewed, self::SalnViewed, self::SalnPrinted, self::SalaryNoticePrinted,
             self::LdCertificateViewed, self::LdLogViewed, self::LdReportViewed,
             self::RecruitmentPdsRead, self::RecruitmentDocumentRead,
         ];

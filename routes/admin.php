@@ -59,6 +59,7 @@ use App\Http\Controllers\Admin\PlantillaController;
 use App\Http\Controllers\Admin\PlantillaSheetController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ReassignmentReportController;
+use App\Http\Controllers\Admin\SalaryNoticeController;
 use App\Http\Controllers\Admin\SalaryScheduleController;
 use App\Http\Controllers\Admin\SalnController;
 use App\Http\Controllers\Admin\ScheduledTaskController;
@@ -582,6 +583,19 @@ Route::middleware('auth')->group(function () {
     // pds.verify — see PdsSubmissionPolicy) and the verification queue.
     Route::middleware('permission:pds.view,pds.verify')->group(function () {
         Route::get('admin/hr/pds-verifications/{submission}', [PdsVerificationController::class, 'show'])->name('admin.hr.pds-verifications.show');
+    });
+
+    // Notices of Salary Adjustment and of Step Increment: generate, print,
+    // file the signed copy in the 201 File. SalaryNoticePolicy keeps HR off
+    // their own notices.
+    Route::middleware('permission:salary_notices.manage')->group(function () {
+        Route::get('admin/hr/salary-notices', [SalaryNoticeController::class, 'index'])->name('admin.hr.salary-notices.index');
+        Route::post('admin/hr/salary-notices/nosa', [SalaryNoticeController::class, 'generateNosa'])->name('admin.hr.salary-notices.nosa');
+        Route::post('admin/hr/salary-notices/nosi', [SalaryNoticeController::class, 'generateNosi'])->name('admin.hr.salary-notices.nosi');
+        Route::get('admin/hr/salary-notices/print', [SalaryNoticeController::class, 'print'])->name('admin.hr.salary-notices.print');
+        Route::post('admin/hr/salary-notices/file', [SalaryNoticeController::class, 'fileMany'])->middleware('throttle:30,1')->name('admin.hr.salary-notices.file-many');
+        Route::post('admin/hr/salary-notices/{notice}/file', [SalaryNoticeController::class, 'file'])->whereNumber('notice')->name('admin.hr.salary-notices.file');
+        Route::delete('admin/hr/salary-notices/{notice}', [SalaryNoticeController::class, 'destroy'])->whereNumber('notice')->name('admin.hr.salary-notices.destroy');
     });
 
     // SALN: HRD's compliance list, exemptions, receiving, filing and encoding

@@ -32,6 +32,8 @@ class SalarySchedules
         return [
             'name' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'issuance_date' => ['nullable', 'date', 'after:1900-01-01'],
+            'implements' => ['nullable', 'string', 'max:255'],
             'effective_date' => ['required', 'date', 'after:1900-01-01', Rule::unique('salary_schedules', 'effective_date')->ignore($ignore)],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'rates' => ['nullable', 'array', 'max:'.self::GRADES],
@@ -52,7 +54,7 @@ class SalarySchedules
     {
         return DB::transaction(function () use ($schedule, $data) {
             $schedule ??= new SalarySchedule;
-            $schedule->fill(collect($data)->only(['name', 'reference', 'effective_date', 'remarks'])->all())->save();
+            $schedule->fill(collect($data)->only(['name', 'reference', 'issuance_date', 'implements', 'effective_date', 'remarks'])->all())->save();
 
             $rates = $data['rates'] ?? null;
             if ($rates === null && ! empty($data['copy_from'])) {

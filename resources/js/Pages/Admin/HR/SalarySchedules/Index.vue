@@ -41,7 +41,7 @@ const pick = (id) => router.get('/admin/hr/salary-schedules', { schedule: id }, 
 
 // ── Editing the table ────────────────────────────────────────────────
 const editing = ref(false);
-const table = useForm({ name: '', reference: '', effective_date: '', remarks: '', rates: {} });
+const table = useForm({ name: '', reference: '', issuance_date: '', implements: '', effective_date: '', remarks: '', rates: {} });
 
 const loadTable = () => {
     if (!selected.value) return;
@@ -50,7 +50,7 @@ const loadTable = () => {
         rates[grade] = {};
         stepList.value.forEach((step) => (rates[grade][step] = props.grid?.[grade]?.[step] ?? ''));
     });
-    table.defaults({ ...selected.value, remarks: selected.value.remarks ?? '', reference: selected.value.reference ?? '', rates });
+    table.defaults({ ...selected.value, remarks: selected.value.remarks ?? '', reference: selected.value.reference ?? '', issuance_date: selected.value.issuance_date ?? '', implements: selected.value.implements ?? '', rates });
     table.reset();
     table.clearErrors();
 };
@@ -66,6 +66,8 @@ const saveTable = () =>
     table
         .transform((data) => ({
             ...data,
+            issuance_date: data.issuance_date || null,
+            implements: data.implements || null,
             rates: Object.fromEntries(Object.entries(data.rates).map(([grade, steps]) => [grade, Object.fromEntries(Object.entries(steps).map(([step, value]) => [step, value === '' ? null : value]))])),
         }))
         .put(`/admin/hr/salary-schedules/${props.selectedId}`, { preserveScroll: true, onSuccess: () => (editing.value = false) });
@@ -105,7 +107,7 @@ const applyPaste = () => {
 
 // ── A new schedule ───────────────────────────────────────────────────
 const createOpen = ref(false);
-const create = useForm({ name: '', reference: '', effective_date: '', remarks: '', copy_from: '' });
+const create = useForm({ name: '', reference: '', issuance_date: '', implements: 'Executive Order No. 64 s. 2024 dated 02 August 2024', effective_date: '', remarks: '', copy_from: '' });
 const copyOptions = computed(() => [{ value: '', label: 'Start empty' }, ...props.schedules.map((schedule) => ({ value: schedule.id, label: `Copy ${schedule.name}` }))]);
 const openCreate = () => {
     create.reset();
@@ -114,7 +116,7 @@ const openCreate = () => {
 };
 const submitCreate = () =>
     create
-        .transform((data) => ({ ...data, copy_from: data.copy_from || null, reference: data.reference || null, remarks: data.remarks || null }))
+        .transform((data) => ({ ...data, copy_from: data.copy_from || null, reference: data.reference || null, issuance_date: data.issuance_date || null, implements: data.implements || null, remarks: data.remarks || null }))
         .post('/admin/hr/salary-schedules', { preserveScroll: true, onSuccess: () => (createOpen.value = false) });
 
 const destroy = async () => {
@@ -188,6 +190,16 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
                 <div>
                     <TextInput id="schedule-effective" v-model="table.effective_date" type="date" label="Effective date" required :error="table.errors.effective_date" />
                 </div>
+                <div>
+                    <TextInput id="schedule-issuance-date" v-model="table.issuance_date" type="date" label="Date of the issuance" :error="table.errors.issuance_date" />
+                </div>
+                <div class="sm:col-span-2">
+                    <TextInput id="schedule-implements" v-model="table.implements" label="Implementing (printed on the NOSA)" :error="table.errors.implements" />
+                </div>
+                <p class="text-xs text-text-muted sm:col-span-3">
+                    The NOSA reads: “Pursuant to <em>{{ table.reference || 'reference' }}</em> dated <em>{{ table.issuance_date || 'date of the issuance' }}</em>,
+                    implementing <em>{{ table.implements || '…' }}</em>, …”. Type the reference as it should be printed, e.g. National Budget Circular No. 601 s. 2026.
+                </p>
             </div>
 
             <p v-if="!editing && selected.cells === 0" class="mb-4 rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
@@ -255,6 +267,12 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
             </div>
             <div>
                 <TextInput id="new-effective" v-model="create.effective_date" type="date" label="Effective date" required :error="create.errors.effective_date" />
+            </div>
+            <div>
+                <TextInput id="new-issuance-date" v-model="create.issuance_date" type="date" label="Date of the issuance (for the NOSA)" :error="create.errors.issuance_date" />
+            </div>
+            <div>
+                <TextInput id="new-implements" v-model="create.implements" label="Implementing (printed on the NOSA)" :error="create.errors.implements" />
             </div>
             <div>
                 <InputLabel for="new-copy">Amounts</InputLabel>

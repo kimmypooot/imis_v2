@@ -32,6 +32,7 @@ a new session. Read it together with `CLAUDE.md` and the HR sections of
 | HR-6c | Monetization/terminal leave, FWA and FAR, reports, calendar, Wellness Leave (CSC MC No. 01, s. 2026) | ✅ Done |
 | **HR-7** | Data migration and cutover | ✅ Tools built (`imis:import-legacy-leave`, Cutover Readiness, `imis:retire-legacy-hr`); migrated locally. ⏳ **The import has not been run on real data**: the `lms_*` tables are only on the live server. Its columns come from the legacy code, so check them with a `--dry-run` first. |
 | HR-8 | Payroll and payslips: pay components, pay profiles, loans, monthly payrolls (whole month, released at month end), payslip requests approved by the head of HRD | ✅ Done. Rates seeded from current law: HR should verify them. Not run on real data yet. |
+| NOSA & NOSI | Notices of Salary Adjustment (a batch per salary schedule) and of Step Increment (due list, 3-year rule, LWOP over 15 days), printed on the RO VIII templates with a blank signature space, signed copies filed in the 201 File | ✅ Done (2026-11-26). Give each schedule its reference and issuance date. Merit step increments and payroll differentials are not built. |
 | SALN | Statement of Assets, Liabilities and Net Worth on the 2025 SALN Form: encode, print on the official form, HRD receipt, SALN Committee review, oath before the Regional Director, signed copy to the 201 File; compliance and reminders | ✅ Done. Give `saln.review` to the SALN Committee once it is formed. |
 
 **Tests:** the suite has 768 tests, all passing. HR tests are in

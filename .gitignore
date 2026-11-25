@@ -37,3 +37,9 @@ default.php
 error_log
 .playwright-mcp/
 /*.dat
+
+# HRD's NOSA/NOSI samples and templates carry real names and salaries (RA 10173).
+/NOSA_*.pdf
+/NOSI_*.pdf
+/NOSA_Template_*.docx
+/NOSI_Template_*.docx

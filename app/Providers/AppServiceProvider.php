@@ -36,6 +36,7 @@ use App\Models\PlantillaAppointment;
 use App\Models\PlantillaItem;
 use App\Models\Position;
 use App\Models\Role;
+use App\Models\SalaryNotice;
 use App\Models\SalarySchedule;
 use App\Models\Saln;
 use App\Models\Service;
@@ -182,6 +183,7 @@ class AppServiceProvider extends ServiceProvider
             'employee' => Employee::class,
             'employee_document' => EmployeeDocument::class,
             'saln' => Saln::class,
+            'salary_notice' => SalaryNotice::class,
             'employee_assignment' => EmployeeAssignment::class,
             'plantilla_item' => PlantillaItem::class,
             'position' => Position::class,

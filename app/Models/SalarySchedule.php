@@ -15,11 +15,11 @@ use Illuminate\Support\Carbon;
  */
 class SalarySchedule extends Model
 {
-    protected $fillable = ['name', 'reference', 'effective_date', 'remarks'];
+    protected $fillable = ['name', 'reference', 'issuance_date', 'implements', 'effective_date', 'remarks'];
 
     protected function casts(): array
     {
-        return ['effective_date' => 'date:Y-m-d'];
+        return ['effective_date' => 'date:Y-m-d', 'issuance_date' => 'date:Y-m-d'];
     }
 
     public function rates(): HasMany

@@ -158,6 +158,11 @@ enum PermissionName: string
     // in another agency before the CSC (never on their own record).
     case ServiceRecordsManage = 'service_records.manage';
 
+    // Notices of Salary Adjustment and of Step Increment: generating them
+    // (a NOSI also records the step increment on the plantilla), printing
+    // them and filing the signed copies in the 201 File. Never your own.
+    case SalaryNoticesManage = 'salary_notices.manage';
+
     // HR-6 leave. `view` reads everyone's leave cards; `manage` maintains
     // leave types and holidays, employees' leave settings, opening
     // balances and adjustments, and runs accrual (never on their own card).

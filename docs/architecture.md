@@ -5267,3 +5267,115 @@ electronic signing and online oaths.
 
 ### Tests
 `tests/Feature/HR/Saln*Test.php`.
+
+## Human Resources: NOSA and NOSI — IMPLEMENTED
+
+Notices of Salary Adjustment (NOSA) and of Step Increment due to length of
+service (NOSI). Before IMIS, HRD typed each notice in Word and emailed it
+to each employee. Now HRD generates them, prints them on the office's
+templates, has them signed, and files the signed copies in the 201 File.
+IMIS sends no email: the employee opens the signed copy under My 201 File.
+The legacy IMIS had no notices.
+
+### Rules
+- **Policy:**
+  - NOSA: NBC No. 601 §5.1 (the same grade and step at the new rate) and
+    §7 (HRMO prepares, the Head of Agency approves, copy to GSIS).
+  - NOSI: CSC-DBM JC No. 1, s. 2012 (one step for every three years of
+    continuous satisfactory service in the present position, up to step 8).
+  - Signatures: DBM CL No. 2024-7 (a digital signature must be PNPKI).
+  - The research and the user's decisions are in
+    `docs/superpowers/plans/2026-11-26-nosi-nosa.md`.
+- **Signatory:** the Regional Director (whoever holds the Director IV
+  item), or the Director III as the alternate (`NoticeSignatory`). The
+  notice prints the name and position with the **signature space left
+  blank**, at the Regional Director's request. It is signed by hand, or
+  saved as PDF and signed with PNPKI outside IMIS.
+- **Central Office notices:** directors' notices (any position titled
+  "Director …") come from the Central Office. They are left out of the
+  NOSA batch and the step-increment list.
+- **Never your own:** nobody generates, deletes or files their own notice
+  (`SalaryNoticePolicy`, plus the plantilla `appoint` rule).
+- **NOSA batch** (`SalaryNotices::nosaCandidates()` / `generateNosa()`),
+  per salary schedule:
+  - **Covers:** everyone holding a plantilla item on the day before the
+    schedule takes effect and still holding it on that day.
+  - **Amounts:** item 2 is what the period paid that day (`salaryOf`);
+    item 1 is the new schedule's rate at the same grade and step.
+  - **Left out, with the reason:** already generated, Central Office,
+    the preparer, incomplete plantilla details, no amount in either
+    schedule, no increase, and a salary set by hand
+    (`salary_override`). Above the new step 8 there is no adjustment
+    (§5.1.3); between steps, HR prepares the notice by hand (§5.1.2).
+  - **Paragraph:** quotes the schedule's `reference`, `issuance_date` and
+    `implements` (new fields on Salary Schedules): "Pursuant to {reference}
+    dated {date}, implementing {implements}, …". It can't be generated
+    without them.
+- **NOSI** (`StepIncrementsDue`, `SalaryNotices::recordStepIncrement()`):
+  - **Due list:** open periods below step 8, due three years after the
+    period began (a promotion, transfer or step increment starts a new
+    period). Approved leave without pay of more than 15 days in those
+    years moves the date back by all the days without pay. The list shows
+    the working and looks 60 days ahead.
+  - **Recording:** "Record and generate" calls
+    `Plantilla::stepIncrement()` (the next step, from the effective date
+    HR confirms) and writes the notice in one transaction.
+  - **Holds:** ratings and administrative cases aren't in IMIS. HR checks
+    them before recording.
+  - **Recorded without a notice:** step increments recorded with the
+    plantilla's own button in the last year can get their notice
+    afterwards.
+- **Snapshots:** a notice (`salary_notices`, `SalaryNotice`) stores
+  everything it prints: names, position, item, grade, steps, salaries,
+  basis, salutation and signatory. Later plantilla or schedule changes
+  never alter it.
+- **Deleting:** an unfiled notice can be deleted and generated again.
+  Deleting a NOSI leaves its step increment on the plantilla.
+- **Filing:**
+  - One at a time, or many at once matched by HRD's file names
+    (`NOSA_Uy, Rey Albert.pdf`; case and extra spaces ignored).
+  - A file matching no notice, or more than one, is listed for HR to file
+    one by one.
+  - Each signed copy becomes a 201 document ("Notice of Salary
+    Adjustment / Step Increment", titled "… effective January 1, 2027").
+  - A filed notice can't be deleted. If it was wrong, archive the
+    document in the 201 File.
+
+### Printing (`Pages/HR/SalaryNoticePrint.vue`)
+- **Templates:** `NOSA_Template_2026.docx` and `NOSI_Template_2026.docx`
+  (from HRD, not in git: their sample text is real personal data).
+- **Page:** A4 on the CSC RO VIII letterhead
+  (`public/images/brand/csc-ro8-letterhead-a4.jpg`, the templates' own
+  full-page header image), Aptos 12 pt, 1-inch margins. Each block sits
+  where Word renders it on the templates.
+- **Copies:** a NOSA prints an *Employee Copy* and an *OHRMD/HRD Copy*;
+  a NOSI prints one page.
+- **Letterhead switch:** turn the letterhead off to print on letterhead
+  paper.
+- **File name:** the page title is HRD's file name, so "Save as PDF"
+  suggests it.
+- **Audit:** printing someone else's notice is a personal-data access
+  (`salary_notice.printed`).
+- **If the templates change:** render them through Word, re-measure,
+  then adjust the positions in the print page and the wording in
+  `SalaryNotices` (`NOSI_BASIS`, the office lines).
+
+### Access and audit
+- `salary_notices.manage`: the page, generating, printing, deleting.
+  Filing also needs `employee_documents.manage`.
+- HR Staff get it from migration `2027_04_01_090001`; HrRoleSeeder only
+  creates missing roles.
+- Audit events: `salary_notice.generated`, `deleted`, `filed`, `printed`.
+  Recording a step increment also writes
+  `plantilla_appointment.step_increment`, and each filed copy writes
+  `employee_document.uploaded`.
+
+### Deploying
+1. `php artisan migrate`. This adds the tables and the schedule fields,
+   grants HR Staff the permission, and adds the What's New items.
+2. Under Salary Schedules, give each schedule its reference as printed
+   (e.g. "National Budget Circular No. 601 s. 2026") and the date of the
+   issuance.
+
+### Tests
+`tests/Feature/HR/SalaryNoticesTest.php`.

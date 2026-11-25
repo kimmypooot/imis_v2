@@ -87,6 +87,11 @@ particular:
   the hard copy, the SALN Committee (`saln.review`) clears or returns it,
   the Regional Director administers the oath, and the signed scan goes to
   the 201 File. Statements are encrypted with `APP_KEY` too.
+  NOSA & NOSI (Admin → HR → NOSA & NOSI) are done: generated from the
+  plantilla and salary schedules, printed on the RO VIII templates with the
+  signature space left blank (the Regional Director's wish; alternate is the
+  Director III), signed outside IMIS, and filed in the 201 File. IMIS sends
+  no email. Directors' notices come from the Central Office.
   Progress and next steps: `docs/hr-checkpoint.md`.
 - GAD Corner (`../gad-corner-v2`, a separate app under the hub like JPortal)
   replaces the legacy GAD Corner panel (`../gad-corner`, reference only).

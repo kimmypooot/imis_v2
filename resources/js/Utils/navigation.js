@@ -253,6 +253,7 @@ export const hrNavItems = [
             { label: 'Non-Plantilla', href: '/admin/hr/non-plantilla', icon: 'users', permission: ['plantilla.view', 'plantilla.manage'] },
             { label: 'Positions', href: '/admin/hr/positions', icon: 'clipboard', permission: ['plantilla.view', 'plantilla.manage'] },
             { label: 'Salary Schedules', href: '/admin/hr/salary-schedules', icon: 'database', permission: ['plantilla.view', 'plantilla.manage'] },
+            { label: 'NOSA & NOSI', href: '/admin/hr/salary-notices', icon: 'document', permission: 'salary_notices.manage' },
         ],
     },
     {

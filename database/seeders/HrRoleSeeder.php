@@ -37,7 +37,7 @@ class HrRoleSeeder extends Seeder
                     P::PdsView, P::PdsUpdate, P::PdsVerify,
                     P::EmployeeDocumentsView, P::EmployeeDocumentsManage, P::SalnManage,
                     P::LdView, P::LdManage, P::LdApprove,
-                    P::PlantillaView, P::PlantillaManage, P::PlantillaCorrect,
+                    P::PlantillaView, P::PlantillaManage, P::PlantillaCorrect, P::SalaryNoticesManage,
                     P::ServiceRecordsView, P::ServiceRecordsManage,
                     P::LeaveView, P::LeaveManage, P::LeaveCertify,
                     P::DtrView, P::DtrManage,

@@ -32,6 +32,8 @@ class SalaryScheduleController extends Controller
                 'id' => $schedule->id,
                 'name' => $schedule->name,
                 'reference' => $schedule->reference,
+                'issuance_date' => $schedule->issuance_date?->toDateString(),
+                'implements' => $schedule->implements,
                 'effective_date' => $schedule->effective_date->toDateString(),
                 'remarks' => $schedule->remarks,
                 'cells' => $schedule->rates_count,
