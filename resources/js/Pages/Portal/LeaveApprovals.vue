@@ -51,22 +51,25 @@ const waitingSince = () => props.queue.map((row) => row.waiting_since);
 const ageClass = (iso) => (daysSince(iso) >= 7 ? "bg-danger-bg text-danger-fg" : daysSince(iso) >= 3 ? "bg-warning-bg text-warning-fg" : "bg-surface-muted text-text-muted");
 const ageLabel = (iso) => (daysSince(iso) === 0 ? "today" : `${daysSince(iso)} d`);
 
+// The reference, type and dates share one "Application" cell; hidden columns keep them in the CSV.
 const queueColumns = [
-    { key: 'reference_number', label: 'Reference' },
     { key: 'name', label: 'Employee' },
-    { key: 'type_name', label: 'Type of leave' },
-    { key: 'date_from', label: 'Dates', value: (row) => leaveDates(row, formatCalendarDate) },
+    { key: 'application', label: 'Application', value: (row) => `${row.reference_number} ${row.type_name}`, export: false },
     { key: 'step_label', label: 'Your step' },
     { key: 'waiting_since', label: 'Waiting since' },
+    { key: 'reference_number', label: 'Reference', hidden: true },
+    { key: 'type_name', label: 'Type of leave', hidden: true },
+    { key: 'date_from', label: 'Dates', value: (row) => leaveDates(row, formatCalendarDate), hidden: true },
 ];
 
 const recentColumns = [
-    { key: 'reference_number', label: 'Reference' },
     { key: 'name', label: 'Employee' },
-    { key: 'type_name', label: 'Type of leave' },
+    { key: 'application', label: 'Application', value: (row) => `${row.reference_number} ${row.type_name}`, export: false },
     { key: 'my_action', label: 'Your action' },
-    { key: 'status_label', label: 'Now' },
     { key: 'acted_at', label: 'When' },
+    { key: 'reference_number', label: 'Reference', hidden: true },
+    { key: 'type_name', label: 'Type of leave', hidden: true },
+    { key: 'status_label', label: 'Now', hidden: true },
 ];
 </script>
 
@@ -83,19 +86,20 @@ const recentColumns = [
         <QueueSummary :since="waitingSince()" noun="leave application" />
 
         <Card :title="`Waiting for you (${queue.length})`" icon="checkCircle">
-            <DataTable :columns="queueColumns" :rows="queue" caption="Leave applications waiting for you" export-name="imis-leave-queue" empty-text="Nothing is waiting for you.">
-                <template #cell-reference_number="{ row }">
+            <DataTable :columns="queueColumns" :rows="queue" caption="Leave applications waiting for you" export-name="imis-leave-queue" :numbered="false" empty-text="Nothing is waiting for you.">
+                <template #cell-application="{ row }">
                     <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
+                    <div class="text-xs text-text">{{ row.type_name }}</div>
+                    <div class="text-xs text-text-muted">{{ leaveDates(row, formatCalendarDate) }}</div>
                 </template>
                 <template #cell-name="{ row }">
                     <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.office" />
                 </template>
-                <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-waiting_since="{ row }">
-                    <span class="whitespace-nowrap">{{ formatDateTime(row.waiting_since) }}</span>
-                    <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.waiting_since)">{{ ageLabel(row.waiting_since) }}</span>
-                    <span v-if="row.deemed_approved" class="ml-2 rounded-full bg-danger-bg px-2 py-0.5 text-xs font-medium text-danger-fg" title="Sec. 49, Rule XVI: not acted on within 5 working days">Deemed approved: act now</span>
-                    <span v-else-if="row.waiting_working_days === 4" class="ml-2 rounded-full bg-warning-bg px-2 py-0.5 text-xs font-medium text-warning-fg">Due today</span>
+                    <div class="whitespace-nowrap">{{ formatDateTime(row.waiting_since) }}</div>
+                    <span class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium" :class="ageClass(row.waiting_since)">{{ ageLabel(row.waiting_since) }}</span>
+                    <span v-if="row.deemed_approved" class="mt-1 ml-1 inline-block rounded-full bg-danger-bg px-2 py-0.5 text-xs font-medium text-danger-fg" title="Sec. 49, Rule XVI: not acted on within 5 working days">Deemed approved: act now</span>
+                    <span v-else-if="row.waiting_working_days === 4" class="mt-1 ml-1 inline-block rounded-full bg-warning-bg px-2 py-0.5 text-xs font-medium text-warning-fg">Due today</span>
                 </template>
             </DataTable>
         </Card>
@@ -131,9 +135,17 @@ const recentColumns = [
         </Card>
 
         <Card v-if="recent.length" title="Recently acted on" icon="activity">
-            <DataTable :columns="recentColumns" :rows="recent" caption="Leave applications you acted on" export-name="imis-leave-acted" :searchable="false">
-                <template #cell-reference_number="{ row }">
+            <DataTable :columns="recentColumns" :rows="recent" caption="Leave applications you acted on" export-name="imis-leave-acted" :searchable="false" :numbered="false">
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.office" />
+                </template>
+                <template #cell-application="{ row }">
                     <Link :href="`/leave/applications/${row.id}`" class="font-medium text-link hover:underline">{{ row.reference_number }}</Link>
+                    <div class="text-xs text-text">{{ row.type_name }}</div>
+                </template>
+                <template #cell-my_action="{ row }">
+                    {{ row.my_action }}
+                    <div class="text-xs text-text-muted">Now: {{ row.status_label }}</div>
                 </template>
                 <template #cell-acted_at="{ row }"><span class="whitespace-nowrap">{{ row.acted_at ? formatDateTime(row.acted_at) : '—' }}</span></template>
             </DataTable>

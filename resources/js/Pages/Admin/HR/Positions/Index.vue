@@ -7,6 +7,7 @@ import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
@@ -90,9 +91,8 @@ const fields = computed(() =>
 
 const columns = [
     { key: 'title', label: 'Position' },
-    { key: 'salary_grade', label: 'SG', align: 'right', value: (row) => row.salary_grade ?? '' },
-    { key: 'monthly_salary', label: 'Monthly salary', align: 'right', value: (row) => row.monthly_salary ?? '' },
-    { key: 'level_label', label: 'Level', value: (row) => row.level_label ?? '' },
+    // Grade, salary and level share one cell; the hidden columns keep salary and level in the CSV.
+    { key: 'salary_grade', label: 'Grade', value: (row) => row.salary_grade ?? '' },
     {
         key: 'items',
         label: 'Item no. and place of assignment',
@@ -101,6 +101,8 @@ const columns = [
     },
     { key: 'staff_count', label: 'Staff with this title', align: 'right' },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center' },
+    { key: 'monthly_salary', label: 'Monthly salary', value: (row) => row.monthly_salary ?? '', hidden: true },
+    { key: 'level_label', label: 'Level', value: (row) => row.level_label ?? '', hidden: true },
 ];
 </script>
 
@@ -130,6 +132,7 @@ const columns = [
             caption="Positions"
             export-name="imis-positions"
             :default-sort="{ key: 'title', direction: 'asc' }"
+            :numbered="false"
             empty-text="No positions yet. Use “Add titles from staff” to start from the titles on staff accounts."
         >
             <template #cell-title="{ row }">
@@ -137,14 +140,16 @@ const columns = [
                 <div v-if="row.remarks" class="text-xs text-text-muted">{{ row.remarks }}</div>
             </template>
             <template #cell-salary_grade="{ row }">
-                <span v-if="row.salary_grade" class="tabular-nums">{{ row.salary_grade }}</span>
+                <CellFacts
+                    v-if="row.salary_grade"
+                    :facts="[
+                        { label: 'SG', value: row.salary_grade },
+                        { label: 'Monthly salary', value: row.monthly_salary !== null ? formatPeso(row.monthly_salary) : null },
+                        { label: 'Level', value: row.level_label },
+                    ]"
+                />
                 <StatusBadge v-else status="warning" label="Not Set" />
             </template>
-            <template #cell-monthly_salary="{ row }">
-                <span v-if="row.monthly_salary !== null" class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span>
-                <span v-else class="text-text-muted">—</span>
-            </template>
-            <template #cell-level_label="{ row }">{{ row.level_label || '—' }}</template>
             <template #cell-items="{ row }">
                 <ul v-if="row.items.length" class="space-y-1">
                     <li v-for="item in row.items" :key="item.id" class="text-sm">

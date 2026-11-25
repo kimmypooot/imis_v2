@@ -53,15 +53,16 @@ const shown = computed(() => {
 const addOpen = ref(false);
 const tones = { filled: 'active', vacant: 'warning', abolished: 'logged_out' };
 
+// Grade, step and status sit under the item, position and salary; hidden columns keep them in the CSV.
 const columns = [
     { key: 'item_number', label: 'Item No.' },
     { key: 'position_title', label: 'Position' },
-    { key: 'salary_grade', label: 'SG', align: 'right' },
     { key: 'office', label: 'Place of assignment', value: (row) => row.office ?? '' },
     { key: 'holder', label: 'Incumbent', value: (row) => row.holder?.name ?? '' },
-    { key: 'step', label: 'Step', align: 'right', value: (row) => row.holder?.step ?? '' },
     { key: 'monthly_salary', label: 'Monthly salary', align: 'right', value: (row) => row.monthly_salary ?? '' },
-    { key: 'status', label: 'Status' },
+    { key: 'salary_grade', label: 'SG', hidden: true },
+    { key: 'step', label: 'Step', value: (row) => row.holder?.step ?? '', hidden: true },
+    { key: 'status', label: 'Status', hidden: true },
 ];
 </script>
 
@@ -124,13 +125,14 @@ const columns = [
                 </div>
             </template>
 
-            <DataTable :columns="columns" :rows="shown" caption="Plantilla of positions" :export-name="`imis-plantilla-${view}`" empty-text="No items here.">
+            <DataTable :columns="columns" :rows="shown" caption="Plantilla of positions" :export-name="`imis-plantilla-${view}`" :numbered="false" empty-text="No items here.">
                 <template #cell-item_number="{ row }">
                     <Link :href="`/admin/hr/plantilla/${row.id}`" class="font-medium text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link>
+                    <div class="mt-1"><StatusBadge :status="tones[row.status]" :label="row.status" /></div>
                 </template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title }}
-                    <div v-if="row.level_label" class="text-xs text-text-muted">{{ row.level_label }}</div>
+                    <div class="text-xs text-text-muted">{{ [`SG ${row.salary_grade}`, row.level_label].filter(Boolean).join(' · ') }}</div>
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-holder="{ row }">
@@ -142,9 +144,10 @@ const columns = [
                     <div v-if="row.holder?.missing.length" class="text-xs text-warning-fg" :title="`Missing: ${row.holder.missing.join(', ')}`">Incomplete link</div>
                     <div v-if="row.holder?.account_position" class="text-xs text-warning-fg">Account says {{ row.holder.account_position }}</div>
                 </template>
-                <template #cell-step="{ row }"><span class="tabular-nums">{{ row.holder?.step ?? '—' }}</span></template>
-                <template #cell-monthly_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span></template>
-                <template #cell-status="{ row }"><StatusBadge :status="tones[row.status]" :label="row.status" /></template>
+                <template #cell-monthly_salary="{ row }">
+                    <span class="whitespace-nowrap tabular-nums">{{ formatPeso(row.monthly_salary) }}</span>
+                    <div v-if="row.holder?.step" class="text-xs text-text-muted">Step {{ row.holder.step }}</div>
+                </template>
             </DataTable>
         </Card>
     </div>

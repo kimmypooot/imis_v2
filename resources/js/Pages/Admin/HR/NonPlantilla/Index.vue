@@ -60,13 +60,14 @@ const rate = (contract) => (contract?.rate != null ? `${formatPeso(contract.rate
 
 const columns = [
     { key: 'name', label: 'Name' },
-    { key: 'designation', label: 'Designation', value: (row) => row.designation ?? '' },
-    { key: 'office', label: 'Office', value: (row) => row.office ?? '' },
     { key: 'status_label', label: 'Status' },
     { key: 'period', label: 'Contract period', value: (row) => period(row.contract) },
-    { key: 'rate', label: 'Rate', align: 'right', value: (row) => rate(row.contract) },
-    { key: 'state', label: 'Contract', value: (row) => stateBadges[row.state].label },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center' },
+    // Under the name and the contract on screen; separate in the CSV.
+    { key: 'designation', label: 'Designation', value: (row) => row.designation ?? '', hidden: true },
+    { key: 'office', label: 'Office', value: (row) => row.office ?? '', hidden: true },
+    { key: 'rate', label: 'Rate', value: (row) => rate(row.contract), hidden: true },
+    { key: 'state', label: 'Contract', value: (row) => stateBadges[row.state].label, hidden: true },
 ];
 
 // Add / edit / renew one contract.
@@ -152,21 +153,19 @@ const remove = async (contract) => {
                 </div>
             </template>
 
-            <DataTable :columns="columns" :rows="shown" caption="Non-plantilla personnel" :export-name="`imis-non-plantilla-${status}`" empty-text="No one here.">
+            <DataTable :columns="columns" :rows="shown" caption="Non-plantilla personnel" :export-name="`imis-non-plantilla-${status}`" :numbered="false" empty-text="No one here.">
                 <template #cell-name="{ row }">
-                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="[row.designation, row.office].filter(Boolean).join(' · ')" />
                 </template>
-                <template #cell-designation="{ row }">{{ row.designation || '—' }}</template>
-                <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-period="{ row }">
                     <template v-if="row.contract">
                         {{ period(row.contract) }}
+                        <div v-if="rate(row.contract)" class="text-xs text-text-muted tabular-nums">{{ rate(row.contract) }}</div>
                         <div v-if="row.state === 'expiring'" class="text-xs text-warning-fg">{{ row.days_left }} {{ row.days_left === 1 ? 'day' : 'days' }} left</div>
                     </template>
                     <span v-else class="text-text-muted">—</span>
+                    <div class="mt-1"><StatusBadge :status="stateBadges[row.state].tone" :label="stateBadges[row.state].label" /></div>
                 </template>
-                <template #cell-rate="{ row }"><span class="tabular-nums">{{ rate(row.contract) || '—' }}</span></template>
-                <template #cell-state="{ row }"><StatusBadge :status="stateBadges[row.state].tone" :label="stateBadges[row.state].label" /></template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-center gap-1">
                         <Button variant="secondary" size="sm" @click="historyId = row.employee_id">Contracts ({{ row.contracts.length }})</Button>

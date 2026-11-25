@@ -6,6 +6,7 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 import { formatPeso } from '../../../../Utils/money';
 
@@ -26,43 +27,48 @@ defineProps({
     totals: { type: Object, required: true },
 });
 
+// Related figures share a cell (CellFacts); the hidden columns keep each one in the CSV.
 const officeColumns = [
     { key: 'name', label: 'Office' },
-    { key: 'items', label: 'Plantilla items', align: 'right' },
-    { key: 'filled', label: 'Filled', align: 'right' },
-    { key: 'vacant', label: 'Vacant', align: 'right' },
-    { key: 'reassigned_out', label: 'Serving elsewhere', align: 'right' },
-    { key: 'reassigned_in', label: 'From other offices', align: 'right' },
+    { key: 'plantilla', label: 'Plantilla', value: (row) => row.items, export: false },
+    { key: 'movement', label: 'Movement', value: (row) => row.reassigned_out + row.reassigned_in, export: false },
     { key: 'present', label: 'Actually serving here', align: 'right' },
-    { key: 'without_item', label: 'Staff without an item', align: 'right' },
+    { key: 'without_item', label: 'Without an item', align: 'right' },
+    { key: 'items', label: 'Plantilla items', hidden: true },
+    { key: 'filled', label: 'Filled', hidden: true },
+    { key: 'vacant', label: 'Vacant', hidden: true },
+    { key: 'reassigned_out', label: 'Serving elsewhere', hidden: true },
+    { key: 'reassigned_in', label: 'From other offices', hidden: true },
 ];
 
 const elsewhereColumns = [
     { key: 'name', label: 'Name' },
     { key: 'position_title', label: 'Position (item)', value: (row) => `${row.position_title} ${row.item}` },
-    { key: 'place_of_assignment', label: 'Place of assignment' },
-    { key: 'office', label: 'Serving at' },
+    { key: 'office', label: 'Assignment', value: (row) => `${row.place_of_assignment} ${row.office}`, export: false },
     { key: 'since', label: 'Since', value: (row) => row.since ?? '' },
-    { key: 'order_number', label: 'Order', value: (row) => [row.kind, row.order_number].filter(Boolean).join(' ') },
+    { key: 'place_of_assignment', label: 'Place of assignment', hidden: true },
+    { key: 'serving_at', label: 'Serving at', value: (row) => row.office, hidden: true },
+    { key: 'order_number', label: 'Order', value: (row) => [row.kind, row.order_number].filter(Boolean).join(' '), hidden: true },
 ];
 
 const designationColumns = [
     { key: 'office', label: 'Office' },
     { key: 'name', label: 'Headed by' },
-    { key: 'capacity', label: 'As' },
-    { key: 'home_office', label: 'Their own office', value: (row) => row.home_office ?? '' },
     { key: 'position_title', label: 'Position (item)', value: (row) => [row.position_title, row.item].filter(Boolean).join(' ') },
     { key: 'since', label: 'Since' },
-    { key: 'order_number', label: 'Order', value: (row) => row.order_number ?? '' },
+    { key: 'capacity', label: 'As', hidden: true },
+    { key: 'home_office', label: 'Their own office', value: (row) => row.home_office ?? '', hidden: true },
+    { key: 'order_number', label: 'Order', value: (row) => row.order_number ?? '', hidden: true },
 ];
 
 const vacancyColumns = [
     { key: 'place_of_assignment', label: 'Place of assignment', value: (row) => row.place_of_assignment ?? '' },
-    { key: 'position_title', label: 'Position' },
-    { key: 'item_number', label: 'Item No.', value: (row) => row.item_number ?? '' },
+    { key: 'position_title', label: 'Position', value: (row) => `${row.position_title} ${row.item_number ?? ''}`, export: false },
     { key: 'salary_grade', label: 'SG', align: 'right', value: (row) => row.salary_grade ?? '' },
     { key: 'monthly_salary', label: 'Monthly salary', align: 'right', value: (row) => row.monthly_salary ?? '' },
     { key: 'selected', label: 'Selected (Recruitment)', value: (row) => row.selected ?? '' },
+    { key: 'position', label: 'Position', value: (row) => row.position_title, hidden: true },
+    { key: 'item_number', label: 'Item No.', value: (row) => row.item_number ?? '', hidden: true },
 ];
 </script>
 
@@ -96,6 +102,7 @@ const vacancyColumns = [
                 caption="Staffing by office"
                 export-name="imis-staffing-by-office"
                 :default-sort="{ key: 'name', direction: 'asc' }"
+                :numbered="false"
                 empty-text="Nothing to show yet. Add plantilla items (Positions or Plantilla) and link staff to them."
             >
                 <template #cell-name="{ row }">
@@ -106,8 +113,11 @@ const vacancyColumns = [
                     </div>
                     <div v-if="row.also_heads.length" class="mt-0.5 text-xs text-text-muted">Its head also heads {{ row.also_heads.join(', ') }}</div>
                 </template>
-                <template #cell-vacant="{ row }">
-                    <span class="tabular-nums" :class="row.vacant ? 'font-semibold text-warning-fg' : ''">{{ row.vacant }}</span>
+                <template #cell-plantilla="{ row }">
+                    <CellFacts :facts="[{ label: 'Items', value: row.items }, { label: 'Filled', value: row.filled }, { label: 'Vacant', value: row.vacant }]" />
+                </template>
+                <template #cell-movement="{ row }">
+                    <CellFacts :facts="[{ label: 'Serving elsewhere', value: row.reassigned_out }, { label: 'From other offices', value: row.reassigned_in }]" />
                 </template>
                 <template #cell-present="{ row }">
                     <span class="font-semibold tabular-nums">{{ row.present }}</span>
@@ -128,6 +138,7 @@ const vacancyColumns = [
                 caption="Personnel serving away from their place of assignment"
                 export-name="imis-serving-elsewhere"
                 :default-sort="{ key: 'name', direction: 'asc' }"
+                :numbered="false"
                 empty-text="Everyone serves in their item's place of assignment."
             >
                 <template #cell-name="{ row }">
@@ -138,13 +149,12 @@ const vacancyColumns = [
                     <div class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item }}</Link></div>
                 </template>
                 <template #cell-office="{ row }">
-                    {{ row.office }}
-                    <span v-if="row.detail" class="ml-1 rounded-full bg-info-bg px-2 py-0.5 text-xs text-link">detail</span>
+                    <CellFacts wrap :facts="[{ label: 'Place of assignment', value: row.place_of_assignment }, { label: 'Serving at', value: row.office }]" />
+                    <span v-if="row.detail" class="mt-1 inline-block rounded-full bg-info-bg px-2 py-0.5 text-xs text-link">detail</span>
                 </template>
-                <template #cell-since="{ row }">{{ row.since ? formatCalendarDate(row.since) : '—' }}</template>
-                <template #cell-order_number="{ row }">
-                    <span v-if="row.order_number">{{ row.kind }} {{ row.order_number }}</span>
-                    <span v-else class="text-text-muted">{{ row.kind ? `${row.kind}, no order no.` : '—' }}</span>
+                <template #cell-since="{ row }">
+                    <span class="whitespace-nowrap">{{ row.since ? formatCalendarDate(row.since) : '—' }}</span>
+                    <div class="text-xs text-text-muted">{{ row.order_number ? `${row.kind ?? ''} ${row.order_number}`.trim() : row.kind ? `${row.kind}, no order no.` : '' }}</div>
                 </template>
             </DataTable>
         </Card>
@@ -162,12 +172,12 @@ const vacancyColumns = [
                 caption="Offices headed by designation"
                 export-name="imis-headed-by-designation"
                 :default-sort="{ key: 'office', direction: 'asc' }"
+                :numbered="false"
                 empty-text="No office is headed by designation."
             >
                 <template #cell-name="{ row }">
-                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="[row.capacity, row.home_office && `own office: ${row.home_office}`].filter(Boolean).join(' · ')" />
                 </template>
-                <template #cell-home_office="{ row }">{{ row.home_office || '—' }}</template>
                 <template #cell-position_title="{ row }">
                     {{ row.position_title || '—' }}
                     <div v-if="row.item_id" class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item }}</Link></div>
@@ -175,10 +185,7 @@ const vacancyColumns = [
                 <template #cell-since="{ row }">
                     {{ formatCalendarDate(row.since) }}
                     <div class="text-xs text-text-muted">{{ row.until ? `until ${formatCalendarDate(row.until)}` : 'until further notice' }}</div>
-                </template>
-                <template #cell-order_number="{ row }">
-                    <span v-if="row.order_number">{{ row.order_number }}</span>
-                    <span v-else class="text-text-muted">No order no.</span>
+                    <div class="text-xs text-text-muted">{{ row.order_number ? `Order ${row.order_number}` : 'No order no.' }}</div>
                 </template>
             </DataTable>
         </Card>
@@ -191,11 +198,13 @@ const vacancyColumns = [
                 caption="Vacant plantilla items"
                 export-name="imis-vacancies"
                 :default-sort="{ key: 'place_of_assignment', direction: 'asc' }"
+                :numbered="false"
                 empty-text="No vacant items."
             >
                 <template #cell-place_of_assignment="{ row }">{{ row.place_of_assignment || '—' }}</template>
-                <template #cell-item_number="{ row }">
-                    <Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link>
+                <template #cell-position_title="{ row }">
+                    {{ row.position_title }}
+                    <div class="text-xs"><Link :href="`/admin/hr/plantilla/${row.item_id}`" class="text-link hover:underline">{{ row.item_number || 'No item no.' }}</Link></div>
                 </template>
                 <template #cell-salary_grade="{ row }"><span class="tabular-nums">{{ row.salary_grade ?? '—' }}</span></template>
                 <template #cell-monthly_salary="{ row }">

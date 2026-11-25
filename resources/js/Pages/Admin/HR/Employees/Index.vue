@@ -10,6 +10,7 @@ import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import BulkSetupModal from '../../../../Components/HR/BulkSetupModal.vue';
 import { employeeDefaults, employeeFields, employeeNullable } from '../../../../Components/HR/employeeFields';
@@ -36,16 +37,16 @@ const bulkOpen = ref(false);
 
 const columns = [
     { key: 'name', label: 'Employee', value: (employee) => employee.user.list_name },
-    { key: 'employee_number', label: 'Employee no.' },
-    { key: 'biometric_id', label: 'Biometric ID' },
+    { key: 'employee_number', label: 'IDs' },
+    { key: 'biometric_id', label: 'Biometric ID', hidden: true },
     {
         key: 'unit',
         label: 'Office',
         value: (employee) => [employee.user.unit, ...employee.user.concurrent_units.map((unit) => `${unit.capacity} of ${unit.office}`)].filter(Boolean).join('; '),
     },
-    { key: 'employment_status_label', label: 'Employment status' },
+    { key: 'employment_status_label', label: 'Status' },
     { key: 'csc_years', label: 'Years in CSC', align: 'right', value: (employee) => employee.csc_service?.years ?? '' },
-    { key: 'service', label: 'Service', align: 'center', value: (employee) => (employee.separated ? 'Separated' : 'In Service') },
+    { key: 'service', label: 'Service', value: (employee) => (employee.separated ? 'Separated' : 'In Service'), hidden: true },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '5rem' },
 ];
 
@@ -158,15 +159,18 @@ const visible = computed(() =>
             :rows="visible"
             :caption="`Employee records — ${activeLabel}`"
             :export-name="`imis-employees-${activeStatus.replaceAll('_', '-')}`"
+            :numbered="false"
             :empty-text="`No employee records under “${activeLabel}”.`"
         >
             <template #cell-name="{ row }">
                 <PersonCell :name="row.user.list_name" :photo-url="row.user.profile_photo_url" :subtitle="row.user.position" />
             </template>
-            <template #cell-employee_number="{ row }">{{ row.employee_number || '—' }}</template>
-            <template #cell-biometric_id="{ row }">
-                <span v-if="row.biometric_id" class="tabular-nums">{{ row.biometric_id }}</span>
-                <span v-else class="text-text-muted">Not set</span>
+            <template #cell-employee_number="{ row }">
+                <CellFacts :facts="[{ label: 'Employee no.', value: row.employee_number || '—' }, { label: 'Biometric ID', value: row.biometric_id || 'Not set' }]" />
+            </template>
+            <template #cell-employment_status_label="{ row }">
+                <div>{{ row.employment_status_label || '—' }}</div>
+                <StatusBadge class="mt-1" :status="row.separated ? 'inactive' : 'active'" :label="row.separated ? 'Separated' : 'In Service'" />
             </template>
             <template #cell-unit="{ row }">
                 {{ row.user.unit || '—' }}
@@ -181,9 +185,6 @@ const visible = computed(() =>
                     </div>
                 </template>
                 <span v-else class="text-text-muted">—</span>
-            </template>
-            <template #cell-service="{ row }">
-                <StatusBadge :status="row.separated ? 'inactive' : 'active'" :label="row.separated ? 'Separated' : 'In Service'" />
             </template>
             <template #cell-actions="{ row }">
                 <ActionButton icon="eye" tone="neutral" :label="`Open the employee record of ${row.user.name}`" :href="`/admin/hr/employees/${row.id}`" />

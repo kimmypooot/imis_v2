@@ -8,6 +8,7 @@ import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
@@ -109,14 +110,15 @@ const itemColumns = [
     { key: 'period', label: 'In effect', value: (row) => `${row.effective_from} – ${row.effective_to ?? ''}` },
     { key: 'actions', label: '', sortable: false, export: false },
 ];
+// Amounts share a cell and the status sits under the balance; hidden columns keep them in the CSV.
 const loanColumns = [
     { key: 'type', label: 'Loan' },
-    { key: 'monthly_amortization', label: 'Monthly', align: 'right' },
-    { key: 'total_payable', label: 'Payable', align: 'right' },
-    { key: 'paid', label: 'Paid', align: 'right' },
+    { key: 'monthly_amortization', label: 'Amounts' },
     { key: 'balance', label: 'Balance', align: 'right' },
-    { key: 'status', label: 'Status' },
     { key: 'actions', label: '', sortable: false, export: false },
+    { key: 'total_payable', label: 'Payable', hidden: true },
+    { key: 'paid', label: 'Paid', hidden: true },
+    { key: 'status', label: 'Status', value: (row) => row.status_label, hidden: true },
 ];
 const recentColumns = [
     { key: 'period', label: 'Month' },
@@ -165,7 +167,7 @@ const recentColumns = [
                 <template v-if="canManage" #actions>
                     <Button size="sm" variant="success" @click="editLoan()"><Icon name="plus" size="sm" />Add loan</Button>
                 </template>
-                <DataTable :columns="loanColumns" :rows="loans" :caption="`Loans of ${employee.name}`" export-name="imis-loans" :searchable="false" empty-text="No loans.">
+                <DataTable :columns="loanColumns" :rows="loans" :caption="`Loans of ${employee.name}`" export-name="imis-loans" :searchable="false" :numbered="false" empty-text="No loans.">
                     <template #cell-type="{ row }">
                         <span class="font-medium text-text">{{ row.type }}</span>
                         <div class="text-xs text-text-muted">
@@ -175,16 +177,16 @@ const recentColumns = [
                             · {{ row.installments_paid }} deducted
                         </div>
                     </template>
-                    <template #cell-monthly_amortization="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_amortization) }}</span></template>
-                    <template #cell-total_payable="{ row }"><span class="tabular-nums">{{ formatPeso(row.total_payable) }}</span></template>
-                    <template #cell-paid="{ row }"><span class="tabular-nums">{{ formatPeso(row.paid) }}</span></template>
-                    <template #cell-balance="{ row }"><span class="font-medium tabular-nums">{{ formatPeso(row.balance) }}</span></template>
-                    <template #cell-status="{ row }">
-                        <StatusBadge :status="loanTones[row.status]" :label="row.status_label" />
+                    <template #cell-monthly_amortization="{ row }">
+                        <CellFacts :facts="[{ label: 'Monthly', value: formatPeso(row.monthly_amortization) }, { label: 'Payable', value: formatPeso(row.total_payable) }, { label: 'Paid', value: formatPeso(row.paid) }]" />
+                    </template>
+                    <template #cell-balance="{ row }">
+                        <span class="font-medium whitespace-nowrap tabular-nums">{{ formatPeso(row.balance) }}</span>
+                        <div class="mt-1"><StatusBadge :status="loanTones[row.status]" :label="row.status_label" /></div>
                         <div v-if="row.cancelled_on || row.stopped_on" class="mt-1 text-xs text-text-muted">since {{ formatCalendarDate(row.cancelled_on ?? row.stopped_on) }}</div>
                     </template>
                     <template #cell-actions="{ row }">
-                        <div v-if="canManage" class="flex justify-end gap-3 text-sm whitespace-nowrap">
+                        <div v-if="canManage" class="flex flex-col items-end gap-1 text-sm whitespace-nowrap">
                             <button type="button" class="text-link hover:underline" @click="scheduleId = row.id">Schedule</button>
                             <button type="button" class="text-link hover:underline" @click="editLoan(row)">Edit</button>
                             <button v-if="row.status === 'active'" type="button" class="text-link hover:underline" @click="stopping = row">Suspend</button>

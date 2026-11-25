@@ -45,11 +45,11 @@ const rows = computed(() => props.organizationalUnits.filter((item) => item.stat
 
 const columns = [
     { key: 'name', label: 'Name' },
-    { key: 'code', label: 'Code', align: 'center' },
-    { key: 'unit_type', label: 'Type', value: (unit) => typeLabel(unit.unit_type) },
+    { key: 'code', label: 'Code', hidden: true },
+    { key: 'unit_type', label: 'Type', value: (unit) => typeLabel(unit.unit_type), hidden: true },
     { key: 'head', label: 'Head', value: (unit) => (unit.head ? [unit.head.name, unit.head.capacity ?? unit.head.position].filter(Boolean).join(', ') : '') },
     { key: 'parent', label: 'Parent', value: (unit) => unit.parent?.name ?? '' },
-    { key: 'sort_order', label: 'Order', align: 'center' },
+    { key: 'sort_order', label: 'Order', hidden: true },
     { key: 'status', label: 'Status', align: 'center' },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center', width: '6rem' },
 ];
@@ -130,13 +130,15 @@ const toggleStatus = async (unit) => {
             :rows="rows"
             :caption="`${tab.key === 'active' ? 'Active' : 'Inactive'} offices`"
             :export-name="`imis-offices-${tab.key}`"
+            :numbered="false"
         >
             <template #cell-name="{ row }">
                 <div class="font-medium text-text">{{ row.name }}</div>
-                <div v-if="row.short_name && row.short_name !== row.code" class="text-xs text-text-muted">{{ row.short_name }}</div>
-            </template>
-            <template #cell-code="{ row }">
-                <span class="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{ row.code }}</span>
+                <div class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-text-muted">
+                    <span class="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-text">{{ row.code }}</span>
+                    <span v-if="row.short_name && row.short_name !== row.code">{{ row.short_name }}</span>
+                    <span>{{ typeLabel(row.unit_type) }}</span>
+                </div>
             </template>
             <template #cell-head="{ row }">
                 <template v-if="row.head">

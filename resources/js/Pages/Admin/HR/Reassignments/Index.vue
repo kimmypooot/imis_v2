@@ -8,6 +8,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -38,20 +39,23 @@ const tones = { reassignment: 'info', detail: 'warning', designation: 'draft', r
 
 const stationColumns = [
     { key: 'name', label: 'Employee' },
-    { key: 'position', label: 'Position', value: (row) => row.position ?? '' },
+    { key: 'position', label: 'Position', value: (row) => row.position ?? '', hidden: true },
     { key: 'office', label: 'Office', value: (row) => row.office ?? '' },
     { key: 'detailed_to', label: 'Detailed to', value: (row) => row.detailed_to ?? '' },
 ];
 
+// Kind, from and to share the "Movement" cell; the end date and order date sit under
+// their neighbours. Hidden columns keep each in the CSV.
 const movementColumns = [
     { key: 'effective_date', label: 'Effective' },
     { key: 'name', label: 'Employee' },
-    { key: 'kind_label', label: 'Kind' },
-    { key: 'from_unit', label: 'From', value: (row) => row.from_unit ?? '' },
-    { key: 'to_unit', label: 'To' },
-    { key: 'end_date', label: 'Until', value: (row) => row.end_date ?? '' },
+    { key: 'movement', label: 'Movement', value: (row) => `${row.kind_label} ${row.from_unit ?? ''} ${row.to_unit}`, export: false },
     { key: 'order_number', label: 'Order No.', value: (row) => row.order_number ?? '' },
-    { key: 'order_date', label: 'Order date', value: (row) => row.order_date ?? '' },
+    { key: 'kind_label', label: 'Kind', hidden: true },
+    { key: 'from_unit', label: 'From', value: (row) => row.from_unit ?? '', hidden: true },
+    { key: 'to_unit', label: 'To', hidden: true },
+    { key: 'end_date', label: 'Until', value: (row) => row.end_date ?? '', hidden: true },
+    { key: 'order_date', label: 'Order date', value: (row) => row.order_date ?? '', hidden: true },
 ];
 
 </script>
@@ -99,9 +103,9 @@ const movementColumns = [
         </Card>
 
         <Card :title="`Stations as of ${formatCalendarDate(filters.as_of)}`" icon="building" description="Office from the reassignment history; details shown separately. Separated employees are left out.">
-            <DataTable :columns="stationColumns" :rows="stations" row-key="employee_id" :caption="`Stations as of ${filters.as_of}`" :export-name="`imis-stations-${filters.as_of}`">
+            <DataTable :columns="stationColumns" :rows="stations" row-key="employee_id" :caption="`Stations as of ${filters.as_of}`" :export-name="`imis-stations-${filters.as_of}`" :numbered="false">
                 <template #cell-name="{ row }">
-                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="row.position" />
                 </template>
                 <template #cell-office="{ row }">{{ row.office || '—' }}</template>
                 <template #cell-detailed_to="{ row }">{{ row.detailed_to || '—' }}</template>
@@ -118,20 +122,25 @@ const movementColumns = [
                 :rows="movements"
                 :caption="`Movements ${filters.from} to ${filters.to}`"
                 :export-name="`imis-movements-${filters.from}-${filters.to}`"
+                :numbered="false"
                 empty-text="No movements recorded in this period."
             >
-                <template #cell-effective_date="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.effective_date) }}</span></template>
+                <template #cell-effective_date="{ row }">
+                    <span class="whitespace-nowrap">{{ formatCalendarDate(row.effective_date) }}</span>
+                    <div v-if="row.end_date" class="text-xs whitespace-nowrap text-text-muted">until {{ formatCalendarDate(row.end_date) }}</div>
+                </template>
                 <template #cell-name="{ row }">
                     <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" />
                 </template>
-                <template #cell-kind_label="{ row }"><StatusBadge :status="tones[row.kind]" :label="row.kind_label" /></template>
-                <template #cell-from_unit="{ row }">{{ row.from_unit || '—' }}</template>
-                <template #cell-end_date="{ row }"><span class="whitespace-nowrap">{{ row.end_date ? formatCalendarDate(row.end_date) : '—' }}</span></template>
+                <template #cell-movement="{ row }">
+                    <StatusBadge :status="tones[row.kind]" :label="row.kind_label" />
+                    <CellFacts wrap class="mt-1.5" :facts="[{ label: 'From', value: row.from_unit || '—' }, { label: 'To', value: row.to_unit }]" />
+                </template>
                 <template #cell-order_number="{ row }">
                     {{ row.order_number || '—' }}
                     <a v-if="row.scan" :href="row.scan.url" target="_blank" rel="noopener" class="ml-1 text-link hover:underline">scan</a>
+                    <div v-if="row.order_date" class="text-xs whitespace-nowrap text-text-muted">{{ formatCalendarDate(row.order_date) }}</div>
                 </template>
-                <template #cell-order_date="{ row }"><span class="whitespace-nowrap">{{ row.order_date ? formatCalendarDate(row.order_date) : '—' }}</span></template>
             </DataTable>
         </Card>
     </div>

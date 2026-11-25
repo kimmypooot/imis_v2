@@ -5,6 +5,8 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -27,23 +29,26 @@ const range = (row) => (row.dates_label && row.date_from !== row.date_to ? row.d
 const columns = computed(() => ({
     on_leave: [
         { key: 'name', label: 'Employee' },
-        { key: 'office', label: 'Office', value: (row) => row.office ?? '' },
+        { key: 'office', label: 'Office', value: (row) => row.office ?? '', hidden: true },
         { key: 'type', label: 'Leave' },
         { key: 'date_from', label: 'Dates', value: range },
         { key: 'reference_number', label: 'Reference' },
     ],
+    // Counts and days share a cell each; the hidden columns keep every figure in the CSV.
     utilization: [
         { key: 'type', label: 'Leave type' },
-        { key: 'filed', label: 'Filed', align: 'right' },
-        { key: 'approved', label: 'Approved', align: 'right' },
-        { key: 'disapproved', label: 'Disapproved', align: 'right' },
-        { key: 'pending', label: 'Open', align: 'right' },
-        { key: 'days_with_pay', label: 'Days with pay', align: 'right' },
-        { key: 'days_without_pay', label: 'Days without pay', align: 'right' },
+        { key: 'filed', label: 'Applications', export: false },
+        { key: 'days_with_pay', label: 'Days approved', export: false },
+        { key: 'filed_count', label: 'Filed', value: (row) => row.filed, hidden: true },
+        { key: 'approved', label: 'Approved', hidden: true },
+        { key: 'disapproved', label: 'Disapproved', hidden: true },
+        { key: 'pending', label: 'Open', hidden: true },
+        { key: 'with_pay', label: 'Days with pay', value: (row) => row.days_with_pay, hidden: true },
+        { key: 'days_without_pay', label: 'Days without pay', hidden: true },
     ],
     forced_leave: [
         { key: 'name', label: 'Employee' },
-        { key: 'office', label: 'Office', value: (row) => row.office ?? '' },
+        { key: 'office', label: 'Office', value: (row) => row.office ?? '', hidden: true },
         { key: 'vl_balance', label: 'VL balance', align: 'right' },
         { key: 'taken', label: 'VL/FL taken this year', align: 'right' },
         { key: 'short', label: 'Still to take', align: 'right' },
@@ -58,11 +63,12 @@ const columns = computed(() => ({
     adjustments: [
         { key: 'posted_at', label: 'Posted' },
         { key: 'name', label: 'Employee' },
-        { key: 'code', label: 'Type' },
-        { key: 'kind', label: 'Kind' },
+        { key: 'code', label: 'Type', value: (row) => `${row.code} ${row.kind}`, export: false },
         { key: 'amount', label: 'Days', align: 'right' },
         { key: 'particulars', label: 'Particulars' },
-        { key: 'recorded_by', label: 'By', value: (row) => row.recorded_by ?? '' },
+        { key: 'leave_type', label: 'Type', value: (row) => row.code, hidden: true },
+        { key: 'kind', label: 'Kind', hidden: true },
+        { key: 'recorded_by', label: 'By', value: (row) => row.recorded_by ?? '', hidden: true },
     ],
 })[props.filters.report]);
 
@@ -98,10 +104,26 @@ const subtitle = computed(() => (props.filters.report === 'on_leave' ? formatCal
     </p>
 
     <Card :title="title" icon="printer" :description="subtitle">
-        <DataTable :key="filters.report" :columns="columns" :rows="rows" :caption="`${title}, ${subtitle}`" :export-name="`imis-leave-${filters.report}`" empty-text="Nothing to report.">
+        <DataTable :key="filters.report" :columns="columns" :rows="rows" :caption="`${title}, ${subtitle}`" :export-name="`imis-leave-${filters.report}`" :numbered="false" empty-text="Nothing to report.">
+            <template #cell-name="{ row }">
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :href="row.employee_id ? `/admin/hr/employees/${row.employee_id}` : null" :subtitle="row.office" />
+            </template>
+            <template #cell-filed="{ row }">
+                <CellFacts :facts="[{ label: 'Filed', value: row.filed }, { label: 'Approved', value: row.approved }, { label: 'Disapproved', value: row.disapproved || null }, { label: 'Open', value: row.pending || null }]" />
+            </template>
+            <template #cell-days_with_pay="{ row }">
+                <CellFacts :facts="[{ label: 'With pay', value: days(row.days_with_pay) }, { label: 'Without pay', value: row.days_without_pay ? days(row.days_without_pay) : null }]" />
+            </template>
+            <template #cell-code="{ row }">
+                {{ row.code }}
+                <div class="text-xs text-text-muted">{{ row.kind }}</div>
+            </template>
             <template #cell-date_from="{ row }"><span class="whitespace-nowrap">{{ range(row) }}</span></template>
-            <template #cell-posted_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.posted_at) }}</span></template>
-            <template v-for="key in ['vl_balance', 'taken', 'short', 'days_with_pay', 'days_without_pay', 'amount']" :key="key" #[`cell-${key}`]="{ row }">
+            <template #cell-posted_at="{ row }">
+                <span class="whitespace-nowrap">{{ formatDateTime(row.posted_at) }}</span>
+                <div v-if="row.recorded_by" class="text-xs text-text-muted">by {{ row.recorded_by }}</div>
+            </template>
+            <template v-for="key in ['vl_balance', 'taken', 'short', 'days_without_pay', 'amount']" :key="key" #[`cell-${key}`]="{ row }">
                 <span class="tabular-nums">{{ days(row[key]) }}</span>
             </template>
         </DataTable>

@@ -34,15 +34,16 @@ const tabs = computed(() => [
 const rows = computed(() => (tab.value === 'pending' ? pending.value : decided.value));
 
 const tones = { pending: 'warning', approved: 'active', rejected: 'inactive', cancelled: 'logged_out' };
+// Who and when sit under the reference, the field above its change; hidden columns keep them in the CSV.
 const columns = [
-    { key: 'reference_number', label: 'Reference' },
-    { key: 'employee', label: 'Employee' },
-    { key: 'field_label', label: 'Field' },
-    { key: 'change', label: 'Change', sortable: false, value: (row) => `${row.current_value ?? ''} ${row.proposed_value}` },
+    { key: 'reference_number', label: 'Request' },
+    { key: 'change', label: 'Change', sortable: false, value: (row) => `${row.field_label} ${row.current_value ?? ''} ${row.proposed_value}` },
     { key: 'reason', label: 'Reason' },
     { key: 'status', label: 'Status' },
-    { key: 'requested_at', label: 'Requested' },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center' },
+    { key: 'employee', label: 'Employee', hidden: true },
+    { key: 'field_label', label: 'Field', hidden: true },
+    { key: 'requested_at', label: 'Requested', hidden: true },
 ];
 
 const deciding = ref(null);
@@ -74,9 +75,16 @@ const submit = () => form.post(`/admin/hr/corrections/${deciding.value.id}`, { p
                     :rows="rows"
                     :caption="`${item.key === 'pending' ? 'Pending' : 'Decided'} correction requests`"
                     :export-name="`imis-corrections-${item.key}`"
+                    :numbered="false"
                     :empty-text="item.key === 'pending' ? 'Nothing waiting.' : 'No decided requests yet.'"
                 >
+                    <template #cell-reference_number="{ row }">
+                        <span class="font-medium text-text">{{ row.reference_number }}</span>
+                        <div class="text-text">{{ row.employee }}</div>
+                        <div class="text-xs whitespace-nowrap text-text-muted">{{ formatDateTime(row.requested_at) }}</div>
+                    </template>
                     <template #cell-change="{ row }">
+                        <div class="text-2xs text-text-muted">{{ row.field_label }}:</div>
                         <span class="text-text-muted line-through">{{ row.current_value || '—' }}</span>
                         <span class="mx-1 text-text-muted">→</span>
                         <span class="font-medium text-text">{{ row.proposed_value || '—' }}</span>
@@ -87,7 +95,6 @@ const submit = () => form.post(`/admin/hr/corrections/${deciding.value.id}`, { p
                         <div v-if="row.decided_by" class="mt-1 text-xs text-text-muted">by {{ row.decided_by }}</div>
                         <div v-if="row.remarks" class="text-xs text-text-muted">{{ row.remarks }}</div>
                     </template>
-                    <template #cell-requested_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.requested_at) }}</span></template>
                     <template #cell-actions="{ row }">
                         <div v-if="row.can_decide" class="flex justify-center gap-2">
                             <Button size="sm" variant="success" icon="check" @click="open(row, 'approved')">Approve</Button>

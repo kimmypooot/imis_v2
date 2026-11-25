@@ -105,7 +105,10 @@ Rows send the photo as `photo_url` (the user's `profile_photo_url`).
 Tables don't scroll sideways: when there are too many figures, stack the
 related ones in one cell with `CellFacts` (each label on its own small
 line above its value), as on Age & Service, and drop the "#" column
-(`:numbered="false"`).
+(`:numbered="false"`). Long values such as office names take
+`CellFacts wrap`. Keep every folded field in the export: give it its own
+column with `hidden: true` (searched and exported, not drawn) and mark the
+folded display column `export: false`.
 
 ## Reusing this in other hub systems
 

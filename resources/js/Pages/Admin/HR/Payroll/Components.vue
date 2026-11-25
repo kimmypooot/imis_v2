@@ -62,13 +62,14 @@ const groups = computed(() =>
     props.kinds.map((kind) => ({ ...kind, rows: props.components.filter((component) => component.kind === kind.value) })),
 );
 
+// The code sits beside the name and the status under "Applies to"; hidden columns keep them in the CSV.
 const columns = [
-    { key: 'code', label: 'Code' },
+    { key: 'code', label: 'Code', hidden: true },
     { key: 'name', label: 'Name' },
     { key: 'rule', label: 'Computed as' },
     { key: 'category_label', label: 'Group', value: (row) => row.category_label ?? '' },
     { key: 'automatic', label: 'Applies to', value: (row) => (row.automatic ? 'Everyone' : 'Pay profiles') },
-    { key: 'is_active', label: 'Status', value: (row) => (row.is_active ? 'Active' : 'Inactive') },
+    { key: 'is_active', label: 'Status', value: (row) => (row.is_active ? 'Active' : 'Inactive'), hidden: true },
     { key: 'actions', label: '', sortable: false, export: false },
 ];
 </script>
@@ -88,14 +89,16 @@ const columns = [
 
     <div class="space-y-6">
         <Card v-for="group in groups" :key="group.value" :title="group.label" icon="database">
-            <DataTable :columns="columns" :rows="group.rows" :caption="group.label" :export-name="`imis-pay-components-${group.value}`" :searchable="false" :empty-text="`No ${group.label.toLowerCase()} types yet.`">
-                <template #cell-code="{ row }"><span class="font-mono text-xs">{{ row.code }}</span></template>
+            <DataTable :columns="columns" :rows="group.rows" :caption="group.label" :export-name="`imis-pay-components-${group.value}`" :searchable="false" :numbered="false" :empty-text="`No ${group.label.toLowerCase()} types yet.`">
                 <template #cell-name="{ row }">
                     <span class="font-medium text-text">{{ row.name }}</span>
+                    <span class="ml-1 font-mono text-xs text-text-muted">{{ row.code }}</span>
                     <div v-if="row.remarks" class="text-xs text-text-muted">{{ row.remarks }}</div>
                 </template>
-                <template #cell-automatic="{ row }"><Badge :tone="row.automatic ? 'info' : 'neutral'">{{ row.automatic ? 'Everyone' : 'Pay profiles' }}</Badge></template>
-                <template #cell-is_active="{ row }"><StatusBadge :status="row.is_active ? 'active' : 'inactive'" /></template>
+                <template #cell-automatic="{ row }">
+                    <Badge :tone="row.automatic ? 'info' : 'neutral'">{{ row.automatic ? 'Everyone' : 'Pay profiles' }}</Badge>
+                    <div class="mt-1"><StatusBadge :status="row.is_active ? 'active' : 'inactive'" /></div>
+                </template>
                 <template #cell-actions="{ row }">
                     <div v-if="canManage" class="flex justify-end gap-1">
                         <ActionButton icon="pencil" :label="`Edit ${row.name}`" @click="edit(row)" />
