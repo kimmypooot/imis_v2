@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use App\Notifications\Concerns\EmailsWhenWanted;
-use App\Support\Notifications\NotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
@@ -31,7 +30,7 @@ class FeedbackUpdate extends Notification implements ShouldQueueAfterCommit
      */
     public function via(object $notifiable): array
     {
-        return NotificationPreferences::wantsEmail($notifiable, $this->kind) ? ['database', 'mail'] : ['database'];
+        return $this->channelsFor($notifiable, $this->kind);
     }
 
     /**

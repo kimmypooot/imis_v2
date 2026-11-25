@@ -26,6 +26,12 @@ final class NotificationPreferences
             'email' => false,
             'permission' => null,
         ],
+        'plantilla' => [
+            'label' => 'Plantilla',
+            'description' => 'An item holder whose account position title differs from the plantilla, often a promotion not yet recorded.',
+            'email' => false,
+            'permission' => 'plantilla.manage',
+        ],
         'feedback' => [
             'label' => 'Feedback replies',
             'description' => 'A reply to feedback, a suggestion or a recommendation you sent.',

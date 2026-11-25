@@ -3615,6 +3615,16 @@ pending. Fields can be adjusted once it arrives.
   their account's position title are set from the open period.
   Retitling an item retitles its holder's account. The **office does not
   follow**; that's the reassignment history's job (HR-1b).
+- **Title differences:** the sync above runs only when the plantilla
+  changes, so an account title set elsewhere (the legacy import) can
+  disagree with the item held, typically a promotion never recorded here.
+  Neither side is overwritten: the Plantilla page shows a banner, a "Title
+  differs" view (`?view=title_differs`) and "Account says …" under the
+  incumbent, and `imis:check-plantilla-titles` (daily, 08:10,
+  `PlantillaTitleChecks`) tells `plantilla.manage` holders under the bell
+  (kind `plantilla`, `PlantillaAlert`, may also be emailed). Each
+  difference (period, account title) is reported to a person once, using
+  the `keys` stored in their earlier notifications.
 - **Pricing:** `SalarySchedules::monthlySalary(grade, step, date)`. A
   current period uses today's schedule; a past period uses the schedule
   in force when it began. A vacant item is priced at step 1.
@@ -5025,6 +5035,35 @@ Seven independent features; none has a legacy counterpart.
   Email is off by default except the weekly summary.
 - Notification classes use `Notifications/Concerns/EmailsWhenWanted`
   (a `KIND` constant and their `toArray()`).
+
+### Push notifications (`Support/Notifications/PushNotifications`)
+- Web Push through `laravel-notification-channels/webpush` (subscriptions
+  in `push_subscriptions`, `User` uses `HasPushSubscriptions`). Every bell
+  notification is also pushed to the devices the person switched on
+  ("Push notifications" card on Notification settings, the
+  `usePushNotifications` composable, service worker `public/sw.js`, which
+  caches nothing). `EmailsWhenWanted::via()` adds the channel.
+- **Allowed by the Super Administrator:** System Settings →
+  Notifications → "Allow push notifications" (`push_notifications_enabled`,
+  off by default). Off hides the card, refuses subscribing and stops all
+  pushes; devices stay stored and resume when it is turned on again.
+- **Server needs:** `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+  in `.env` (`php artisan webpush:vapid`; never regenerate casually, it
+  cuts off every device) and HTTPS (browsers allow push on localhost
+  only otherwise). On Windows/XAMPP PHP needs `OPENSSL_CONF` pointing at
+  `php/extras/ssl/openssl.cnf` to make keys and encrypt pushes. Pushes are
+  sent by the queue worker.
+- **What a push says:** only "You have a new {kind} notification" and an
+  in-app path to open (never another site), since it shows on lock
+  screens; the payload itself is encrypted for the device. Inactive
+  accounts get no pushes; expired devices are deleted when a push bounces.
+- **Endpoints** must be on the major browsers' push services
+  (`webpush.allowed_hosts`: Google, Mozilla, Apple, Microsoft): the server
+  posts to whatever is stored, so anything else is refused.
+- A browser belongs to whoever switched it on last. iPhone/iPad need IMIS
+  added to the Home Screen first (iOS 16.4+). "Send a test" pushes
+  `PushTest` to your own devices only.
+- Tests: `tests/Feature/PushNotificationsTest.php`.
 
 ### Email templates (`/admin/email-templates`, `Support/Mail/EmailTemplates`)
 - Subject, opening, button and closing of: new account (set your

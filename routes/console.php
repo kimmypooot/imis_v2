@@ -50,6 +50,10 @@ Schedule::command('imis:leave-deadlines')->weekdays()->dailyAt('07:30')->timezon
 // HR-8: employees hear when a recurring deduction is nearly completed.
 Schedule::command('imis:notify-loan-endings')->dailyAt('08:00')->timezone('Asia/Manila')->withoutOverlapping();
 
+// HR-4: HR hears when a holder's account title differs from their plantilla
+// item (a promotion not yet recorded); each difference once.
+Schedule::command('imis:check-plantilla-titles')->dailyAt('08:10')->timezone('Asia/Manila')->withoutOverlapping();
+
 // DTR: HR is reminded once a month ends that its tardiness still has to be
 // synced to leave credits (from the 2nd, once the biometric logs are in).
 Schedule::command('imis:remind-tardiness-sync')->dailyAt('08:15')->timezone('Asia/Manila')->withoutOverlapping();

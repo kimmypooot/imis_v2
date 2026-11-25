@@ -9,6 +9,7 @@
         "php": "^8.3",
         "chillerlan/php-qrcode": "^6.0",
         "inertiajs/inertia-laravel": "^3.4",
+        "laravel-notification-channels/webpush": "^13.0",
         "laravel/framework": "^13.17",
         "laravel/passkeys": "^0.3.0",
         "laravel/tinker": "^3.0"

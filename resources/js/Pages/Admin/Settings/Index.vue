@@ -21,7 +21,7 @@ defineProps({
 
     <PageHeader
         title="System Settings"
-        description="Portal display, contact, HR, security, backup, log-retention and Executive Dashboard settings. Server configuration and credentials are managed outside the application and never appear here."
+        description="Portal display, contact, HR, security, notification, backup, log-retention and Executive Dashboard settings. Server configuration and credentials are managed outside the application and never appear here."
         :breadcrumbs="[{ label: 'Home', href: '/admin' }, { label: 'System Settings' }]"
     />
 

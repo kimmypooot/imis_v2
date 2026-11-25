@@ -364,6 +364,13 @@ final class SettingRegistry
                 'default' => 24,
                 'constraints' => ['required' => true, 'min' => 0, 'max' => 120, 'min_unless_zero' => 3],
             ],
+            'push_notifications_enabled' => [
+                'type' => SettingType::Boolean,
+                'group' => SettingGroup::Notifications,
+                'label' => 'Allow push notifications',
+                'description' => 'Lets staff switch on push notifications for their phones and computers (Account → Notification settings). They only say something new arrived. Turning this off stops all pushes at once; the devices stay listed and resume if it is turned back on. Needs HTTPS and the VAPID keys in the server\'s .env.',
+                'default' => false,
+            ],
             'executive_alerts' => [
                 'type' => SettingType::Boolean,
                 'group' => SettingGroup::Executive,

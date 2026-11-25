@@ -30,7 +30,7 @@ watch(() => props.unread, (value) => {
 });
 
 // Same icons as the full Notifications page, so a list scans by shape.
-const kindIcons = { leave: 'calendar', executive: 'chartBar', hr: 'users', feedback: 'chat', payslip: 'database', pds: 'clipboard' };
+const kindIcons = { leave: 'calendar', executive: 'chartBar', hr: 'users', feedback: 'chat', payslip: 'database', pds: 'clipboard', plantilla: 'grid' };
 const iconFor = (item) => kindIcons[item.kind?.split('_')[0]] ?? 'bell';
 
 // Newest first, filed under Today / Yesterday / This week / Earlier.

@@ -8,6 +8,8 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
+import { usePushNotifications } from '../../Composables/usePushNotifications';
 
 defineOptions({ layout: [PortalLayout, AccountLayout] });
 
@@ -18,7 +20,19 @@ defineOptions({ layout: [PortalLayout, AccountLayout] });
 const props = defineProps({
     kinds: { type: Array, required: true },
     email: { type: String, default: null },
+    push: { type: Object, default: null },
 });
+
+// Push on this device (only offered when the server has VAPID keys).
+const pushDevice = usePushNotifications(() => props.push ?? { publicKey: '', endpoints: [] });
+const pushNotes = {
+    loading: 'Checking this browser…',
+    unsupported: 'This browser can\'t receive push notifications. Use a current Chrome, Edge, Firefox or Safari over a secure (https) connection.',
+    'needs-install': 'On iPhone and iPad, first add IMIS to your Home Screen (Share → Add to Home Screen), then open it from there and switch this on.',
+    blocked: 'Notifications are blocked for IMIS in this browser. Allow them in the site settings (the icon left of the address), then reload this page.',
+    off: 'Get a notice on this device when something new arrives under the bell, even while IMIS is closed.',
+    on: 'This device gets a notice when something new arrives under the bell.',
+};
 
 const form = useForm({ email: Object.fromEntries(props.kinds.map((kind) => [kind.kind, kind.email])) });
 const save = () => form.put('/account/notifications', { preserveScroll: true, onSuccess: () => form.defaults() });
@@ -60,6 +74,25 @@ const reset = () => form.reset();
                 {{ email ? `${enabledCount} of ${kinds.length} on` : 'Bell only' }}
             </Badge>
         </div>
+
+        <Card v-if="push" title="Push notifications" icon="bell" description="A notice on your phone or computer, like other apps. It only says something new arrived; open IMIS to read it.">
+            <Switch
+                id="push-this-device"
+                :model-value="pushDevice.isOn.value"
+                :disabled="pushDevice.busy.value || !['on', 'off'].includes(pushDevice.state.value)"
+                label="On this device"
+                :description="pushNotes[pushDevice.state.value]"
+                @update:model-value="(on) => (on ? pushDevice.enable() : pushDevice.disable())"
+            />
+            <p v-if="pushDevice.failure.value" class="mt-3 text-sm text-danger-fg" role="alert">{{ pushDevice.failure.value }}</p>
+
+            <div v-if="pushDevice.deviceCount.value" class="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-4">
+                <p class="text-sm text-text-muted">
+                    On for {{ pushDevice.deviceCount.value }} {{ pushDevice.deviceCount.value === 1 ? 'device' : 'devices' }} in all. Switch it off on each device to stop it there.
+                </p>
+                <Button type="button" variant="secondary" size="sm" icon="bell" :loading="pushDevice.busy.value" class="ml-auto" @click="pushDevice.sendTest()">Send a test</Button>
+            </div>
+        </Card>
 
         <Card title="Also send by email" icon="bell" description="The bell always shows everything. Switch on the ones you want in your inbox too.">
             <template v-if="email" #actions>

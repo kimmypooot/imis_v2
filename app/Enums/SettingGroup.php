@@ -15,6 +15,7 @@ enum SettingGroup: string
     case Privacy = 'privacy';
     case HumanResources = 'human_resources';
     case Security = 'security';
+    case Notifications = 'notifications';
     case Backups = 'backups';
     case Retention = 'retention';
     case Executive = 'executive';
@@ -28,6 +29,7 @@ enum SettingGroup: string
             self::Privacy => 'Data Privacy',
             self::HumanResources => 'Human Resources',
             self::Security => 'Security',
+            self::Notifications => 'Notifications',
             self::Backups => 'Automatic Backups',
             self::Retention => 'Log Retention',
             self::Executive => 'Executive Dashboard',
@@ -43,6 +45,7 @@ enum SettingGroup: string
             self::Privacy => 'Who answers privacy questions, shown on the privacy notice (RA 10173). The rest of the notice follows what IMIS actually collects and keeps.',
             self::HumanResources => 'What HR documents print, such as who certifies the Service Record.',
             self::Security => 'Sign-in, session and password rules for every account. Changes apply from the next request; password rules are checked when a password is next set.',
+            self::Notifications => 'How IMIS may reach staff beyond the bell. What each person receives is their own choice in Account → Notification settings.',
             self::Backups => 'The nightly database backup kept on the server, in addition to the backups you download.',
             self::Retention => 'How long logs are kept before the nightly clean-up deletes them. 0 keeps them forever.',
             self::Executive => 'Alerts and the weekly summary for top management. Targets and connected systems are set on the Executive Dashboard\'s own Settings page.',

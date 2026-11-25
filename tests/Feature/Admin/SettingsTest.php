@@ -63,7 +63,7 @@ class SettingsTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Admin/Settings/Index')
                 ->where('canUpdate', false)
-                ->has('groups', 9)
+                ->has('groups', 10)
                 ->where('groups.0.key', 'general')
                 ->where('groups.0.settings.0.key', 'organization_name')
                 ->where('groups.0.settings.0.editable', false));

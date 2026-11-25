@@ -23,7 +23,7 @@ const unread = computed(() => props.notifications.filter((notification) => !noti
 const readAll = () => router.post('/notifications/read-all', {}, { preserveScroll: true });
 
 // Each kind of notification gets its own icon, so a list scans by shape.
-const kindIcons = { leave: 'calendar', executive: 'chartBar', hr: 'users', feedback: 'chat', payslip: 'database', pds: 'clipboard' };
+const kindIcons = { leave: 'calendar', executive: 'chartBar', hr: 'users', feedback: 'chat', payslip: 'database', pds: 'clipboard', plantilla: 'grid' };
 const iconFor = (notification) => kindIcons[notification.kind] ?? 'bell';
 
 const filter = ref('all');

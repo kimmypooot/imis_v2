@@ -46,6 +46,7 @@ class PlantillaController extends Controller
                 'filled' => $items->where('status', 'filled')->count(),
                 'vacant' => $items->where('status', 'vacant')->count(),
                 'abolished' => $items->where('status', 'abolished')->count(),
+                'title_differs' => $items->filter(fn (array $item) => filled($item['holder']['account_position'] ?? null))->count(),
             ],
             'schedule' => $schedule ? ['name' => $schedule->name, 'reference' => $schedule->reference, 'effective_date' => $schedule->effective_date->toDateString()] : null,
             'canManage' => $canManage,

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
@@ -36,9 +36,13 @@ const views = [
     { key: 'abolished', label: 'Abolished' },
     { key: 'elsewhere', label: 'Serving elsewhere' },
     { key: 'incomplete', label: 'Incomplete links' },
+    { key: 'title_differs', label: 'Title differs' },
 ];
-const view = ref('all');
+// A notification can open a view directly (?view=title_differs).
+const requested = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('view');
+const view = ref(views.some((option) => option.key === requested) ? requested : 'all');
 const shown = computed(() => {
+    if (view.value === 'title_differs') return props.items.filter((item) => item.holder?.account_position);
     if (view.value === 'elsewhere') return props.items.filter((item) => item.serving?.elsewhere);
     if (view.value === 'incomplete') return props.items.filter((item) => item.holder?.missing.length);
 
@@ -95,6 +99,13 @@ const columns = [
             <Link href="/admin/hr/salary-schedules" class="font-medium text-link hover:underline">Enter the salary schedule</Link>.
         </p>
 
+        <p v-if="counts.title_differs" class="rounded-md border border-warning-border bg-warning-bg px-4 py-3 text-sm text-text">
+            {{ counts.title_differs }} {{ counts.title_differs === 1 ? 'holder’s account shows' : 'holders’ accounts show' }} a different position title than the item they hold,
+            often a promotion not yet recorded here.
+            <button type="button" class="font-medium text-link hover:underline" @click="view = 'title_differs'">Show them</button>,
+            then record the appointment on the right item (or correct the account if the plantilla is right).
+        </p>
+
         <Card title="Items" icon="grid">
             <template #actions>
                 <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
@@ -128,6 +139,7 @@ const columns = [
                         Serving at {{ row.serving.office }}<template v-if="row.serving.order_number"> ({{ row.serving.order_number }})</template>
                     </div>
                     <div v-if="row.holder?.missing.length" class="text-xs text-warning-fg" :title="`Missing: ${row.holder.missing.join(', ')}`">Incomplete link</div>
+                    <div v-if="row.holder?.account_position" class="text-xs text-warning-fg">Account says {{ row.holder.account_position }}</div>
                 </template>
                 <template #cell-step="{ row }"><span class="tabular-nums">{{ row.holder?.step ?? '—' }}</span></template>
                 <template #cell-monthly_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span></template>

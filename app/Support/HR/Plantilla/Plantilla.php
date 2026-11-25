@@ -492,6 +492,7 @@ class Plantilla
                 'status_label' => $holder->status?->label(),
                 'since' => $holder->date_from?->toDateString(),
                 'missing' => $holder->missingDetails(),
+                'account_position' => $this->accountPositionDiffers($holder) ? $holder->employee->user->position : null,
             ] : null,
             // The holder's salary override, else priced at their step (step 1 for a vacant item).
             'monthly_salary' => match (true) {
@@ -501,6 +502,19 @@ class Plantilla
                 default => $this->schedules->monthlySalary($item->salary_grade, $holder->step ?? 1),
             },
         ];
+    }
+
+    /**
+     * The account's position title should follow the item held. It can
+     * drift when the title came from elsewhere (the legacy import) and a
+     * promotion was never recorded here, so the plantilla flags it for HR
+     * instead of overwriting either side.
+     */
+    public function accountPositionDiffers(PlantillaAppointment $holder): bool
+    {
+        $normalize = fn (?string $title) => mb_strtolower(preg_replace('/\s+/', ' ', trim((string) $title)));
+
+        return $normalize($holder->employee->user->position) !== $normalize($holder->item->position_title);
     }
 
     /**

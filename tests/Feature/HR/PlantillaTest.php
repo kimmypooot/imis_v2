@@ -125,6 +125,59 @@ class PlantillaTest extends TestCase
             ->assertSessionHasErrors('employee_id');
     }
 
+    public function test_a_holder_whose_account_title_differs_from_the_item_is_flagged_until_the_promotion_is_recorded(): void
+    {
+        $hr = $this->hr();
+        $lower = $this->item();
+        $higher = $this->item(['item_number' => 'CSCB-AO5-1', 'position_title' => 'Administrative Officer V']);
+        $employee = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$lower->id}/appointments", $this->appointment($employee))->assertSessionHasNoErrors();
+
+        // Same title apart from case and spacing: not flagged.
+        $employee->user->forceFill(['position' => ' administrative  officer iv '])->save();
+        $this->actingAs($hr)->get('/admin/hr/plantilla')->assertInertia(fn (Assert $page) => $page
+            ->where('counts.title_differs', 0)
+            ->where('items.0.holder.account_position', null));
+
+        // The account says a promotion happened that the plantilla doesn't have.
+        $employee->user->forceFill(['position' => 'Administrative Officer V'])->save();
+        $this->actingAs($hr)->get('/admin/hr/plantilla')->assertInertia(fn (Assert $page) => $page
+            ->where('counts.title_differs', 1)
+            ->where('items.0.holder.account_position', 'Administrative Officer V'));
+
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$higher->id}/appointments", $this->appointment($employee, ['nature' => 'promotion', 'date_from' => '2026-05-01']))
+            ->assertSessionHasNoErrors();
+        $this->actingAs($hr)->get('/admin/hr/plantilla')->assertInertia(fn (Assert $page) => $page->where('counts.title_differs', 0));
+    }
+
+    public function test_hr_is_notified_once_per_title_difference_and_again_for_a_new_one(): void
+    {
+        $hr = $this->hr();
+        $bystander = User::factory()->create();
+        $item = $this->item();
+        $employee = $this->employee();
+        $this->actingAs($hr)->post("/admin/hr/plantilla/{$item->id}/appointments", $this->appointment($employee))->assertSessionHasNoErrors();
+
+        // In step: nothing to tell.
+        $this->artisan('imis:check-plantilla-titles')->assertSuccessful();
+        $this->assertSame(0, $hr->notifications()->count());
+
+        $employee->user->forceFill(['position' => 'Administrative Officer V'])->save();
+        $this->artisan('imis:check-plantilla-titles')->assertSuccessful();
+        $this->artisan('imis:check-plantilla-titles')->assertSuccessful();
+
+        $notification = $hr->notifications()->sole();
+        $this->assertSame('plantilla', $notification->data['kind']);
+        $this->assertSame('/admin/hr/plantilla?view=title_differs', $notification->data['url']);
+        $this->assertStringContainsString('account says Administrative Officer V, but they hold Administrative Officer IV (CSCB-AO4-1)', $notification->data['message']);
+        $this->assertSame(0, $bystander->notifications()->count());
+
+        // A different title is a new difference.
+        $employee->user->forceFill(['position' => 'Administrative Officer III'])->save();
+        $this->artisan('imis:check-plantilla-titles')->assertSuccessful();
+        $this->assertSame(2, $hr->notifications()->count());
+    }
+
     public function test_a_promotion_ends_the_previous_item_the_day_before(): void
     {
         $hr = $this->hr();

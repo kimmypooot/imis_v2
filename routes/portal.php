@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\NotificationSettingsController;
 use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
+use App\Http\Controllers\Account\PushSubscriptionController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
@@ -72,6 +73,10 @@ Route::middleware('auth')->group(function () {
     // Admin-3: which notifications also come by email.
     Route::get('account/notifications', [NotificationSettingsController::class, 'edit'])->name('account.notifications.edit');
     Route::put('account/notifications', [NotificationSettingsController::class, 'update'])->name('account.notifications.update');
+    // Push notifications: this device on or off, and a test push.
+    Route::post('account/push-subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:10,1')->name('account.push.store');
+    Route::delete('account/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->middleware('throttle:10,1')->name('account.push.destroy');
+    Route::post('account/push-subscriptions/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:3,1')->name('account.push.test');
     Route::put('account/password', [PasswordController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('account.password.update');
