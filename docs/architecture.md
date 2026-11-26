@@ -1575,6 +1575,50 @@ now also considers a `label` attribute (only `Setting` has one).
 - **Behavior:** the notice banner, the portal home announcement limit,
   and the welcome message actually change.
 
+### Reset test data (danger zone, development only)
+- **What it is:** a checklist modal (`TestDataResetDangerZone`) for a
+  Super Administrator to delete test activity and keep the people.
+- **Categories:** `App\Support\Admin\TestDataReset::CATEGORIES`, each with
+  its live row count and ticked by default. Untick a category to keep it
+  this time. The categories:
+  - NOSA & NOSI
+  - SALN
+  - leave applications and approvals
+  - leave cards and credits
+  - flexible work
+  - biometric punches and DTR
+  - payroll runs and payslips
+  - training records
+  - 201 File documents
+  - PDS submissions and record corrections
+  - plantilla selections
+  - announcements, feedback and notifications
+  - logs and dashboard snapshots
+  - sessions, tokens, cache and queue (you stay signed in)
+- **Never on the list:**
+  - accounts and their pictures, employee records, the PDS, service
+    history and the whole Plantilla, step increments included
+    - Step increments were a category at first. On 2026-11-26 the reset
+      removed 12 real ones, recorded from the November 2026 payroll
+      workbook; they were restored from the reset's backup.
+    - A test step increment is removed on its Plantilla item page instead.
+  - saved e-signatures, loans and pay items
+  - all setup: offices, positions, salary schedules, leave types, roles
+    and permissions, systems, settings, What's New
+- **Files:** what deleted rows pointed to is removed from the private
+  disk, except a file a kept record still uses (a profile or PDS photo, a
+  saved signature, a brand asset).
+- **Guards:**
+  - Super Administrator only.
+  - The current password and the phrase `RESET TEST DATA`.
+  - Off unless `test_data.reset_allowed` is on. It defaults to off in
+    production and on elsewhere; `IMIS_ALLOW_TEST_DATA_RESET` overrides
+    it.
+  - A database backup is taken first; if it fails, nothing is deleted.
+  - Audited as `system.test_data_reset`, with the rows per category and
+    the backup's name.
+- **Tests:** `tests/Feature/Admin/TestDataResetTest.php`.
+
 ## Global Search & UX Refinement — IMPLEMENTED (Phase 14)
 
 One search over the four portal content types, plus shell-wide

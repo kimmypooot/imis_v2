@@ -71,6 +71,7 @@ use App\Http\Controllers\Admin\StaffingController;
 use App\Http\Controllers\Admin\SystemAccessController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\TardinessController;
+use App\Http\Controllers\Admin\TestDataResetController;
 use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\Admin\WorkScheduleController;
 use App\Http\Controllers\AdminController;
@@ -803,5 +804,7 @@ Route::middleware('auth')->group(function () {
         Route::put('admin/settings/{group}', [SettingController::class, 'update'])->name('admin.settings.update');
         // Danger zone, Super Administrators only (see LeaveCreditsPurgeController).
         Route::delete('admin/settings/leave-credits', [LeaveCreditsPurgeController::class, 'destroy'])->middleware('throttle:3,1')->name('admin.settings.leave-credits.destroy');
+        // Development only (see TestDataResetController).
+        Route::delete('admin/settings/test-data', [TestDataResetController::class, 'destroy'])->middleware('throttle:3,1')->name('admin.settings.test-data.destroy');
     });
 });

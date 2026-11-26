@@ -28,6 +28,8 @@ enum AuditEvent: string
     case DatabaseBackupDeleted = 'system.backup_deleted';
     case LogsPruned = 'system.logs_pruned';
     case LeaveCreditsPurged = 'system.leave_credits_purged';
+    // Development: a Super Administrator deleted the ticked test data.
+    case TestDataReset = 'system.test_data_reset';
     case ScheduledTaskPaused = 'system.task_paused';
     case ScheduledTaskResumed = 'system.task_resumed';
     case ScheduledTaskRun = 'system.task_run';
