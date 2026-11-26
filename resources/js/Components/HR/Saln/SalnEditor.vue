@@ -244,20 +244,20 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
         <fieldset :disabled="locked" class="space-y-6">
             <Card title="Declarant" icon="user" description="As it should print on the form.">
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <div><InputLabel for="d-family">Family name</InputLabel><input id="d-family" v-model="s.declarant.family_name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('declarant.family_name')" /></div>
-                    <div><InputLabel for="d-first">First name</InputLabel><input id="d-first" v-model="s.declarant.first_name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('declarant.first_name')" /></div>
+                    <div><InputLabel for="d-family">Family name</InputLabel><input id="d-family" v-model="s.declarant.family_name" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('declarant.family_name')" /><InputError :message="err('declarant.family_name')" /></div>
+                    <div><InputLabel for="d-first">First name</InputLabel><input id="d-first" v-model="s.declarant.first_name" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('declarant.first_name')" /><InputError :message="err('declarant.first_name')" /></div>
                     <div><InputLabel for="d-mi">M.I.</InputLabel><input id="d-mi" v-model="s.declarant.middle_initial" class="form-control mt-1 block w-full px-3 py-2" /></div>
-                    <div><InputLabel for="d-position">Position</InputLabel><input id="d-position" v-model="s.declarant.position" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('declarant.position')" /></div>
-                    <div><InputLabel for="d-agency">Agency/office</InputLabel><input id="d-agency" v-model="s.declarant.agency" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('declarant.agency')" /></div>
-                    <div><InputLabel for="d-address">Office address</InputLabel><input id="d-address" v-model="s.declarant.office_address" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('declarant.office_address')" /></div>
+                    <div><InputLabel for="d-position">Position</InputLabel><input id="d-position" v-model="s.declarant.position" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('declarant.position')" /><InputError :message="err('declarant.position')" /></div>
+                    <div><InputLabel for="d-agency">Agency/office</InputLabel><input id="d-agency" v-model="s.declarant.agency" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('declarant.agency')" /><InputError :message="err('declarant.agency')" /></div>
+                    <div><InputLabel for="d-address">Office address</InputLabel><input id="d-address" v-model="s.declarant.office_address" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('declarant.office_address')" /><InputError :message="err('declarant.office_address')" /></div>
                 </div>
             </Card>
 
             <Card title="Spouse" icon="users" description="Spouses file separately. Position, agency and address are only for a spouse in government service.">
                 <Switch id="has-spouse" v-model="hasSpouse" label="I have a spouse to declare" />
                 <div v-if="s.spouse" class="mt-4 grid gap-4 sm:grid-cols-3">
-                    <div><InputLabel for="s-family">Family name</InputLabel><input id="s-family" v-model="s.spouse.family_name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('spouse.family_name')" /></div>
-                    <div><InputLabel for="s-first">First name</InputLabel><input id="s-first" v-model="s.spouse.first_name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('spouse.first_name')" /></div>
+                    <div><InputLabel for="s-family">Family name</InputLabel><input id="s-family" v-model="s.spouse.family_name" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('spouse.family_name')" /><InputError :message="err('spouse.family_name')" /></div>
+                    <div><InputLabel for="s-first">First name</InputLabel><input id="s-first" v-model="s.spouse.first_name" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('spouse.first_name')" /><InputError :message="err('spouse.first_name')" /></div>
                     <div><InputLabel for="s-mi">M.I.</InputLabel><input id="s-mi" v-model="s.spouse.middle_initial" class="form-control mt-1 block w-full px-3 py-2" /></div>
                     <fieldset class="sm:col-span-3">
                         <legend class="text-sm font-medium text-text">Is your spouse also a government official or employee?</legend>
@@ -311,9 +311,9 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
 
             <Card title="Unmarried children below 18 living in your household" icon="users" :description="`Age as of ${saln.reckoning_date}. Include dependent children living apart while studying. The form has 3 lines; more continue on a separate sheet.`">
                 <div v-for="(child, i) in s.children" :key="i" class="mb-2 grid items-end gap-2 sm:grid-cols-[1fr_11rem_6rem_auto]">
-                    <div><InputLabel :for="`c-name-${i}`">Name</InputLabel><input :id="`c-name-${i}`" v-model="child.name" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err(`children.${i}.name`)" /></div>
-                    <div><InputLabel :for="`c-born-${i}`">Date of birth</InputLabel><input :id="`c-born-${i}`" :value="child.birth_date" type="date" class="form-control mt-1 block w-full px-3 py-2" @input="setBirthDate(child, $event.target.value)" /></div>
-                    <div><InputLabel :for="`c-age-${i}`">Age</InputLabel><input :id="`c-age-${i}`" v-model="child.age" type="number" min="0" max="17" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err(`children.${i}.age`)" /></div>
+                    <div><InputLabel :for="`c-name-${i}`">Name</InputLabel><input :id="`c-name-${i}`" v-model="child.name" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err(`children.${i}.name`)" /><InputError :message="err(`children.${i}.name`)" /></div>
+                    <div><InputLabel :for="`c-born-${i}`">Date of birth</InputLabel><input :id="`c-born-${i}`" :value="child.birth_date" type="date" class="form-control mt-1 block w-full px-3 py-2" @input="setBirthDate(child, $event.target.value)" :aria-invalid="!!err(`children.${i}.birth_date`)" /><InputError :message="err(`children.${i}.birth_date`)" /></div>
+                    <div><InputLabel :for="`c-age-${i}`">Age</InputLabel><input :id="`c-age-${i}`" v-model="child.age" type="number" min="0" max="17" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err(`children.${i}.age`)" /><InputError :message="err(`children.${i}.age`)" /></div>
                     <ActionButton icon="trash" tone="danger" :label="`Remove ${child.name || 'this child'}`" class="mb-1.5" @click="s.children.splice(i, 1)" />
                 </div>
                 <Button variant="outline" size="sm" icon="plus" @click="addChild">Add a child</Button>
@@ -439,6 +439,7 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                         :inputmode="column.type === 'money' ? 'decimal' : undefined"
                                         :aria-label="`${column.label}, row ${i + 1}`"
                                         :title="err(`${section.table}.${i}.${column.key}`)"
+                                        :aria-invalid="!!err(`${section.table}.${i}.${column.key}`)"
                                     />
                                     </div>
                                 </td>
@@ -474,7 +475,7 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                                         <select v-if="column.type === 'owner'" v-model="row.owner" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`">
                                             <option v-for="option in options.owners" :key="option.value" :value="option.value">{{ option.label }}</option>
                                         </select>
-                                        <input v-else v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`business_interests.${i}.${column.key}`) }" />
+                                        <input v-else v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`business_interests.${i}.${column.key}`) }" :aria-invalid="!!err(`business_interests.${i}.${column.key}`)" />
                                     </td>
                                     <td class="py-1 pl-1 align-middle"><ActionButton icon="trash" tone="danger" :label="`Remove row ${i + 1}`" @click="removeRow('business_interests', i)" /></td>
                                 </tr>
@@ -495,7 +496,7 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
                             <tbody>
                                 <tr v-for="(row, i) in s.relatives" :key="i">
                                     <td v-for="column in TABLES.relatives" :key="column.key" class="px-1 py-1">
-                                        <input v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`relatives.${i}.${column.key}`) }" />
+                                        <input v-model="row[column.key]" class="form-control block w-full px-2 py-1.5" :aria-label="`${column.label}, row ${i + 1}`" :class="{ 'border-danger': err(`relatives.${i}.${column.key}`) }" :aria-invalid="!!err(`relatives.${i}.${column.key}`)" />
                                     </td>
                                     <td class="py-1 pl-1 align-middle"><ActionButton icon="trash" tone="danger" :label="`Remove row ${i + 1}`" @click="removeRow('relatives', i)" /></td>
                                 </tr>
@@ -509,9 +510,9 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
 
             <Card title="Government-issued ID and oath" icon="shield" description="The ID you will show when you swear to the SALN.">
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <div><InputLabel for="id-type">Government-issued ID</InputLabel><input id="id-type" v-model="s.government_id.type" class="form-control mt-1 block w-full px-3 py-2" placeholder="e.g. UMID, passport" /><InputError :message="err('government_id.type')" /></div>
-                    <div><InputLabel for="id-number">ID number</InputLabel><input id="id-number" v-model="s.government_id.number" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('government_id.number')" /></div>
-                    <div><InputLabel for="id-issued">Date issued</InputLabel><input id="id-issued" v-model="s.government_id.issued_on" type="date" class="form-control mt-1 block w-full px-3 py-2" /><InputError :message="err('government_id.issued_on')" /></div>
+                    <div><InputLabel for="id-type">Government-issued ID</InputLabel><input id="id-type" v-model="s.government_id.type" class="form-control mt-1 block w-full px-3 py-2" placeholder="e.g. UMID, passport" :aria-invalid="!!err('government_id.type')" /><InputError :message="err('government_id.type')" /></div>
+                    <div><InputLabel for="id-number">ID number</InputLabel><input id="id-number" v-model="s.government_id.number" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('government_id.number')" /><InputError :message="err('government_id.number')" /></div>
+                    <div><InputLabel for="id-issued">Date issued</InputLabel><input id="id-issued" v-model="s.government_id.issued_on" type="date" class="form-control mt-1 block w-full px-3 py-2" :aria-invalid="!!err('government_id.issued_on')" /><InputError :message="err('government_id.issued_on')" /></div>
                 </div>
                 <fieldset class="mt-5">
                     <legend class="text-sm font-medium text-text">You will swear to it</legend>
