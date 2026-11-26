@@ -386,6 +386,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:dtr.manage')->group(function () {
         Route::post('admin/hr/dtr/import', [BiometricImportController::class, 'store'])->name('admin.hr.dtr.import.store');
         Route::delete('admin/hr/dtr/import/ids', [BiometricImportController::class, 'clearIds'])->name('admin.hr.dtr.import.clear-ids');
+        Route::post('admin/hr/dtr/import/preview', [BiometricImportController::class, 'preview'])->middleware('throttle:20,1')->name('admin.hr.dtr.import.preview');
         Route::post('admin/hr/employees/{employee}/dtr/adjustments', [EmployeeDtrController::class, 'store'])->name('admin.hr.employees.dtr.adjustments.store');
         Route::delete('admin/hr/employees/{employee}/dtr/adjustments/{adjustment}', [EmployeeDtrController::class, 'destroy'])->name('admin.hr.employees.dtr.adjustments.destroy');
         Route::post('admin/hr/employees/{employee}/dtr/punches', [EmployeePunchController::class, 'store'])->middleware('throttle:60,1')->name('admin.hr.employees.dtr.punches.store');

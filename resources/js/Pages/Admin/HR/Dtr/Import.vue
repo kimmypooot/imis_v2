@@ -19,6 +19,7 @@ import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import DtrLogPreview from '../../../../Components/HR/DtrLogPreview.vue';
 import DtrPrintChoice from '../../../../Components/HR/DtrPrintChoice.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
@@ -46,6 +47,12 @@ const props = defineProps({
 });
 
 const form = useForm({ file: null, known_only: true });
+// The file being previewed (what uploading it would do), before it is uploaded.
+const previewing = ref(null);
+const uploadFromPreview = () => {
+    previewing.value = null;
+    send();
+};
 const send = async () => {
     const ok = await confirm({
         title: 'Upload this log?',
@@ -179,7 +186,11 @@ const importColumns = [
             <form class="space-y-4" @submit.prevent="send">
                 <div>
                     <InputLabel for="dtr-file">Attendance log (.dat)</InputLabel>
-                    <FileInput id="dtr-file" class="mt-1" accept=".dat,.txt" required :invalid="!!form.errors.file" @update:model-value="(file) => (form.file = file)" />
+                    <FileInput id="dtr-file" class="mt-1" accept=".dat,.txt" required :invalid="!!form.errors.file" @update:model-value="(file) => (form.file = file)">
+                        <template #actions="{ file }">
+                            <Button type="button" size="sm" variant="secondary" icon="eye" :aria-label="`Preview ${file.name}`" @click="previewing = file">Preview</Button>
+                        </template>
+                    </FileInput>
                     <InputError :message="form.errors.file" />
                 </div>
 
@@ -376,5 +387,6 @@ const importColumns = [
         </Card>
     </div>
 
+    <DtrLogPreview :file="previewing" :known-only="form.known_only" @close="previewing = null" @upload="uploadFromPreview" />
     <DtrPrintChoice action="export" :url="exporting ? `/admin/hr/dtr/export?office=${exporting.key}&month=${month}` : null" :subject="exporting?.office ?? ''" :period="monthLabel" @close="exporting = null" />
 </template>

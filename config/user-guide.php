@@ -532,6 +532,7 @@ return [
                         'After the month ends, open Tardiness & undertime and choose "Sync with DTR" to charge late and undertime minutes to leave credits.',
                     ],
                     'tips' => [
+                        'Before uploading, choose Preview beside Replace to see what the file would add: new punches against those already on file, what would be skipped, and whose punches it holds. Nothing is saved until you upload.',
                         'Without a work schedule, the DTR shows punches but no hours.',
                         'A punch belongs to the employee whose profile carries its Biometric ID. Unmatched IDs are listed on Biometric logs.',
                     ],

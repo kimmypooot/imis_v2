@@ -14,6 +14,7 @@ use App\Support\HR\Dtr\BiometricImporter;
 use App\Support\HR\Dtr\DtrSheets;
 use App\Support\HR\Dtr\UploadMonitor;
 use App\Support\Settings\Settings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -66,6 +67,20 @@ class BiometricImportController extends Controller
             'punches' => BiometricPunch::query()->count(),
             'canManage' => $request->user()->can('manage', BiometricPunch::class),
         ]);
+    }
+
+    /**
+     * What uploading the chosen file would do, without saving anything:
+     * new punches against those already on file, what would be skipped,
+     * and whose punches it holds. Shown in a dialog before uploading.
+     */
+    public function preview(Request $request, BiometricImporter $importer): JsonResponse
+    {
+        $this->authorize('manage', BiometricPunch::class);
+
+        $request->validate(['file' => ['required', 'file', 'extensions:dat,txt', 'max:5120'], 'known_only' => ['sometimes', 'boolean']], [], ['file' => 'attendance log']);
+
+        return response()->json($importer->preview($request->file('file')->getRealPath(), $request->boolean('known_only')));
     }
 
     public function store(Request $request, BiometricImporter $importer): RedirectResponse

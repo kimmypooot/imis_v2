@@ -118,6 +118,114 @@ class BiometricImporter
     }
 
     /**
+     * What uploading this file would do, without saving anything: the same
+     * reading and rules as import() (unreadable lines, the DTR start date,
+     * IDs on no profile when $knownOnly), then which punches are new and
+     * which are already on file. Per Biometric ID: whose it is, how many
+     * punches, how many new, and the date range; plus the first lines.
+     *
+     * @return array{counts: array{read: int, unreadable: int, before_start: int, left_out: int, already: int, new: int}, new_by_month: array<string, int>, first_at: ?string, last_at: ?string, people: list<array<string, mixed>>, sample: list<array<string, mixed>>, sample_limit: int}
+     */
+    public function preview(string $path, bool $knownOnly = false): array
+    {
+        $names = Employee::query()->whereNotNull('biometric_id')->with('user:id,name')->get(['id', 'user_id', 'biometric_id'])
+            ->mapWithKeys(fn (Employee $employee) => [(string) $employee->biometric_id => ['employee_id' => $employee->id, 'name' => $employee->user?->name]]);
+        $start = Settings::get('dtr_punches_from');
+        $counts = ['read' => 0, 'unreadable' => 0, 'before_start' => 0, 'left_out' => 0, 'already' => 0, 'new' => 0];
+        $byMonth = [];
+        $people = [];
+        $sample = [];
+        $first = null;
+        $last = null;
+        $buffer = [];
+        $sampleLimit = 200;
+
+        // Which buffered punches are already stored, then tally each one.
+        $flush = function () use (&$buffer, &$counts, &$byMonth, &$people, &$sample) {
+            if ($buffer === []) {
+                return;
+            }
+            $stored = BiometricPunch::query()
+                ->whereIn('biometric_id', array_unique(array_column($buffer, 'biometric_id')))
+                ->whereBetween('punched_at', [min(array_column($buffer, 'punched_at')), max(array_column($buffer, 'punched_at'))])
+                ->get(['biometric_id', 'punched_at'])
+                ->mapWithKeys(fn (BiometricPunch $punch) => [$punch->biometric_id.'|'.$punch->punched_at->format('Y-m-d H:i:s') => true]);
+
+            foreach ($buffer as $punch) {
+                $isNew = ! $stored->has($punch['biometric_id'].'|'.$punch['punched_at']);
+                $counts[$isNew ? 'new' : 'already']++;
+                $person = &$people[$punch['biometric_id']];
+                $person['new'] = ($person['new'] ?? 0) + ($isNew ? 1 : 0);
+                if ($isNew) {
+                    $month = substr($punch['punched_at'], 0, 7);
+                    $byMonth[$month] = ($byMonth[$month] ?? 0) + 1;
+                }
+                unset($person);
+                if ($punch['sample'] !== null) {
+                    $sample[$punch['sample']]['status'] = $isNew ? 'new' : 'already';
+                }
+            }
+            $buffer = [];
+        };
+
+        $skipped = 0;
+        foreach ($this->reader->stream($path, $skipped) as $punch) {
+            $counts['read']++;
+            $id = (string) $punch['biometric_id'];
+            $person = &$people[$id];
+            $person['biometric_id'] = $id;
+            $person['punches'] = ($person['punches'] ?? 0) + 1;
+            $person['first_at'] = min($person['first_at'] ?? $punch['punched_at'], $punch['punched_at']);
+            $person['last_at'] = max($person['last_at'] ?? $punch['punched_at'], $punch['punched_at']);
+            unset($person);
+
+            if ($start && substr($punch['punched_at'], 0, 10) < $start) {
+                $counts['before_start']++;
+                if (count($sample) < $sampleLimit) {
+                    $sample[] = [...$punch, 'status' => 'before_start'];
+                }
+
+                continue;
+            }
+            if ($knownOnly && ! $names->has($id)) {
+                $counts['left_out']++;
+                if (count($sample) < $sampleLimit) {
+                    $sample[] = [...$punch, 'status' => 'left_out'];
+                }
+
+                continue;
+            }
+
+            $first = $first === null || $punch['punched_at'] < $first ? $punch['punched_at'] : $first;
+            $last = $last === null || $punch['punched_at'] > $last ? $punch['punched_at'] : $last;
+            // Kept in the file's order: its status is filled in once it has been checked.
+            $sampleIndex = null;
+            if (count($sample) < $sampleLimit) {
+                $sampleIndex = count($sample);
+                $sample[] = [...$punch, 'status' => null];
+            }
+            $buffer[] = [...$punch, 'sample' => $sampleIndex];
+            if (count($buffer) >= self::CHUNK) {
+                $flush();
+            }
+        }
+        $flush();
+        $counts['unreadable'] = $skipped;
+        krsort($byMonth);
+
+        $people = collect($people)->map(fn (array $person) => [
+            ...$person,
+            'new' => $person['new'] ?? 0,
+            'employee_id' => $names[$person['biometric_id']]['employee_id'] ?? null,
+            'name' => $names[$person['biometric_id']]['name'] ?? null,
+        ])->sortBy([['new', 'desc'], ['biometric_id', 'asc']])->values()->all();
+
+        $sample = array_map(fn (array $row) => [...$row, 'name' => $names[(string) $row['biometric_id']]['name'] ?? null], $sample);
+
+        return ['counts' => $counts, 'new_by_month' => $byMonth, 'first_at' => $first, 'last_at' => $last, 'people' => $people, 'sample' => $sample, 'sample_limit' => $sampleLimit];
+    }
+
+    /**
      * Deletes the stored punches of the given IDs, but only those no
      * employee's record carries: a punch that counts toward someone's DTR is
      * never removed. Used to clear separated, resigned or retired staff.

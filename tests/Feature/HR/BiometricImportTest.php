@@ -241,6 +241,38 @@ class BiometricImportTest extends TestCase
         $this->assertCount(1, $regional['staff']);
     }
 
+    public function test_the_preview_says_what_an_upload_would_do_and_saves_nothing(): void
+    {
+        Employee::factory()->create(['biometric_id' => '906', 'user_id' => User::factory()->create(['name' => 'Ana Cruz'])]);
+        $hrd = $this->userWith(['dtr.manage']);
+        // One punch already on file.
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => UploadedFile::fake()->createWithContent('old.dat', "906\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n")]);
+        $before = BiometricPunch::query()->count();
+
+        $file = UploadedFile::fake()->createWithContent('new.dat', "906\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n906\t2026-03-03 08:00:00\t1\t0\t0\t0\r\n555\t2026-03-03 08:00:00\t1\t0\t0\t0\r\nnot a punch\r\n");
+
+        $this->actingAs($hrd)->postJson('/admin/hr/dtr/import/preview', ['file' => $file, 'known_only' => true])
+            ->assertOk()
+            ->assertJsonPath('counts', ['read' => 3, 'unreadable' => 1, 'before_start' => 0, 'left_out' => 1, 'already' => 1, 'new' => 1])
+            ->assertJsonPath('new_by_month', ['2026-03' => 1])
+            ->assertJsonPath('people.0.biometric_id', '906')
+            ->assertJsonPath('people.0.name', 'Ana Cruz')
+            ->assertJsonPath('people.0.new', 1)
+            ->assertJsonPath('people.1.name', null)
+            ->assertJsonPath('sample.0.status', 'already')
+            ->assertJsonPath('sample.1.status', 'new');
+
+        $this->assertSame($before, BiometricPunch::query()->count());
+        $this->assertSame(1, BiometricImport::query()->count());
+    }
+
+    public function test_only_those_who_may_upload_can_preview(): void
+    {
+        $this->actingAs($this->userWith(['dtr.view']))
+            ->postJson('/admin/hr/dtr/import/preview', ['file' => $this->log(1)])
+            ->assertForbidden();
+    }
+
     public function test_contract_of_service_personnel_are_not_counted(): void
     {
         $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
