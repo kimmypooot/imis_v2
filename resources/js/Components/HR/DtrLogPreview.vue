@@ -128,7 +128,7 @@ const sampleColumns = [
                 <template v-if="preview.first_at">The punches to keep run from {{ formatCalendarDate(preview.first_at.slice(0, 10)) }} to {{ formatCalendarDate(preview.last_at.slice(0, 10)) }}.</template>
             </p>
 
-            <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <dl class="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
                 <div v-for="tile in tiles" :key="tile.label" class="rounded-md border border-border p-3">
                     <dt class="text-xs text-text-muted">{{ tile.label }}</dt>
                     <dd class="text-lg font-semibold tabular-nums" :class="tile.tone">{{ number(tile.value) }}</dd>
