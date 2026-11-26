@@ -446,6 +446,53 @@ class LeaveApplications
     }
 
     /**
+     * Who a waiting step is with: its assigned approver (the supervisor),
+     * else HR or the Head of Agency (or an OIC), who act from a shared queue.
+     */
+    public function holderOf(LeaveApplicationStep $step): string
+    {
+        return $step->assignee?->name ?? match ($step->role) {
+            'hr' => 'HR',
+            'head' => 'the Head of Agency (or OIC)',
+            default => $step->roleLabel(),
+        };
+    }
+
+    /**
+     * For a list: who each application under review is waiting for, and
+     * since when (the last action in its current round, else when it was
+     * filed). One query for the whole list.
+     *
+     * @param  Collection<int, LeaveApplication>|\Illuminate\Database\Eloquent\Collection<int, LeaveApplication>  $applications
+     * @return array<int, array{holder: string, since: ?string}> keyed by application id
+     */
+    public function waitingFor(Collection $applications): array
+    {
+        $open = $applications->filter(fn (LeaveApplication $application) => $application->status === LeaveApplicationStatus::ForReview);
+
+        if ($open->isEmpty()) {
+            return [];
+        }
+
+        $steps = LeaveApplicationStep::query()
+            ->whereIn('leave_application_id', $open->map->getKey())
+            ->with('assignee:id,name')
+            ->orderBy('round')->orderBy('step')
+            ->get()
+            ->groupBy('leave_application_id');
+
+        return $open->mapWithKeys(function (LeaveApplication $application) use ($steps) {
+            $round = ($steps[$application->id] ?? collect())->where('round', ($steps[$application->id] ?? collect())->max('round'));
+            $waiting = $round->firstWhere('action', LeaveStepAction::Pending);
+
+            return $waiting ? [$application->id => [
+                'holder' => $this->holderOf($waiting),
+                'since' => ($round->whereNotNull('acted_at')->max('acted_at') ?? $application->submitted_at)?->toIso8601String(),
+            ]] : [];
+        })->all();
+    }
+
+    /**
      * Where the application is on its way (current round): filed, each
      * approver in turn, then the decision. The step it waits at shows who
      * it's with: the assigned supervisor, else HR or the Head (or an OIC).
@@ -458,11 +505,7 @@ class LeaveApplications
         $status = $application->status;
         $waiting = $status === LeaveApplicationStatus::ForReview ? $steps->firstWhere('action', LeaveStepAction::Pending) : null;
         $labels = ['supervisor' => 'Supervisor', 'hr' => 'HR', 'head' => 'Head of Agency'];
-        $holder = fn (LeaveApplicationStep $step): string => $step->assignee?->name ?? match ($step->role) {
-            'hr' => 'HR',
-            'head' => 'the Head of Agency (or OIC)',
-            default => $step->roleLabel(),
-        };
+        $holder = fn (LeaveApplicationStep $step): string => $this->holderOf($step);
 
         $trail = [ApprovalTrail::step('Filed', ApprovalTrail::Done, ApprovalTrail::date($application->submitted_at))];
         $since = $application->submitted_at;

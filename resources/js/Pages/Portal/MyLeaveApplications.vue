@@ -9,7 +9,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
-import { formatCalendarDate } from '../../Utils/datetime';
+import { formatCalendarDate, formatDate } from '../../Utils/datetime';
 import { leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
 
 defineOptions({ layout: PortalLayout });
@@ -27,7 +27,12 @@ const columns = [
     { key: 'type_name', label: 'Type of leave' },
     { key: 'date_from', label: 'Dates', value: (row) => leaveDates(row, formatCalendarDate) },
     { key: 'status_label', label: 'Status' },
+    { key: 'waiting_for', label: 'Now with', value: (row) => nowWith(row) },
 ];
+
+// Who has it now: the approver it waits for (and since when), or you when it was returned.
+const nowWith = (row) =>
+    row.waiting_for ? `${row.waiting_for.holder}, since ${formatDate(row.waiting_for.since)}` : row.status === 'returned' ? 'You, to correct' : '—';
 
 const matches = {
     all: () => true,
@@ -72,6 +77,14 @@ const rows = computed(() => props.applications.filter(matches[filter.value]));
                 </template>
                 <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>
+                <template #cell-waiting_for="{ row }">
+                    <span v-if="row.waiting_for" class="block">
+                        <span class="block font-medium text-text">{{ row.waiting_for.holder }}</span>
+                        <span class="block text-xs text-text-muted">since {{ formatDate(row.waiting_for.since) }}</span>
+                    </span>
+                    <span v-else-if="row.status === 'returned'" class="font-medium text-warning-fg">You, to correct</span>
+                    <span v-else class="text-text-muted">—</span>
+                </template>
             </DataTable>
         </Card>
     </div>

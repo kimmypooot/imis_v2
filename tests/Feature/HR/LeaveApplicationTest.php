@@ -372,6 +372,22 @@ class LeaveApplicationTest extends TestCase
                 ->where('trail.steps.2.detail', 'HR'));
     }
 
+    public function test_my_applications_list_shows_who_each_one_is_with(): void
+    {
+        $application = $this->file();
+        $list = fn () => $this->actingAs($this->employee->user)->get('/my/leave/applications');
+
+        $list()->assertInertia(fn (Assert $page) => $page
+            ->where('applications.0.waiting_for.holder', $this->supervisor->name)
+            ->where('applications.0.waiting_for.since', fn (string $since) => str_starts_with($since, '2026-06-01')));
+
+        $this->act($this->supervisor, $application, 'recommended');
+        $list()->assertInertia(fn (Assert $page) => $page->where('applications.0.waiting_for.holder', 'HR'));
+
+        $this->act($this->hr, $application, 'returned', 'Attach the certificate');
+        $list()->assertInertia(fn (Assert $page) => $page->where('applications.0.waiting_for', null));
+    }
+
     public function test_the_trail_marks_a_returned_step_and_the_final_decision(): void
     {
         $returned = $this->file();

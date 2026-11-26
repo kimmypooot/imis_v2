@@ -26,11 +26,16 @@ class MyLeaveApplicationController extends Controller
     public function index(Request $request, LeaveApplications $applications): Response
     {
         $employee = $this->employee($request);
+        $list = LeaveApplication::query()->where('employee_id', $employee->id)
+            ->with(['leaveType', 'employee.user'])->latest('date_from')->latest('id')->get();
+        // Who each one under review is with now, and since when.
+        $waiting = $applications->waitingFor($list);
 
         return Inertia::render('Portal/MyLeaveApplications', [
-            'applications' => LeaveApplication::query()->where('employee_id', $employee->id)
-                ->with(['leaveType', 'employee.user'])->latest('date_from')->latest('id')->get()
-                ->map(fn (LeaveApplication $application) => $applications->present($application)),
+            'applications' => $list->map(fn (LeaveApplication $application) => [
+                ...$applications->present($application),
+                'waiting_for' => $waiting[$application->id] ?? null,
+            ]),
         ]);
     }
 
