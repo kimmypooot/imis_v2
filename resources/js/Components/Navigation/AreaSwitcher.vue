@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { adminAccessPermissions, hrAccessPermissions } from '../../Utils/navigation';
@@ -11,11 +11,15 @@ import { adminAccessPermissions, hrAccessPermissions } from '../../Utils/navigat
  * Admin. Each person sees only their own areas; with no area besides
  * their own pages there is nothing to switch, so it isn't shown.
  */
-const page = usePage();
+const props = defineProps({
+    // The layout says which area this is (a page such as /design-system sits in Admin without an /admin URL).
+    area: { type: String, required: true, validator: (value) => ['me', 'hr', 'admin'].includes(value) },
+});
+
 const { canAny } = useAuthorization();
 
-const inHr = computed(() => /^\/admin\/hr(\/|\?|$)/.test(page.url));
-const inAdmin = computed(() => !inHr.value && /^\/admin(\/|\?|$)/.test(page.url));
+const inHr = computed(() => props.area === 'hr');
+const inAdmin = computed(() => props.area === 'admin');
 
 const areas = computed(() => {
     const list = [{ label: 'My pages', short: 'Me', href: '/dashboard', icon: 'user', current: !inHr.value && !inAdmin.value }];

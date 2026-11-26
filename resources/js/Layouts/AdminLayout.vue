@@ -18,7 +18,7 @@ const navItems = computed(() => (inHr.value ? hrNavItems : adminNavItems));
 <template>
     <AppShell :nav-items="navItems" variant="admin">
         <template #sidebar-header>
-            <AreaSwitcher />
+            <AreaSwitcher :area="inHr ? 'hr' : 'admin'" />
         </template>
         <slot />
     </AppShell>

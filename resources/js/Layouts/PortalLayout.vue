@@ -10,7 +10,7 @@ import { portalNavItems } from '../Utils/navigation';
 <template>
     <AppShell :nav-items="portalNavItems">
         <template #sidebar-header>
-            <AreaSwitcher />
+            <AreaSwitcher area="me" />
         </template>
         <slot />
     </AppShell>

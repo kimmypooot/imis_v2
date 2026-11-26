@@ -33,6 +33,7 @@ import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import ConfirmDialog from '@cscro8/ui/Components/Feedback/ConfirmDialog.vue';
+import { toast } from '@cscro8/ui/Composables/useDialog.js';
 
 defineOptions({ layout: AdminLayout });
 
@@ -85,6 +86,14 @@ const demoRows = [
     { id: 1, name: 'Example record A', status: 'active' },
     { id: 2, name: 'Example record B', status: 'pending' },
 ];
+
+// All four kinds at once, a moment apart, to compare them side by side.
+const showAllToasts = () => {
+    toast.success('Saved. This closes after 3 seconds.');
+    window.setTimeout(() => toast.info('Here is something worth knowing. This closes after 4 seconds.'), 150);
+    window.setTimeout(() => toast.warning('Double-check this before continuing. This closes after 6 seconds.'), 300);
+    window.setTimeout(() => toast.error('Something went wrong. This stays until you close it.'), 450);
+};
 </script>
 
 <template>
@@ -280,6 +289,18 @@ const demoRows = [
                 <Alert tone="warning" title="Warning">Double-check this before continuing.</Alert>
                 <Alert tone="danger" title="Error" dismissible>Something went wrong.</Alert>
             </div>
+        </Card>
+
+        <Card title="Toasts" description="Short notices at the top right. Done closes after 3 s, Notice after 4 s, Heads up after 6 s; the bar along the bottom shows the time left and pauses while you point at one. Errors stay until closed. A flash message from the server shows the same way.">
+            <div class="flex flex-wrap gap-2">
+                <Button variant="success" icon="checkCircle" @click="toast.success('Saved. This closes after 3 seconds.')">Done</Button>
+                <Button variant="secondary" icon="info" @click="toast.info('Here is something worth knowing. This closes after 4 seconds.')">Notice</Button>
+                <Button variant="secondary" icon="exclamation" @click="toast.warning('Double-check this before continuing. This closes after 6 seconds.')">Heads up</Button>
+                <Button variant="danger" icon="xCircle" @click="toast.error('Something went wrong. This stays until you close it.')">Error</Button>
+                <Button variant="ghost" @click="showAllToasts">All four</Button>
+            </div>
+            <pre v-pre class="mt-4 overflow-x-auto rounded-md bg-surface-muted p-4 text-xs leading-relaxed text-text"><code>import { toast } from '@cscro8/ui/Composables/useDialog.js';
+toast.success('Saved.');   // also .info, .warning, .error</code></pre>
         </Card>
 
         <Card title="Badges">
