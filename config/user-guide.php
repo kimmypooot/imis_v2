@@ -30,6 +30,7 @@ return [
                         'Use the menu button at the top left to show or hide the side navigation.',
                         'If you work in HR or administer IMIS, switch areas at the top of the side navigation: Me for your own records, leave and pay, HR for Human Resources work, Admin for administration.',
                         'Use the search box in the header to find systems, services, offices and people.',
+                        'To jump straight to a page, press Ctrl+K (⌘+K on a Mac), type a few letters of its name, such as "payslip" or "file leave", and press Enter.',
                         'Open your account menu (top right) for account settings, feedback and signing out.',
                     ],
                     'tips' => [

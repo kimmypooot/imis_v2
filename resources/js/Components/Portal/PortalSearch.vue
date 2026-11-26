@@ -5,8 +5,8 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 
 /**
  * The compact search box in the application header. Submitting goes to
- * `/search?q=…` (all result types). The `/` and Ctrl/⌘+K shortcuts that
- * focus it are handled once by AppShell, which finds the visible box via
+ * `/search?q=…` (all result types). The `/` shortcut that focuses it is
+ * handled once by AppShell (Ctrl/⌘+K opens the "Go to…" palette), which finds the visible box via
  * the `data-portal-search` attribute — so every instance needs its own `id`.
  */
 const props = defineProps({

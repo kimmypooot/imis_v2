@@ -103,6 +103,12 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   `UserGuide::articleFor` from each article's `link` and optional `pages`
   patterns in `config/user-guide.php`). Add or point an article there rather
   than writing help into a page; `:help="false"` hides the link.
+- **Go to…:** Ctrl/⌘+K opens the kit's `CommandPalette` (the shell's
+  `#command-palette` slot); "/" still focuses the header search. IMIS fills
+  it from `Utils/navigation.js` (every sidebar area plus `accountNavItems`,
+  by the sidebar's own permission and area rules). A new page appears there
+  once it has a nav entry; give it `keywords` for words people may type
+  that aren't in its name (e.g. "salary" for My Payslips).
 - **Where a request is:** `ApprovalTrail` draws the steps a request takes
   (done, current with who has it, returned, stopped, still to come) from a
   `{ summary, steps }` the server builds with `App\Support\ApprovalTrail`.
