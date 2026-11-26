@@ -17,6 +17,7 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
 import RecordModal from '../../../../Components/Admin/RecordModal.vue';
 import { plantillaItemDefaults, plantillaItemFields, plantillaItemNullable } from '../../../../Components/HR/plantillaFields';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
@@ -228,13 +229,13 @@ const field = 'mt-1 block w-full';
                 <div class="sm:col-span-2">
                     <InputLabel for="appoint-employee" required>Employee</InputLabel>
                     <Select id="appoint-employee" v-model="form.employee_id" :class="field" :options="appointForm.employees" placeholder="— Select —" required :invalid="!!form.errors.employee_id" />
-                    <p class="mt-1 text-xs text-text-muted">
+                    <HelperText for="appoint-employee">
                         <template v-if="appointForm.matches">
                             {{ appointForm.matches === 1 ? '1 employee has' : `${appointForm.matches} employees have` }} “{{ item.position_title }}” as their position; they're listed first.
                         </template>
                         <template v-else>No employee has “{{ item.position_title }}” as their position yet; everyone's current title is shown.</template>
-                    </p>
-                    <p class="mt-1 text-xs text-text-muted">If they hold another item now (a promotion or transfer), that period ends the day before. Their position title and employment status follow this item.</p>
+                    </HelperText>
+                    <HelperText for="appoint-employee">If they hold another item now (a promotion or transfer), that period ends the day before. Their position title and employment status follow this item.</HelperText>
                     <InputError :message="form.errors.employee_id" />
                 </div>
             </template>
@@ -242,7 +243,7 @@ const field = 'mt-1 block w-full';
             <div v-if="mode === 'past'" class="sm:col-span-2">
                 <InputLabel for="past-employee" required>Employee</InputLabel>
                 <Select id="past-employee" v-model="form.employee_id" :class="field" :options="pastEmployees" placeholder="— Select —" required :invalid="!!form.errors.employee_id" />
-                <p class="mt-1 text-xs text-text-muted">For service on this item that has already ended, such as an earlier promotion or a period before the current holder. It only adds a line to their Service Record: their current item, position title, status and office don't change.</p>
+                <HelperText for="past-employee">For service on this item that has already ended, such as an earlier promotion or a period before the current holder. It only adds a line to their Service Record: their current item, position title, status and office don't change.</HelperText>
                 <InputError :message="form.errors.employee_id" />
             </div>
 
@@ -280,7 +281,7 @@ const field = 'mt-1 block w-full';
                 </div>
                 <div class="sm:col-span-2">
                     <TextInput id="action-salary-override" v-model="form.salary_override" type="number" step="0.01" min="0" label="Monthly salary override (optional)" :invalid="!!form.errors.salary_override" />
-                    <p class="mt-1 text-xs text-text-muted">Leave blank to follow the salary schedule. Set it when the schedule has no amount for this grade and step, or an agreed rate applies. Payroll and the Service Record use it.</p>
+                    <HelperText for="action-salary-override">Leave blank to follow the salary schedule. Set it when the schedule has no amount for this grade and step, or an agreed rate applies. Payroll and the Service Record use it.</HelperText>
                     <InputError :message="form.errors.salary_override" />
                 </div>
             </template>

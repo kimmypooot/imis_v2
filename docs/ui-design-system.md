@@ -81,6 +81,11 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   `CheckboxGroup`, `Radio`, `Switch`, `FileInput`, `FormGroup`, `InputError`.
   For several files at once, IMIS's own `Components/Forms/MultiFileInput`
   (the same drop zone, then a removable list of the chosen files).
+  A hint under a field is `<HelperText for="field-id">` (or the
+  `helperText` prop on `TextInput`, `PasswordInput` and `FormGroup`), never a
+  hand-written `<p>`: with `for`, `TextInput`, `Select` and `Textarea` link it
+  (and an `InputError for="field-id"`) through `aria-describedby`, so screen
+  readers read it, including hints shown only sometimes (`v-if`).
   For a compact field in a filter bar use `class="filter-control"`; for a
   one-off raw field use `class="form-control block w-full px-3 py-2"`.
 - **Effects (in `app.css`):** `stagger` (children rise in turn, once per

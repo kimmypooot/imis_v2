@@ -9,6 +9,7 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -113,8 +114,8 @@ const field = 'mt-1 block w-full';
         <form id="assignment-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
             <div class="sm:col-span-2">
                 <InputLabel for="assignment-kind" required>Kind</InputLabel>
-                <Select id="assignment-kind" v-model="form.kind" :class="field" :options="kindOptions" required :invalid="!!form.errors.kind" aria-describedby="assignment-kind-hint" />
-                <p id="assignment-kind-hint" class="mt-1 text-xs text-text-muted">{{ hint }}</p>
+                <Select id="assignment-kind" v-model="form.kind" :class="field" :options="kindOptions" required :invalid="!!form.errors.kind" />
+                <HelperText for="assignment-kind">{{ hint }}</HelperText>
                 <InputError :message="form.errors.kind" />
             </div>
 

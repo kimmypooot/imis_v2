@@ -9,6 +9,7 @@ import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
 import CheckboxGroup from '@cscro8/ui/Components/Forms/CheckboxGroup.vue';
 import PhotoPicker from '@cscro8/ui/Components/Forms/PhotoPicker.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
@@ -243,7 +244,7 @@ const close = () => emit('close');
                                 :disabled="!canEdit"
                                 :invalid="!!form.errors.username"
                             />
-                            <p class="mt-1 text-xs text-text-muted">Used to sign in. Saved with the Profile changes.</p>
+                            <HelperText for="edit-username">Used to sign in. Saved with the Profile changes.</HelperText>
                             <InputError :message="form.errors.username" />
                         </div>
 

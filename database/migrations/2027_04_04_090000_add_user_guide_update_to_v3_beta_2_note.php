@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'The hints under form fields (what to attach for a leave type, why a reason is asked, what a password re-entry means) look the same everywhere and are read aloud by screen readers when you move to the field.'],
             ['improvement', 'Pages the User Guide explains show "How does this work?" beside their title. It opens the guide at the article for that page (filing leave, your PDS, SALN, DTR, payslips, approvals and more) and highlights it, so help is one click away from where you are.'],
             ['improvement', 'IMIS asks before you lose unsaved work. Leaving a leave application, your PDS or SALN, System Settings, an email template, payroll withholding taxes or a release note with changes not yet saved asks "Leave without saving?" first; Stay (or Enter) keeps you on the page with everything you typed.'],
             ['improvement', 'Notices that close on their own (Done, Notice, Heads up) show a thin bar that empties as their time runs out. Point at one to hold it open: the bar pauses and starts over when you move away. Errors still stay until you close them.'],
