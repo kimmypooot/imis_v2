@@ -111,6 +111,7 @@ Route::middleware('auth')->group(function () {
         ->whereIn('section', PdsSchema::editableSectionKeys())
         ->name('my.pds.update');
     Route::get('my/pds/print', [MyPdsController::class, 'print'])->name('my.pds.print');
+    Route::get('my/pds/print.xlsx', [MyPdsController::class, 'workbook'])->middleware('throttle:30,1')->name('my.pds.print.xlsx');
     // The e-signature re-checks the password, so it's rate-limited like
     // the password change.
     Route::post('my/pds/submit', [MyPdsController::class, 'submit'])
@@ -225,6 +226,7 @@ Route::middleware('auth')->group(function () {
 
     // A signed PDS copy, for its owner or HR (PdsSubmissionPolicy::view).
     Route::get('pds/submissions/{submission}/print', PdsSubmissionPrintController::class)->name('pds.submissions.print');
+    Route::get('pds/submissions/{submission}/print.xlsx', [PdsSubmissionPrintController::class, 'workbook'])->middleware('throttle:30,1')->name('pds.submissions.print.xlsx');
     Route::get('pds/submissions/{submission}/photo', [PdsPhotoController::class, 'showSubmission'])->name('pds.submissions.photo');
 
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');

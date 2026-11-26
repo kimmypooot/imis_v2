@@ -554,6 +554,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:pds.view')->group(function () {
         Route::get('admin/hr/employees/{employee}/pds', [EmployeePdsController::class, 'show'])->name('admin.hr.employees.pds');
         Route::get('admin/hr/employees/{employee}/pds/print', [EmployeePdsController::class, 'print'])->name('admin.hr.employees.pds.print');
+        Route::get('admin/hr/employees/{employee}/pds/print.xlsx', [EmployeePdsController::class, 'workbook'])->middleware('throttle:30,1')->name('admin.hr.employees.pds.print.xlsx');
         Route::get('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'showFor'])->name('admin.hr.employees.pds.photo');
     });
 

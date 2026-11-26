@@ -6,12 +6,14 @@ use App\Enums\AuditEvent;
 use App\Http\Controllers\Concerns\SavesPdsSections;
 use App\Models\Employee;
 use App\Models\Pds\PdsSubmission;
+use App\Support\HR\Pds\PdsPrintout;
 use App\Support\HR\Pds\PdsReader;
 use App\Support\HR\Pds\PdsSchema;
 use App\Support\HR\Pds\PdsSubmissions;
 use App\Support\HR\Pds\PdsWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -93,16 +95,19 @@ class MyPdsController extends Controller
         ]);
     }
 
-    public function print(Request $request, PdsReader $reader): Response
+    public function print(Request $request, PdsReader $reader, PdsPrintout $printout): Response
     {
         $employee = $this->requireEmployee($request);
 
-        return Inertia::render('HR/PdsPrint', [
-            'schema' => PdsSchema::forEditor(),
-            'pds' => $reader->read($employee),
-            'photoUrl' => $this->photoUrl($employee),
-            'signature' => null,
-        ]);
+        return Inertia::render('HR/PdsPrint', $printout->page($reader->read($employee), $this->photoUrl($employee), null, route('my.pds.print.xlsx', [], false)));
+    }
+
+    /** Your current PDS on CSC's own workbook (CS Form No. 212). */
+    public function workbook(Request $request, PdsReader $reader, PdsPrintout $printout): HttpResponse
+    {
+        $employee = $this->requireEmployee($request);
+
+        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null);
     }
 
     private function employee(Request $request): ?Employee
