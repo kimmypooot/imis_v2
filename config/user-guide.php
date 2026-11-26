@@ -316,6 +316,7 @@ return [
                     ],
                     'tips' => [
                         'Save your e-signature on My Employee Record first.',
+                        'The "Late & undertime" tile on your home page shows this month so far, and says "sign" with last month\'s name while that sheet is waiting for your signature.',
                         'If HRD changes the sheet after you sign, or you change your verifier, it is marked "Changed since signed". Review it and sign again.',
                     ],
                     'link' => ['label' => 'My DTR', 'href' => '/my/dtr'],
