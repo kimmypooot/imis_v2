@@ -346,6 +346,56 @@ class LeaveApplicationTest extends TestCase
         $this->assertSame('0.952', $this->employee->leaveLedger()->where('kind', 'accrual')->where('leave_type_id', $this->type('VL')->id)->value('amount'));
     }
 
+    public function test_the_trail_shows_who_has_the_application_now(): void
+    {
+        $application = $this->file();
+
+        $this->actingAs($this->employee->user)->get("/leave/applications/{$application->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('trail.steps.0.label', 'Filed')
+                ->where('trail.steps.0.state', 'done')
+                ->where('trail.steps.1.label', 'Supervisor')
+                ->where('trail.steps.1.state', 'current')
+                ->where('trail.steps.1.detail', $this->supervisor->name)
+                ->where('trail.steps.2.state', 'upcoming')
+                ->where('trail.steps.4.label', 'Decision')
+                ->where('trail.summary', "Waiting for {$this->supervisor->name} since Jun 1, 2026."));
+
+        $this->act($this->supervisor, $application, 'recommended');
+
+        $this->actingAs($this->employee->user)->get("/leave/applications/{$application->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('trail.steps.1.state', 'done')
+                ->where('trail.steps.1.detail', "{$this->supervisor->name} · Jun 1, 2026")
+                ->where('trail.steps.2.label', 'HR')
+                ->where('trail.steps.2.state', 'current')
+                ->where('trail.steps.2.detail', 'HR'));
+    }
+
+    public function test_the_trail_marks_a_returned_step_and_the_final_decision(): void
+    {
+        $returned = $this->file();
+        $this->act($this->supervisor, $returned, 'returned', 'Wrong dates');
+
+        $this->actingAs($this->employee->user)->get("/leave/applications/{$returned->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('trail.steps.1.state', 'returned')
+                ->where('trail.steps.2.state', 'upcoming')
+                ->where('trail.summary', fn (string $summary) => str_starts_with($summary, 'Returned to the employee')));
+
+        $approved = $this->file(data: $this->vacation(['date_from' => '2026-06-22', 'date_to' => '2026-06-24']));
+        $this->act($this->supervisor, $approved, 'recommended');
+        $this->act($this->hr, $approved, 'certified');
+        $this->act($this->head, $approved, 'approved');
+
+        $this->actingAs($this->employee->user)->get("/leave/applications/{$approved->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('trail.steps.3.state', 'done')
+                ->where('trail.steps.4.label', 'Approved')
+                ->where('trail.steps.4.state', 'done')
+                ->where('trail.summary', 'Approved on Jun 1, 2026.'));
+    }
+
     public function test_cancelling_and_who_can_see_an_application(): void
     {
         $application = $this->file();

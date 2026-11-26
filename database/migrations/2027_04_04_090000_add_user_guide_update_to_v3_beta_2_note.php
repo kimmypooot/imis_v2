@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'See where your request is at a glance. Leave applications, your PDS and your SALN show their route as steps: what is done and by whom, where it is now and who has it (for leave, "Waiting for … since …"), anything returned for correction, and what comes next.'],
             ['feature', 'New to IMIS? The dashboard shows a short "Get set up in IMIS" checklist: save your e-signature, submit your PDS and set up fingerprint sign-in, each with a button that takes you there. Items tick themselves off as you do them, and the checklist disappears once everything is done. "Hide for now" puts it away for 30 days.'],
             ['improvement', 'The hints under form fields (what to attach for a leave type, why a reason is asked, what a password re-entry means) look the same everywhere and are read aloud by screen readers when you move to the field.'],
             ['improvement', 'Pages the User Guide explains show "How does this work?" beside their title. It opens the guide at the article for that page (filing leave, your PDS, SALN, DTR, payslips, approvals and more) and highlights it, so help is one click away from where you are.'],

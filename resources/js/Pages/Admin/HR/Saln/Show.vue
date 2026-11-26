@@ -6,6 +6,7 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import ApprovalTrail from '@cscro8/ui/Components/UI/ApprovalTrail.vue';
 import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
@@ -91,6 +92,10 @@ function columnsOf(section) {
             <Button v-if="can.edit" variant="outline" size="sm" :href="`/admin/hr/saln/${saln.id}/edit`">Encode on their behalf</Button>
         </template>
     </PageHeader>
+
+    <Card class="mb-6" title="Where it is" icon="activity">
+        <ApprovalTrail :trail="saln.trail" label="SALN progress" />
+    </Card>
 
     <div class="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div class="space-y-6">

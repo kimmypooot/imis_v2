@@ -103,6 +103,11 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   `UserGuide::articleFor` from each article's `link` and optional `pages`
   patterns in `config/user-guide.php`). Add or point an article there rather
   than writing help into a page; `:help="false"` hides the link.
+- **Where a request is:** `ApprovalTrail` draws the steps a request takes
+  (done, current with who has it, returned, stopped, still to come) from a
+  `{ summary, steps }` the server builds with `App\Support\ApprovalTrail`.
+  Leave applications, the PDS status card and SALN pages use it; a new
+  approval flow should too, rather than its own list of badges.
 - **Shell:** `AppShell` with `AdminLayout`, `PortalLayout`, `AccountLayout`
   and `AuthLayout`; `SidebarNav`, `UserMenu`, `HelpMenu`, `NotificationMenu`.
 

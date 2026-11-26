@@ -132,6 +132,38 @@ class SalnPagesTest extends TestCase
         $this->assertSame(SalnStatus::Cleared, $saln->fresh()->status);
     }
 
+    public function test_the_trail_shows_where_the_statement_is(): void
+    {
+        $hrd = $this->userWith(['saln.manage']);
+        $committee = $this->userWith(['saln.review']);
+        $saln = $this->saln();
+        $owner = $saln->employee->user;
+        $steps = fn () => collect($this->actingAs($owner)->get("/my/saln/{$saln->id}")->viewData('page')['props']['saln']['trail']['steps']);
+
+        $this->assertSame(['done', 'done', 'current', 'upcoming', 'upcoming', 'upcoming'], $steps()->pluck('state')->all());
+        $this->assertSame('Hand the signed copy to HRD', $steps()[2]['detail']);
+
+        $this->actingAs($hrd)->post('/admin/hr/saln/receive', ['reference' => 'IMIS '.$saln->reference()]);
+        $this->assertSame(['done', 'done', 'done', 'current', 'upcoming', 'upcoming'], $steps()->pluck('state')->all());
+
+        $this->actingAs($committee)->post("/admin/hr/saln/{$saln->id}/decide", ['decision' => 'return', 'remarks' => 'Sign page 2.']);
+        $this->assertSame('returned', $steps()[3]['state']);
+        $this->assertStringContainsString($committee->name, $steps()[3]['detail']);
+    }
+
+    public function test_a_cleared_statement_waits_for_the_oath_before_its_officer(): void
+    {
+        $saln = $this->saln();
+        $this->actingAs($this->userWith(['saln.manage']))->post('/admin/hr/saln/receive', ['reference' => 'IMIS '.$saln->reference()]);
+        $this->actingAs($this->userWith(['saln.review']))->post("/admin/hr/saln/{$saln->id}/decide", ['decision' => 'clear']);
+
+        $this->actingAs($saln->employee->user)->get("/my/saln/{$saln->id}")->assertInertia(fn (Assert $page) => $page
+            ->where('saln.trail.steps.3.state', 'done')
+            ->where('saln.trail.steps.4.label', 'Oath')
+            ->where('saln.trail.steps.4.state', 'current')
+            ->where('saln.trail.steps.4.detail', 'Before a notary public'));
+    }
+
     public function test_an_old_printout_is_refused_by_reference(): void
     {
         $saln = $this->saln();

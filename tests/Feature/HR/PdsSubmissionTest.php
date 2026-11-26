@@ -109,6 +109,26 @@ class PdsSubmissionTest extends TestCase
 
     // ── HR review ────────────────────────────────────────────────────
 
+    public function test_the_trail_follows_the_pds_from_draft_to_verified(): void
+    {
+        $employee = $this->employee();
+        $hr = $this->userWith(['pds.verify']);
+        $trail = fn (array $states) => $this->actingAs($employee->user)->get('/my/pds')->assertInertia(fn (Assert $page) => $page
+            ->where('status.trail.steps', fn ($steps) => collect($steps)->pluck('state')->all() === $states));
+
+        $trail(['current', 'upcoming', 'upcoming', 'upcoming']);
+
+        $submission = $this->sign($employee);
+        $trail(['done', 'done', 'current', 'upcoming']);
+
+        $this->actingAs($hr)->post("/admin/hr/pds-verifications/{$submission->id}/return", ['remarks' => 'Add your eligibility.']);
+        $trail(['done', 'done', 'returned', 'upcoming']);
+
+        $resubmitted = $this->sign($employee);
+        $this->actingAs($hr)->post("/admin/hr/pds-verifications/{$resubmitted->id}/verify")->assertSessionHasNoErrors();
+        $trail(['done', 'done', 'done', 'done']);
+    }
+
     public function test_hr_returns_with_remarks_that_the_employee_sees(): void
     {
         $employee = $this->employee();

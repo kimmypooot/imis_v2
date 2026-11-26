@@ -6,6 +6,7 @@ use App\Enums\PdsSubmissionStatus;
 use App\Models\Employee;
 use App\Models\Pds\PdsSubmission;
 use App\Models\User;
+use App\Support\ApprovalTrail;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -91,7 +92,33 @@ class PdsSubmissions
             'state' => $state,
             'latest' => $latest ? $this->summary($latest) : null,
             'last_verified_at' => $lastVerified?->reviewed_at?->toIso8601String(),
+            'trail' => $this->trail($state, $latest),
         ];
+    }
+
+    /**
+     * Filled in → signed and submitted → HR verification → verified. The
+     * status card already says what to do next, so there is no summary.
+     *
+     * @return array{summary: ?string, steps: array<int, array{label: string, state: string, detail: ?string}>}
+     */
+    private function trail(string $state, ?PdsSubmission $latest): array
+    {
+        $submitted = $state !== 'draft';
+        $verified = in_array($state, ['verified', 'changed_since_verified'], true);
+        $reviewed = ApprovalTrail::byOn($latest?->reviewer?->name, $latest?->reviewed_at);
+
+        return ApprovalTrail::make([
+            ApprovalTrail::step('Filled in', $submitted ? ApprovalTrail::Done : ApprovalTrail::Current, $submitted ? null : 'You'),
+            ApprovalTrail::step('Signed and submitted', $submitted ? ApprovalTrail::Done : ApprovalTrail::Upcoming, $submitted ? ApprovalTrail::date($latest->signed_at) : null),
+            match (true) {
+                $state === 'returned' => ApprovalTrail::step('HR verification', ApprovalTrail::Returned, $reviewed),
+                $verified => ApprovalTrail::step('HR verification', ApprovalTrail::Done, $reviewed),
+                $submitted => ApprovalTrail::step('HR verification', ApprovalTrail::Current, 'HR'),
+                default => ApprovalTrail::step('HR verification', ApprovalTrail::Upcoming),
+            },
+            ApprovalTrail::step('Verified', $verified ? ApprovalTrail::Done : ApprovalTrail::Upcoming),
+        ]);
     }
 
     /**

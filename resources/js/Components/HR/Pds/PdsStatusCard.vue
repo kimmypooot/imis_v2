@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import ApprovalTrail from '@cscro8/ui/Components/UI/ApprovalTrail.vue';
 import { formatDateTime } from '../../../Utils/datetime';
 import { pdsStates } from './pdsStates';
 
@@ -50,5 +51,6 @@ const text = computed(() =>
                 <slot :can-sign="state.canSign" />
             </div>
         </div>
+        <ApprovalTrail v-if="status.trail" :trail="status.trail" label="PDS progress" class="mt-5 border-t border-border pt-5" />
     </Card>
 </template>

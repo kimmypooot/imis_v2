@@ -12,6 +12,7 @@ import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
+import ApprovalTrail from '@cscro8/ui/Components/UI/ApprovalTrail.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveActionTones, leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
@@ -30,6 +31,7 @@ const props = defineProps({
     canUpdate: { type: Boolean, required: true },
     hasSignature: { type: Boolean, default: false },
     action: { type: Object, default: null },
+    trail: { type: Object, required: true },
 });
 
 const rounds = computed(() => [...new Set(props.steps.map((step) => step.round))].sort((a, b) => b - a));
@@ -68,6 +70,11 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
             <Button v-if="canUpdate" variant="danger" @click="cancel" icon="close">Cancel application</Button>
         </template>
     </PageHeader>
+
+    <!-- Where it is now: filed, each approver in turn, the decision. -->
+    <Card class="mb-6" title="Where it is" icon="activity">
+        <ApprovalTrail :trail="trail" label="Approval progress" />
+    </Card>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <div class="space-y-6 xl:col-span-2">
