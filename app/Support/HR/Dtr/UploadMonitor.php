@@ -25,7 +25,11 @@ class UploadMonitor
      * first (no Biometric ID, then no punches), each with the days they
      * punched and their last punch, so HRD sees exactly who is missing.
      *
-     * @return list<array{key: string, office: string, employees: int, with_id: int, with_punches: int, last_punch: ?string, staff: list<array{employee_id: int, name: string, photo_url: ?string, position: ?string, biometric_id: ?string, days: int, last_punch: ?string, status: string}>, status: string}>
+     * Each person counts once, in the office they ended the month in; one who
+     * moved during the month carries the office(s) they came from
+     * (`moved_from`).
+     *
+     * @return list<array{key: string, office: string, employees: int, with_id: int, with_punches: int, last_punch: ?string, staff: list<array{employee_id: int, name: string, photo_url: ?string, position: ?string, biometric_id: ?string, days: int, last_punch: ?string, status: string, moved_from: list<string>}>, status: string}>
      */
     public function forMonth(Carbon $month): array
     {
@@ -68,24 +72,26 @@ class UploadMonitor
                     'status' => ! $hasId ? 'no_id' : ($last === null ? 'no_punches' : 'in'),
                 ];
 
-                // A transferee counts where they worked that month, so each office is judged on its own staff;
-                // once per office, so a move between two support units (both the Regional Office) counts once.
-                $keys = collect($this->unitsDuring($employee, $from, $to))->map(function ($unitId) use ($units) {
+                // Each person counts once, under the office they ended the period in, so the offices
+                // add up to the headcount; a move within the month is noted on their row instead.
+                $keyOf = function ($unitId) use ($units): string {
                     $unit = $units->get($unitId);
 
                     return $unit && $unit->unit_type !== UnitType::RegionalSupportUnit ? (string) $unit->id : self::REGIONAL;
-                })->unique();
+                };
+                $key = $keyOf($this->unitAtEnd($employee, $to));
+                $person['moved_from'] = collect($this->unitsDuring($employee, $from, $to))->map($keyOf)->unique()
+                    ->reject(fn (string $other) => $other === $key)
+                    ->map(fn (string $other) => $groups[$other]['office'] ?? null)->filter()->values()->all();
 
-                foreach ($keys as $key) {
-                    $groups[$key]['employees']++;
-                    $groups[$key]['staff'][] = $person;
-                    if ($hasId) {
-                        $groups[$key]['with_id']++;
-                    }
-                    if ($last !== null) {
-                        $groups[$key]['with_punches']++;
-                        $groups[$key]['last'] = max($groups[$key]['last'] ?? '', (string) $last);
-                    }
+                $groups[$key]['employees']++;
+                $groups[$key]['staff'][] = $person;
+                if ($hasId) {
+                    $groups[$key]['with_id']++;
+                }
+                if ($last !== null) {
+                    $groups[$key]['with_punches']++;
+                    $groups[$key]['last'] = max($groups[$key]['last'] ?? '', (string) $last);
                 }
             });
 
@@ -110,6 +116,23 @@ class UploadMonitor
         ])->sortBy('sort')->map(fn (array $row) => collect($row)->except('sort')->all())->values()->all();
 
         return $rows;
+    }
+
+    /**
+     * The office someone was in on the last day of the period, from their
+     * reassignments (their account's office when they have none).
+     */
+    private function unitAtEnd(Employee $employee, Carbon $to): ?int
+    {
+        $moves = $employee->assignments;
+
+        if ($moves->isEmpty()) {
+            return $employee->user?->organizational_unit_id;
+        }
+
+        $latest = $moves->filter(fn ($move) => $move->effective_date->lte($to))->last();
+
+        return $latest ? $latest->to_unit_id : $moves->first()->from_unit_id;
     }
 
     /**

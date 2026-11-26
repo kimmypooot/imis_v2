@@ -301,7 +301,9 @@ const importColumns = [
                             </select>
                         </template>
                         <template #cell-name="{ row }">
-                            <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.position" />
+                            <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.position">
+                                <div v-if="row.moved_from?.length" class="text-xs text-text-muted">Moved here this month from {{ row.moved_from.join(', ') }}</div>
+                            </PersonCell>
                         </template>
                         <template #cell-punches="{ row }">
                             <CellFacts :facts="[{ label: 'Biometric ID', value: row.biometric_id ?? '—' }, { label: 'Days punched', value: String(row.days) }, { label: 'Last punch', value: row.last_punch ? formatCalendarDate(row.last_punch) : null }]" />

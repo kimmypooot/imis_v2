@@ -269,7 +269,7 @@ class BiometricImportTest extends TestCase
         $this->assertSame(2, $samar['staff'][1]['days']);
     }
 
-    public function test_a_transferee_counts_in_the_office_they_worked_in_that_month(): void
+    public function test_a_transferee_counts_once_in_the_office_they_ended_the_month_in(): void
     {
         $samar = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
         $leyte = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Leyte I']);
@@ -283,11 +283,13 @@ class BiometricImportTest extends TestCase
 
         $rows = fn (string $month) => collect($this->actingAs($hrd)->get("/admin/hr/dtr/import?month={$month}")->viewData('page')['props']['monitor'])->pluck('employees', 'office');
 
-        // February: still Samar's. March: both. April: Leyte I's only.
+        // February: still Samar's. March: Leyte I's, where the month ended, noting the move. April: Leyte I's.
         $this->assertSame(1, $rows('2026-02')['CSC Field Office - Samar']);
         $this->assertSame(0, $rows('2026-02')['CSC Field Office - Leyte I']);
-        $this->assertSame(1, $rows('2026-03')['CSC Field Office - Samar']);
+        $this->assertSame(0, $rows('2026-03')['CSC Field Office - Samar']);
         $this->assertSame(1, $rows('2026-03')['CSC Field Office - Leyte I']);
+        $march = collect($this->actingAs($hrd)->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Leyte I');
+        $this->assertSame(['CSC Field Office - Samar'], $march['staff'][0]['moved_from']);
         $this->assertSame(0, $rows('2026-04')['CSC Field Office - Samar']);
         $this->assertSame(1, $rows('2026-04')['CSC Field Office - Leyte I']);
     }
