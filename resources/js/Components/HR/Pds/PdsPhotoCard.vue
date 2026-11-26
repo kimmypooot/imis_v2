@@ -9,8 +9,11 @@ import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 
 /**
- * The PDS photo (passport size). Uploads are cropped to 3.5 × 4.5 cm on
- * the server and stored privately; `url` is the upload/remove endpoint.
+ * The PDS photo (passport size, 3.5 × 4.5 cm). It must be exactly 413 × 531
+ * pixels (3.5 × 4.5 cm at 300 dpi, PdsPhotos::WIDTH/HEIGHT), so it prints at
+ * its true size without cropping: the size is checked here before
+ * uploading, and again on the server. Stored privately; `url` is the
+ * upload/remove endpoint.
  */
 const props = defineProps({
     photoUrl: { type: String, default: null },
@@ -23,9 +26,44 @@ const form = useForm({ photo: null });
 
 const dragging = ref(false);
 
-const send = (file) => {
-    form.photo = file ?? null;
-    if (!form.photo) return;
+const SIZE = { width: 413, height: 531 };
+
+/** The picture's size in pixels, or null when it can't be read as an image. */
+const dimensionsOf = (file) =>
+    new Promise((resolve) => {
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+            resolve({ width: image.naturalWidth, height: image.naturalHeight });
+            URL.revokeObjectURL(url);
+        };
+        image.onerror = () => {
+            resolve(null);
+            URL.revokeObjectURL(url);
+        };
+        image.src = url;
+    });
+
+const send = async (file) => {
+    form.clearErrors();
+    if (!file) return;
+
+    const size = await dimensionsOf(file);
+    if (!size) {
+        form.setError('photo', 'That file could not be read as a picture. Use a JPG, PNG or WebP image.');
+        if (input.value) input.value.value = '';
+        return;
+    }
+    if (size.width !== SIZE.width || size.height !== SIZE.height) {
+        form.setError(
+            'photo',
+            `The photo must be exactly ${SIZE.width} × ${SIZE.height} pixels (passport size, 3.5 × 4.5 cm at 300 dpi). This one is ${size.width} × ${size.height}. Resize or crop it to that size, then upload it again.`,
+        );
+        if (input.value) input.value.value = '';
+        return;
+    }
+
+    form.photo = file;
 
     form.post(props.url, {
         preserveScroll: true,
@@ -83,7 +121,7 @@ const remove = async () => {
                     <Icon name="upload" size="sm" />
                     {{ form.processing ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo' }}
                 </label>
-                <p class="text-xs text-text-muted">JPG, PNG or WebP. You can also drop a photo on the frame.</p>
+                <p class="text-xs text-text-muted">Exactly 413 × 531 pixels (3.5 × 4.5 cm at 300 dpi). JPG, PNG or WebP. You can also drop it on the frame.</p>
                 <Button v-if="photoUrl" variant="link" class="block text-danger-fg" @click="remove">Remove</Button>
                 <InputError :message="form.errors.photo" />
             </div>

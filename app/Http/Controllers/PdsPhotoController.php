@@ -62,8 +62,13 @@ class PdsPhotoController extends Controller
     {
         $this->authorize('updatePds', $employee);
 
+        // Exactly passport size, so it prints at 3.5 × 4.5 cm without cropping.
+        $width = PdsPhotos::WIDTH;
+        $height = PdsPhotos::HEIGHT;
         $request->validate([
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=200,min_height=250,max_width=8000,max_height=8000'],
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', "dimensions:width={$width},height={$height}"],
+        ], [
+            'photo.dimensions' => "The photo must be exactly {$width} × {$height} pixels (passport size, 3.5 × 4.5 cm at 300 dpi). Resize or crop it to that size, then upload it again.",
         ]);
 
         $profile = $employee->pdsProfile()->firstOrNew();

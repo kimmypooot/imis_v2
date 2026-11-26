@@ -24,10 +24,10 @@ class PdsPhotos
 
     private const SUBMISSIONS = 'pds/submissions';
 
-    // 3.5 × 4.5 cm at 300 dpi.
-    private const WIDTH = 413;
+    /** Passport size, 3.5 × 4.5 cm at 300 dpi: uploads must be exactly this many pixels. */
+    public const WIDTH = 413;
 
-    private const HEIGHT = 531;
+    public const HEIGHT = 531;
 
     public function store(UploadedFile $file, ?string $replacing = null): string
     {

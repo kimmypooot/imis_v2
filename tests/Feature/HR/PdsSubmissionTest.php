@@ -236,7 +236,7 @@ class PdsSubmissionTest extends TestCase
         $employee = $this->employee();
         $user = $employee->user;
 
-        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('me.jpg', 600, 800)])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('me.jpg', 413, 531)])->assertSessionHasNoErrors();
         $livePath = $employee->pdsProfile()->value('photo_path');
         Storage::disk('local')->assertExists($livePath);
         $this->assertStringStartsWith('pds/photos/', $livePath);
@@ -249,7 +249,7 @@ class PdsSubmissionTest extends TestCase
 
         // Replacing the live photo leaves the signed copy alone, and
         // counts as a change.
-        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('new.jpg', 600, 800)])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('new.jpg', 413, 531)])->assertSessionHasNoErrors();
         Storage::disk('local')->assertMissing($livePath);
         Storage::disk('local')->assertExists($submission->photo_path);
         $this->actingAs($user)->get("/pds/submissions/{$submission->id}/photo")->assertOk();
@@ -264,6 +264,20 @@ class PdsSubmissionTest extends TestCase
             ->assertSessionHasErrors('photo');
         $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('tiny.jpg', 50, 50)])
             ->assertSessionHasErrors('photo');
+    }
+
+    public function test_photos_must_be_exactly_passport_size(): void
+    {
+        $employee = $this->employee();
+
+        // Close is not enough: it must print at exactly 3.5 × 4.5 cm.
+        $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('big.jpg', 600, 800)])
+            ->assertSessionHasErrors(['photo' => 'The photo must be exactly 413 × 531 pixels (passport size, 3.5 × 4.5 cm at 300 dpi). Resize or crop it to that size, then upload it again.']);
+        $this->assertNull($employee->pdsProfile()->value('photo_path'));
+
+        $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('passport.jpg', 413, 531)])
+            ->assertSessionHasNoErrors();
+        $this->assertNotNull($employee->pdsProfile()->value('photo_path'));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

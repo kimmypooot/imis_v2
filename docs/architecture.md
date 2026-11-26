@@ -3189,12 +3189,20 @@ makes that data unreadable. To rotate it, move the old key to
   own, with the section and what changed.
 
 ### Editor (`Components/HR/Pds`)
-- **`PdsEditor`:** a read-only identity card, then one tab per part of
-  the form. Tabs with unsaved changes get a dot. It warns before you
-  leave the page, or navigate away, with unsaved changes.
-- **`PdsSectionForm` and `PdsRowsForm`:** each section saves on its own.
-  List sections can add, remove and reorder rows, and focus moves to a
-  new row's first field.
+- **`PdsEditor`:** a read-only identity card, then the parts of the form
+  as steps in a list beside the editor (a menu on phones), each with its
+  state (Done, Started, Not started, Optional; `pdsProgress.js`), an
+  "Unsaved" mark and, for HR's review, "Changed". One part is edited at a
+  time with one **Save** for all its sections and **Save and continue**;
+  every part stays mounted, so edits survive moving between parts. It
+  warns before leaving the page with unsaved changes.
+- **`PdsSectionForm` and `PdsRowsForm`:** each section still saves to its
+  own route; the editor saves the changed ones of a part in turn
+  (`save()`). Lists show one line per entry, set by the schema: `layout:
+  inline` (children, items 31–33) is typed straight in, Enter adding a
+  line; others show a `summary` line (dates in their own column) that
+  opens to the full form. `order: recent` (work experience) keeps entries
+  newest first, so it has no move buttons.
 - **`PdsField`:** decimal steps, numeric keyboards for ID numbers,
   suggestion lists, Yes/No answers, and errors tied to their inputs
   (`aria-describedby`).
@@ -3273,8 +3281,11 @@ saving without changes doesn't count.
 
 ### Photo
 - Passport size (3.5 × 4.5 cm), handled by `PdsPhotos`.
-- Re-encoded with GD as a centered 7:9 crop at 413×531, so no EXIF is
-  kept.
+- Uploads must be **exactly 413 × 531 px** (3.5 × 4.5 cm at 300 dpi),
+  checked in the browser before uploading and enforced on the server, so the
+  photo prints at its true size uncropped: laid over C4's photo frame (which
+  is a little smaller), on the print page and in the Excel copy.
+- Re-encoded with GD, so no EXIF is kept.
 - Stored on the **private** `local` disk.
 - Served only through authorized routes with `Cache-Control: private,
   no-store`:
@@ -3284,30 +3295,53 @@ saving without changes doesn't count.
 - Uploads by the employee, or by HR with `pds.update`, are audited as
   `pds.updated` (section `photo`).
 
-### Print (`Pages/HR/PdsPrint.vue`)
-- A standalone page laid out like the four official pages, using the
-  form's own row counts:
-  - children: 13
-  - education: 1 per level
-  - eligibility: 7
-  - work experience: 24
-  - L&D: 17
-  - voluntary work: 9
-  - other information: 7
-  - references: 3
-- Overflow goes onto continuation sheets C5–C11, as the form instructs.
-- Dates print as dd/mm/yyyy.
-- **Signature line:**
-  - On a signed copy: "Electronically signed through IMIS by {name}",
-    with the signing date as "Date Accomplished".
-  - On the current PDS: "Not signed — current PDS (draft)".
+### Print (`Pages/HR/PdsPrint.vue`) and the Excel copy
+- Each page **is** the official form: CSC's workbook
+  (`resources/templates/hr/cs-form-212-revised-2026.xlsx`) as Excel prints
+  it on Folio (8.5 × 13 in, 0.25 in margins, each sheet fitted to one page,
+  centred across), rendered at 300 dpi to `public/images/pds/*.png`. The
+  entries are written into the cells at the positions Excel prints them
+  (`Components/HR/Pds/pdsFormGeometry.js`: every column's and row's
+  printed edges, each check box's square and the photo frame, in points).
+  Entries shrink, then wrap, to fit their cell; nothing is cut off.
+- `PdsForm` (backend) decides what goes where: per page, the sheet (C1–C11),
+  the text for each cell or merged range and the ticked boxes (by their
+  linked cells). The print page places them; `PdsFormWorkbook` writes the
+  same entries into CSC's own workbook ("Download Excel"): inline strings,
+  check boxes (control, legacy VML and linked cell), the country drop-down,
+  the photo in C4's frame, Folio page setup on every sheet.
+- The form's own row counts (`PdsForm::LISTS`): children 13, education 1
+  per level, eligibility 7, work experience 24, L&D 17, voluntary work 9,
+  other information 7, references 3. Overflow continues on C5–C11, as many
+  pages as needed; in the Excel copy the continuation sheet gets more rows
+  instead (as people extend it by hand), which `PdsWorkbookReader` reads
+  back — a test round-trips a PDS through the workbook.
+- It follows CSC's *Guide to Filling Out the PDS (Revised 2026)*
+  (`docs/reference/pds`): dates as
+  dd/mm/yyyy; no blank entries (N/A in every empty field, every empty cell of
+  a listed row, an empty list's first line and a level with no school; the
+  "If YES" lines of questions 34–40 are filled only for a Yes); work experience from the current
+  position down; monthly salary in figures (₱21,877.00); pay grade as "00-0";
+  continuation sheets printed only when used. The PDS editor shows the
+  guide's filling-in rules as field hints (e.g. PRIMARY EDUCATION, HIGH
+  SCHOOL / JUNIOR or SENIOR HIGH SCHOOL, names and agencies in full).
+- **Signature:** on a signed copy, "Electronically signed through IMIS by
+  {name}" in each page's signature box (over its "(e-signature/digital
+  certificate)" hint) and the signing date in its date box. On the current
+  PDS both are left blank.
 - The right thumbmark and the oath block print blank, for wet completion.
-- **Paper:** printed on 8.5 × 13 in (long bond), as common in government
-  offices. The official .xlsx mixes A4 (pages 1–2) and legal (3–4).
+- **Printing:** 8.5 × 13 in paper, Margins None, Scale 100%.
 - **Routes:**
   - the current PDS: `/my/pds/print`, `/admin/hr/employees/{id}/pds/print`
   - a signed copy: `/pds/submissions/{id}/print`
-- Printing someone else's PDS is audited (`pds.printed`).
+  - each with `.xlsx` for the Excel copy
+- **If CSC revises the form:** replace the template, then with Excel on a
+  Windows machine: export each sheet to PDF on Folio (a printer driver that
+  offers Folio must be active), export a copy whose last row and last column
+  are striped in alternating colours to read each column's and row's
+  printed edges, render the pages at 300 dpi, regenerate
+  `pdsFormGeometry.js`, and adjust the cells in `PdsForm`.
+- Printing or downloading someone else's PDS is audited (`pds.printed`).
 
 ### Audit
 - `pds.submitted`, `pds.verified`, `pds.returned` and `pds.printed`.
