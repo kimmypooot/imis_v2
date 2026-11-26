@@ -157,6 +157,9 @@ class EmployeeDocumentTest extends TestCase
             ->where('hasRecord', true)
             ->has('documents', 1)
             ->where('documents.0.type_label', 'Diploma')
+            // Its part of the 201 file, for the filter pills.
+            ->where('documents.0.group', 'qualifications')
+            ->where('documents.0.group_label', 'Education & eligibility')
             ->missing('documents.0.archive_reason')
             ->has('pdsHistory', 0));
 

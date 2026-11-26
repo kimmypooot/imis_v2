@@ -2,6 +2,7 @@
 
 namespace App\Support\HR;
 
+use App\Enums\EmployeeDocumentType;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\User;
@@ -81,6 +82,8 @@ class EmployeeDocuments
             'id' => $document->id,
             'document_type' => $document->document_type->value,
             'type_label' => $document->document_type->label(),
+            'group' => $document->document_type->group(),
+            'group_label' => EmployeeDocumentType::groups()[$document->document_type->group()],
             'title' => $document->title,
             'document_date' => $document->document_date?->toDateString(),
             'remarks' => $document->remarks,

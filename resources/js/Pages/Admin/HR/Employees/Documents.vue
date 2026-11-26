@@ -1,7 +1,7 @@
 <script setup>
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
@@ -11,8 +11,9 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import DocumentList from '../../../../Components/HR/DocumentList.vue';
+import PdsVerifiedHistory from '../../../../Components/HR/Pds/PdsVerifiedHistory.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import DocumentUploadForm from '../../../../Components/HR/DocumentUploadForm.vue';
-import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
 
@@ -83,31 +84,20 @@ const breadcrumbs = computed(() => [
                 </label>
             </template>
 
-            <DocumentList :documents="showArchived ? [...active, ...archived] : active" empty="No documents in this 201 file yet.">
+            <DocumentList
+                :documents="showArchived ? [...active, ...archived] : active"
+                :caption="`201 file documents of ${employee.name}`"
+                empty="No documents in this 201 file yet."
+            >
                 <template v-if="canManage" #actions="{ document }">
-                    <button v-if="!document.archived_at" type="button" class="text-danger-fg hover:underline" @click="openArchive(document)">
-                        Archive<span class="sr-only"> {{ document.type_label }}</span>
-                    </button>
-                    <button v-else type="button" class="text-success-fg hover:underline" @click="restore(document)">
-                        Restore<span class="sr-only"> {{ document.type_label }}</span>
-                    </button>
+                    <ActionButton v-if="!document.archived_at" icon="archive" tone="danger" :label="`Archive ${document.type_label}`" @click="openArchive(document)" />
+                    <ActionButton v-else icon="restore" tone="success" :label="`Restore ${document.type_label}`" @click="restore(document)" />
                 </template>
             </DocumentList>
         </Card>
 
         <Card title="Verified PDS history" icon="checkCircle" description="Each verified Personal Data Sheet, exactly as signed.">
-            <p v-if="pdsHistory.length === 0" class="text-sm text-text-muted">No verified PDS yet.</p>
-            <ul v-else class="divide-y divide-border text-sm">
-                <li v-for="item in pdsHistory" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                    <span class="text-text">Signed {{ formatDateTime(item.signed_at) }} · verified by {{ item.reviewer }} on {{ formatDateTime(item.reviewed_at) }}</span>
-                    <span class="flex gap-3 font-medium">
-                        <Link :href="`/admin/hr/pds-verifications/${item.id}`" class="text-link hover:underline">View</Link>
-                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-link hover:underline">
-                            Print<span class="sr-only"> (opens in a new tab)</span>
-                        </a>
-                    </span>
-                </li>
-            </ul>
+            <PdsVerifiedHistory :items="pdsHistory" :view-url="(item) => `/admin/hr/pds-verifications/${item.id}`" show-reviewer />
         </Card>
     </div>
 
