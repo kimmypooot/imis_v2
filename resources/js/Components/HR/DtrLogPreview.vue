@@ -74,6 +74,22 @@ const tiles = computed(() => [
     { label: 'Unreadable', value: counts.value.unreadable, tone: counts.value.unreadable ? 'text-warning-fg' : '' },
 ].filter((tile) => !(tile.hideZero && !tile.value)));
 
+// Month by month, one tab per year (newest first), each a table of that year's months.
+const months = computed(() => preview.value?.months ?? []);
+const years = computed(() => [...new Set(months.value.map((row) => row.month.slice(0, 4)))]);
+const year = ref('');
+watch(years, (list) => (year.value = list[0] ?? ''));
+const monthsOf = (key) => months.value.filter((row) => row.month.startsWith(`${key}-`));
+const newIn = (key) => monthsOf(key).reduce((total, row) => total + row.new, 0);
+const monthColumns = computed(() => [
+    { key: 'month', label: 'Month', value: (row) => row.month },
+    { key: 'punches', label: 'In the file', align: 'right' },
+    { key: 'already', label: 'Already on file', align: 'right' },
+    // Only when the file has punches the upload would skip (before the start date, or IDs on no profile).
+    ...(months.value.some((row) => row.skipped) ? [{ key: 'skipped', label: 'Skipped', align: 'right' }] : []),
+    { key: 'new', label: 'New', align: 'right' },
+]);
+
 const tabs = computed(() => [
     { key: 'people', label: `By Biometric ID (${preview.value?.people.length ?? 0})`, icon: 'users' },
     { key: 'sample', label: 'First lines', icon: 'documentText' },
@@ -119,13 +135,35 @@ const sampleColumns = [
                 </div>
             </dl>
 
-            <div v-if="Object.keys(preview.new_by_month).length" class="text-sm">
-                <p class="text-xs font-medium text-text-muted">New punches, month by month</p>
-                <ul class="mt-1 flex flex-wrap gap-x-6 gap-y-1">
-                    <li v-for="(count, key) in preview.new_by_month" :key="key"><span class="text-text-muted">{{ monthName(key) }}:</span> <span class="font-medium tabular-nums">{{ number(count) }}</span></li>
-                </ul>
-            </div>
-            <Alert v-else tone="info">Nothing in this file is new: every punch is already on file or would be skipped.</Alert>
+            <Alert v-if="!counts.new" tone="info">Nothing in this file is new: every punch is already on file or would be skipped.</Alert>
+
+            <section v-if="years.length" aria-labelledby="preview-months-title">
+                <h3 id="preview-months-title" class="text-sm font-semibold text-text">Month by month</h3>
+                <Tabs v-model="year" :tabs="years.map((key) => ({ key, label: newIn(key) ? `${key} · ${number(newIn(key))} new` : key, icon: 'calendar' }))">
+                    <template v-for="key in years" :key="key" #[key]>
+                        <div class="pt-3">
+                            <DataTable
+                                :columns="monthColumns"
+                                :rows="monthsOf(key)"
+                                row-key="month"
+                                :caption="`Punches in the file, month by month, ${key}`"
+                                :export-name="`imis-dat-preview-${key}`"
+                                :numbered="false"
+                                :searchable="false"
+                                :page-size-select="false"
+                                :default-page-size="12"
+                                density="compact"
+                            >
+                                <template #cell-month="{ row }"><span class="font-medium text-text">{{ monthName(row.month) }}</span></template>
+                                <template #cell-punches="{ row }"><span class="tabular-nums">{{ number(row.punches) }}</span></template>
+                                <template #cell-already="{ row }"><span class="tabular-nums text-text-muted">{{ number(row.already) }}</span></template>
+                                <template #cell-skipped="{ row }"><span class="tabular-nums text-text-muted">{{ number(row.skipped) }}</span></template>
+                                <template #cell-new="{ row }"><span class="font-semibold tabular-nums" :class="row.new ? 'text-success-fg' : 'text-text-muted'">{{ number(row.new) }}</span></template>
+                            </DataTable>
+                        </div>
+                    </template>
+                </Tabs>
+            </section>
 
             <Tabs v-model="tab" :tabs="tabs">
                 <template #people>

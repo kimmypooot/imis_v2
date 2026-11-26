@@ -124,7 +124,7 @@ class BiometricImporter
      * which are already on file. Per Biometric ID: whose it is, how many
      * punches, how many new, and the date range; plus the first lines.
      *
-     * @return array{counts: array{read: int, unreadable: int, before_start: int, left_out: int, already: int, new: int}, new_by_month: array<string, int>, first_at: ?string, last_at: ?string, people: list<array<string, mixed>>, sample: list<array<string, mixed>>, sample_limit: int}
+     * @return array{counts: array{read: int, unreadable: int, before_start: int, left_out: int, already: int, new: int}, new_by_month: array<string, int>, months: list<array{month: string, punches: int, already: int, new: int, skipped: int}>, first_at: ?string, last_at: ?string, people: list<array<string, mixed>>, sample: list<array<string, mixed>>, sample_limit: int}
      */
     public function preview(string $path, bool $knownOnly = false): array
     {
@@ -141,7 +141,9 @@ class BiometricImporter
         $sampleLimit = 200;
 
         // Which buffered punches are already stored, then tally each one.
-        $flush = function () use (&$buffer, &$counts, &$byMonth, &$people, &$sample) {
+        // Per month: punches in the file, already on file, new, and skipped (before the start date or left out).
+        $months = [];
+        $flush = function () use (&$buffer, &$counts, &$byMonth, &$months, &$people, &$sample) {
             if ($buffer === []) {
                 return;
             }
@@ -154,6 +156,7 @@ class BiometricImporter
             foreach ($buffer as $punch) {
                 $isNew = ! $stored->has($punch['biometric_id'].'|'.$punch['punched_at']);
                 $counts[$isNew ? 'new' : 'already']++;
+                $months[substr($punch['punched_at'], 0, 7)][$isNew ? 'new' : 'already']++;
                 $person = &$people[$punch['biometric_id']];
                 $person['new'] = ($person['new'] ?? 0) + ($isNew ? 1 : 0);
                 if ($isNew) {
@@ -178,9 +181,13 @@ class BiometricImporter
             $person['first_at'] = min($person['first_at'] ?? $punch['punched_at'], $punch['punched_at']);
             $person['last_at'] = max($person['last_at'] ?? $punch['punched_at'], $punch['punched_at']);
             unset($person);
+            $monthKey = substr($punch['punched_at'], 0, 7);
+            $months[$monthKey] ??= ['month' => $monthKey, 'punches' => 0, 'already' => 0, 'new' => 0, 'skipped' => 0];
+            $months[$monthKey]['punches']++;
 
             if ($start && substr($punch['punched_at'], 0, 10) < $start) {
                 $counts['before_start']++;
+                $months[$monthKey]['skipped']++;
                 if (count($sample) < $sampleLimit) {
                     $sample[] = [...$punch, 'status' => 'before_start'];
                 }
@@ -189,6 +196,7 @@ class BiometricImporter
             }
             if ($knownOnly && ! $names->has($id)) {
                 $counts['left_out']++;
+                $months[$monthKey]['skipped']++;
                 if (count($sample) < $sampleLimit) {
                     $sample[] = [...$punch, 'status' => 'left_out'];
                 }
@@ -212,6 +220,7 @@ class BiometricImporter
         $flush();
         $counts['unreadable'] = $skipped;
         krsort($byMonth);
+        krsort($months);
 
         $people = collect($people)->map(fn (array $person) => [
             ...$person,
@@ -222,7 +231,7 @@ class BiometricImporter
 
         $sample = array_map(fn (array $row) => [...$row, 'name' => $names[(string) $row['biometric_id']]['name'] ?? null], $sample);
 
-        return ['counts' => $counts, 'new_by_month' => $byMonth, 'first_at' => $first, 'last_at' => $last, 'people' => $people, 'sample' => $sample, 'sample_limit' => $sampleLimit];
+        return ['counts' => $counts, 'new_by_month' => $byMonth, 'months' => array_values($months), 'first_at' => $first, 'last_at' => $last, 'people' => $people, 'sample' => $sample, 'sample_limit' => $sampleLimit];
     }
 
     /**

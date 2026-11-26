@@ -255,6 +255,8 @@ class BiometricImportTest extends TestCase
             ->assertOk()
             ->assertJsonPath('counts', ['read' => 3, 'unreadable' => 1, 'before_start' => 0, 'left_out' => 1, 'already' => 1, 'new' => 1])
             ->assertJsonPath('new_by_month', ['2026-03' => 1])
+            // March: three readable punches, one already on file, one new, one skipped (ID 555 is on no profile).
+            ->assertJsonPath('months', [['month' => '2026-03', 'punches' => 3, 'already' => 1, 'new' => 1, 'skipped' => 1]])
             ->assertJsonPath('people.0.biometric_id', '906')
             ->assertJsonPath('people.0.name', 'Ana Cruz')
             ->assertJsonPath('people.0.new', 1)
