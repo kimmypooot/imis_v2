@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import KitAppShell from '@cscro8/ui/Layouts/AppShell.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
@@ -12,6 +12,7 @@ import AboutDialog from '../Components/Portal/AboutDialog.vue';
 import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
 import CommandPalette from '@cscro8/ui/Components/Navigation/CommandPalette.vue';
+import { focusFirstErrorAfterInvalidSubmits } from '@cscro8/ui/Utils/focusFirstError.js';
 import { accountNavItems, adminAccessPermissions, adminNavItems, flattenNav, hrAccessPermissions, hrNavItems, portalNavItems } from '../Utils/navigation';
 import { greetingName, useSplash } from '../Composables/useSplash';
 import { useBranding } from '../Composables/useBranding';
@@ -108,10 +109,16 @@ const nav = computed(() => ({
     local: Boolean(page.props.app?.local),
 }));
 
+// After a submit the server rejects, take the person to the first problem field.
+let removeErrorFocus;
+
 onMounted(() => {
     // Keeps this person's saved login-page card (name, photo) current.
     refreshRememberedAccount(page.props.auth.user);
 });
+
+onMounted(() => (removeErrorFocus = focusFirstErrorAfterInvalidSubmits()));
+onBeforeUnmount(() => removeErrorFocus?.());
 </script>
 
 <template>

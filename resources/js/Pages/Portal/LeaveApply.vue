@@ -14,6 +14,7 @@ import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
+import ErrorSummary from '@cscro8/ui/Components/Feedback/ErrorSummary.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -161,6 +162,7 @@ const field = 'mt-1 block w-full';
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Application" icon="clipboard" class="xl:col-span-2">
+            <ErrorSummary :errors="form.errors" class="mb-4" />
             <p v-if="resubmitting?.returned_remarks" class="mb-4 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">
                 <strong>Returned for correction:</strong> {{ resubmitting.returned_remarks }}
             </p>

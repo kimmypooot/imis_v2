@@ -86,6 +86,11 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   hand-written `<p>`: with `for`, `TextInput`, `Select` and `Textarea` link it
   (and an `InputError for="field-id"`) through `aria-describedby`, so screen
   readers read it, including hints shown only sometimes (`v-if`).
+  After any submit the server rejects, the shell moves the cursor to the
+  first field marked `:invalid` (or the field beside the first
+  `InputError`), inside an open dialog if there is one
+  (`focusFirstErrorAfterInvalidSubmits`), so mark invalid fields. Long forms
+  also put `<ErrorSummary :errors="form.errors" />` at the top.
   For a compact field in a filter bar use `class="filter-control"`; for a
   one-off raw field use `class="form-control block w-full px-3 py-2"`.
 - **Effects (in `app.css`):** `stagger` (children rise in turn, once per

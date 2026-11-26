@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'When a form can\'t be saved, IMIS takes you straight to the first field that needs fixing, even if it is far up the page or inside a dialog. Long forms (filing leave, your SALN) also list everything to fix in one box at the top.'],
             ['feature', 'Jump to any page: press Ctrl+K (⌘+K on a Mac), type a few letters such as "payslip", "file leave" or "salary", and press Enter. Only pages you can open are listed, and the last option searches the whole portal for what you typed. The Help menu shows the shortcut.'],
             ['improvement', 'See where your request is at a glance. Leave applications, your PDS and your SALN show their route as steps: what is done and by whom, where it is now and who has it (for leave, "Waiting for … since …"), anything returned for correction, and what comes next.'],
             ['feature', 'New to IMIS? The dashboard shows a short "Get set up in IMIS" checklist: save your e-signature, submit your PDS and set up fingerprint sign-in, each with a button that takes you there. Items tick themselves off as you do them, and the checklist disappears once everything is done. "Hide for now" puts it away for 30 days.'],

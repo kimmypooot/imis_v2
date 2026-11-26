@@ -10,6 +10,7 @@ import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
 import Radio from '@cscro8/ui/Components/Forms/Radio.vue';
 import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
+import ErrorSummary from '@cscro8/ui/Components/Feedback/ErrorSummary.vue';
 import { formatPeso } from '../../../Utils/money';
 
 /**
@@ -227,6 +228,7 @@ const printNew = () => save(() => form.post(props.generateUrl, { preserveScroll:
 
 <template>
     <form class="saln-editor space-y-6" @submit.prevent="save()">
+        <ErrorSummary :errors="form.errors" />
         <div v-if="locked" class="flex items-start gap-2 rounded-md border border-info-border bg-info-bg px-4 py-3 text-sm text-text">
             <Icon name="lock" class="mt-0.5 h-4 w-4 shrink-0" />
             <p>This SALN is with HRD ({{ saln.status_label.toLowerCase() }}), so it can't be changed. If HRD returns it, you can correct it and print it again.</p>
