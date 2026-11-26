@@ -12,6 +12,7 @@ import { greetingName } from '../../Composables/useSplash';
 import { useInstallApp } from '../../Composables/useInstallApp';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
+import GettingStartedCard from '../../Components/Portal/GettingStartedCard.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
 import SystemDirectory from '../../Components/Portal/SystemDirectory.vue';
@@ -23,6 +24,7 @@ const props = defineProps({
     whatsNew: { type: Object, default: null },
     // The personal "At a glance" tiles (a deferred prop).
     glance: { type: Array, default: null },
+    gettingStarted: { type: Object, default: null },
     directory: { type: Object, required: true },
     division: { type: String, default: null },
     announcements: { type: Array, required: true },
@@ -106,6 +108,9 @@ const greeting = computed(() => {
                 <Button variant="primary" size="sm" icon="download" @click="installFromCard">Install</Button>
             </div>
         </div>
+
+        <!-- One-time setup still to do (signature, PDS, fingerprint); gone once done. -->
+        <GettingStartedCard v-if="gettingStarted" :checklist="gettingStarted" />
 
         <!-- At a glance: your own figures, loaded just after the page appears. -->
         <Deferred data="glance">

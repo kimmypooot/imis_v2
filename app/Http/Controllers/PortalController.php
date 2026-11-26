@@ -9,6 +9,7 @@ use App\Models\Application;
 use App\Models\Changelog;
 use App\Models\Service;
 use App\Support\Portal\AtAGlance;
+use App\Support\Portal\GettingStarted;
 use App\Support\Portal\SystemDirectory;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ use Inertia\Response;
  */
 class PortalController extends Controller
 {
-    public function index(Request $request, AtAGlance $glance): Response
+    public function index(Request $request, AtAGlance $glance, GettingStarted $gettingStarted): Response
     {
         $user = $request->user();
 
@@ -58,6 +59,8 @@ class PortalController extends Controller
             'division' => $request->string('division')->limit(40, '')->value() ?: null,
             // The personal "At a glance" row, loaded after the page appears.
             'glance' => Inertia::defer(fn () => $glance->for($user)),
+            // One-time setup still to do (signature, PDS, fingerprint); null once done.
+            'gettingStarted' => fn () => $gettingStarted->for($user),
             'whatsNew' => $whatsNew,
             'welcomeMessage' => Settings::get('portal_welcome_message'),
             // The legacy greeting's division badge (the user's fo_rsu).

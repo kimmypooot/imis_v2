@@ -2055,6 +2055,24 @@ Placeholders and in-place updates share three pieces: `UI/Skeleton.vue` (a shimm
 progress, approvals waiting, unread notifications) as a deferred prop of
 `PortalController`.
 
+### Dashboard "Get set up" checklist
+`Support/Portal/GettingStarted` lists the one-time setup still to do, each
+worked out from data, never ticked by hand: saving an e-signature and
+submitting the PDS (Submitted or Verified; a returned one doesn't count),
+for people with an employee record, and fingerprint sign-in (a passkey),
+for everyone. It is null once all are done, so the card
+(`Components/Portal/GettingStartedCard.vue`) disappears; "Hide for now"
+puts it away on that device for 30 days. Covered by
+`tests/Feature/Portal/GettingStartedTest.php`.
+
+### Guidance on every page
+Pages explained by the User Guide get a "How does this work?" link in
+`PageHeader`: `UserGuide::articleFor` picks the article whose `link` is the
+page, or whose `pages` patterns cover it, among those the person may read,
+shared as the `help` prop. Long forms use `useUnsavedChanges` (@cscro8/ui)
+to ask before leaving with unsaved changes, and field hints are
+`HelperText for="…"`, linked to their field for screen readers.
+
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,
 the email login no longer working, the generic error, last-login
