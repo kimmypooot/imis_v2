@@ -3196,6 +3196,11 @@ makes that data unreadable. To rotate it, move the old key to
   time with one **Save** for all its sections and **Save and continue**;
   every part stays mounted, so edits survive moving between parts. It
   warns before leaving the page with unsaved changes.
+- **Status card (`PdsStatusCard`):** on My PDS, while it can be signed, a
+  "Before you sign" list (`pdsProgress.readiness`): every part filled in, the
+  photo, items 34–40 answered, the government-issued ID and three
+  references, each with a link to its part. It guides; it doesn't block
+  signing.
 - **`PdsSectionForm` and `PdsRowsForm`:** each section still saves to its
   own route; the editor saves the changed ones of a part in turn
   (`save()`). Lists show one line per entry, set by the schema: `layout:
@@ -3285,6 +3290,9 @@ saving without changes doesn't count.
   checked in the browser before uploading and enforced on the server, so the
   photo prints at its true size uncropped: laid over C4's photo frame (which
   is a little smaller), on the print page and in the Excel copy.
+- A picture of any other size opens `PdsPhotoCropper`: a frame in the
+  photo's proportions (drag, zoom, or arrows and +/−) that saves exactly
+  413 × 531, warning when a small picture would print blurry.
 - Re-encoded with GD, so no EXIF is kept.
 - Stored on the **private** `local` disk.
 - Served only through authorized routes with `Cache-Control: private,
