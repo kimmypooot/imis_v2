@@ -257,6 +257,18 @@ class Employee extends Model
     }
 
     /**
+     * People whose Daily Time Record IMIS keeps: everyone but Contract of
+     * Service personnel, who aren't government employees and file no DTR.
+     * A record whose employment status isn't set yet still counts.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeKeepsDtr(Builder $query): void
+    {
+        $query->where(fn (Builder $query) => $query->whereNull('employment_status')->orWhere('employment_status', '!=', EmploymentStatus::ContractOfService->value));
+    }
+
+    /**
      * The records a viewer may see: everyone's with `employees.view`, their
      * offices' with `employees.view_unit` (officesSupervisedBy), and always
      * their own. The policy applies the same rule to a single record.

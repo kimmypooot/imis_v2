@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\HR;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\UnitType;
 use App\Models\AuditLog;
 use App\Models\BiometricImport;
@@ -225,6 +226,18 @@ class BiometricImportTest extends TestCase
                 ->where('monitor.0.staff.1.status', 'in')
                 ->where('monitor.0.staff.1.days', 1)
                 ->where('monitor.0.staff.1.last_punch', '2026-03-02'));
+    }
+
+    public function test_contract_of_service_personnel_are_not_counted(): void
+    {
+        $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
+        Employee::factory()->create(['biometric_id' => '5', 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Ana Permanent'])]);
+        Employee::factory()->create(['biometric_id' => '6', 'employment_status' => EmploymentStatus::ContractOfService, 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Cy Contract'])]);
+
+        $samar = collect($this->actingAs($this->userWith(['dtr.view']))->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Samar');
+
+        $this->assertSame(1, $samar['employees']);
+        $this->assertSame(['Ana Permanent'], array_column($samar['staff'], 'name'));
     }
 
     public function test_someone_without_a_biometric_id_is_listed_first_as_missing(): void

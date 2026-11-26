@@ -70,6 +70,7 @@ class TardinessDeductions
 
         return Employee::query()->with('user')
             ->whereNotNull('biometric_id')
+            ->keepsDtr()
             ->where(fn ($query) => $query->whereNull('separation_date')->orWhereDate('separation_date', '>=', $from))
             ->get()
             ->map(function (Employee $employee) use ($from, $to, $vacation, $cardThrough, $key) {

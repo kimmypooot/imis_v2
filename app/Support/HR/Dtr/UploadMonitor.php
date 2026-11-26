@@ -9,7 +9,8 @@ use App\Models\OrganizationalUnit;
 use Illuminate\Support\Carbon;
 
 /**
- * DTR: which offices' biometric logs have reached the system for a month.
+ * DTR: which offices' biometric logs have reached the system for a month
+ * (Contract of Service personnel aren't counted: they file no DTR).
  * The Regional Support Units count as one (the Regional Office, whose logs
  * HRD generates itself); every field and satellite office stands alone. A
  * punch belongs to an office through the employee carrying its biometric
@@ -50,6 +51,7 @@ class UploadMonitor
 
         Employee::query()->with(['user:id,name,position,organizational_unit_id,profile_photo_path', 'assignments' => fn ($query) => $query->reassignments()->orderBy('effective_date')->orderBy('id')])
             ->whereNull('separation_date')
+            ->keepsDtr()
             ->get(['id', 'user_id', 'biometric_id'])
             ->each(function (Employee $employee) use (&$groups, $units, $punched, $from, $to) {
                 $hasId = $employee->biometric_id !== null && $employee->biometric_id !== '';
