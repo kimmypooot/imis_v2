@@ -151,6 +151,7 @@ const sampleColumns = [
                                 :numbered="false"
                                 :searchable="false"
                                 :page-size-select="false"
+                                :exportable="false"
                                 :default-page-size="12"
                                 density="compact"
                             >
@@ -168,7 +169,7 @@ const sampleColumns = [
             <Tabs v-model="tab" :tabs="tabs">
                 <template #people>
                     <div class="pt-3">
-                        <DataTable :columns="peopleColumns" :rows="preview.people" row-key="biometric_id" caption="Biometric IDs in the file" export-name="imis-dat-preview-ids" :numbered="false" :default-page-size="10" density="compact">
+                        <DataTable :columns="peopleColumns" :rows="preview.people" row-key="biometric_id" caption="Biometric IDs in the file" export-name="imis-dat-preview-ids" :exportable="false" :numbered="false" :default-page-size="10" density="compact">
                             <template #cell-biometric_id="{ row }"><span class="font-medium tabular-nums">{{ row.biometric_id }}</span></template>
                             <template #cell-name="{ row }">
                                 <span v-if="row.name" class="text-text">{{ row.name }}</span>
@@ -184,7 +185,7 @@ const sampleColumns = [
                 <template #sample>
                     <div class="pt-3">
                         <p class="mb-2 text-xs text-text-muted">The first {{ number(preview.sample.length) }} readable lines of the file, as the upload would treat them.</p>
-                        <DataTable :columns="sampleColumns" :rows="preview.sample.map((row, index) => ({ ...row, key: index }))" row-key="key" caption="First lines of the file" export-name="imis-dat-preview-lines" :numbered="false" :default-page-size="10" density="compact">
+                        <DataTable :columns="sampleColumns" :rows="preview.sample.map((row, index) => ({ ...row, key: index }))" row-key="key" caption="First lines of the file" export-name="imis-dat-preview-lines" :exportable="false" :numbered="false" :default-page-size="10" density="compact">
                             <template #cell-punched_at="{ row }"><span class="whitespace-nowrap tabular-nums">{{ formatDateTime(row.punched_at) }}</span></template>
                             <template #cell-name="{ row }">{{ row.name ?? '—' }}</template>
                             <template #cell-status="{ row }"><Badge :tone="sampleStatus[row.status].tone">{{ sampleStatus[row.status].label }}</Badge></template>
