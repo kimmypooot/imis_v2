@@ -54,6 +54,9 @@ return new class extends Migration
         return [
             ['improvement', 'More tables fit the page, with each person\'s photo and the same search, page size, Copy, CSV and Print: DTR Management, Work schedules, Biometric logs, Tardiness and undertime, Sync with the leave card file, Monetization, the payroll register and withholding tax, plantilla item holders, SALN statements, Integration Tokens and Security Logs.'],
             ['improvement', 'DTR Management searches and pages the list as you type, and Work schedules and Biometric logs tick rows to end, remove or delete them together.'],
+            ['improvement', 'The Admin dashboard\'s Top Systems and Users Without System Access, and the roles list in Manage Systems, use the same tables; people without access now show with their photos.'],
+            ['improvement', 'The buttons that pick a view of a list (Pending, Approved, Vacant…) look and work the same on every page, and short lists no longer show a "Show N entries" picker.'],
+            ['fix', 'Number fields that take decimals (leave days, payroll amounts, leave type limits) accept them everywhere, and text fields keep their length limits.'],
         ];
     }
 };
