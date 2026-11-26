@@ -228,6 +228,19 @@ class BiometricImportTest extends TestCase
                 ->where('monitor.0.staff.1.last_punch', '2026-03-02'));
     }
 
+    public function test_a_move_between_two_support_units_counts_once_in_the_regional_office(): void
+    {
+        $psed = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);
+        $msd = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);
+        $mover = Employee::factory()->create(['biometric_id' => '7', 'user_id' => User::factory()->create(['organizational_unit_id' => $msd->id])]);
+        $mover->assignments()->create(['kind' => 'reassignment', 'from_unit_id' => $psed->id, 'to_unit_id' => $msd->id, 'effective_date' => '2026-03-10']);
+
+        $regional = collect($this->actingAs($this->userWith(['dtr.view']))->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'Regional Office');
+
+        $this->assertSame(1, $regional['employees']);
+        $this->assertCount(1, $regional['staff']);
+    }
+
     public function test_contract_of_service_personnel_are_not_counted(): void
     {
         $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);

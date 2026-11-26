@@ -68,11 +68,15 @@ class UploadMonitor
                     'status' => ! $hasId ? 'no_id' : ($last === null ? 'no_punches' : 'in'),
                 ];
 
-                // A transferee counts where they worked that month, so each office is judged on its own staff.
-                foreach ($this->unitsDuring($employee, $from, $to) as $unitId) {
+                // A transferee counts where they worked that month, so each office is judged on its own staff;
+                // once per office, so a move between two support units (both the Regional Office) counts once.
+                $keys = collect($this->unitsDuring($employee, $from, $to))->map(function ($unitId) use ($units) {
                     $unit = $units->get($unitId);
-                    $key = $unit && $unit->unit_type !== UnitType::RegionalSupportUnit ? (string) $unit->id : self::REGIONAL;
 
+                    return $unit && $unit->unit_type !== UnitType::RegionalSupportUnit ? (string) $unit->id : self::REGIONAL;
+                })->unique();
+
+                foreach ($keys as $key) {
                     $groups[$key]['employees']++;
                     $groups[$key]['staff'][] = $person;
                     if ($hasId) {
