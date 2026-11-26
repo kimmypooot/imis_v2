@@ -13,6 +13,7 @@ import ProgressBar from '@cscro8/ui/Components/UI/ProgressBar.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
 import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
+import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
@@ -104,8 +105,17 @@ const missingTotal = computed(() => staffRows.value.filter((person) => person.st
 const showMissing = (row) => {
     staffOffice.value = row.key;
     staffShow.value = 'missing';
-    document.getElementById('dtr-staff')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    tab.value = 'employees';
 };
+
+// One card of tabs below the upload: by office, by employee, unmatched IDs and past uploads.
+const tab = ref('submitted');
+const tabs = computed(() => [
+    { key: 'submitted', label: 'Who has submitted', icon: 'clipboard' },
+    { key: 'employees', label: 'Employees', icon: 'users', badge: missingTotal.value || null },
+    { key: 'unmatched', label: 'IDs not on any employee', icon: 'exclamation', badge: props.unmatched.length || null },
+    { key: 'uploads', label: 'Recent uploads', icon: 'download' },
+]);
 const personStatus = {
     no_id: { label: 'No Biometric ID', tone: 'danger' },
     no_punches: { label: 'No punches', tone: 'warning' },
@@ -160,78 +170,11 @@ const importColumns = [
 
     <PageHeader
         title="Biometric logs"
-        description="Upload the attendance log (.dat) from a biometric device. Punches already on file are skipped, so the whole history can be uploaded again."
+        description="Upload the attendance log (.dat) from a biometric device, then check who has submitted for the month and who is missing."
         :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Biometric logs' }]"
     />
 
     <div class="space-y-6">
-        <Card :title="`Who has submitted: ${monthLabel}`" icon="clipboard" description="The Regional Support Units count as one Regional Office; each Field Office stands on its own. An office counts once its employees' punches for the month are on file.">
-            <div class="mb-3 flex flex-wrap items-end gap-3">
-                <div>
-                    <InputLabel for="monitor-month">Month</InputLabel>
-                    <div class="mt-1 flex items-center gap-1">
-                        <ActionButton icon="chevronLeft" :label="`Previous month`" @click="goToMonth(shiftMonth(-1))" />
-                        <input id="monitor-month" type="month" class="filter-control" :value="month" @change="(event) => event.target.value && goToMonth(event.target.value)" />
-                        <ActionButton icon="chevronRight" :label="`Next month`" @click="goToMonth(shiftMonth(1))" />
-                    </div>
-                </div>
-                <p class="pb-2 text-sm text-text-muted" aria-live="polite">{{ received }} of {{ monitor.length }} offices complete.</p>
-            </div>
-            <DataTable :columns="monitorColumns" :rows="monitor" row-key="key" :caption="`Offices whose biometric logs are on file for ${monthLabel}`" :export-name="`imis-dtr-submissions-${month}`" :numbered="false" :searchable="false" :default-page-size="50">
-                <template #cell-office="{ row }">
-                    <span class="font-medium text-text">{{ row.office }}</span>
-                    <div v-if="missingIn(row)">
-                        <Button size="sm" variant="link" :aria-label="`See who is missing in ${row.office}`" @click="showMissing(row)">{{ missingIn(row) }} missing: see who</Button>
-                    </div>
-                </template>
-                <template #cell-status="{ row }">
-                    <Badge :tone="statusTone[row.status]">{{ statusLabel[row.status] }}</Badge>
-                </template>
-                <template #cell-coverage="{ row }">
-                    <CellFacts :facts="[{ label: 'With punches', value: `${row.with_punches} of ${row.employees}` }, { label: 'With a Biometric ID', value: String(row.with_id) }]" />
-                </template>
-                <template #cell-last_punch="{ row }"><span class="whitespace-nowrap text-text-muted">{{ row.last_punch ? formatCalendarDate(row.last_punch) : '—' }}</span></template>
-                <template #cell-export="{ row }">
-                    <span v-if="!row.employees" />
-                    <Button v-else size="sm" variant="secondary" icon="download" :aria-label="`Export ${row.office} DTRs for ${monthLabel} to Excel`" @click="exporting = row">Excel</Button>
-                </template>
-            </DataTable>
-        </Card>
-
-        <Card id="dtr-staff" :title="`Employees, office by office: ${monthLabel}`" icon="users" :description="missingTotal ? `${missingTotal} ${missingTotal === 1 ? 'employee has' : 'employees have'} no punches yet this month, or no Biometric ID.` : 'Everyone has punches on file this month.'">
-            <DataTable
-                :columns="staffColumns"
-                :rows="shownStaff"
-                row-key="row_key"
-                :caption="`Employees and their punches for ${monthLabel}`"
-                :export-name="`imis-dtr-employees-${month}`"
-                :numbered="false"
-                :empty-text="staffShow === 'missing' ? 'No one is missing here.' : 'No employees here.'"
-            >
-                <template #toolbar>
-                    <FilterButtons
-                        v-model="staffShow"
-                        variant="pills"
-                        label="Show"
-                        :options="[{ value: 'missing', label: 'Missing', count: officeStaff.filter((person) => person.status !== 'in').length }, { value: 'all', label: 'Everyone', count: officeStaff.length }]"
-                    />
-                    <select v-model="staffOffice" class="filter-control" aria-label="Office">
-                        <option value="">All offices</option>
-                        <option v-for="row in monitor" :key="row.key" :value="row.key">{{ row.office }}</option>
-                    </select>
-                </template>
-                <template #cell-name="{ row }">
-                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.position" />
-                </template>
-                <template #cell-punches="{ row }">
-                    <CellFacts :facts="[{ label: 'Biometric ID', value: row.biometric_id ?? '—' }, { label: 'Days punched', value: String(row.days) }, { label: 'Last punch', value: row.last_punch ? formatCalendarDate(row.last_punch) : null }]" />
-                </template>
-                <template #cell-status="{ row }">
-                    <Badge :tone="personStatus[row.status].tone">{{ personStatus[row.status].label }}</Badge>
-                </template>
-            </DataTable>
-        </Card>
-
         <Card v-if="canManage" title="Upload the consolidated log" icon="download" description="Upload the device's whole export: every month in it is stored, and punches already on file are skipped. Employees whose punches it adds are told under the bell.">
             <form class="space-y-4" @submit.prevent="send">
                 <div>
@@ -271,7 +214,7 @@ const importColumns = [
                     <div v-if="result.before_start"><dt class="text-xs text-text-muted">Before the start date</dt><dd class="font-semibold tabular-nums">{{ number(result.before_start) }}</dd></div>
                     <div><dt class="text-xs text-text-muted">Employees notified</dt><dd class="font-semibold tabular-nums">{{ number(result.notified) }}</dd></div>
                 </dl>
-                <p v-if="result.unmatched" class="mt-2 text-warning-fg">{{ result.unmatched }} {{ result.unmatched === 1 ? 'ID' : 'IDs' }} in the logs {{ result.unmatched === 1 ? 'is' : 'are' }} not on any employee's profile yet (see below).</p>
+                <p v-if="result.unmatched" class="mt-2 text-warning-fg">{{ result.unmatched }} {{ result.unmatched === 1 ? 'ID' : 'IDs' }} in the logs {{ result.unmatched === 1 ? 'is' : 'are' }} not on any employee's profile yet: see the "IDs not on any employee" tab.</p>
                 <p v-if="!result.rows_new" class="mt-2 text-text-muted">Nothing new in this file, so no one was notified.</p>
                 <div v-else-if="Object.keys(result.new_by_month ?? {}).length" class="mt-3">
                     <p class="text-xs font-medium text-text-muted">New punches, month by month</p>
@@ -285,64 +228,149 @@ const importColumns = [
             </div>
         </Card>
 
-        <Card title="IDs not on any employee (separated, resigned, retired)" icon="users">
-            <details class="group">
-            <summary class="cursor-pointer text-sm font-medium text-text">
-                {{ unmatched.length ? `${number(unmatched.length)} ${unmatched.length === 1 ? 'ID' : 'IDs'} not on any profile` : 'Every ID in the logs belongs to an employee' }}
-            </summary>
-            <p class="mt-3 text-sm text-text-muted">
-                These numbers are in the uploaded logs but are not the Biometric ID on any employee's profile. They are usually staff who have separated, resigned or retired, whose enrolment is still on the device. Tick the ones you no longer need and delete their stored punches to free space. If one belongs to a current employee, open them in
-                <Link href="/admin/hr/employees" class="text-link hover:underline">Employees</Link>, choose Edit, and fill in their Biometric ID: their punches, including the ones already uploaded, then count toward their DTR.
-            </p>
-            <DataTable
-                v-model:selected="selectedIds"
-                class="mt-3"
-                :columns="unmatchedColumns"
-                :rows="unmatched"
-                row-key="biometric_id"
-                :selectable="canManage"
-                caption="Biometric IDs in the logs that no employee has"
-                export-name="imis-unmatched-biometric-ids"
-                :numbered="false"
-                empty-text="Every ID in the logs belongs to an employee."
-            >
-                <template #cell-biometric_id="{ row }"><span class="font-medium tabular-nums">{{ row.biometric_id }}</span></template>
-                <template #cell-punches="{ row }"><span class="tabular-nums">{{ number(row.punches) }}</span></template>
-                <template #cell-seen="{ row }">
-                    <CellFacts :facts="[{ label: 'First', value: formatDateTime(row.first_at) }, { label: 'Last', value: formatDateTime(row.last_at) }]" />
+        <Card>
+            <Tabs v-model="tab" :tabs="tabs">
+                <template #submitted>
+                    <div class="space-y-3 pt-4">
+                        <p class="text-sm text-text-muted">The Regional Support Units count as one Regional Office; each Field Office stands on its own. An office counts once its employees' punches for the month are on file.</p>
+                    <div class="mb-3 flex flex-wrap items-end gap-3">
+                        <div>
+                            <InputLabel for="monitor-month">Month</InputLabel>
+                            <div class="mt-1 flex items-center gap-1">
+                                <ActionButton icon="chevronLeft" :label="`Previous month`" @click="goToMonth(shiftMonth(-1))" />
+                                <input id="monitor-month" type="month" class="filter-control" :value="month" @change="(event) => event.target.value && goToMonth(event.target.value)" />
+                                <ActionButton icon="chevronRight" :label="`Next month`" @click="goToMonth(shiftMonth(1))" />
+                            </div>
+                        </div>
+                        <p class="pb-2 text-sm text-text-muted" aria-live="polite">{{ received }} of {{ monitor.length }} offices complete.</p>
+                    </div>
+                    <DataTable :columns="monitorColumns" :rows="monitor" row-key="key" :caption="`Offices whose biometric logs are on file for ${monthLabel}`" :export-name="`imis-dtr-submissions-${month}`" :numbered="false" :searchable="false" :default-page-size="50">
+                        <template #cell-office="{ row }">
+                            <span class="font-medium text-text">{{ row.office }}</span>
+                            <div v-if="missingIn(row)">
+                                <Button size="sm" variant="link" :aria-label="`See who is missing in ${row.office}`" @click="showMissing(row)">{{ missingIn(row) }} missing: see who</Button>
+                            </div>
+                        </template>
+                        <template #cell-status="{ row }">
+                            <Badge :tone="statusTone[row.status]">{{ statusLabel[row.status] }}</Badge>
+                        </template>
+                        <template #cell-coverage="{ row }">
+                            <CellFacts :facts="[{ label: 'With punches', value: `${row.with_punches} of ${row.employees}` }, { label: 'With a Biometric ID', value: String(row.with_id) }]" />
+                        </template>
+                        <template #cell-last_punch="{ row }"><span class="whitespace-nowrap text-text-muted">{{ row.last_punch ? formatCalendarDate(row.last_punch) : '—' }}</span></template>
+                        <template #cell-export="{ row }">
+                            <span v-if="!row.employees" />
+                            <Button v-else size="sm" variant="secondary" icon="download" :aria-label="`Export ${row.office} DTRs for ${monthLabel} to Excel`" @click="exporting = row">Excel</Button>
+                        </template>
+                    </DataTable>
+                    </div>
                 </template>
-                <template #bulk>
-                    <span class="text-text-muted">{{ number(selectedPunches) }} punches</span>
-                    <Button size="sm" variant="danger" icon="trash" :loading="clearing" @click="clearSelected">Delete selected punches</Button>
-                </template>
-            </DataTable>
-            </details>
-        </Card>
 
-        <Card title="Recent uploads" icon="clipboard">
-            <DataTable :columns="importColumns" :rows="imports" caption="The latest uploaded attendance logs" export-name="imis-biometric-uploads" :numbered="false" empty-text="Nothing uploaded yet.">
-                <template #cell-created_at="{ row }">
-                    <span class="whitespace-nowrap">{{ formatDateTime(row.created_at) }}</span>
-                    <div class="text-xs text-text-muted">{{ row.uploader }}</div>
+                <template #employees>
+                    <div class="space-y-3 pt-4">
+                        <p class="text-sm text-text-muted">{{ missingTotal ? `${missingTotal} ${missingTotal === 1 ? 'employee has' : 'employees have'} no punches yet in ${monthLabel}, or no Biometric ID.` : `Everyone has punches on file for ${monthLabel}.` }}</p>
+                    <div class="mb-3 flex flex-wrap items-end gap-3">
+                        <div>
+                            <InputLabel for="staff-month">Month</InputLabel>
+                            <div class="mt-1 flex items-center gap-1">
+                                <ActionButton icon="chevronLeft" :label="`Previous month`" @click="goToMonth(shiftMonth(-1))" />
+                                <input id="staff-month" type="month" class="filter-control" :value="month" @change="(event) => event.target.value && goToMonth(event.target.value)" />
+                                <ActionButton icon="chevronRight" :label="`Next month`" @click="goToMonth(shiftMonth(1))" />
+                            </div>
+                        </div>
+                    </div>
+                    <DataTable
+                        :columns="staffColumns"
+                        :rows="shownStaff"
+                        row-key="row_key"
+                        :caption="`Employees and their punches for ${monthLabel}`"
+                        :export-name="`imis-dtr-employees-${month}`"
+                        :numbered="false"
+                        :empty-text="staffShow === 'missing' ? 'No one is missing here.' : 'No employees here.'"
+                    >
+                        <template #toolbar>
+                            <FilterButtons
+                                v-model="staffShow"
+                                variant="pills"
+                                label="Show"
+                                :options="[{ value: 'missing', label: 'Missing', count: officeStaff.filter((person) => person.status !== 'in').length }, { value: 'all', label: 'Everyone', count: officeStaff.length }]"
+                            />
+                            <select v-model="staffOffice" class="filter-control" aria-label="Office">
+                                <option value="">All offices</option>
+                                <option v-for="row in monitor" :key="row.key" :value="row.key">{{ row.office }}</option>
+                            </select>
+                        </template>
+                        <template #cell-name="{ row }">
+                            <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.position" />
+                        </template>
+                        <template #cell-punches="{ row }">
+                            <CellFacts :facts="[{ label: 'Biometric ID', value: row.biometric_id ?? '—' }, { label: 'Days punched', value: String(row.days) }, { label: 'Last punch', value: row.last_punch ? formatCalendarDate(row.last_punch) : null }]" />
+                        </template>
+                        <template #cell-status="{ row }">
+                            <Badge :tone="personStatus[row.status].tone">{{ personStatus[row.status].label }}</Badge>
+                        </template>
+                    </DataTable>
+                    </div>
                 </template>
-                <template #cell-counts="{ row }">
-                    <CellFacts
-                        :facts="[
-                            { label: 'Read', value: number(row.rows_read) },
-                            { label: 'New', value: number(row.rows_new) },
-                            { label: 'Already on file', value: number(row.rows_duplicate) },
-                            { label: 'Left out', value: row.rows_ignored ? number(row.rows_ignored) : null },
-                            { label: 'Before the start date', value: row.rows_before_start ? number(row.rows_before_start) : null },
-                            { label: 'Skipped', value: row.rows_skipped ? number(row.rows_skipped) : null },
-                        ]"
-                    />
+
+                <template #unmatched>
+                    <div class="space-y-3 pt-4">
+                    <p class="text-sm text-text-muted">
+                        These numbers are in the uploaded logs but are not the Biometric ID on any employee's profile. They are usually staff who have separated, resigned or retired, whose enrolment is still on the device. Tick the ones you no longer need and delete their stored punches to free space. If one belongs to a current employee, open them in
+                        <Link href="/admin/hr/employees" class="text-link hover:underline">Employees</Link>, choose Edit, and fill in their Biometric ID: their punches, including the ones already uploaded, then count toward their DTR.
+                    </p>
+                <DataTable
+                    v-model:selected="selectedIds"
+                    :columns="unmatchedColumns"
+                    :rows="unmatched"
+                    row-key="biometric_id"
+                    :selectable="canManage"
+                    caption="Biometric IDs in the logs that no employee has"
+                    export-name="imis-unmatched-biometric-ids"
+                    :numbered="false"
+                    empty-text="Every ID in the logs belongs to an employee."
+                >
+                    <template #cell-biometric_id="{ row }"><span class="font-medium tabular-nums">{{ row.biometric_id }}</span></template>
+                    <template #cell-punches="{ row }"><span class="tabular-nums">{{ number(row.punches) }}</span></template>
+                    <template #cell-seen="{ row }">
+                        <CellFacts :facts="[{ label: 'First', value: formatDateTime(row.first_at) }, { label: 'Last', value: formatDateTime(row.last_at) }]" />
+                    </template>
+                    <template #bulk>
+                        <span class="text-text-muted">{{ number(selectedPunches) }} punches</span>
+                        <Button size="sm" variant="danger" icon="trash" :loading="clearing" @click="clearSelected">Delete selected punches</Button>
+                    </template>
+                </DataTable>
+                    </div>
                 </template>
-                <template #cell-covers="{ row }">
-                    <CellFacts v-if="row.first_punch_at" :facts="[{ label: 'From', value: formatDateTime(row.first_punch_at) }, { label: 'To', value: formatDateTime(row.last_punch_at) }]" />
-                    <span v-else class="text-text-muted">—</span>
-                    <CellFacts v-if="Object.keys(row.new_by_month ?? {}).length" class="mt-1.5" :facts="Object.entries(row.new_by_month).map(([key, count]) => ({ label: `New in ${monthName(key)}`, value: number(count) }))" />
+
+                <template #uploads>
+                    <div class="pt-4">
+                    <DataTable :columns="importColumns" :rows="imports" caption="The latest uploaded attendance logs" export-name="imis-biometric-uploads" :numbered="false" empty-text="Nothing uploaded yet.">
+                        <template #cell-created_at="{ row }">
+                            <span class="whitespace-nowrap">{{ formatDateTime(row.created_at) }}</span>
+                            <div class="text-xs text-text-muted">{{ row.uploader }}</div>
+                        </template>
+                        <template #cell-counts="{ row }">
+                            <CellFacts
+                                :facts="[
+                                    { label: 'Read', value: number(row.rows_read) },
+                                    { label: 'New', value: number(row.rows_new) },
+                                    { label: 'Already on file', value: number(row.rows_duplicate) },
+                                    { label: 'Left out', value: row.rows_ignored ? number(row.rows_ignored) : null },
+                                    { label: 'Before the start date', value: row.rows_before_start ? number(row.rows_before_start) : null },
+                                    { label: 'Skipped', value: row.rows_skipped ? number(row.rows_skipped) : null },
+                                ]"
+                            />
+                        </template>
+                        <template #cell-covers="{ row }">
+                            <CellFacts v-if="row.first_punch_at" :facts="[{ label: 'From', value: formatDateTime(row.first_punch_at) }, { label: 'To', value: formatDateTime(row.last_punch_at) }]" />
+                            <span v-else class="text-text-muted">—</span>
+                            <CellFacts v-if="Object.keys(row.new_by_month ?? {}).length" class="mt-1.5" :facts="Object.entries(row.new_by_month).map(([key, count]) => ({ label: `New in ${monthName(key)}`, value: number(count) }))" />
+                        </template>
+                    </DataTable>
+                    </div>
                 </template>
-            </DataTable>
+            </Tabs>
         </Card>
     </div>
 
