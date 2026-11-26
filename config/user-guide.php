@@ -525,7 +525,7 @@ return [
                     'title' => 'Biometric logs, schedules and DTR management',
                     'summary' => 'Bring in the biometric punches, give everyone a work schedule, and keep each month\'s Daily Time Records in order.',
                     'steps' => [
-                        'Open Biometric logs and upload the attendance log (.dat) under "Upload the consolidated log". Punches already on file are skipped, and everyone in service is told under the bell that the logs are in.',
+                        'Open Biometric logs and upload the device\'s whole export (.dat) under "Upload the consolidated log". Every month in it is stored, punches already on file are skipped, and the result shows the new punches month by month. Employees whose punches it adds are told under the bell.',
                         'Check "Who has submitted" for the month. Choose "missing: see who" on an office to list just its missing people (no punches or no Biometric ID) under "Employees, office by office", or choose Excel to export its DTRs.',
                         'Open Work schedules. Under Assign, tick the employees, pick a schedule and the dates, and apply it to all of them at once.',
                         'Open DTR Management, pick the month and office, and use the buttons (No biometric ID, No work schedule, Entries to verify…) to find what needs attention. Open someone\'s DTR to adjust a day or fix a raw punch.',

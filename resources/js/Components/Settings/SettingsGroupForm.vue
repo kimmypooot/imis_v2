@@ -31,7 +31,7 @@ const form = useForm({
     ),
 });
 
-const inputTypes = { string: 'text', integer: 'number', url: 'url', email: 'email' };
+const inputTypes = { string: 'text', integer: 'number', url: 'url', email: 'email', date: 'date' };
 
 // An optional select can be left unset (stored as null).
 const selectOptions = (setting) => [

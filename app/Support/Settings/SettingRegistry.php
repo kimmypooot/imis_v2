@@ -204,6 +204,15 @@ final class SettingRegistry
                 'description' => 'Show the "multiple marriages" part of the SALN to employees. Off, it is hidden and the form prints "Not Applicable".',
                 'default' => false,
             ],
+            // DTR: an uploaded attendance log can hold a device's whole history;
+            // punches before this date are never used for a DTR, so they're skipped.
+            'dtr_punches_from' => [
+                'type' => SettingType::Date,
+                'group' => SettingGroup::HumanResources,
+                'label' => 'DTR: keep punches from',
+                'description' => 'Punches dated before this in an uploaded biometric log are skipped (counted as "Before the start date") and never stored. Leave empty to keep every punch.',
+                'default' => null,
+            ],
             // HR-6: the Director IV's supervisor (Supervisors), outside IMIS.
             'hr_csc_chairperson' => [
                 'type' => SettingType::String,

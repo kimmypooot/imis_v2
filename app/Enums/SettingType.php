@@ -22,6 +22,7 @@ enum SettingType: string
     case Url = 'url';
     case Email = 'email';
     case Select = 'select';
+    case Date = 'date';
 
     /**
      * Validation rules for one value of this type. `$constraints` comes
@@ -53,6 +54,7 @@ enum SettingType: string
             self::Url => ['url:http,https', 'max:2048'],
             self::Email => ['email', 'max:255'],
             self::Select => ['string', Rule::in($constraints['options'] ?? [])],
+            self::Date => ['date_format:Y-m-d'],
         }];
     }
 

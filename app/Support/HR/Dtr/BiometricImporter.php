@@ -6,6 +6,7 @@ use App\Models\BiometricImport;
 use App\Models\BiometricPunch;
 use App\Models\Employee;
 use App\Models\User;
+use App\Support\Settings\Settings;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -40,8 +41,10 @@ class BiometricImporter
         $known = $knownOnly
             ? Employee::query()->whereNotNull('biometric_id')->pluck('biometric_id')->map(fn ($id) => (string) $id)->flip()
             : null;
+        // A device's whole history may come along; nothing before the DTR start date is ever used.
+        $start = Settings::get('dtr_punches_from');
 
-        return DB::transaction(function () use ($path, $originalName, $uploader, $known) {
+        return DB::transaction(function () use ($path, $originalName, $uploader, $known, $start) {
             $import = BiometricImport::query()->create([
                 'user_id' => $uploader->id,
                 'file_name' => $originalName,
@@ -49,6 +52,7 @@ class BiometricImporter
             ]);
 
             $skipped = 0;
+            $before = 0;
             $read = 0;
             $new = 0;
             $first = null;
@@ -59,6 +63,11 @@ class BiometricImporter
             foreach ($this->reader->stream($path, $skipped) as $punch) {
                 $read++;
 
+                if ($start && substr((string) $punch['punched_at'], 0, 10) < $start) {
+                    $before++;
+
+                    continue;
+                }
                 if ($known !== null && ! $known->has((string) $punch['biometric_id'])) {
                     $this->ignored++;
 
@@ -84,12 +93,22 @@ class BiometricImporter
                 $new += BiometricPunch::query()->insertOrIgnore($buffer);
             }
 
+            // The punches this upload added carry its id (one already on file keeps its first upload's).
+            $byMonth = [];
+            foreach (BiometricPunch::query()->where('biometric_import_id', $import->id)->select(['id', 'punched_at'])->lazyById(2000) as $added) {
+                $key = $added->punched_at->format('Y-m');
+                $byMonth[$key] = ($byMonth[$key] ?? 0) + 1;
+            }
+            krsort($byMonth);
+
             $import->update([
                 'rows_read' => $read,
                 'rows_new' => $new,
-                'rows_duplicate' => $read - $this->ignored - $new,
+                'rows_duplicate' => $read - $before - $this->ignored - $new,
                 'rows_skipped' => $skipped,
                 'rows_ignored' => $this->ignored,
+                'rows_before_start' => $before,
+                'new_by_month' => $byMonth,
                 'first_punch_at' => $first,
                 'last_punch_at' => $last,
             ]);

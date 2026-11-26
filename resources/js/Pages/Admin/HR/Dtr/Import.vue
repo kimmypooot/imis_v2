@@ -35,6 +35,8 @@ const props = defineProps({
     monthLabel: { type: String, required: true },
     monitor: { type: Array, required: true },
     staffCount: { type: Number, default: 0 },
+    // Punches dated before this are skipped on upload (System Settings → Human Resources); null keeps all.
+    punchesFrom: { type: String, default: null },
     result: { type: Object, default: null },
     imports: { type: Array, required: true },
     unmatched: { type: Array, required: true },
@@ -46,7 +48,7 @@ const form = useForm({ file: null, known_only: true });
 const send = async () => {
     const ok = await confirm({
         title: 'Upload this log?',
-        text: `${form.file?.name ?? 'The file'} will be added, and all ${props.staffCount} employees in service are told under the bell that the logs are in, with your name as the uploader.`,
+        text: `${form.file?.name ?? 'The file'} will be added. Everyone whose punches it adds is told under the bell that their logs are in, with your name as the uploader.`,
         confirmText: 'Upload and notify',
     });
     if (ok) {
@@ -87,6 +89,9 @@ const statusLabel = { received: 'Complete', partial: 'Partial', missing: 'Not ye
 const statusTone = { received: 'success', partial: 'warning', missing: 'danger' };
 
 const number = (value) => Number(value).toLocaleString();
+// "2026-11" → "November 2026", for the month-by-month count of new punches.
+const monthName = (key) => new Date(`${key}-01T00:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+const latestMonth = (byMonth) => Object.keys(byMonth ?? {})[0] ?? null;
 
 // Everyone, office by office, so HRD sees exactly who is missing: no Biometric ID or no punches this month.
 const missingIn = (row) => row.staff.filter((person) => person.status !== 'in').length;
@@ -227,7 +232,7 @@ const importColumns = [
             </DataTable>
         </Card>
 
-        <Card v-if="canManage" title="Upload the consolidated log" icon="download" :description="`Everyone in service (${number(staffCount)} employees) is notified under the bell when an upload adds new punches.`">
+        <Card v-if="canManage" title="Upload the consolidated log" icon="download" description="Upload the device's whole export: every month in it is stored, and punches already on file are skipped. Employees whose punches it adds are told under the bell.">
             <form class="space-y-4" @submit.prevent="send">
                 <div>
                     <InputLabel for="dtr-file">Attendance log (.dat)</InputLabel>
@@ -239,6 +244,12 @@ const importColumns = [
                     <Checkbox id="dtr-known-only" v-model="form.known_only" label="Keep only IDs already on an employee's profile" />
                     <p class="mt-1 pl-6 text-xs text-text-muted">Keeps the database small. Punches from other IDs are left out; upload the file again after adding an ID to a profile to bring them in.</p>
                 </div>
+
+                <p class="text-sm text-text-muted">
+                    <template v-if="punchesFrom">Punches dated before {{ formatCalendarDate(punchesFrom) }} are skipped, since no DTR uses them.</template>
+                    <template v-else>Every punch in the file is kept, however old.</template>
+                    Change this in System Settings, under Human Resources ("DTR: keep punches from").
+                </p>
 
                 <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                     <p class="text-sm text-text-muted">{{ number(punches) }} punches on file.</p>
@@ -257,10 +268,20 @@ const importColumns = [
                     <div><dt class="text-xs text-text-muted">Already on file</dt><dd class="font-semibold tabular-nums">{{ number(result.rows_duplicate) }}</dd></div>
                     <div v-if="result.ignored"><dt class="text-xs text-text-muted">Left out (no profile)</dt><dd class="font-semibold tabular-nums">{{ number(result.ignored) }}</dd></div>
                     <div><dt class="text-xs text-text-muted">Unreadable</dt><dd class="font-semibold tabular-nums" :class="result.rows_skipped ? 'text-warning-fg' : ''">{{ number(result.rows_skipped) }}</dd></div>
+                    <div v-if="result.before_start"><dt class="text-xs text-text-muted">Before the start date</dt><dd class="font-semibold tabular-nums">{{ number(result.before_start) }}</dd></div>
                     <div><dt class="text-xs text-text-muted">Employees notified</dt><dd class="font-semibold tabular-nums">{{ number(result.notified) }}</dd></div>
                 </dl>
                 <p v-if="result.unmatched" class="mt-2 text-warning-fg">{{ result.unmatched }} {{ result.unmatched === 1 ? 'ID' : 'IDs' }} in the logs {{ result.unmatched === 1 ? 'is' : 'are' }} not on any employee's profile yet (see below).</p>
                 <p v-if="!result.rows_new" class="mt-2 text-text-muted">Nothing new in this file, so no one was notified.</p>
+                <div v-else-if="Object.keys(result.new_by_month ?? {}).length" class="mt-3">
+                    <p class="text-xs font-medium text-text-muted">New punches, month by month</p>
+                    <ul class="mt-1 space-y-0.5">
+                        <li v-for="(count, key) in result.new_by_month" :key="key" class="flex max-w-sm justify-between gap-4">
+                            <span>{{ monthName(key) }}<span v-if="key !== latestMonth(result.new_by_month)" class="text-text-muted"> (late punches)</span></span>
+                            <span class="font-medium tabular-nums">{{ number(count) }}</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </Card>
 
@@ -311,6 +332,7 @@ const importColumns = [
                             { label: 'New', value: number(row.rows_new) },
                             { label: 'Already on file', value: number(row.rows_duplicate) },
                             { label: 'Left out', value: row.rows_ignored ? number(row.rows_ignored) : null },
+                            { label: 'Before the start date', value: row.rows_before_start ? number(row.rows_before_start) : null },
                             { label: 'Skipped', value: row.rows_skipped ? number(row.rows_skipped) : null },
                         ]"
                     />
@@ -318,6 +340,7 @@ const importColumns = [
                 <template #cell-covers="{ row }">
                     <CellFacts v-if="row.first_punch_at" :facts="[{ label: 'From', value: formatDateTime(row.first_punch_at) }, { label: 'To', value: formatDateTime(row.last_punch_at) }]" />
                     <span v-else class="text-text-muted">—</span>
+                    <CellFacts v-if="Object.keys(row.new_by_month ?? {}).length" class="mt-1.5" :facts="Object.entries(row.new_by_month).map(([key, count]) => ({ label: `New in ${monthName(key)}`, value: number(count) }))" />
                 </template>
             </DataTable>
         </Card>

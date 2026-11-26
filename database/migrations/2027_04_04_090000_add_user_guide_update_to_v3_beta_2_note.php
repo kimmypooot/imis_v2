@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'Uploading a biometric log still stores every month in the file, and now shows the new punches month by month, so late punches for an earlier month stand out. Only the employees whose punches it adds are notified, and punches older than a start date (System Settings: "DTR: keep punches from") can be skipped.'],
             ['improvement', 'Biometric logs lists every employee, office by office, with their Biometric ID, the days they punched and their last punch. Missing people (no punches yet, or no Biometric ID) come first, and each office\'s "missing: see who" opens just its list. The list can be searched and exported to chase them up.'],
             ['improvement', 'The HR dashboard\'s banner shows how many things are waiting on HR and where the month stands, step by step: biometric logs in, DTR entries to verify, tardiness to charge, the payroll, and SALN filing or step increments when they are due. Its buttons are for the tasks at hand (upload a biometric log, open the payroll, review leave). Each person sees only the steps for their own work.'],
             ['improvement', 'Filing leave: leave types you can\'t file yet are greyed out under "Not available to you", each with a short reason (for example, needs 24 months of service), and leave for the other sex is no longer listed.'],

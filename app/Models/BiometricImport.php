@@ -23,6 +23,8 @@ class BiometricImport extends Model
             'rows_duplicate' => 'integer',
             'rows_skipped' => 'integer',
             'rows_ignored' => 'integer',
+            'rows_before_start' => 'integer',
+            'new_by_month' => 'array',
             'first_punch_at' => 'datetime',
             'last_punch_at' => 'datetime',
         ];

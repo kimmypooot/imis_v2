@@ -10,7 +10,10 @@ use App\Models\Employee;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\User;
+use App\Support\Settings\SettingRegistry;
+use App\Support\Settings\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -140,10 +143,11 @@ class BiometricImportTest extends TestCase
                 ->where('unmatched.0.punches', 2));
     }
 
-    public function test_employees_in_service_are_notified_with_the_uploader_once_per_upload(): void
+    public function test_only_employees_whose_punches_the_upload_adds_are_notified_once(): void
     {
-        $staff = Employee::factory()->create();
-        $gone = Employee::factory()->create(['separation_date' => '2025-01-01']);
+        $staff = Employee::factory()->create(['biometric_id' => '906']);
+        $elsewhere = Employee::factory()->create(['biometric_id' => '907']);
+        $gone = Employee::factory()->create(['biometric_id' => '908', 'separation_date' => '2025-01-01']);
         $hrd = $this->userWith(['dtr.manage']);
 
         $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $this->log(2, '906')]);
@@ -153,10 +157,43 @@ class BiometricImportTest extends TestCase
         $this->assertStringContainsString($hrd->name, $note->data['message']);
         $this->assertSame('/my/dtr', $note->data['url']);
         $this->assertCount(0, $gone->user->notifications);
+        // Nothing of theirs was in this upload.
+        $this->assertCount(0, $elsewhere->user->notifications);
 
         // Nothing new in a repeat upload, so nobody is bothered again.
         $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $this->log(2, '906')]);
         $this->assertCount(1, $staff->user->fresh()->notifications);
+    }
+
+    public function test_the_whole_file_is_stored_and_the_new_punches_are_counted_month_by_month(): void
+    {
+        $hrd = $this->userWith(['dtr.manage']);
+        $file = UploadedFile::fake()->createWithContent('all.dat', "906\t2026-10-30 08:00:00\t1\t0\t0\t0\r\n906\t2026-11-02 08:00:00\t1\t0\t0\t0\r\n906\t2026-11-03 08:00:00\t1\t0\t0\t0\r\n");
+
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $file])
+            ->assertSessionHas('import_result', fn (array $result) => $result['new_by_month'] === ['2026-11' => 2, '2026-10' => 1]);
+
+        $this->assertSame(3, BiometricPunch::query()->count());
+        $this->assertSame(['2026-11' => 2, '2026-10' => 1], BiometricImport::query()->sole()->new_by_month);
+    }
+
+    public function test_punches_before_the_dtr_start_date_are_skipped_and_counted(): void
+    {
+        SettingRegistry::sync();
+        $setting = Setting::query()->where('key', 'dtr_punches_from')->firstOrFail();
+        $setting->value = $setting->type->serialize('2026-11-01');
+        $setting->save();
+        Settings::flush();
+        $hrd = $this->userWith(['dtr.manage']);
+        $file = UploadedFile::fake()->createWithContent('all.dat', "906\t2025-06-30 08:00:00\t1\t0\t0\t0\r\n906\t2026-10-31 17:00:00\t1\t0\t0\t0\r\n906\t2026-11-01 08:00:00\t1\t0\t0\t0\r\n");
+
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $file]);
+
+        $import = BiometricImport::query()->sole();
+        $this->assertSame(2, $import->rows_before_start);
+        $this->assertSame(1, $import->rows_new);
+        $this->assertSame(0, $import->rows_duplicate);
+        $this->assertSame(['2026-11-01 08:00:00'], BiometricPunch::query()->pluck('punched_at')->map->toDateTimeString()->all());
     }
 
     public function test_the_monitor_groups_support_units_as_one_regional_office_and_lists_each_field_office(): void
