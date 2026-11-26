@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'The HR dashboard\'s banner shows how many things are waiting on HR and where the month stands, step by step: biometric logs in, DTR entries to verify, tardiness to charge, the payroll, and SALN filing or step increments when they are due. Its buttons are for the tasks at hand (upload a biometric log, open the payroll, review leave). Each person sees only the steps for their own work.'],
             ['improvement', 'Filing leave: leave types you can\'t file yet are greyed out under "Not available to you", each with a short reason (for example, needs 24 months of service), and leave for the other sex is no longer listed.'],
             ['improvement', 'Switch areas in one click: the top of the side navigation now offers Me (your own records, leave and pay), HR and Admin, each shown only if you have access. HRD staff move between their own pages and HR work without scrolling to the bottom of the menu.'],
             ['improvement', 'The home page\'s Notifications tile, which repeated the bell, is now "Late & undertime": this month\'s total so far, and a reminder when last month\'s DTR is waiting for your signature.'],

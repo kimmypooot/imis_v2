@@ -71,7 +71,7 @@ const onLeaveToday = computed(() => props.hr.leave?.onLeaveToday.length ?? 0);
 
         <!-- What's waiting, and gaps in the records -->
         <div class="grid gap-4 xl:grid-cols-12">
-            <Card title="Waiting on HR" :description="pendingTotal ? `${pendingTotal} to act on` : 'Nothing waiting'" icon="bell" class="xl:col-span-7">
+            <Card id="waiting-on-hr" title="Waiting on HR" :description="pendingTotal ? `${pendingTotal} to act on` : 'Nothing waiting'" icon="bell" class="xl:col-span-7">
                 <ul class="divide-y divide-border">
                     <li v-for="item in hr.pending" :key="item.href" class="flex items-center justify-between py-2 text-sm">
                         <Link :href="item.href" class="font-medium text-link hover:text-primary-hover">{{ item.label }}</Link>
