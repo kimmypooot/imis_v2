@@ -73,6 +73,54 @@ class UserGuideTest extends TestCase
         $this->assertSame(['payslips', 'open'], array_column($categories[0]['articles'], 'slug'));
     }
 
+    public function test_pages_share_a_help_link_to_the_article_that_explains_them(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/notifications')
+            ->assertInertia(fn ($page) => $page
+                ->where('help.slug', 'notifications-bell')
+                ->where('help.href', '/guide#notifications-bell'));
+
+        $this->actingAs($user)
+            ->get('/guide')
+            ->assertInertia(fn ($page) => $page->where('help', null));
+    }
+
+    public function test_help_link_prefers_the_article_linking_to_the_page_over_one_covering_it_by_pattern(): void
+    {
+        config(['user-guide.categories' => [[
+            'title' => 'Records',
+            'icon' => 'document',
+            'articles' => [
+                ['slug' => 'filing', 'title' => 'Filing', 'summary' => 's', 'steps' => ['a'], 'link' => ['label' => 'Go', 'href' => '/my/saln'], 'pages' => ['my/saln/*']],
+                ['slug' => 'review', 'title' => 'Review', 'summary' => 's', 'steps' => ['a'], 'link' => ['label' => 'Go', 'href' => '/my/saln/queue']],
+            ],
+        ]]]);
+
+        $guide = app(UserGuide::class);
+        $user = User::factory()->create();
+
+        $this->assertSame('filing', $guide->articleFor($user, '/my/saln')['slug']);
+        $this->assertSame('filing', $guide->articleFor($user, 'my/saln/12/edit')['slug']);
+        $this->assertSame('review', $guide->articleFor($user, 'my/saln/queue')['slug']);
+        $this->assertNull($guide->articleFor($user, 'my/pds'));
+    }
+
+    public function test_help_link_skips_articles_the_person_may_not_read(): void
+    {
+        config(['user-guide.categories' => [[
+            'title' => 'Admin',
+            'icon' => 'cog',
+            'articles' => [
+                ['slug' => 'secret', 'title' => 'Secret', 'summary' => 's', 'steps' => ['a'], 'requires' => ['users.view'], 'link' => ['label' => 'Go', 'href' => '/admin/users']],
+            ],
+        ]]]);
+
+        $this->assertNull(app(UserGuide::class)->articleFor(User::factory()->create(), 'admin/users'));
+    }
+
     public function test_the_guide_lists_every_article_once_with_its_parts(): void
     {
         $articles = collect(config('user-guide.categories'))->flatMap(fn (array $category) => $category['articles']);

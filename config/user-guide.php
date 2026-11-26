@@ -8,7 +8,9 @@
  *
  * Article keys: slug, title, summary, steps[], tips[] (optional),
  * link ['label', 'href'] (optional), requires[] (optional permission names),
- * audience[] (optional roles that come from someone's position, as in the
+ * pages[] (optional: more paths this article explains, beyond its link,
+ * as Str::is patterns such as 'my/saln/*'; the page's "How does this work?"
+ * link opens it), audience[] (optional roles that come from someone's position, as in the
  * sidebar: leaveApprover, dtrVerifier, payslipApprover, payrollTaxReviewer).
  * An article with requires or audience shows when either one matches.
  */
@@ -215,6 +217,7 @@ return [
                 ],
                 [
                     'slug' => 'personal-data-sheet',
+                    'pages' => ['my/pds/*'],
                     'title' => 'Filling in and submitting your Personal Data Sheet',
                     'summary' => 'Keep your CS Form 212 (Revised 2026) complete, sign it, and send it to HR for verification.',
                     'steps' => [
@@ -253,6 +256,7 @@ return [
                 ],
                 [
                     'slug' => 'file-saln',
+                    'pages' => ['my/saln/*'],
                     'title' => 'Filing your SALN',
                     'summary' => 'Encode your Statement of Assets, Liabilities and Net Worth (2025 SALN Form, RA 6713), print it on the official form, and file the signed copy.',
                     'steps' => [
@@ -369,6 +373,7 @@ return [
                 ],
                 [
                     'slug' => 'my-leave-applications',
+                    'pages' => ['leave/applications/*'],
                     'title' => 'Tracking and printing your applications',
                     'summary' => 'See where each application stands and print the CS Form No. 6.',
                     'steps' => [
@@ -380,6 +385,7 @@ return [
                 ],
                 [
                     'slug' => 'leave-calendar',
+                    'pages' => ['my/leave/calendar/*'],
                     'title' => 'Using the leave calendar',
                     'summary' => 'See who is away before you plan your own leave.',
                     'steps' => [
@@ -522,6 +528,7 @@ return [
             'articles' => [
                 [
                     'slug' => 'hr-dtr',
+                    'pages' => ['admin/hr/dtr/*'],
                     'title' => 'Biometric logs, schedules and DTR management',
                     'summary' => 'Bring in the biometric punches, give everyone a work schedule, and keep each month\'s Daily Time Records in order.',
                     'steps' => [
@@ -541,6 +548,7 @@ return [
                 ],
                 [
                     'slug' => 'hr-payroll',
+                    'pages' => ['admin/hr/payroll/*'],
                     'title' => 'Preparing the monthly payroll',
                     'summary' => 'HRD drafts the month\'s payroll, Accounting enters the withholding tax, and HRD finalizes it for release at month end.',
                     'steps' => [
@@ -558,6 +566,7 @@ return [
                 ],
                 [
                     'slug' => 'hr-saln',
+                    'pages' => ['admin/hr/saln/*'],
                     'title' => 'Receiving and filing SALNs',
                     'summary' => 'Track who has filed, receive the hard copies, and file the signed SALNs in the 201 File.',
                     'steps' => [

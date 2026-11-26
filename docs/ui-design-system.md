@@ -90,7 +90,14 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   gradients; every motion has a reduced-motion fallback.
 - **Feedback:** `Modal` (solid brand-navy header by default; green for "Add", red for
   destructive), `ConfirmDialog`, `Alert`, and the toast/confirm
-  host (`DialogHost`, `useDialog`).
+  host (`DialogHost`, `useDialog`; `focusCancel` makes the safe choice the
+  default). Long forms call `useUnsavedChanges(form)` so leaving with unsaved
+  changes asks "Leave without saving?" first.
+- **Guidance:** `PageHeader` shows "How does this work?" when the User Guide
+  has an article for the page (the shared `help` prop, worked out by
+  `UserGuide::articleFor` from each article's `link` and optional `pages`
+  patterns in `config/user-guide.php`). Add or point an article there rather
+  than writing help into a page; `:help="false"` hides the link.
 - **Shell:** `AppShell` with `AdminLayout`, `PortalLayout`, `AccountLayout`
   and `AuthLayout`; `SidebarNav`, `UserMenu`, `HelpMenu`, `NotificationMenu`.
 

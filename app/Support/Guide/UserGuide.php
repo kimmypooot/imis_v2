@@ -7,6 +7,7 @@ use App\Support\HR\Dtr\DtrEntryVerification;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Payroll\PayrollAccounting;
 use App\Support\HR\Payroll\PayslipApprovers;
+use Illuminate\Support\Str;
 
 /**
  * The in-app User Guide: the categories and articles in config/user-guide.php,
@@ -48,6 +49,34 @@ class UserGuide
             ->filter(fn (array $category): bool => $category['articles'] !== [])
             ->values()
             ->all();
+    }
+
+    /**
+     * The article that explains the page at `$path` (e.g. "my/leave/apply"),
+     * for the page header's "How does this work?" link: one whose link goes
+     * to that page, or else one whose `pages` patterns cover it. Only
+     * articles this person may read count; the first in guide order wins.
+     *
+     * @return array{slug: string, title: string, href: string}|null
+     */
+    public function articleFor(User $user, string $path): ?array
+    {
+        $path = trim($path, '/');
+        $articles = collect(config('user-guide.categories', []))->flatMap(fn (array $category): array => $category['articles']);
+
+        $linked = $articles->filter(fn (array $article): bool => trim(parse_url($article['link']['href'] ?? '', PHP_URL_PATH) ?? '', '/') === $path);
+        $covered = $articles->filter(fn (array $article): bool => Str::is($article['pages'] ?? [], $path));
+
+        $audiences = [];
+        $article = $linked->concat($covered)->first(
+            fn (array $article): bool => $this->visibleTo($user, $article['requires'] ?? [], $article['audience'] ?? [], $audiences),
+        );
+
+        return $article ? [
+            'slug' => $article['slug'],
+            'title' => $article['title'],
+            'href' => '/guide#'.$article['slug'],
+        ] : null;
     }
 
     /**
