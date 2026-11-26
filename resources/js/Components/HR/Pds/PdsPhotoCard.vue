@@ -7,13 +7,15 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Spinner from '@cscro8/ui/Components/UI/Spinner.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
+import PdsPhotoCropper from './PdsPhotoCropper.vue';
 
 /**
  * The PDS photo (passport size, 3.5 × 4.5 cm). It must be exactly 413 × 531
  * pixels (3.5 × 4.5 cm at 300 dpi, PdsPhotos::WIDTH/HEIGHT), so it prints at
- * its true size without cropping: the size is checked here before
- * uploading, and again on the server. Stored privately; `url` is the
- * upload/remove endpoint.
+ * its true size without cropping. The size is checked here before
+ * uploading: a picture of another size opens the cropper (PdsPhotoCropper),
+ * which saves it at exactly that size. The server checks again. Stored
+ * privately; `url` is the upload/remove endpoint.
  */
 const props = defineProps({
     photoUrl: { type: String, default: null },
@@ -55,16 +57,27 @@ const send = async (file) => {
         return;
     }
     if (size.width !== SIZE.width || size.height !== SIZE.height) {
-        form.setError(
-            'photo',
-            `The photo must be exactly ${SIZE.width} × ${SIZE.height} pixels (passport size, 3.5 × 4.5 cm at 300 dpi). This one is ${size.width} × ${size.height}. Resize or crop it to that size, then upload it again.`,
-        );
+        // Not passport size: say so, and offer to crop it to size here.
+        cropping.value = {
+            file,
+            message: `The photo must be exactly ${SIZE.width} × ${SIZE.height} pixels (passport size, 3.5 × 4.5 cm at 300 dpi). This one is ${size.width} × ${size.height}, so crop it to size below, or choose another photo.`,
+        };
         if (input.value) input.value.value = '';
         return;
     }
 
-    form.photo = file;
+    post(file);
+};
 
+/** The cropper for a picture that isn't passport size: { file, message }, or null. */
+const cropping = ref(null);
+const onCropped = (file) => {
+    cropping.value = null;
+    post(file);
+};
+
+const post = (file) => {
+    form.photo = file;
     form.post(props.url, {
         preserveScroll: true,
         forceFormData: true,
@@ -121,10 +134,19 @@ const remove = async () => {
                     <Icon name="upload" size="sm" />
                     {{ form.processing ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo' }}
                 </label>
-                <p class="text-xs text-text-muted">Exactly 413 × 531 pixels (3.5 × 4.5 cm at 300 dpi). JPG, PNG or WebP. You can also drop it on the frame.</p>
+                <p class="text-xs text-text-muted">Passport size: 413 × 531 pixels (3.5 × 4.5 cm). Any other size can be cropped to fit. JPG, PNG or WebP; you can also drop it on the frame.</p>
                 <Button v-if="photoUrl" variant="link" class="block text-danger-fg" @click="remove">Remove</Button>
                 <InputError :message="form.errors.photo" />
             </div>
         </div>
+
+        <PdsPhotoCropper
+            :open="!!cropping"
+            :file="cropping?.file ?? null"
+            :size="SIZE"
+            :message="cropping?.message ?? null"
+            @close="cropping = null"
+            @crop="onCropped"
+        />
     </Card>
 </template>
