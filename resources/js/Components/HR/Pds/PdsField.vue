@@ -13,13 +13,15 @@ const props = defineProps({
     id: { type: String, required: true },
     error: { type: String, default: null },
     disabled: { type: Boolean, default: false },
+    /** In a one-line list row: the label is read out but not shown (the list has column headings), and help isn't repeated. */
+    compact: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue']);
 
 const errorId = computed(() => `${props.id}-error`);
 const helpId = computed(() => `${props.id}-help`);
-const describedBy = computed(() => [props.error && errorId.value, props.field.help && helpId.value].filter(Boolean).join(' ') || undefined);
+const describedBy = computed(() => [props.error && errorId.value, props.field.help && !props.compact && helpId.value].filter(Boolean).join(' ') || undefined);
 
 const inputType = computed(
     () => ({ email: 'email', number: 'number', year: 'number', date: 'date', idnumber: 'text' })[props.field.type] ?? 'text',
@@ -79,7 +81,7 @@ const inputMode = computed(() => {
 
     <!-- Labelled input / select / textarea -->
     <div v-else>
-        <label :for="id" class="block text-sm font-medium text-text">
+        <label :for="id" :class="compact ? 'sr-only' : 'block text-sm font-medium text-text'">
             {{ field.label }}<span v-if="field.required && !field.when" class="text-danger-fg" aria-hidden="true"> *</span>
         </label>
 
@@ -91,7 +93,7 @@ const inputMode = computed(() => {
             :required="field.required"
             :aria-invalid="!!error"
             :aria-describedby="describedBy"
-            :class="[control, spaced]"
+            :class="[control, !compact && spaced]"
             @change="emit('update:modelValue', $event.target.value)"
         >
             <option value="">— Select —</option>
@@ -111,7 +113,7 @@ const inputMode = computed(() => {
             @input="emit('update:modelValue', $event.target.value)"
         />
 
-        <div v-else class="relative mt-1">
+        <div v-else class="relative" :class="!compact && 'mt-1'">
             <span
                 v-if="field.prefix"
                 class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-text-muted"
@@ -146,7 +148,7 @@ const inputMode = computed(() => {
             </datalist>
         </div>
 
-        <p v-if="field.help && !error" :id="helpId" class="mt-1 text-xs text-text-muted">{{ field.help }}</p>
+        <p v-if="field.help && !error && !compact" :id="helpId" class="mt-1 text-xs text-text-muted">{{ field.help }}</p>
         <p v-if="error" :id="errorId" class="mt-1 text-xs text-danger-fg">{{ error }}</p>
     </div>
 </template>
