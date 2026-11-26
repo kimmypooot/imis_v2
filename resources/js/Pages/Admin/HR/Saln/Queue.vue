@@ -53,7 +53,7 @@ const columns = [
     <div class="space-y-6">
         <Card v-if="canManage" title="Receive a hard copy" icon="documentText" description="Type the reference printed at the foot of each page. The latest printout is received.">
             <form class="flex flex-wrap items-end gap-3" @submit.prevent="receive">
-                <TextInput id="receive-reference" v-model="receiving.reference" label="Reference" required helper-text="For example SALN-2025-00042." class="min-w-64" :error="receiving.errors.reference" />
+                <TextInput id="receive-reference" v-model="receiving.reference" label="Reference" required placeholder="SALN-2025-00042" class="min-w-64" :error="receiving.errors.reference" />
                 <Button type="submit" :loading="receiving.processing">Receive</Button>
             </form>
         </Card>

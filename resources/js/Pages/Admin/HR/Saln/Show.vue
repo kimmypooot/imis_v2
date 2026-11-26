@@ -127,7 +127,7 @@ function columnsOf(section) {
             <Card v-for="section in sections" :key="section.title" :title="section.title" icon="clipboard">
                 <p v-if="section.none" class="text-sm text-text-muted">{{ section.none }}</p>
                 <p v-else-if="!section.rows.length" class="text-sm text-text-muted">None declared.</p>
-                <DataTable v-else :columns="section.columns" :rows="section.rows" row-key="_row" :caption="section.title" :export-name="`imis-saln-${saln.reference}`" :numbered="false" :searchable="false" density="compact">
+                <DataTable v-else :columns="section.columns" :page-size-select="false" :rows="section.rows" row-key="_row" :caption="section.title" :export-name="`imis-saln-${saln.reference}`" :numbered="false" :searchable="false" density="compact">
                     <template v-for="fold in section.folds ?? []" :key="fold.key" #[`cell-${fold.key}`]="{ row }">
                         <CellFacts wrap class="tabular-nums" :facts="factsOf(section, fold, row)" />
                     </template>

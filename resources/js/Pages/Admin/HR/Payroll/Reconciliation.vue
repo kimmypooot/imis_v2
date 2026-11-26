@@ -4,6 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
@@ -83,16 +84,7 @@ const signed = (amount) => `${amount > 0 ? '+' : '−'}${formatPeso(Math.abs(amo
                 <div><dt class="text-text-muted">On the payroll, not the workbook</dt><dd class="text-lg font-semibold tabular-nums text-text">{{ result.summary.only_in_imis }}</dd></div>
             </dl>
 
-            <div class="mt-4 flex flex-wrap gap-1" role="group" aria-label="Show">
-                <button
-                    v-for="option in [{ key: 'differences', label: 'Differences only' }, { key: 'all', label: 'Everyone' }]"
-                    :key="option.key"
-                    type="button"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium"
-                    :class="show === option.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                    @click="show = option.key"
-                >{{ option.label }}</button>
-            </div>
+            <FilterButtons v-model="show" class="mt-4" label="Show" :options="[{ value: 'differences', label: 'Differences only' }, { value: 'all', label: 'Everyone' }]" />
 
             <DataTable class="mt-3" :columns="columns" :rows="rows" :caption="`Workbook against payroll, ${run.period}`" :export-name="`imis-reconciliation-${run.month}`" numbered>
                 <template #cell-name="{ row }">

@@ -208,20 +208,7 @@ const field = 'mt-1 block w-full';
             <div>
                 <TextInput id="entry-date" v-model="entry.entry_date" type="date" label="As of" required :error="entry.errors.entry_date" />
             </div>
-            <div>
-                <InputLabel for="entry-amount" required>Days</InputLabel>
-                <input
-                    id="entry-amount"
-                    v-model="entry.amount"
-                    type="number"
-                    step="0.001"
-                    required
-                    :aria-invalid="!!entry.errors.amount"
-                    class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-                />
-                <p class="mt-1 text-xs text-text-muted">An adjustment can be negative (a deduction).</p>
-                <InputError :message="entry.errors.amount" />
-            </div>
+            <TextInput id="entry-amount" v-model="entry.amount" type="number" step="0.001" label="Days" required helper-text="An adjustment can be negative (a deduction)." :error="entry.errors.amount" />
             <div class="sm:col-span-2">
                 <TextInput id="entry-particulars" v-model="entry.particulars" label="Particulars (e.g. Balance carried over from the paper leave card)" required :error="entry.errors.particulars" />
             </div>
@@ -252,20 +239,7 @@ const field = 'mt-1 block w-full';
                 {{ correcting.code }} {{ correcting.amount > 0 ? '+' : '' }}{{ correcting.amount }} on {{ formatCalendarDate(correcting.date) }} — {{ correcting.particulars }}.
                 The entry is reversed and the right amount posted, both dated today; the original stays on the card.
             </p>
-            <div>
-                <InputLabel for="correct-amount" required>Right amount (days)</InputLabel>
-                <input
-                    id="correct-amount"
-                    v-model="correction.amount"
-                    type="number"
-                    step="0.001"
-                    required
-                    :aria-invalid="!!correction.errors.amount"
-                    class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-                />
-                <p class="mt-1 text-xs text-text-muted">Negative for a deduction, as on the card.</p>
-                <InputError :message="correction.errors.amount" />
-            </div>
+            <TextInput id="correct-amount" v-model="correction.amount" type="number" step="0.001" label="Right amount (days)" required helper-text="Negative for a deduction, as on the card." :error="correction.errors.amount" />
             <TextInput id="correct-reason" v-model="correction.reason" label="Reason" required :error="correction.errors.reason" />
         </form>
         <template #footer>
@@ -283,18 +257,16 @@ const field = 'mt-1 block w-full';
             <div v-for="group in [{ key: 'vl', label: 'Vacation leave' }, { key: 'sl', label: 'Sick leave' }]" :key="group.key">
                 <p class="text-sm font-medium text-text">{{ group.label }}</p>
                 <div class="mt-1 grid gap-3" :class="isForward ? 'sm:grid-cols-1' : 'sm:grid-cols-3'">
-                    <div v-for="figureField in isForward ? monthFields.filter((item) => item.key === 'balance') : monthFields" :key="figureField.key">
-                        <InputLabel :for="`month-${group.key}-${figureField.key}`">{{ figureField.label }}</InputLabel>
-                        <input
-                            :id="`month-${group.key}-${figureField.key}`"
-                            v-model="monthForm[`${group.key}_${figureField.key}`]"
-                            type="number"
-                            step="0.001"
-                            :aria-invalid="!!monthForm.errors[`${group.key}_${figureField.key}`]"
-                            class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-                        />
-                        <InputError :message="monthForm.errors[`${group.key}_${figureField.key}`]" />
-                    </div>
+                    <TextInput
+                        v-for="figureField in isForward ? monthFields.filter((item) => item.key === 'balance') : monthFields"
+                        :id="`month-${group.key}-${figureField.key}`"
+                        :key="figureField.key"
+                        v-model="monthForm[`${group.key}_${figureField.key}`]"
+                        type="number"
+                        step="0.001"
+                        :label="figureField.label"
+                        :error="monthForm.errors[`${group.key}_${figureField.key}`]"
+                    />
                 </div>
             </div>
             <TextInput v-if="!isForward" id="month-particulars" v-model="monthForm.particulars" label="Particulars" :error="monthForm.errors.particulars" />

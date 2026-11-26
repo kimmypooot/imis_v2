@@ -4,6 +4,7 @@ import { Head } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
@@ -60,19 +61,7 @@ const columns = [
 
     <Card title="Loans" icon="key" :description="`${rows.length} shown · ${formatPeso(outstanding)} outstanding`">
         <template #actions>
-            <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
-                <button
-                    v-for="option in filters"
-                    :key="option.value"
-                    type="button"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium"
-                    :class="filter === option.value ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                    :aria-pressed="filter === option.value"
-                    @click="filter = option.value"
-                >
-                    {{ option.label }} ({{ count(option.value) }})
-                </button>
-            </div>
+            <FilterButtons v-model="filter" label="Show" :options="filters.map((option) => ({ value: option.value, label: option.label, count: count(option.value) }))" />
         </template>
 
         <DataTable :columns="columns" :rows="rows" caption="Loans" :export-name="`imis-loans-${filter}`" empty-text="No loans here.">

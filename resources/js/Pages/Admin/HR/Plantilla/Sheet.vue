@@ -5,6 +5,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
@@ -76,19 +77,7 @@ const discard = () => router.delete('/admin/hr/plantilla-sheet');
 
         <Card v-if="upload && summary" :title="`2. Review: ${upload.name}`" icon="clipboard">
             <template #actions>
-                <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
-                    <button
-                        v-for="option in [{ key: 'changes', label: 'Changes and errors' }, { key: 'errors', label: 'Errors only' }, { key: 'all', label: 'All rows' }]"
-                        :key="option.key"
-                        type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium"
-                        :class="show === option.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                        :aria-pressed="show === option.key"
-                        @click="show = option.key"
-                    >
-                        {{ option.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="show" label="Show" :options="[{ value: 'changes', label: 'Changes and errors' }, { value: 'errors', label: 'Errors only' }, { value: 'all', label: 'All rows' }]" />
             </template>
 
             <p class="text-sm text-text">

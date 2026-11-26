@@ -269,7 +269,7 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                         or <strong>User Access</strong>. A role can have its own launch URL (e.g. an admin page).
                     </p>
 
-                    <DataTable :columns="roleColumns" :rows="system.roles" :caption="`Roles in ${system.name}`" :export-name="`imis-system-roles-${system.id}`" :numbered="false" :searchable="false" :exportable="false" density="compact" :row-class="(role) => (editingRoleId === role.id ? 'bg-info-bg/40' : undefined)" empty-text="No roles yet — add the first one below.">
+                    <DataTable :columns="roleColumns" :page-size-select="false" :rows="system.roles" :caption="`Roles in ${system.name}`" :export-name="`imis-system-roles-${system.id}`" :numbered="false" :searchable="false" :exportable="false" density="compact" :row-class="(role) => (editingRoleId === role.id ? 'bg-info-bg/40' : undefined)" empty-text="No roles yet — add the first one below.">
                         <template #cell-name="{ row }">
                             <div class="font-medium text-text">{{ row.name }}</div>
                             <div v-if="row.description" class="text-xs text-text-muted">{{ row.description }}</div>

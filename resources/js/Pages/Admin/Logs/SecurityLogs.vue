@@ -42,7 +42,7 @@ const columns = [
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Top failing IPs" description="Failed sign-ins in the last 7 days" icon="shield" class="xl:col-span-1">
-            <DataTable :columns="ipColumns" :rows="topIps" row-key="ip_address" caption="IP addresses with the most failed sign-ins in the last 7 days" export-name="imis-failing-ips" :numbered="false" :searchable="false" :exportable="false" empty-text="No failed sign-ins this week.">
+            <DataTable :columns="ipColumns" :page-size-select="false" :rows="topIps" row-key="ip_address" caption="IP addresses with the most failed sign-ins in the last 7 days" export-name="imis-failing-ips" :numbered="false" :searchable="false" :exportable="false" empty-text="No failed sign-ins this week.">
                 <template #cell-ip_address="{ row }"><span class="font-mono text-xs">{{ row.ip_address }}</span></template>
                 <template #cell-attempts="{ row }">
                     <Badge pill :tone="row.attempts >= 5 ? 'danger' : 'warning'">{{ row.attempts }}</Badge>

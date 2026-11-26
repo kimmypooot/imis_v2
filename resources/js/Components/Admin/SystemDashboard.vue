@@ -127,7 +127,7 @@ const noAccessColumns = [
         <!-- Row 4: top systems + users without access -->
         <div class="grid gap-4 xl:grid-cols-12">
             <Card v-if="dashboard.accessBySystem" title="Top Systems" icon="grid" class="xl:col-span-5">
-                <DataTable :columns="topColumns" :rows="dashboard.accessBySystem.top" caption="Systems with the most people assigned" export-name="imis-top-systems" :searchable="false" :exportable="false" density="compact" empty-text="No systems yet.">
+                <DataTable :columns="topColumns" :page-size-select="false" :rows="dashboard.accessBySystem.top" caption="Systems with the most people assigned" export-name="imis-top-systems" :searchable="false" :exportable="false" density="compact" empty-text="No systems yet.">
                     <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
                     <template #cell-assigned="{ row }"><span class="tabular-nums">{{ row.assigned }}</span></template>
                 </DataTable>

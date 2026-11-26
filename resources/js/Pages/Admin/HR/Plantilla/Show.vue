@@ -191,7 +191,7 @@ const field = 'mt-1 block w-full';
         </Card>
 
         <Card title="Holders" icon="users" description="Every period of service on this item, newest first.">
-            <DataTable :columns="holderColumns" :rows="history" :caption="`Holders of ${item.item_number}`" :export-name="`imis-plantilla-holders-${item.item_number}`" :numbered="false" :searchable="false" empty-text="Nobody has held this item yet.">
+            <DataTable :columns="holderColumns" :page-size-select="false" :rows="history" :caption="`Holders of ${item.item_number}`" :export-name="`imis-plantilla-holders-${item.item_number}`" :numbered="false" :searchable="false" empty-text="Nobody has held this item yet.">
                 <template #cell-name="{ row }">
                     <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="row.status_label ? `${row.status_label} · ${row.nature_label}` : row.nature_label">
                         <StatusBadge v-if="row.current" status="active" label="Current" class="mt-1" />

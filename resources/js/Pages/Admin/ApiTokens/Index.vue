@@ -121,6 +121,7 @@ const copy = async () => {
 
             <DataTable
                 :columns="tokenColumns"
+                :page-size-select="false"
                 :rows="integration.tokens"
                 :caption="`Tokens issued for ${integration.label}`"
                 :export-name="`imis-tokens-${integration.value}`"

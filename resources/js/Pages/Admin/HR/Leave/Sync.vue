@@ -5,6 +5,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
@@ -119,19 +120,7 @@ const discard = () => router.delete('/admin/hr/leave/sync');
 
         <Card v-if="upload && summary" :title="`2. Review: ${upload.name}`" icon="clipboard">
             <template #actions>
-                <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
-                    <button
-                        v-for="option in [{ key: 'attention', label: 'Needs attention' }, { key: 'all', label: 'Everyone' }]"
-                        :key="option.key"
-                        type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium"
-                        :class="show === option.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                        :aria-pressed="show === option.key"
-                        @click="show = option.key"
-                    >
-                        {{ option.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="show" label="Show" :options="[{ value: 'attention', label: 'Needs attention' }, { value: 'all', label: 'Everyone' }]" />
             </template>
 
             <p class="text-sm text-text">

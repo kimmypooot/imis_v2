@@ -266,7 +266,7 @@ const recentColumns = [
                 No more {{ stopping.type }} deductions after this date. The balance ({{ formatPeso(stopping.balance) }}) stays on record, and the loan can be resumed.
             </p>
             <TextInput id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" label="Last day deducted" required :error="stopForm.errors.stopped_on" />
-            <TextInput id="loan-stop-reason" v-model="stopForm.reason" label="Reason (optional)" :error="stopForm.errors.reason" />
+            <TextInput id="loan-stop-reason" v-model="stopForm.reason" label="Reason (optional)" maxlength="500" :error="stopForm.errors.reason" />
         </form>
         <template #footer>
             <Button variant="secondary" @click="stopping = null" icon="close">Cancel</Button>
@@ -295,7 +295,7 @@ const recentColumns = [
                 IMIS records what payrolls take; it does not collect or remit anything. “Confirmed” is on a finalized payroll, “Paid” is when HR marks it remitted,
                 and “Overdue” is confirmed but not marked paid 30 days after release.
             </p>
-            <DataTable :columns="scheduleColumns" :rows="scheduled.schedule.rows" row-key="month" :caption="`Installments of ${scheduled.type}`" :export-name="`imis-loan-schedule`" :numbered="false" :searchable="false" density="compact" empty-text="Nothing is scheduled: the loan is complete, suspended or cancelled.">
+            <DataTable :columns="scheduleColumns" :page-size-select="false" :rows="scheduled.schedule.rows" row-key="month" :caption="`Installments of ${scheduled.type}`" :export-name="`imis-loan-schedule`" :numbered="false" :searchable="false" density="compact" empty-text="Nothing is scheduled: the loan is complete, suspended or cancelled.">
                 <template #cell-amount="{ row }"><span class="tabular-nums">{{ formatPeso(row.amount) }}</span></template>
                 <template #cell-status="{ row }">
                     <StatusBadge :status="scheduleTones[row.status]" :label="row.status_label" />

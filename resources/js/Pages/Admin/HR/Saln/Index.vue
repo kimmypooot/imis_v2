@@ -104,7 +104,7 @@ const columns = [
 
     <Card v-if="exempting" title="Exempt from filing" icon="shield" :description="`${exempting.name}, for ${exemption.year}. For example a laborer position or an honorary role.`" class="mb-6">
         <form class="flex flex-wrap items-end gap-3" @submit.prevent="saveExempt">
-            <TextInput id="exempt-reason" v-model="exemption.reason" label="Reason" required class="min-w-64 flex-1" :error="exemption.errors.reason" />
+            <TextInput id="exempt-reason" v-model="exemption.reason" label="Reason" required maxlength="255" class="min-w-64 flex-1" :error="exemption.errors.reason" />
             <Button type="submit" :loading="exemption.processing">Record exemption</Button>
             <Button variant="ghost" @click="exempting = null">Cancel</Button>
         </form>

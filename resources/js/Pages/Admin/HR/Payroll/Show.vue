@@ -403,11 +403,9 @@ const taxColumns = [
                 <FormGroup v-if="!addForm.pay_component_id" id="add-kind" label="Kind" class="sm:col-span-3">
                     <Select id="add-kind" v-model="addForm.kind" :options="[{ value: 'earning', label: 'Earning' }, { value: 'deduction', label: 'Deduction' }]" />
                 </FormGroup>
-                <TextInput v-if="!addForm.pay_component_id" id="add-label" v-model="addForm.label" label="Label" helper-text="For example, Absences (2 days)." :error="addForm.errors.label" class="sm:col-span-4" />
-                <FormGroup id="add-amount" label="Amount" required :error="addForm.errors.amount || addForm.errors.run" class="sm:col-span-2">
-                    <input id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" required class="block w-full form-control px-3 py-2 text-right" />
-                </FormGroup>
-                <TextInput id="add-reason" v-model="addForm.reason" label="Reason (optional)" :error="addForm.errors.reason" class="sm:col-span-6" />
+                <TextInput v-if="!addForm.pay_component_id" id="add-label" v-model="addForm.label" label="Label" maxlength="120" placeholder="e.g. Absences (2 days)" :error="addForm.errors.label" class="sm:col-span-4" />
+                <TextInput id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" label="Amount" required :error="addForm.errors.amount || addForm.errors.run" class="sm:col-span-2" />
+                <TextInput id="add-reason" v-model="addForm.reason" label="Reason (optional)" maxlength="500" :error="addForm.errors.reason" class="sm:col-span-6" />
                 <div class="flex items-end sm:col-span-6">
                     <Button type="submit" size="sm" variant="success" :loading="addForm.processing"><Icon name="plus" size="sm" />Add line</Button>
                 </div>

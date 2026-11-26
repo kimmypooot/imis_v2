@@ -4,6 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
@@ -138,19 +139,7 @@ const remove = async (contract) => {
 
         <Card title="Personnel" icon="users">
             <template #actions>
-                <div class="flex flex-wrap gap-1" role="group" aria-label="Status">
-                    <button
-                        v-for="tab in statusTabs"
-                        :key="tab.key"
-                        type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium"
-                        :class="status === tab.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                        :aria-pressed="status === tab.key"
-                        @click="status = tab.key"
-                    >
-                        {{ tab.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="status" label="Status" :options="statusTabs.map((tab) => ({ value: tab.key, label: tab.label }))" />
             </template>
 
             <DataTable :columns="columns" :rows="shown" caption="Non-plantilla personnel" :export-name="`imis-non-plantilla-${status}`" :numbered="false" empty-text="No one here.">

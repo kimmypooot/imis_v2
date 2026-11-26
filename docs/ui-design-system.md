@@ -112,6 +112,13 @@ line above its value), as on Age & Service, and drop the "#" column
 column with `hidden: true` (searched and exported, not drawn) and mark the
 folded display column `export: false`.
 
+A short list (a handful of rows) takes `:page-size-select="false"` to drop
+the "Show N entries" picker. To pick one view of a list ("Pending",
+"Approved"…), put `FilterButtons` in the Card's actions instead of
+hand-built toggle buttons; Tabs are for panels that swap whole content.
+Number fields use `TextInput` with `step` (e.g. `step="0.01"` for pesos),
+`min` and `max`; without `step` the browser rejects decimals.
+
 ## Reusing this in other hub systems
 
 Copy, in this order, so the look stays identical: the `@theme` block, `@utility`

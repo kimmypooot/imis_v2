@@ -5,6 +5,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
@@ -85,19 +86,7 @@ const columns = [
 
     <Card title="Requests" icon="database">
         <template #actions>
-            <div class="flex flex-wrap gap-1" role="group" aria-label="Status">
-                <button
-                    v-for="tab in tabs"
-                    :key="tab"
-                    type="button"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium"
-                    :class="status === tab ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                    :aria-pressed="status === tab"
-                    @click="show(tab)"
-                >
-                    {{ tab.charAt(0).toUpperCase() + tab.slice(1) }} ({{ counts[tab] ?? 0 }})
-                </button>
-            </div>
+            <FilterButtons :model-value="status" label="Status" :options="tabs.map((tab) => ({ value: tab, label: tab.charAt(0).toUpperCase() + tab.slice(1), count: counts[tab] ?? 0 }))" @update:model-value="show" />
         </template>
 
         <DataTable :columns="columns" :rows="requests" caption="Leave monetization requests" :export-name="`imis-monetization-${status}`" :numbered="false" :empty-text="`No ${status} requests.`">

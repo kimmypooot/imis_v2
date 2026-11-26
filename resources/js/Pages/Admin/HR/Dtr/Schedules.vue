@@ -211,7 +211,7 @@ const assignmentColumns = computed(() => [
     <template #schedules>
     <div class="space-y-6 pt-4">
         <Card title="Schedules" icon="clock">
-            <DataTable :columns="scheduleColumns" :rows="schedules" caption="Work schedules" export-name="imis-work-schedules" :numbered="false" :searchable="false" empty-text="No schedules yet.">
+            <DataTable :columns="scheduleColumns" :page-size-select="false" :rows="schedules" caption="Work schedules" export-name="imis-work-schedules" :numbered="false" :searchable="false" empty-text="No schedules yet.">
                 <template #cell-name="{ row }"><span class="font-medium text-text">{{ row.name }}</span></template>
                 <template #cell-start_time="{ row }"><span class="tabular-nums">{{ row.start_time }}</span></template>
                 <template #cell-latest_arrival="{ row }"><span class="tabular-nums">{{ row.latest_arrival }}</span></template>
@@ -230,12 +230,12 @@ const assignmentColumns = computed(() => [
 
         <Card v-if="canManage" :title="editing ? 'Edit the schedule' : 'Add a schedule'" icon="plus">
             <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" @submit.prevent="saveSchedule">
-                <TextInput id="sched-name" v-model="scheduleForm.name" label="Name" required :error="scheduleForm.errors.name" class="sm:col-span-2 lg:col-span-3" />
+                <TextInput id="sched-name" v-model="scheduleForm.name" label="Name" required maxlength="120" :error="scheduleForm.errors.name" class="sm:col-span-2 lg:col-span-3" />
                 <TextInput id="sched-start" v-model="scheduleForm.start_time" type="time" label="Work starts" required :error="scheduleForm.errors.start_time" />
                 <TextInput id="sched-late" v-model="scheduleForm.latest_arrival" type="time" label="Late after" required :error="scheduleForm.errors.latest_arrival" />
-                <TextInput id="sched-minutes" v-model="scheduleForm.required_minutes" type="number" label="Full day (minutes)" required helper-text="1 to 1440." :error="scheduleForm.errors.required_minutes" />
+                <TextInput id="sched-minutes" v-model="scheduleForm.required_minutes" type="number" min="1" max="1440" label="Full day (minutes)" required :error="scheduleForm.errors.required_minutes" />
                 <TextInput id="sched-break-start" v-model="scheduleForm.break_start" type="time" label="Break starts (blank for none)" :error="scheduleForm.errors.break_start" />
-                <TextInput id="sched-break-minutes" v-model="scheduleForm.break_minutes" type="number" label="Break (minutes)" :error="scheduleForm.errors.break_minutes" />
+                <TextInput id="sched-break-minutes" v-model="scheduleForm.break_minutes" type="number" min="0" max="600" label="Break (minutes)" :error="scheduleForm.errors.break_minutes" />
                 <CheckboxGroup id="sched-rest" v-model="scheduleForm.rest_weekdays" legend="Rest days besides the weekend" :options="weekdays" :error="scheduleForm.errors['rest_weekdays.0'] || scheduleForm.errors.rest_weekdays" />
                 <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
                     <Button type="submit" :loading="scheduleForm.processing">{{ editing ? 'Save' : 'Add schedule' }}</Button>
