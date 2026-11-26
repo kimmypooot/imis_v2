@@ -43,10 +43,13 @@ class MyLeaveApplicationController extends Controller
 
         abort_if($returned && $request->user()->cannot('update', $returned), 403);
 
-        // Types that don't concern this person (Solo Parent Leave for non-solo parents) aren't offered;
-        // the type of an application being resubmitted always is.
+        // Types that don't concern this person (Solo Parent Leave for non-solo parents, a leave for
+        // the other sex) aren't offered; the type of an application being resubmitted always is.
+        // The rest they can't file yet are listed apart, with a short reason.
         $types = LeaveType::query()->active()->ordered()->get();
         $shown = $credits->shownTypeIds($employee, $types);
+        $reasons = $types->mapWithKeys(fn (LeaveType $type) => [$type->id => $credits->shortReason($employee, $type)]);
+        $shown = array_values(array_filter($shown, fn (int $id) => ! ($reasons[$id]['permanent'] ?? false)));
 
         $prefill = $request->filled('date_from') && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('date_from'))
             ? ['date_from' => $request->query('date_from'), 'date_to' => $request->query('date_from')]
@@ -69,6 +72,7 @@ class MyLeaveApplicationController extends Controller
                 'event_label' => $type->event_label,
                 'event_window_days' => $type->event_window_days,
                 'ineligible' => $credits->ineligibilityReasons($employee, $type),
+                'unavailable' => $reasons[$type->id]['label'] ?? null,
             ]),
             'detailOptions' => LeaveDetail::optionsByCode(),
             'maxChosenDates' => LeaveApplications::MAX_CHOSEN_DATES,

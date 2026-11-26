@@ -64,9 +64,15 @@ const form = useForm({
 });
 
 const type = computed(() => props.types.find((option) => option.id === Number(form.leave_type_id)) ?? null);
-const typeOptions = computed(() =>
-    props.types.map((option) => ({ value: option.id, label: option.ineligible.length ? `${option.name} — not available to you` : option.name })),
-);
+// Types you can file first; the ones you can't yet are greyed out in their own group, each with a short reason.
+const typeOptions = computed(() => {
+    const available = props.types.filter((option) => !option.ineligible.length).map((option) => ({ value: option.id, label: option.name }));
+    const unavailable = props.types
+        .filter((option) => option.ineligible.length)
+        .map((option) => ({ value: option.id, label: `${option.name} — ${option.unavailable ?? 'not available to you'}`, disabled: true }));
+
+    return unavailable.length ? [...available, { label: 'Not available to you', options: unavailable }] : available;
+});
 const details = computed(() => (type.value ? (props.detailOptions[type.value.code] ?? []) : []));
 const detail = computed(() => details.value.find((option) => option.value === form.detail) ?? null);
 
