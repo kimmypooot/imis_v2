@@ -131,8 +131,6 @@ export const portalNavItems = [
         group: 'Management',
         items: [
             { label: 'Executive Dashboard', href: '/executive', icon: 'chartBar', permission: 'executive.view' },
-            { label: 'HR Management', href: '/admin/hr', icon: 'clipboard', permission: hrAccessPermissions },
-            { label: 'Administration', href: '/admin', icon: 'shield', permission: adminAccessPermissions },
         ],
     },
 ];

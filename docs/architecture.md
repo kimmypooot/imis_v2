@@ -2361,13 +2361,15 @@ administrators, and system administrators don't need HR's personal data.
   `adminAccessPermissions` and `hrAccessPermissions`. Either gate shows
   `administrative`-visibility directory entries
   (`HasPortalVisibility::seesAdministrative`), as before the split.
-- **Entry points:** the portal's Management group and the account menu
-  list **HR Management** and **Administration**, each only with its gate.
+- **Entry points:** a **Me · HR · Admin** switcher at the top of every
+  sidebar (`Components/Navigation/AreaSwitcher.vue`, in AppShell's
+  `sidebar-header` slot, used by both PortalLayout and AdminLayout). Me is
+  your own pages (`/dashboard`); HR and Admin show only with their gate,
+  and with neither the switcher is hidden. HR staff get Me · HR, so they
+  move between their own records and HR work in one click.
 - **Sidebar:** `AdminLayout` picks `hrNavItems` for any `/admin/hr` URL and
-  `adminNavItems` otherwise. HR URLs stayed under `/admin/hr`. People with
-  both areas (e.g. Super Administrator) get an Admin | HR switcher at the
-  top of the sidebar (AppShell's `sidebar-header` slot). HR breadcrumbs
-  start at **Human Resources** (`/admin/hr`), not `/admin`.
+  `adminNavItems` otherwise. HR URLs stayed under `/admin/hr`. HR
+  breadcrumbs start at **Human Resources** (`/admin/hr`), not `/admin`.
 - **Banner:** both dashboards share `Components/Admin/DashboardBanner.vue`.
 
 ### HR dashboard

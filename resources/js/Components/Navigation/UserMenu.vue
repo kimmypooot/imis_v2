@@ -15,7 +15,7 @@ import { formatDateTime } from '../../Utils/datetime';
  * The account menu: who you are and when you last signed in, your account
  * and feedback links, and
  * Sign out (confirmed, then the "Signing Out" splash carries you to the
- * login page). HR Management and Administration live in the sidebar.
+ * login page). HR and Administration are switched to at the top of the sidebar.
  */
 const { theme, setTheme } = useTheme();
 const themeOptions = [

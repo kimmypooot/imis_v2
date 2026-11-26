@@ -26,6 +26,7 @@ return [
                         'Open IMIS and sign in with your username (not your email) and password.',
                         'The dashboard greets you and lists the systems you may open. Click one to launch it without signing in again.',
                         'Use the menu button at the top left to show or hide the side navigation.',
+                        'If you work in HR or administer IMIS, switch areas at the top of the side navigation: Me for your own records, leave and pay, HR for Human Resources work, Admin for administration.',
                         'Use the search box in the header to find systems, services, offices and people.',
                         'Open your account menu (top right) for account settings, feedback and signing out.',
                     ],

@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'Switch areas in one click: the top of the side navigation now offers Me (your own records, leave and pay), HR and Admin, each shown only if you have access. HRD staff move between their own pages and HR work without scrolling to the bottom of the menu.'],
             ['improvement', 'The home page\'s Notifications tile, which repeated the bell, is now "Late & undertime": this month\'s total so far, and a reminder when last month\'s DTR is waiting for your signature.'],
             ['improvement', 'Staff pages match the rest of IMIS: the filter tiles on My Leave Applications and My Feedback, the filter chips on Notifications, What\'s New, Payslip Approvals and the training log, and the leave card\'s view switch all look and work the same way.'],
             ['improvement', 'DTR entries to verify is a table with each person\'s photo: tick several days and verify them together. Payslip Approvals shows each requester\'s photo.'],
