@@ -4,6 +4,7 @@ use Database\Seeders\HrRoleSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -24,6 +25,11 @@ return new class extends Migration
             $table->foreignId('returned_by')->nullable()->after('returned_at')->constrained('users')->nullOnDelete();
             $table->string('accounting_note', 1000)->nullable()->after('returned_by');
         });
+
+        // A fresh database gets its roles and permissions from db:seed; this only updates a seeded install.
+        if (! DB::table('roles')->where('name', 'super-admin')->exists()) {
+            return;
+        }
 
         (new RolePermissionSeeder)->run();
         (new HrRoleSeeder)->run();
