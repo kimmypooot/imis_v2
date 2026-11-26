@@ -35,6 +35,9 @@ class LeaveFormWorkbook
 
     private const EMU_PER_PX = 9525;
 
+    /** The check boxes' legacy drawing, which older Excel and LibreOffice read. */
+    private const VML = 'xl/drawings/vmlDrawing1.vml';
+
     /** Paper size 14 is Folio, 8.5 × 13 in. */
     private const FOLIO = '14';
 
@@ -104,8 +107,11 @@ class LeaveFormWorkbook
             $this->folio($instructions);
             $zip->addFromString('xl/worksheets/sheet2.xml', $instructions->saveXML());
 
-            $this->tick($zip, $controls, $this->ticks($form));
-            $this->stretchVml($zip);
+            // The legacy VML is read once, changed in memory by both steps, and
+            // written once: an entry replaced in an open archive can't be read back.
+            $vml = (string) $zip->getFromName(self::VML);
+            $vml = $this->tick($zip, $controls, $this->ticks($form), $vml);
+            $zip->addFromString(self::VML, $this->stretchVml($vml));
 
             $drawing = $this->load($zip, 'xl/drawings/drawing1.xml');
             $this->fillTextBoxes($drawing, $form);
@@ -339,10 +345,9 @@ class LeaveFormWorkbook
     }
 
     /** The legacy (VML) check boxes: anchor = col, px, row, px, col, px, row, px. */
-    private function stretchVml(ZipArchive $zip): void
+    private function stretchVml(string $vml): string
     {
-        $vml = (string) $zip->getFromName('xl/drawings/vmlDrawing1.vml');
-        $vml = preg_replace_callback('/<x:Anchor>(.*?)<\/x:Anchor>/s', function (array $match) {
+        return preg_replace_callback('/<x:Anchor>(.*?)<\/x:Anchor>/s', function (array $match) {
             $parts = array_map('intval', explode(',', $match[1]));
             if (count($parts) === 8) {
                 $parts[3] = (int) round($parts[3] * $this->stretch);
@@ -351,7 +356,6 @@ class LeaveFormWorkbook
 
             return '<x:Anchor>'.implode(', ', $parts).'</x:Anchor>';
         }, $vml) ?? $vml;
-        $zip->addFromString('xl/drawings/vmlDrawing1.vml', $vml);
     }
 
     // ── Check boxes ──────────────────────────────────────────────────
@@ -410,10 +414,10 @@ class LeaveFormWorkbook
      *
      * @param  array<string, array{part: string, shape: string}>  $controls
      * @param  array<int, string>  $ticks
+     * @return string the VML, with the boxes set
      */
-    private function tick(ZipArchive $zip, array $controls, array $ticks): void
+    private function tick(ZipArchive $zip, array $controls, array $ticks, string $vml): string
     {
-        $vml = (string) $zip->getFromName('xl/drawings/vmlDrawing1.vml');
 
         foreach (self::BOXES as $name => $meaning) {
             $control = $controls[$name] ?? null;
@@ -437,7 +441,7 @@ class LeaveFormWorkbook
             ) ?? $vml;
         }
 
-        $zip->addFromString('xl/drawings/vmlDrawing1.vml', $vml);
+        return $vml;
     }
 
     // ── Text boxes ───────────────────────────────────────────────────
