@@ -11,6 +11,11 @@ import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../../../Utils/datetime';
 
@@ -101,6 +106,19 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 const absenceText = (row) =>
     [row.absences ? plural(row.absences, 'absence') : null, row.half_day_absences ? `${plural(row.half_day_absences, 'half-day absence')}` : null].filter(Boolean).join(' and ');
 const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 0));
+
+// Minutes and days fold into one cell; hidden columns keep each figure in the export.
+const columns = computed(() => [
+    { key: 'name', label: 'Employee' },
+    { key: 'time', label: 'Tardiness & undertime', sortable: false, export: false },
+    { key: 'available', label: 'VL at month end', align: 'right', value: (row) => days(row.available) },
+    { key: 'charge', label: 'Charge', sortable: false, value: (row) => (row.deduction ? `Charged ${days(row.deduction.days)} to ${row.deduction.type}` : row.card_managed ? 'On the workbook' : 'Not charged') },
+    ...(props.canManage ? [{ key: 'actions', label: '', sortable: false, export: false, align: 'right' }] : []),
+    { key: 'late_minutes', label: 'Late', hidden: true, value: (row) => hm(row.late_minutes) },
+    { key: 'undertime_minutes', label: 'Undertime', hidden: true, value: (row) => hm(row.undertime_minutes) },
+    { key: 'minutes', label: 'Total', hidden: true, value: (row) => hm(row.minutes) },
+    { key: 'days', label: 'Days (Table IV)', hidden: true, value: (row) => (row.minutes ? days(row.days) : '') },
+]);
 </script>
 
 <template>
@@ -181,83 +199,68 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
             <p v-else-if="canManage && !syncCount" class="mb-3 text-sm text-text-muted">
                 Nothing to sync: {{ workbookCount ? `${plural(workbookCount, 'employee')} ${workbookCount === 1 ? 'is' : 'are'} already covered by HR's leave card workbook (record their tardiness there), and the rest ` : 'every row ' }}{{ workbookCount ? 'are' : 'is' }} already charged, has nothing to charge, or still has unverified days.
             </p>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <caption class="sr-only">Tardiness and undertime by employee</caption>
-                    <thead class="border-b border-border text-xs text-text-muted">
-                        <tr>
-                            <th scope="col" class="py-2 pr-4 font-medium">Employee</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Late</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Undertime</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Total</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">Days (Table IV)</th>
-                            <th scope="col" class="px-3 py-2 text-right font-medium">VL at month end</th>
-                            <th scope="col" class="py-2 pl-3 font-medium">Charge</th>
-                            <th v-if="canManage" scope="col" class="py-2 pl-3 text-right font-medium"><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        <tr v-for="row in rows" :key="row.employee_id">
-                            <td class="py-2 pr-4">
-                                <a :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" class="font-medium text-link hover:underline">{{ row.name }}</a>
-                                <div v-if="row.absences || row.half_day_absences" class="text-xs text-text-muted">
-                                    {{ absenceText(row) }}, without pay: not charged here
-                                </div>
-                                <div v-if="row.entered_days.length" class="mt-1 text-xs">
-                                    <button type="button" class="text-left text-link hover:underline" :aria-expanded="opened.includes(row.employee_id)" @click="toggleOpen(row.employee_id)">
-                                        {{ plural(row.entered_days.length, 'day') }} entered by the employee{{ row.entered_minutes ? `, ${hm(row.entered_minutes)} late or short` : '' }}{{ row.unverified_days ? `; ${row.unverified_days} not verified` : '; all verified' }}
-                                    </button>
-                                    <ul v-if="opened.includes(row.employee_id)" class="mt-1 space-y-0.5 text-text-muted">
-                                        <li v-for="day in row.entered_days" :key="day.date">
-                                            {{ day.date }} · {{ day.time_in || '—' }} to {{ day.time_out || '—' }}{{ day.minutes ? ` (${day.minutes} min)` : '' }} · {{ day.remark }}
-                                            <span :class="day.verified ? 'text-success-fg' : 'text-warning-fg'">{{ day.verified ? 'Verified' : 'Not verified' }}</span>
-                                        </li>
-                                    </ul>
-                                    <ActionButton v-if="canManage && row.unverified_days" icon="check" :label="`Verify ${row.name}'s entered days as HR`" @click="verifyAsHr(row)" />
-                                </div>
-                                <div v-if="row.habitual.tardiness" class="mt-1 text-xs text-warning-fg">Possible habitual tardiness (CSC MC No. 23, s. 1998): {{ row.habitual.tardiness }}.</div>
-                                <div v-if="row.habitual.absenteeism" class="mt-1 text-xs text-warning-fg">Possible habitual absenteeism (CSC MC No. 23, s. 1998): {{ row.habitual.absenteeism }}.</div>
-                            </td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(row.late_minutes) }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(row.undertime_minutes) }}</td>
-                            <td class="px-3 py-2 text-right font-medium tabular-nums">{{ hm(row.minutes) }}</td>
-                            <td class="px-3 py-2 text-right font-medium tabular-nums">{{ row.minutes ? days(row.days) : '—' }}</td>
-                            <td class="px-3 py-2 text-right tabular-nums" :class="!row.deduction && row.without_pay > 0 ? 'text-danger-fg' : ''">
-                                {{ days(row.available) }}
-                                <div v-if="!row.deduction && row.without_pay > 0" class="text-xs">{{ days(row.without_pay) }} day without pay</div>
-                            </td>
-                            <td class="py-2 pl-3">
-                                <template v-if="row.deduction">
-                                    <span class="inline-flex rounded-full bg-success-bg px-2.5 py-0.5 text-xs font-semibold text-success-fg">Charged {{ days(row.deduction.days) }} to {{ row.deduction.type }}</span>
-                                    <div v-if="row.deduction.days_without_pay > 0" class="mt-1 text-xs text-danger-fg">{{ days(row.deduction.days_without_pay) }} day without pay: credits used up</div>
-                                    <div class="mt-1 text-xs text-text-muted">{{ formatDateTime(row.deduction.posted_at) }}</div>
-                                    <div v-if="row.deduction.dtr_changed" class="mt-1 text-xs text-warning-fg">The DTR has changed since: now {{ hm(row.minutes) }}. Reverse and charge again to correct it.</div>
-                                </template>
-                                <span v-else-if="row.card_managed" class="text-xs text-text-muted">HR's leave card workbook already covers {{ label }}: record it there.</span>
-                                <template v-else>
-                                    <span class="text-text-muted">Not charged</span>
-                                    <div v-if="row.card_pending" class="mt-1 text-xs text-text-muted">The workbook does not reach {{ label }} yet: charged here, and settled when the workbook catches up.</div>
-                                </template>
-                            </td>
-                            <td v-if="canManage" class="py-2 pl-3 text-right">
-                                <ActionButton v-if="row.deduction" icon="refresh" tone="danger" :label="`Reverse the charge for ${row.name}`" @click="openReverse(row)" />
-                                <ActionButton v-else-if="finished && row.minutes && !row.card_managed" icon="plus" :label="`Charge ${row.name}`" @click="openCharge(row)" />
-                            </td>
-                        </tr>
-                        <tr v-if="!rows.length">
-                            <td colspan="8" class="py-4 text-center text-text-muted">No tardiness or undertime for {{ label }}.</td>
-                        </tr>
-                    </tbody>
-                    <tfoot v-if="rows.length" class="border-t border-border text-xs text-text-muted">
-                        <tr>
-                            <td class="py-2 pr-4">All employees</td>
-                            <td colspan="2"></td>
-                            <td class="px-3 py-2 text-right tabular-nums">{{ hm(total) }}</td>
-                            <td colspan="4"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+            <DataTable
+                :columns="columns"
+                :rows="rows"
+                row-key="employee_id"
+                :caption="`Tardiness and undertime by employee, ${label}`"
+                :export-name="`imis-tardiness-${month}`"
+                :numbered="false"
+                :empty-text="`No tardiness or undertime for ${label}.`"
+            >
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.absences || row.half_day_absences ? `${absenceText(row)}, without pay: not charged here` : null">
+                        <div v-if="row.entered_days.length" class="mt-1 text-xs">
+                            <button type="button" class="text-left text-link hover:underline" :aria-expanded="opened.includes(row.employee_id)" @click="toggleOpen(row.employee_id)">
+                                {{ plural(row.entered_days.length, 'day') }} entered by the employee{{ row.entered_minutes ? `, ${hm(row.entered_minutes)} late or short` : '' }}{{ row.unverified_days ? `; ${row.unverified_days} not verified` : '; all verified' }}
+                            </button>
+                            <ul v-if="opened.includes(row.employee_id)" class="mt-1 space-y-0.5 text-text-muted">
+                                <li v-for="day in row.entered_days" :key="day.date">
+                                    {{ day.date }} · {{ day.time_in || '—' }} to {{ day.time_out || '—' }}{{ day.minutes ? ` (${day.minutes} min)` : '' }} · {{ day.remark }}
+                                    <span :class="day.verified ? 'text-success-fg' : 'text-warning-fg'">{{ day.verified ? 'Verified' : 'Not verified' }}</span>
+                                </li>
+                            </ul>
+                            <ActionButton v-if="canManage && row.unverified_days" icon="check" :label="`Verify ${row.name}'s entered days as HR`" @click="verifyAsHr(row)" />
+                        </div>
+                        <div v-if="row.habitual.tardiness" class="mt-1 text-xs text-warning-fg">Possible habitual tardiness (CSC MC No. 23, s. 1998): {{ row.habitual.tardiness }}.</div>
+                        <div v-if="row.habitual.absenteeism" class="mt-1 text-xs text-warning-fg">Possible habitual absenteeism (CSC MC No. 23, s. 1998): {{ row.habitual.absenteeism }}.</div>
+                    </PersonCell>
+                </template>
+                <template #cell-time="{ row }">
+                    <CellFacts
+                        class="tabular-nums"
+                        :facts="[
+                            { label: 'Late / undertime', value: `${hm(row.late_minutes)} / ${hm(row.undertime_minutes)}` },
+                            { label: 'Total', value: hm(row.minutes) },
+                            { label: 'Days (Table IV)', value: row.minutes ? days(row.days) : '—' },
+                        ]"
+                    />
+                </template>
+                <template #cell-available="{ row }">
+                    <span class="tabular-nums" :class="!row.deduction && row.without_pay > 0 ? 'text-danger-fg' : ''">{{ days(row.available) }}</span>
+                    <div v-if="!row.deduction && row.without_pay > 0" class="text-xs text-danger-fg">{{ days(row.without_pay) }} day without pay</div>
+                </template>
+                <template #cell-charge="{ row }">
+                    <template v-if="row.deduction">
+                        <Badge tone="success" pill>Charged {{ days(row.deduction.days) }} to {{ row.deduction.type }}</Badge>
+                        <div v-if="row.deduction.days_without_pay > 0" class="mt-1 text-xs text-danger-fg">{{ days(row.deduction.days_without_pay) }} day without pay: credits used up</div>
+                        <div class="mt-1 text-xs text-text-muted">{{ formatDateTime(row.deduction.posted_at) }}</div>
+                        <div v-if="row.deduction.dtr_changed" class="mt-1 text-xs text-warning-fg">The DTR has changed since: now {{ hm(row.minutes) }}. Reverse and charge again to correct it.</div>
+                    </template>
+                    <span v-else-if="row.card_managed" class="text-xs text-text-muted">HR's leave card workbook already covers {{ label }}: record it there.</span>
+                    <template v-else>
+                        <span class="text-text-muted">Not charged</span>
+                        <div v-if="row.card_pending" class="mt-1 text-xs text-text-muted">The workbook does not reach {{ label }} yet: charged here, and settled when the workbook catches up.</div>
+                    </template>
+                </template>
+                <template #cell-actions="{ row }">
+                    <span class="inline-flex">
+                        <ActionButton v-if="row.deduction" icon="refresh" tone="danger" :label="`Reverse the charge for ${row.name}`" @click="openReverse(row)" />
+                        <ActionButton v-else-if="finished && row.minutes && !row.card_managed" icon="plus" :label="`Charge ${row.name}`" @click="openCharge(row)" />
+                    </span>
+                </template>
+            </DataTable>
+            <p v-if="rows.length" class="mt-3 text-xs text-text-muted">All employees: {{ hm(total) }} of tardiness and undertime.</p>
         </Card>
     </div>
 
@@ -273,14 +276,14 @@ const total = computed(() => props.rows.reduce((sum, row) => sum + row.minutes, 
                 <InputLabel for="tardiness-charge" required>Charge to</InputLabel>
                 <Select id="tardiness-charge" v-model="charge.charge" :options="chargeOptions" required :invalid="!!charge.errors.charge" />
             </div>
-            <label v-if="charge.charge === 'SL'" class="flex items-start gap-2 text-sm text-text">
-                <input v-model="charge.health_certified" type="checkbox" class="mt-1" />
-                <span>The undertime is for health reasons, and a medical certificate and a leave application are on file.</span>
-            </label>
-            <label v-if="charging && charging.unverified_days" class="flex items-start gap-2 text-sm text-text">
-                <input v-model="charge.post_anyway" type="checkbox" class="mt-1" />
-                <span>{{ plural(charging.unverified_days, 'day') }} the employee entered {{ charging.unverified_days === 1 ? 'is' : 'are' }} not verified yet. Charge anyway. This is recorded in the audit log.</span>
-            </label>
+            <div v-if="charge.charge === 'SL'">
+                <Checkbox id="tardiness-health" v-model="charge.health_certified" label="The undertime is for health reasons" />
+                <p class="mt-1 pl-6 text-xs text-text-muted">A medical certificate and a leave application are on file.</p>
+            </div>
+            <div v-if="charging && charging.unverified_days">
+                <Checkbox id="tardiness-post-anyway" v-model="charge.post_anyway" label="Charge anyway" />
+                <p class="mt-1 pl-6 text-xs text-text-muted">{{ plural(charging.unverified_days, 'day') }} the employee entered {{ charging.unverified_days === 1 ? 'is' : 'are' }} not verified yet. This is recorded in the audit log.</p>
+            </div>
             <InputError :message="charge.errors.charge || charge.errors.month" />
         </form>
         <template #footer>

@@ -136,16 +136,8 @@ const removeAdjustment = async (row) => {
                 <InputError :message="form.errors.kind" />
             </div>
             <div v-if="form.kind === 'times'" class="grid gap-3 sm:grid-cols-2">
-                <div>
-                    <InputLabel for="adjust-in">Time in (blank to keep)</InputLabel>
-                    <input id="adjust-in" v-model="form.time_in" type="time" class="filter-control mt-1 w-full" />
-                    <InputError :message="form.errors.time_in" />
-                </div>
-                <div>
-                    <InputLabel for="adjust-out">Time out (blank to keep)</InputLabel>
-                    <input id="adjust-out" v-model="form.time_out" type="time" class="filter-control mt-1 w-full" />
-                    <InputError :message="form.errors.time_out" />
-                </div>
+                <TextInput id="adjust-in" v-model="form.time_in" type="time" label="Time in (blank to keep)" :error="form.errors.time_in" />
+                <TextInput id="adjust-out" v-model="form.time_out" type="time" label="Time out (blank to keep)" :error="form.errors.time_out" />
             </div>
             <TextInput id="adjust-remark" v-model="form.remark" label="Remark shown on the DTR (for example Pasasalamat Program)" required maxlength="255" :error="form.errors.remark || form.errors.date" />
         </form>

@@ -7,6 +7,10 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
@@ -46,20 +50,32 @@ watch(
 
 const show = ref('attention');
 const shown = computed(() => (show.value === 'attention' ? matched.value.filter((row) => row.sync.status !== 'in_sync' || row.warnings.length) : matched.value));
-const allShownSelected = computed(() => shown.value.length > 0 && shown.value.every((row) => selected.value.includes(row.employee_id)));
-const toggleShown = () => {
-    const ids = shown.value.map((row) => row.employee_id);
-    selected.value = allShownSelected.value ? selected.value.filter((id) => !ids.includes(id)) : [...new Set([...selected.value, ...ids])];
-};
 
 const days = (value) => Number(value).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const signed = (value) => (Math.abs(value) < 0.0005 ? '—' : (value > 0 ? '+' : '') + days(value));
+const diffClass = (value) => (Math.abs(value) >= 0.0005 ? (Math.abs(value) > props.large ? 'text-warning-fg' : 'text-link') : 'text-text-muted');
 const statuses = {
-    in_sync: { label: 'In sync', class: 'bg-success-bg text-success-fg' },
-    adjust: { label: 'Will adjust', class: 'bg-info-bg text-link' },
-    large: { label: 'Check first', class: 'bg-warning-bg text-warning-fg' },
-    check: { label: 'History only', class: 'bg-surface-muted text-text-muted' },
+    in_sync: { label: 'In sync', tone: 'success' },
+    adjust: { label: 'Will adjust', tone: 'info' },
+    large: { label: 'Check first', tone: 'warning' },
+    check: { label: 'History only', tone: 'neutral' },
 };
+
+// Card, system and difference fold into one cell per leave; hidden columns keep each in the export.
+const figure = (group, part) => (row) => (row.sync[group] ? days(row.sync[group][part]) : '');
+const columns = [
+    { key: 'name', label: 'Employee' },
+    { key: 'vl', label: 'Vacation leave', sortable: false, export: false },
+    { key: 'sl', label: 'Sick leave', sortable: false, export: false },
+    { key: 'status', label: 'Status', value: (row) => statuses[row.sync.status].label },
+    { key: 'card_to', label: 'Card to', hidden: true, value: (row) => row.sync.date ?? '' },
+    { key: 'vl_card', label: 'VL card', hidden: true, value: figure('vl', 'card') },
+    { key: 'vl_system', label: 'VL system', hidden: true, value: figure('vl', 'system') },
+    { key: 'vl_diff', label: 'VL difference', hidden: true, value: figure('vl', 'diff') },
+    { key: 'sl_card', label: 'SL card', hidden: true, value: figure('sl', 'card') },
+    { key: 'sl_system', label: 'SL system', hidden: true, value: figure('sl', 'system') },
+    { key: 'sl_diff', label: 'SL difference', hidden: true, value: figure('sl', 'diff') },
+];
 
 const applying = ref(false);
 const apply = async () => {
@@ -127,61 +143,38 @@ const discard = () => router.delete('/admin/hr/leave/sync');
                 Difference = what the card says minus what the system has at the card's last month. Differences over {{ large }} days are not selected until you look at them.
             </p>
 
-            <div class="mt-4 overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <caption class="sr-only">Each person's leave card compared with the system</caption>
-                    <thead class="border-b border-border text-xs text-text-muted">
-                        <tr>
-                            <th scope="col" rowspan="2" class="py-2 pr-3 font-medium">
-                                <input type="checkbox" :checked="allShownSelected" :aria-label="'Select everyone shown'" @change="toggleShown" />
-                            </th>
-                            <th scope="col" rowspan="2" class="py-2 pr-4 font-medium">Employee</th>
-                            <th scope="col" rowspan="2" class="py-2 pr-4 font-medium">Card to</th>
-                            <th scope="colgroup" colspan="3" class="border-l border-border px-3 py-1.5 text-center font-medium">Vacation leave</th>
-                            <th scope="colgroup" colspan="3" class="border-l border-border px-3 py-1.5 text-center font-medium">Sick leave</th>
-                            <th scope="col" rowspan="2" class="border-l border-border py-2 pl-3 font-medium">Status</th>
-                        </tr>
-                        <tr>
-                            <template v-for="group in ['vl', 'sl']" :key="group">
-                                <th scope="col" class="border-l border-border px-3 py-1 text-right font-medium">Card</th>
-                                <th scope="col" class="px-3 py-1 text-right font-medium">System</th>
-                                <th scope="col" class="px-3 py-1 text-right font-medium">Difference</th>
-                            </template>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        <tr v-for="row in shown" :key="row.employee_id">
-                            <td class="py-2 pr-3 align-top">
-                                <input v-model="selected" type="checkbox" :value="row.employee_id" :aria-label="`Sync ${row.name}`" />
-                            </td>
-                            <td class="py-2 pr-4 align-top">
-                                <a :href="`/admin/hr/employees/${row.employee_id}/leave`" class="font-medium text-link hover:underline">{{ row.name }}</a>
-                                <div class="text-xs text-text-muted">{{ row.months }} card months</div>
-                                <ul v-if="row.warnings.length" class="mt-1 space-y-0.5 text-xs text-warning-fg">
-                                    <li v-for="warning in row.warnings" :key="warning">{{ warning }}</li>
-                                </ul>
-                            </td>
-                            <td class="whitespace-nowrap py-2 pr-4 align-top">{{ formatCalendarDate(row.sync.date) }}</td>
-                            <template v-for="group in ['vl', 'sl']" :key="group">
-                                <template v-if="row.sync[group]">
-                                    <td class="border-l border-border px-3 py-2 text-right align-top tabular-nums">{{ days(row.sync[group].card) }}</td>
-                                    <td class="px-3 py-2 text-right align-top tabular-nums">{{ days(row.sync[group].system) }}</td>
-                                    <td class="px-3 py-2 text-right align-top font-medium tabular-nums" :class="Math.abs(row.sync[group].diff) >= 0.0005 ? (Math.abs(row.sync[group].diff) > large ? 'text-warning-fg' : 'text-link') : 'text-text-muted'">
-                                        {{ signed(row.sync[group].diff) }}
-                                    </td>
-                                </template>
-                                <td v-else class="border-l border-border px-3 py-2 text-center text-text-muted" colspan="3">Not on the card</td>
-                            </template>
-                            <td class="border-l border-border py-2 pl-3 align-top">
-                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statuses[row.sync.status].class">{{ statuses[row.sync.status].label }}</span>
-                            </td>
-                        </tr>
-                        <tr v-if="!shown.length">
-                            <td colspan="10" class="py-4 text-center text-text-muted">Nothing needs attention: every matched card already agrees with the system.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                v-model:selected="selected"
+                class="mt-4"
+                :columns="columns"
+                :rows="shown"
+                row-key="employee_id"
+                selectable
+                caption="Each person's leave card compared with the system"
+                :export-name="`imis-leave-card-sync`"
+                :numbered="false"
+                empty-text="Nothing needs attention: every matched card already agrees with the system."
+            >
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :href="`/admin/hr/employees/${row.employee_id}/leave`" :subtitle="`${row.months} card months, to ${formatCalendarDate(row.sync.date)}`">
+                        <ul v-if="row.warnings.length" class="mt-1 space-y-0.5 text-xs text-warning-fg">
+                            <li v-for="warning in row.warnings" :key="warning">{{ warning }}</li>
+                        </ul>
+                    </PersonCell>
+                </template>
+                <template v-for="group in ['vl', 'sl']" :key="group" #[`cell-${group}`]="{ row }">
+                    <template v-if="row.sync[group]">
+                        <CellFacts class="tabular-nums" :facts="[{ label: 'Card', value: days(row.sync[group].card) }, { label: 'System', value: days(row.sync[group].system) }]" />
+                        <p class="mt-1.5 text-2xs text-text-muted">Difference:</p>
+                        <p class="text-xs font-medium tabular-nums" :class="diffClass(row.sync[group].diff)">{{ signed(row.sync[group].diff) }}</p>
+                    </template>
+                    <span v-else class="text-xs text-text-muted">Not on the card</span>
+                </template>
+                <template #cell-status="{ row }">
+                    <Badge :tone="statuses[row.sync.status].tone" pill dot>{{ statuses[row.sync.status].label }}</Badge>
+                </template>
+            </DataTable>
+
 
             <details v-if="unmatched.length" class="mt-4 rounded-md border border-border p-3 text-sm">
                 <summary class="cursor-pointer font-medium text-text">{{ unmatched.length }} sheets not matched to an employee (skipped)</summary>

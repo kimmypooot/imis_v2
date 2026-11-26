@@ -7,6 +7,8 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
@@ -73,6 +75,14 @@ watch(
     { immediate: true },
 );
 
+
+const tokenColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'status', label: 'Status' },
+    { key: 'dates', label: 'Expires & issued', sortable: false },
+    { key: 'last_used_at', label: 'Last used', value: (row) => row.last_used_at ?? '' },
+    { key: 'actions', label: '', sortable: false, align: 'right' },
+];
 const copy = async () => {
     try {
         await navigator.clipboard.writeText(props.issued.token);
@@ -109,42 +119,38 @@ const copy = async () => {
                 The shared secret in <code class="font-mono">.env</code> is still accepted. Once the system uses an issued token, remove it there.
             </p>
 
-            <p v-if="integration.tokens.length === 0" class="text-sm text-text-muted">No issued tokens.</p>
-
-            <div v-else class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="text-xs uppercase text-text-muted">
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Name</th>
-                            <th class="py-2 pr-4 font-medium">Token</th>
-                            <th class="py-2 pr-4 font-medium">Status</th>
-                            <th class="py-2 pr-4 font-medium">Expires</th>
-                            <th class="py-2 pr-4 font-medium">Last used</th>
-                            <th class="py-2 pr-4 font-medium">Issued</th>
-                            <th class="py-2 font-medium"><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        <tr v-for="token in integration.tokens" :key="token.id">
-                            <td class="py-2 pr-4 font-medium text-text">{{ token.name }}</td>
-                            <td class="py-2 pr-4 font-mono text-xs">{{ token.hint }}…</td>
-                            <td class="py-2 pr-4"><StatusBadge :status="token.status" /></td>
-                            <td class="py-2 pr-4">
-                                {{ token.expires_at ? formatDate(token.expires_at) : 'Never' }}
-                                <p v-if="token.expires_soon" class="text-xs font-medium text-warning-fg">Expires soon: issue a new token and revoke this one</p>
-                            </td>
-                            <td class="py-2 pr-4">
-                                <span v-if="token.last_used_at" :title="`${formatDateTime(token.last_used_at)} from ${token.last_used_ip ?? 'unknown'}`">{{ timeAgo(token.last_used_at) }}</span>
-                                <span v-else class="text-text-muted">Never</span>
-                            </td>
-                            <td class="py-2 pr-4 text-text-muted">{{ formatDate(token.created_at) }}<template v-if="token.created_by"> by {{ token.created_by }}</template></td>
-                            <td class="py-2 text-right">
-                                <ActionButton v-if="token.status !== 'revoked'" icon="trash" tone="danger" :label="`Revoke ${token.name}`" @click="revoke(token)" />
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                :columns="tokenColumns"
+                :rows="integration.tokens"
+                :caption="`Tokens issued for ${integration.label}`"
+                :export-name="`imis-tokens-${integration.value}`"
+                :numbered="false"
+                :searchable="false"
+                :exportable="false"
+                empty-text="No issued tokens."
+            >
+                <template #cell-name="{ row }">
+                    <span class="font-medium text-text">{{ row.name }}</span>
+                    <div class="font-mono text-xs text-text-muted">{{ row.hint }}…</div>
+                </template>
+                <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+                <template #cell-dates="{ row }">
+                    <CellFacts
+                        :facts="[
+                            { label: 'Expires', value: row.expires_at ? formatDate(row.expires_at) : 'Never' },
+                            { label: 'Issued', value: formatDate(row.created_at), note: row.created_by ? `by ${row.created_by}` : null },
+                        ]"
+                    />
+                    <p v-if="row.expires_soon" class="mt-1 text-xs font-medium text-warning-fg">Expires soon: issue a new token and revoke this one</p>
+                </template>
+                <template #cell-last_used_at="{ row }">
+                    <span v-if="row.last_used_at" :title="`${formatDateTime(row.last_used_at)} from ${row.last_used_ip ?? 'unknown'}`">{{ timeAgo(row.last_used_at) }}</span>
+                    <span v-else class="text-text-muted">Never</span>
+                </template>
+                <template #cell-actions="{ row }">
+                    <span class="inline-flex"><ActionButton v-if="row.status !== 'revoked'" icon="trash" tone="danger" :label="`Revoke ${row.name}`" @click="revoke(row)" /></span>
+                </template>
+            </DataTable>
         </Card>
     </div>
 

@@ -68,7 +68,7 @@ class DtrOverview
         $to = $month->copy()->endOfMonth()->startOfDay();
 
         $page = $this->query($month, $office, $search, $filter)
-            ->with(['user:id,name,position,organizational_unit_id', 'user.organizationalUnit:id,name,short_name'])
+            ->with(['user:id,name,position,organizational_unit_id,profile_photo_path', 'user.organizationalUnit:id,name,short_name'])
             ->join('users', 'users.id', '=', 'employees.user_id')
             ->orderBy('users.name')
             ->select('employees.*')
@@ -93,6 +93,7 @@ class DtrOverview
                 'id' => $employee->id,
                 'name' => $employee->user->name,
                 'position' => $employee->user->position,
+                'photo_url' => $employee->user->profile_photo_url,
                 'office' => $employee->user->organizationalUnit?->short_name ?: $employee->user->organizationalUnit?->name,
                 'biometric_id' => $employee->biometric_id,
                 'schedule' => $schedules->get($employee->id)?->first()?->schedule->name,

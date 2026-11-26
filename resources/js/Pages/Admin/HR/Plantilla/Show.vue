@@ -6,6 +6,10 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
@@ -113,6 +117,16 @@ const remove = async (row) => {
 };
 
 const period = (row) => `${row.date_from ? formatCalendarDate(row.date_from) : 'Start not set'} – ${row.date_to ? formatCalendarDate(row.date_to) : 'present'}`;
+const holderColumns = computed(() => [
+    { key: 'name', label: 'Employee' },
+    { key: 'period', label: 'Period', value: (row) => period(row) },
+    { key: 'pay', label: 'Step & salary', sortable: false, export: false },
+    ...(props.canManage ? [{ key: 'actions', label: '', sortable: false, export: false, align: 'right' }] : []),
+    { key: 'status_label', label: 'Status', hidden: true, value: (row) => row.status_label ?? '' },
+    { key: 'nature_label', label: 'Nature', hidden: true, value: (row) => row.nature_label ?? '' },
+    { key: 'step', label: 'Step', hidden: true, value: (row) => String(row.step ?? '') },
+    { key: 'monthly_salary', label: 'Monthly salary', hidden: true, value: (row) => String(row.monthly_salary ?? '') },
+]);
 const steps = Array.from({ length: 8 }, (_, index) => ({ value: index + 1, label: `Step ${index + 1}` }));
 const field = 'mt-1 block w-full';
 </script>
@@ -177,50 +191,34 @@ const field = 'mt-1 block w-full';
         </Card>
 
         <Card title="Holders" icon="users" description="Every period of service on this item, newest first.">
-            <p v-if="history.length === 0" class="text-sm text-text-muted">Nobody has held this item yet.</p>
-            <div v-else class="table-card">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="font-medium">Employee</th>
-                            <th scope="col" class="font-medium">Step</th>
-                            <th scope="col" class="font-medium">Status / nature</th>
-                            <th scope="col" class="font-medium">Period</th>
-                            <th scope="col" class="text-right font-medium">Monthly salary</th>
-                            <th v-if="canManage" scope="col" class="font-medium"><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="row in history" :key="row.id">
-                            <td class="align-top">
-                                <Link :href="`/admin/hr/employees/${row.employee_id}`" class="font-medium text-link hover:underline">{{ row.name }}</Link>
-                                <StatusBadge v-if="row.current" status="active" label="Current" class="ml-2" />
-                                <div v-if="row.missing.length" class="text-xs text-warning-fg">Incomplete: missing {{ row.missing.join(', ') }}</div>
-                            </td>
-                            <td class="align-top tabular-nums">{{ row.step ?? '—' }}</td>
-                            <td class="align-top">{{ row.status_label ?? '—' }}<div class="text-xs text-text-muted">{{ row.nature_label }}</div></td>
-                            <td class="align-top">
-                                <span class="whitespace-nowrap">{{ period(row) }}</span>
-                                <div v-if="row.end_reason" class="text-xs text-text-muted">{{ row.end_reason }}</div>
-                            </td>
-                            <td class="text-right align-top tabular-nums">{{ formatPeso(row.monthly_salary) }}<span v-if="row.salary_override !== null" class="block text-xs text-text-muted">Override</span></td>
-                            <td v-if="canManage" class="align-top">
-                                <div v-if="row.can_manage" class="flex flex-wrap justify-end gap-3 whitespace-nowrap">
-                                    <button v-if="row.current && !row.missing.length && row.step < 8" type="button" class="text-success-fg hover:underline" @click="open('step', row)">Step increment</button>
-                                    <button v-if="row.current" type="button" class="text-warning-fg hover:underline" @click="open('vacate', row)">Vacate</button>
-                                    <button type="button" class="text-link hover:underline" @click="open('correct', row)">Correct</button>
-                                    <button type="button" class="text-danger-fg hover:underline" @click="remove(row)">Remove</button>
-                                </div>
-                                <div v-else-if="row.can_correct" class="flex flex-wrap items-center justify-end gap-3 whitespace-nowrap">
-                                    <span class="text-xs text-text-muted">Your own</span>
-                                    <button type="button" class="text-link hover:underline" @click="open('correct', row)">Correct</button>
-                                </div>
-                                <span v-else class="text-xs text-text-muted">Your own</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <DataTable :columns="holderColumns" :rows="history" :caption="`Holders of ${item.item_number}`" :export-name="`imis-plantilla-holders-${item.item_number}`" :numbered="false" :searchable="false" empty-text="Nobody has held this item yet.">
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="row.status_label ? `${row.status_label} · ${row.nature_label}` : row.nature_label">
+                        <StatusBadge v-if="row.current" status="active" label="Current" class="mt-1" />
+                        <div v-if="row.missing.length" class="text-xs text-warning-fg">Incomplete: missing {{ row.missing.join(', ') }}</div>
+                    </PersonCell>
+                </template>
+                <template #cell-period="{ row }">
+                    <span class="whitespace-nowrap">{{ period(row) }}</span>
+                    <div v-if="row.end_reason" class="text-xs text-text-muted">{{ row.end_reason }}</div>
+                </template>
+                <template #cell-pay="{ row }">
+                    <CellFacts class="tabular-nums" :facts="[{ label: 'Step', value: row.step ?? '—' }, { label: 'Monthly salary', value: formatPeso(row.monthly_salary), note: row.salary_override !== null ? 'Override' : null }]" />
+                </template>
+                <template #cell-actions="{ row }">
+                    <div v-if="row.can_manage" class="flex flex-wrap justify-end gap-x-3 gap-y-1 whitespace-nowrap">
+                        <Button v-if="row.current && !row.missing.length && row.step < 8" size="sm" variant="link" @click="open('step', row)">Step increment</Button>
+                        <Button v-if="row.current" size="sm" variant="link" @click="open('vacate', row)">Vacate</Button>
+                        <Button size="sm" variant="link" @click="open('correct', row)">Correct</Button>
+                        <ActionButton icon="trash" tone="danger" :label="`Remove ${row.name}'s period`" @click="remove(row)" />
+                    </div>
+                    <div v-else-if="row.can_correct" class="flex flex-wrap items-center justify-end gap-3 whitespace-nowrap">
+                        <span class="text-xs text-text-muted">Your own</span>
+                        <Button size="sm" variant="link" @click="open('correct', row)">Correct</Button>
+                    </div>
+                    <span v-else class="text-xs text-text-muted">Your own</span>
+                </template>
+            </DataTable>
         </Card>
     </div>
 

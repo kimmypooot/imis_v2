@@ -6,6 +6,8 @@ import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
@@ -42,12 +44,38 @@ const receiving = useForm({ saln_id: props.saln.id, version: props.saln.current_
 const receive = () => receiving.post('/admin/hr/saln/receive', { preserveScroll: true });
 
 const sections = computed(() => [
-    { title: 'Real properties', rows: s.value.real_properties ?? [], cols: [['description', 'Description'], ['kind', 'Kind'], ['location', 'Location'], ['assessed_value', 'Assessed', true], ['market_value', 'Market value', true], ['acquisition_year', 'Year'], ['acquisition_mode', 'Mode'], ['acquisition_cost', 'Cost', true]] },
+    {
+        title: 'Real properties',
+        rows: s.value.real_properties ?? [],
+        cols: [['description', 'Description'], ['kind', 'Kind'], ['location', 'Location'], ['assessed_value', 'Assessed', true], ['market_value', 'Market value', true], ['acquisition_year', 'Year'], ['acquisition_mode', 'Mode'], ['acquisition_cost', 'Cost', true]],
+        // Eight columns don't fit: fold them into three cells, each field still its own CSV column.
+        folds: [
+            { key: 'property', label: 'Property', fields: ['description', 'kind', 'location'] },
+            { key: 'values', label: 'Value', fields: ['assessed_value', 'market_value'] },
+            { key: 'acquired', label: 'Acquired', fields: ['acquisition_year', 'acquisition_mode', 'acquisition_cost'] },
+        ],
+    },
     { title: 'Personal properties', rows: s.value.personal_properties ?? [], cols: [['description', 'Description'], ['acquisition_year', 'Year'], ['acquisition_cost', 'Cost / amount', true]] },
     { title: 'Liabilities', rows: s.value.liabilities ?? [], cols: [['nature', 'Nature'], ['creditor', 'Creditor'], ['outstanding_balance', 'Outstanding balance', true]] },
     { title: 'Business interests and financial connections', rows: s.value.business_interests ?? [], none: s.value.no_business_interests && 'Declares none.', cols: [['name', 'Entity'], ['address', 'Address'], ['nature', 'Nature'], ['acquired_on', 'Acquired']] },
     { title: 'Relatives in the government service', rows: s.value.relatives ?? [], none: s.value.no_relatives && 'Knows of none.', cols: [['name', 'Name'], ['relationship', 'Relationship'], ['position', 'Position'], ['agency_and_address', 'Agency/office and address']] },
-]);
+].map((section) => ({ ...section, rows: section.rows.map((row, index) => ({ ...row, _row: index })), columns: columnsOf(section) })));
+
+const cellText = (row, [key, , num]) => (num ? peso(row[key]) : (row[key] ?? ''));
+const labelOf = (section, key) => section.cols.find(([name]) => name === key);
+const factsOf = (section, fold, row) => fold.fields.map((key) => ({ label: labelOf(section, key)[1], value: cellText(row, labelOf(section, key)) || null }));
+function columnsOf(section) {
+    const owner = section.rows.some((row) => row.owner) ? [{ key: 'owner', label: 'Whose', value: (row) => owners[row.owner] ?? '' }] : [];
+    const plain = (col, extra = {}) => ({ key: col[0], label: col[1], align: col[2] ? 'right' : 'left', value: (row) => cellText(row, col), ...extra });
+    if (!section.folds) {
+        return [...owner, ...section.cols.map((col) => plain(col))];
+    }
+    return [
+        ...owner,
+        ...section.folds.map((fold) => ({ key: fold.key, label: fold.label, sortable: false, export: false })),
+        ...section.cols.map((col) => plain(col, { hidden: true })),
+    ];
+}
 </script>
 
 <template>
@@ -99,17 +127,11 @@ const sections = computed(() => [
             <Card v-for="section in sections" :key="section.title" :title="section.title" icon="clipboard">
                 <p v-if="section.none" class="text-sm text-text-muted">{{ section.none }}</p>
                 <p v-else-if="!section.rows.length" class="text-sm text-text-muted">None declared.</p>
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead><tr class="text-left text-xs text-text-muted"><th v-if="section.rows[0]?.owner" class="pb-1 pr-3 font-medium">Whose</th><th v-for="[key, label, num] in section.cols" :key="key" class="pb-1 pr-3 font-medium" :class="{ 'text-right': num }">{{ label }}</th></tr></thead>
-                        <tbody>
-                            <tr v-for="(row, i) in section.rows" :key="i" class="border-t border-border">
-                                <td v-if="row.owner" class="py-1 pr-3 text-text-muted">{{ owners[row.owner] }}</td>
-                                <td v-for="[key, , num] in section.cols" :key="key" class="py-1 pr-3 text-text" :class="{ 'text-right tabular-nums': num }">{{ num ? peso(row[key]) : row[key] }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable v-else :columns="section.columns" :rows="section.rows" row-key="_row" :caption="section.title" :export-name="`imis-saln-${saln.reference}`" :numbered="false" :searchable="false" density="compact">
+                    <template v-for="fold in section.folds ?? []" :key="fold.key" #[`cell-${fold.key}`]="{ row }">
+                        <CellFacts wrap class="tabular-nums" :facts="factsOf(section, fold, row)" />
+                    </template>
+                </DataTable>
             </Card>
 
             <Card title="Totals" icon="chartBar">

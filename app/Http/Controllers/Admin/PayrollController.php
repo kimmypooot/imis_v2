@@ -77,10 +77,11 @@ class PayrollController extends Controller
 
         return Inertia::render('Admin/HR/Payroll/Show', [
             'run' => $payrolls->presentRun($run),
-            'entries' => $run->entries()->with('lines.adjuster', 'employee')->orderBy('name')->get()
+            'entries' => $run->entries()->with('lines.adjuster', 'employee.user')->orderBy('name')->get()
                 ->map(fn (PayrollEntry $entry) => [
                     ...$payrolls->presentEntry($entry, withLines: true),
                     'own' => $entry->employee->user_id === $request->user()->id,
+                    'photo_url' => $entry->employee->user?->profile_photo_url,
                 ]),
             'leftOut' => $payrolls->leftOut($run),
             'canManage' => $canManage,

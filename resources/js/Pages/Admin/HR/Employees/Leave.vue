@@ -11,6 +11,7 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import LeaveCard from '../../../../Components/HR/LeaveCard.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -316,10 +317,7 @@ const field = 'mt-1 block w-full';
                 <InputError :message="settingsForm.errors.immediate_supervisor_id" />
             </div>
             <div class="sm:col-span-2">
-                <label class="inline-flex items-center gap-2 text-sm text-text">
-                    <input v-model="settingsForm.is_solo_parent" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
-                    Solo parent (for Solo Parent Leave)
-                </label>
+                <Checkbox id="settings-solo-parent" v-model="settingsForm.is_solo_parent" label="Solo parent (for Solo Parent Leave)" />
             </div>
             <template v-if="settingsForm.is_solo_parent">
                 <div>

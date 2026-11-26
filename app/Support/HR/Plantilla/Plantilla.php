@@ -527,6 +527,7 @@ class Plantilla
             'id' => $appointment->id,
             'employee_id' => $appointment->employee_id,
             'name' => $appointment->employee->user->name,
+            'photo_url' => $appointment->employee->user->profile_photo_url,
             'item_id' => $appointment->plantilla_item_id,
             'item_number' => $appointment->item->item_number,
             'position_title' => $appointment->item->position_title,

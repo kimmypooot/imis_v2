@@ -92,6 +92,7 @@ class TardinessDeductions
                 return [
                     'employee_id' => $employee->id,
                     'name' => $employee->user->name,
+                    'photo_url' => $employee->user->profile_photo_url,
                     'biometric_id' => $employee->biometric_id,
                     'late_minutes' => $totals['late_minutes'],
                     'undertime_minutes' => $totals['undertime_minutes'],

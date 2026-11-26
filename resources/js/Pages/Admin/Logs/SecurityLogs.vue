@@ -21,6 +21,10 @@ defineProps({
     query: { type: Object, required: true },
 });
 
+const ipColumns = [
+    { key: 'ip_address', label: 'IP address' },
+    { key: 'attempts', label: 'Attempts', align: 'right' },
+];
 const columns = [
     { key: 'event', label: 'Event', value: (row) => row.event_label },
     { key: 'severity', label: 'Severity', sortable: false, align: 'center' },
@@ -38,28 +42,12 @@ const columns = [
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Top failing IPs" description="Failed sign-ins in the last 7 days" icon="shield" class="xl:col-span-1">
-            <table class="data-table">
-                <caption class="sr-only">IP addresses with the most failed sign-ins in the last 7 days</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">IP address</th>
-                        <th scope="col" class="text-right">Attempts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="!topIps.length">
-                        <td colspan="2" class="px-3 py-6 text-center text-text-muted">No failed sign-ins this week.</td>
-                    </tr>
-                    <tr v-for="row in topIps" :key="row.ip_address">
-                        <td class="font-mono text-xs">{{ row.ip_address }}</td>
-                        <td class="text-right">
-                            <Badge pill :tone="row.attempts >= 5 ? 'danger' : 'warning'">
-                                {{ row.attempts }}
-                            </Badge>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <DataTable :columns="ipColumns" :rows="topIps" row-key="ip_address" caption="IP addresses with the most failed sign-ins in the last 7 days" export-name="imis-failing-ips" :numbered="false" :searchable="false" :exportable="false" empty-text="No failed sign-ins this week.">
+                <template #cell-ip_address="{ row }"><span class="font-mono text-xs">{{ row.ip_address }}</span></template>
+                <template #cell-attempts="{ row }">
+                    <Badge pill :tone="row.attempts >= 5 ? 'danger' : 'warning'">{{ row.attempts }}</Badge>
+                </template>
+            </DataTable>
         </Card>
 
         <Card title="All security events" icon="exclamation" class="xl:col-span-2">

@@ -5,6 +5,7 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
@@ -122,10 +123,7 @@ const runYearStart = async () => {
                     <option value="">All offices</option>
                     <option v-for="name in offices" :key="name" :value="name">{{ name }}</option>
                 </select>
-                <label v-if="separatedCount" class="flex items-center gap-2 text-sm text-text">
-                    <input v-model="showSeparated" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
-                    Show separated ({{ separatedCount }})
-                </label>
+                <Checkbox v-if="separatedCount" id="leave-show-separated" v-model="showSeparated" :label="`Show separated (${separatedCount})`" />
             </template>
 
             <DataTable :columns="columns" :rows="shown" caption="Leave balances" export-name="imis-leave-balances">

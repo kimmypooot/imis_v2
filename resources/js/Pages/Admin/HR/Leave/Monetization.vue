@@ -6,6 +6,9 @@ import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
@@ -55,15 +58,19 @@ const submitTerminal = () => terminal.post('/admin/hr/leave/monetization/termina
 
 const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
 
+// Days and pay fold into one cell; hidden columns keep each figure in the CSV.
 const columns = [
-    { key: 'reference_number', label: 'Reference' },
     { key: 'name', label: 'Employee' },
-    { key: 'kind_label', label: 'Kind' },
-    { key: 'days', label: 'Days (VL / SL)', align: 'right' },
-    { key: 'monthly_salary', label: 'Monthly salary', align: 'right' },
-    { key: 'amount', label: 'Amount', align: 'right' },
+    { key: 'figures', label: 'Days & amount', sortable: false, export: false },
     { key: 'created_at', label: 'Filed' },
-    { key: 'actions', label: '', sortable: false, export: false },
+    { key: 'actions', label: '', sortable: false, export: false, align: 'right' },
+    { key: 'reference_number', label: 'Reference', hidden: true },
+    { key: 'kind_label', label: 'Kind', hidden: true },
+    { key: 'days', label: 'Days', hidden: true, value: (row) => days(row.days) },
+    { key: 'vl_days', label: 'VL days', hidden: true, value: (row) => days(row.vl_days) },
+    { key: 'sl_days', label: 'SL days', hidden: true, value: (row) => days(row.sl_days) },
+    { key: 'monthly_salary', label: 'Monthly salary', hidden: true },
+    { key: 'amount', label: 'Amount', hidden: true },
 ];
 </script>
 
@@ -93,18 +100,28 @@ const columns = [
             </div>
         </template>
 
-        <DataTable :columns="columns" :rows="requests" caption="Leave monetization requests" :export-name="`imis-monetization-${status}`" :empty-text="`No ${status} requests.`">
-            <template #cell-days="{ row }"><span class="tabular-nums">{{ days(row.days) }}<span class="text-xs text-text-muted"> ({{ days(row.vl_days) }} / {{ days(row.sl_days) }})</span></span></template>
-            <template #cell-monthly_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.monthly_salary) }}</span></template>
-            <template #cell-amount="{ row }"><span class="font-medium tabular-nums">{{ formatPeso(row.amount) }}</span></template>
+        <DataTable :columns="columns" :rows="requests" caption="Leave monetization requests" :export-name="`imis-monetization-${status}`" :numbered="false" :empty-text="`No ${status} requests.`">
+            <template #cell-name="{ row }">
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/leave`" :subtitle="`${row.reference_number} · ${row.kind_label}`" />
+            </template>
+            <template #cell-figures="{ row }">
+                <CellFacts
+                    class="tabular-nums"
+                    :facts="[
+                        { label: 'Days (VL / SL)', value: `${days(row.days)} (${days(row.vl_days)} / ${days(row.sl_days)})` },
+                        { label: 'Monthly salary', value: formatPeso(row.monthly_salary) },
+                        { label: 'Amount', value: formatPeso(row.amount) },
+                    ]"
+                />
+            </template>
             <template #cell-created_at="{ row }"><span class="whitespace-nowrap">{{ formatDateTime(row.created_at) }}</span></template>
             <template #cell-actions="{ row }">
-                <div v-if="canManage && !row.own" class="flex justify-end gap-3 whitespace-nowrap text-sm">
+                <div v-if="canManage && !row.own" class="flex justify-end gap-1">
                     <template v-if="row.status === 'pending'">
-                        <button type="button" class="text-success-fg hover:underline" @click="openDecision(row, 'approved')">Approve</button>
-                        <button type="button" class="text-danger-fg hover:underline" @click="openDecision(row, 'rejected')">Reject</button>
+                        <ActionButton icon="check" tone="success" :label="`Approve ${row.reference_number}`" @click="openDecision(row, 'approved')" />
+                        <ActionButton icon="close" tone="danger" :label="`Reject ${row.reference_number}`" @click="openDecision(row, 'rejected')" />
                     </template>
-                    <button v-if="row.status === 'approved'" type="button" class="text-link hover:underline" @click="release(row)">Mark released</button>
+                    <ActionButton v-if="row.status === 'approved'" icon="paperAirplane" :label="`Mark ${row.reference_number} released`" @click="release(row)" />
                 </div>
                 <span v-else-if="row.own" class="text-xs text-text-muted">Your own</span>
             </template>

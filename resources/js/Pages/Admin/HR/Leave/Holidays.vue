@@ -64,7 +64,7 @@ const columns = [
     <PageHeader title="Holidays" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Holidays' }]">
         <template #actions>
             <label class="sr-only" for="holiday-year">Year</label>
-            <select id="holiday-year" :value="year" class="form-control px-3 py-2" @change="changeYear($event.target.value)">
+            <select id="holiday-year" :value="year" class="filter-control" @change="changeYear($event.target.value)">
                 <option v-for="option in years" :key="option" :value="option">{{ option }}</option>
             </select>
             <Button v-if="canManage" variant="success" @click="edit()"><Icon name="plus" size="sm" />Add holiday</Button>

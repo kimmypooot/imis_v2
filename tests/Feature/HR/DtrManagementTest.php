@@ -94,6 +94,19 @@ class DtrManagementTest extends TestCase
             ->where('employees.data.0.name', 'Ben NoId'));
     }
 
+    public function test_the_table_chooses_how_many_rows_a_page_shows(): void
+    {
+        $this->employee('Amy Complete', '101', schedule: true);
+
+        $this->actingAs($this->hr)->get('/admin/hr/dtr?month=2026-11&per_page=10')->assertInertia(fn (Assert $page) => $page
+            ->where('employees.per_page', 10)
+            ->has('employees.data.0.photo_url'));
+
+        // A size the table doesn't offer falls back to the default.
+        $this->actingAs($this->hr)->get('/admin/hr/dtr?month=2026-11&per_page=7')->assertInertia(fn (Assert $page) => $page
+            ->where('employees.per_page', 25));
+    }
+
     public function test_it_is_for_hr_only(): void
     {
         $supervisor = User::factory()->create();
