@@ -116,6 +116,9 @@ A short list (a handful of rows) takes `:page-size-select="false"` to drop
 the "Show N entries" picker. To pick one view of a list ("Pending",
 "Approved"…), put `FilterButtons` in the Card's actions instead of
 hand-built toggle buttons; Tabs are for panels that swap whole content.
+Above a list on its own, use `variant="pills"` (chips with a count); for a
+two- or three-way switch of views, `variant="segmented"`. Summary tiles
+that also filter the list below them are `FilterTiles`.
 Number fields use `TextInput` with `step` (e.g. `step="0.01"` for pesos),
 `min` and `max`; without `step` the browser rejects decimals.
 

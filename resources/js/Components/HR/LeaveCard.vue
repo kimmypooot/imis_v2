@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
@@ -77,19 +78,7 @@ const total = (key, field) => props.monthly.months.reduce((sum, month) => sum + 
             :description="showing === 'monthly' ? 'Month by month, as on the paper leave card: Vacation and Sick Leave earned, used and left.' : 'Every credit and deduction, with the running balance of its leave type.'"
         >
             <template #actions>
-                <div v-if="hasMonthly" class="inline-flex rounded-md border border-border-strong p-0.5 text-sm" role="group" aria-label="Card view">
-                    <button
-                        v-for="option in views"
-                        :key="option.value"
-                        type="button"
-                        class="rounded-sm px-3 py-1.5 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                        :class="showing === option.value ? 'bg-primary text-white' : 'text-text-muted hover:text-text'"
-                        :aria-pressed="showing === option.value"
-                        @click="view = option.value"
-                    >
-                        {{ option.label }}
-                    </button>
-                </div>
+                <FilterButtons v-if="hasMonthly" :model-value="showing" variant="segmented" label="Card view" :options="views" @update:model-value="(value) => (view = value)" />
                 <label v-if="showing === 'ledger'" class="sr-only" for="leave-card-type">Leave type</label>
                 <select v-if="showing === 'ledger'" id="leave-card-type" v-model="filter" class="form-control px-3 py-2">
                     <option value="">All leave types</option>

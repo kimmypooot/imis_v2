@@ -326,7 +326,7 @@ return [
                     'summary' => 'If you supervise or head an office, verify the times your people entered for days the fingerprint reader missed.',
                     'steps' => [
                         'Open DTR Entries to Verify. You are also told under the bell when someone enters times.',
-                        'Tick the days you can vouch for (or "Select all days") and choose Verify.',
+                        'Choose Verify on a day you can vouch for, or tick several (the box at the top ticks them all) and choose "Verify selected".',
                         'Leave the ones you cannot vouch for, and tell the employee.',
                     ],
                     'link' => ['label' => 'DTR Entries to Verify', 'href' => '/dtr/entries'],

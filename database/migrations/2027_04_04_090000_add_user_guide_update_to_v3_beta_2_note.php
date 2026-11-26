@@ -52,6 +52,8 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'Staff pages match the rest of IMIS: the filter tiles on My Leave Applications and My Feedback, the filter chips on Notifications, What\'s New, Payslip Approvals and the training log, and the leave card\'s view switch all look and work the same way.'],
+            ['improvement', 'DTR entries to verify is a table with each person\'s photo: tick several days and verify them together. Payslip Approvals shows each requester\'s photo.'],
             ['improvement', 'The User Guide covers what IMIS does now: your DTR (missed punches, choosing a verifier, signing), your SALN, record corrections, your e-signature, leave monetization, flexible work, downloading your data, dark mode and installing IMIS as an app, plus how to search and export any list.'],
             ['improvement', 'Supervisors, the head of HRD, Accounting, the SALN Committee and HR staff each see guides for their own work: verifying DTR entries, approving payslips, entering withholding tax, reviewing SALNs, and preparing DTRs, payroll, SALNs and NOSA/NOSI.'],
         ];

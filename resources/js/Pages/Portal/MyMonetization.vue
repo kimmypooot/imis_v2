@@ -10,7 +10,7 @@ import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
-import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../Utils/datetime';
 import { formatPeso } from '../../Utils/money';
@@ -91,21 +91,7 @@ const columns = [
             </ul>
 
             <form v-else class="space-y-3" @submit.prevent="submit">
-                <div>
-                    <InputLabel for="mon-days">Days to monetize</InputLabel>
-                    <input
-                        id="mon-days"
-                        v-model="form.days"
-                        type="number"
-                        step="0.001"
-                        min="0.001"
-                        :max="terms.max_days"
-                        required
-                        class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-                    />
-                    <p v-if="estimate" class="mt-1 text-sm text-text">About <strong>{{ formatPeso(estimate) }}</strong> (HR confirms).</p>
-                    <InputError :message="form.errors.days" />
-                </div>
+                <TextInput id="mon-days" v-model="form.days" type="number" step="0.001" min="0.001" :max="terms.max_days" label="Days to monetize" required :helper-text="estimate ? `About ${formatPeso(estimate)} (HR confirms).` : null" :error="form.errors.days" />
                 <div>
                     <InputLabel for="mon-remarks">Remarks (optional)</InputLabel>
                     <Textarea id="mon-remarks" v-model="form.remarks" class="mt-1" />

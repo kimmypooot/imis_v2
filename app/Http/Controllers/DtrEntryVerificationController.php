@@ -21,6 +21,7 @@ class DtrEntryVerificationController extends Controller
             'entries' => $verification->pending($request->user())->map(fn ($row) => [
                 'id' => $row->id,
                 'employee' => $row->employee->user->name,
+                'photo_url' => $row->employee->user->profile_photo_url,
                 'date' => $row->date->toDateString(),
                 'time_in' => $row->time_in ? substr($row->time_in, 0, 5) : null,
                 'time_out' => $row->time_out ? substr($row->time_out, 0, 5) : null,

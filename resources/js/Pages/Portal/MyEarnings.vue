@@ -10,6 +10,7 @@ import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import OrbitCircles from '@cscro8/ui/Components/UI/OrbitCircles.vue';
+import ProgressBar from '@cscro8/ui/Components/UI/ProgressBar.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 import { formatPeso } from '../../Utils/money';
 
@@ -189,9 +190,7 @@ const historyColumns = [
                         <span>{{ loanProgress(loan) }}% deducted</span>
                         <span>{{ loan.installments_paid }} of {{ loan.installments_paid + (loan.status === 'active' || loan.status === 'stopped' ? loan.months_left : 0) }} installments</span>
                     </div>
-                    <div class="mt-1 h-2 overflow-hidden rounded-full bg-surface-muted" role="progressbar" :aria-valuenow="loanProgress(loan)" aria-valuemin="0" aria-valuemax="100" :aria-label="`${loan.type} progress`">
-                        <div class="h-full rounded-full bg-success transition-[width] duration-500" :style="{ width: `${loanProgress(loan)}%` }" />
-                    </div>
+                    <ProgressBar class="mt-1" :value="loanProgress(loan)" tone="success" size="sm" :label="`${loan.type} progress`" />
                 </div>
                 <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
                     <div><dt class="text-text-muted">Monthly deduction</dt><dd class="font-medium tabular-nums text-text">{{ formatPeso(loan.monthly_amortization) }}</dd></div>
