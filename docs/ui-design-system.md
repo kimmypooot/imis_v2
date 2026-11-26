@@ -79,6 +79,8 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   (in-panel spinner + line), `ErrorPage` (403/404/419/429/500/503).
 - **Forms:** `TextInput`, `PasswordInput`, `Select`, `Textarea`, `Checkbox`,
   `CheckboxGroup`, `Radio`, `Switch`, `FileInput`, `FormGroup`, `InputError`.
+  For several files at once, IMIS's own `Components/Forms/MultiFileInput`
+  (the same drop zone, then a removable list of the chosen files).
   For a compact field in a filter bar use `class="filter-control"`; for a
   one-off raw field use `class="form-control block w-full px-3 py-2"`.
 - **Effects (in `app.css`):** `stagger` (children rise in turn, once per

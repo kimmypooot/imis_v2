@@ -14,6 +14,8 @@ import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
+import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
+import MultiFileInput from '../../../../Components/Forms/MultiFileInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate } from '../../../../Utils/datetime';
@@ -52,7 +54,7 @@ const tabs = [
     { key: 'nosi', label: 'Step increments due', icon: 'clock' },
 ];
 
-const signatoryOptions = computed(() => props.signatories.map((option) => ({ value: option.value, label: option.name ? `${option.name} — ${option.label}` : `${option.label} (nobody holds the item)` })));
+const signatoryOptions = computed(() => props.signatories.map((option) => ({ value: option.value, label: option.name ? `${option.name} (${option.position})` : `${option.position} (vacant)` })));
 const printUrl = (ids) => `/admin/hr/salary-notices/print?${ids.map((id) => `ids[]=${id}`).join('&')}`;
 const openPrint = (ids) => window.open(printUrl(ids), '_blank', 'noopener');
 
@@ -96,6 +98,11 @@ const submitFile = () =>
 // Many signed copies, matched by file name.
 const bulkOpen = ref(false);
 const bulkForm = useForm({ files: [] });
+const openBulk = () => {
+    bulkForm.reset();
+    bulkForm.clearErrors();
+    bulkOpen.value = true;
+};
 const submitBulk = () =>
     bulkForm.post('/admin/hr/salary-notices/file', { preserveScroll: true, forceFormData: true, onSuccess: () => (bulkOpen.value = false) });
 
@@ -160,9 +167,14 @@ const submitNosi = () => nosiForm.post('/admin/hr/salary-notices/nosi', { preser
         <template #notices>
             <Card title="Notices" icon="documentText" description="Printing someone else's notice is logged. Directors' notices come from the Central Office.">
                 <template #actions>
-                    <Select id="notice-year" :model-value="filters.year" :options="yearOptions" aria-label="Year" @update:model-value="(year) => filterBy({ year })" />
-                    <Select id="notice-type" :model-value="filters.type ?? ''" :options="typeOptions" aria-label="Notice" @update:model-value="(type) => filterBy({ type })" />
-                    <Button variant="secondary" icon="upload" @click="bulkOpen = true">File signed copies</Button>
+                    <!-- Compact filter fields (Select is full width). -->
+                    <select id="notice-year" class="filter-control" :value="filters.year" aria-label="Year" @change="(event) => filterBy({ year: event.target.value })">
+                        <option v-for="option in yearOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                    <select id="notice-type" class="filter-control" :value="filters.type ?? ''" aria-label="Notice" @change="(event) => filterBy({ type: event.target.value })">
+                        <option v-for="option in typeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                    <Button variant="secondary" icon="upload" @click="openBulk">File signed copies</Button>
                 </template>
 
                 <DataTable
@@ -174,9 +186,9 @@ const submitNosi = () => nosiForm.post('/admin/hr/salary-notices/nosi', { preser
                     :export-name="`imis-salary-notices-${filters.year}`"
                     empty-text="No notices for this year yet."
                 >
-                    <template #bulk="{ selected: ids, clear }">
-                        <Button icon="printer" @click="openPrint(ids)">Print {{ ids.length }}</Button>
-                        <Button variant="ghost" @click="clear">Clear</Button>
+                    <!-- The table adds the count and its own Clear button. -->
+                    <template #bulk="{ selected: ids }">
+                        <Button size="sm" icon="printer" @click="openPrint(ids)">Print</Button>
                     </template>
                     <template #cell-name="{ row }"><PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="row.position" /></template>
                     <template #cell-effective_date="{ row }"><span class="whitespace-nowrap">{{ formatCalendarDate(row.effective_date) }}</span></template>
@@ -321,14 +333,23 @@ const submitNosi = () => nosiForm.post('/admin/hr/salary-notices/nosi', { preser
         <form v-if="filing" id="file-form" class="grid gap-3" @submit.prevent="submitFile">
             <p class="text-sm text-text">The signed {{ filing.type_code }} of <strong>{{ filing.name }}</strong> goes to their 201 File, where they can open it.</p>
             <div>
-                <InputLabel for="file-input">Signed copy (PDF, JPG or PNG, up to 10 MB)</InputLabel>
-                <input id="file-input" type="file" accept=".pdf,.jpg,.jpeg,.png" class="mt-1 block w-full text-sm" required @change="fileForm.file = $event.target.files[0]" />
+                <InputLabel for="file-input">Signed copy</InputLabel>
+                <FileInput
+                    id="file-input"
+                    v-model="fileForm.file"
+                    class="mt-1"
+                    accept="application/pdf,image/jpeg,image/png"
+                    required
+                    :max-size-mb="10"
+                    :invalid="!!fileForm.errors.file"
+                    hint="PDF, JPG or PNG, up to 10 MB. Stored privately."
+                />
                 <InputError :message="fileForm.errors.file" />
             </div>
         </form>
         <template #footer>
             <Button variant="ghost" @click="filing = null">Cancel</Button>
-            <Button type="submit" form="file-form" :loading="fileForm.processing">File in the 201 File</Button>
+            <Button type="submit" form="file-form" icon="upload" :loading="fileForm.processing" :disabled="!fileForm.file">File in the 201 File</Button>
         </template>
     </Modal>
 
@@ -336,18 +357,33 @@ const submitNosi = () => nosiForm.post('/admin/hr/salary-notices/nosi', { preser
     <Modal :open="bulkOpen" title="File signed copies" icon="upload" @close="bulkOpen = false">
         <form id="bulk-form" class="grid gap-3" @submit.prevent="submitBulk">
             <p class="text-sm text-text">
-                Choose the signed files. Each is matched to its notice by name, the way the print page names them:
-                <code>NOSA_Uy, Rey Albert.pdf</code>, <code>NOSI_Aguillon, Otelia Fe.pdf</code>. Files that match no notice are listed so you can file them one by one.
+                Each file is matched to its notice by its name, which is the name the print page suggests when you save as PDF:
             </p>
+            <ul class="-mt-1 space-y-0.5 rounded-md bg-surface-muted px-3 py-2 text-sm text-text">
+                <li><code>NOSA_Dela Cruz, Juan.pdf</code></li>
+                <li><code>NOSI_Santos, Maria.pdf</code></li>
+            </ul>
             <div>
-                <InputLabel for="bulk-input">Signed copies (PDF, JPG or PNG, up to 10 MB each)</InputLabel>
-                <input id="bulk-input" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" class="mt-1 block w-full text-sm" required @change="bulkForm.files = Array.from($event.target.files)" />
+                <InputLabel for="bulk-input">Signed copies</InputLabel>
+                <MultiFileInput
+                    id="bulk-input"
+                    v-model="bulkForm.files"
+                    class="mt-1"
+                    accept="application/pdf,image/jpeg,image/png"
+                    :max-size-mb="10"
+                    :max-files="100"
+                    :invalid="Object.keys(bulkForm.errors).some((key) => key.startsWith('files'))"
+                    hint="PDF, JPG or PNG, up to 10 MB each and 100 at a time."
+                />
                 <InputError :message="bulkForm.errors.files || Object.entries(bulkForm.errors).find(([key]) => key.startsWith('files.'))?.[1]" />
             </div>
+            <p class="text-xs text-text-muted">Files that match no notice are listed afterwards, so you can file them one by one.</p>
         </form>
         <template #footer>
             <Button variant="ghost" @click="bulkOpen = false">Cancel</Button>
-            <Button type="submit" form="bulk-form" :loading="bulkForm.processing">File {{ bulkForm.files.length || '' }} copies</Button>
+            <Button type="submit" form="bulk-form" icon="upload" :loading="bulkForm.processing" :disabled="!bulkForm.files.length">
+                {{ bulkForm.files.length ? `File ${bulkForm.files.length} ${bulkForm.files.length === 1 ? 'copy' : 'copies'}` : 'File copies' }}
+            </Button>
         </template>
     </Modal>
 </template>

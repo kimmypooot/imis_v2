@@ -22,13 +22,14 @@ class NoticeSignatory
     public function __construct(private readonly CertifyingOfficer $officers) {}
 
     /**
-     * @return array<int, array{value: string, label: string, name: ?string}>
+     * @return array<int, array{value: string, label: string, position: string, name: ?string}>
      */
     public function options(): array
     {
         return collect(self::POSITIONS)->map(fn (array $signatory, string $key) => [
             'value' => $key,
             'label' => $signatory['label'],
+            'position' => $signatory['position'],
             'name' => $this->officers->holderOf($signatory['position']),
         ])->values()->all();
     }
