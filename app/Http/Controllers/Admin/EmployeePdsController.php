@@ -67,7 +67,9 @@ class EmployeePdsController extends Controller
             $reader->read($employee),
             $this->photoUrl($employee),
             null,
+            route('admin.hr.employees.pds.print', $employee, false),
             route('admin.hr.employees.pds.print.xlsx', $employee, false),
+            $printout->mode($request, null),
         ));
     }
 
@@ -80,7 +82,7 @@ class EmployeePdsController extends Controller
             $this->audit()->record(AuditEvent::PdsPrinted, "Downloaded the current PDS (Excel) of {$employee->user->name}", $employee);
         }
 
-        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null);
+        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null, $printout->mode($request, null));
     }
 
     private function photoUrl(Employee $employee): ?string

@@ -1,6 +1,6 @@
 <script setup>
 import { nextTick, onMounted } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { formatDateTime } from '../../Utils/datetime';
 import { PHOTO, SHEETS } from '../../Components/HR/Pds/pdsFormGeometry';
 
@@ -24,6 +24,9 @@ const props = defineProps({
     photoUrl: { type: String, default: null },
     signature: { type: Object, default: null },
     excelUrl: { type: String, default: null },
+    /** How it is signed (hand · pnpki · esign) and the choices, each with its page URL (PdsPrintout). */
+    mode: { type: String, default: 'hand' },
+    modes: { type: Array, default: () => [] },
 });
 
 // ── Placement (points from the page's top-left) ────────────────────
@@ -57,6 +60,12 @@ const entryStyle = (sheet, cell) => {
         justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
         textAlign: align,
     };
+};
+
+/** A box to leave clean (its printed hint covered), just inside its borders. */
+const coverStyle = (sheet, cell) => {
+    const { left, right, top, bottom } = rect(sheet, cell.at);
+    return { left: `${left + 1.5}pt`, top: `${top + 1.5}pt`, width: `${right - left - 3}pt`, height: `${bottom - top - 3}pt` };
 };
 
 const boxStyle = (sheet, link) => {
@@ -151,20 +160,40 @@ const print = () => window.print();
             <a v-if="excelUrl" :href="excelUrl" class="secondary">Download Excel</a>
             <button type="button" @click="print">Print / Save as PDF</button>
         </div>
+        <!-- How it will be signed: changes the signature boxes on every page and the Excel copy -->
+        <nav class="signing" aria-label="How this PDS is signed">
+            <span class="signing-label">Signature:</span>
+            <Link
+                v-for="option in modes"
+                :key="option.value"
+                :href="option.url"
+                preserve-scroll
+                class="signing-option"
+                :class="{ active: option.value === mode }"
+                :aria-current="option.value === mode ? 'true' : undefined"
+            >{{ option.label }}</Link>
+            <span class="signing-note">{{ modes.find((option) => option.value === mode)?.description }}</span>
+        </nav>
     </div>
 
     <main class="pds">
         <section v-for="(page, p) in pages" :key="p" class="sheet">
             <img class="bg" :src="SHEETS[page.sheet].image" alt="" />
 
-            <span
-                v-for="(cell, c) in page.cells"
-                :key="c"
-                v-fit
-                class="v"
-                :class="{ signature: cell.kind === 'signature' }"
-                :style="entryStyle(page.sheet, cell)"
-            ><span class="t">{{ cell.text }}</span></span>
+            <template v-for="(cell, c) in page.cells" :key="c">
+                <!-- A box left clean: its printed hint covered -->
+                <span v-if="cell.kind === 'blank'" class="cover" :style="coverStyle(page.sheet, cell)" />
+                <span v-else-if="cell.kind === 'signature-image' && signature?.image_url" class="v esign" :style="entryStyle(page.sheet, cell)">
+                    <img :src="signature.image_url" :alt="cell.text" />
+                </span>
+                <span
+                    v-else
+                    v-fit
+                    class="v"
+                    :class="{ signature: cell.kind === 'signature' }"
+                    :style="entryStyle(page.sheet, cell)"
+                ><span class="t">{{ cell.text }}</span></span>
+            </template>
 
             <svg v-for="link in page.checks" :key="link" class="tick" :style="boxStyle(page.sheet, link)" viewBox="0 0 10 10" aria-hidden="true">
                 <path d="M1.6 5.2 L4.1 7.8 L8.6 1.9" />
@@ -214,6 +243,10 @@ const print = () => window.print();
 .pds .v.wrapped .t { line-height: 0.95; text-wrap: balance; }
 /* An e-signature covers the box's "(e-signature/digital certificate)" hint. */
 .pds .v.signature { background: #fff; font-style: italic; }
+.pds .cover { position: absolute; background: #fff; }
+/* The e-signature image: as large as fits the box, centred, over its hint. */
+.pds .v.esign { background: #fff; justify-content: center; }
+.pds .v.esign img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .pds .tick { position: absolute; overflow: visible; }
 .pds .tick path { fill: none; stroke: #000; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 /* A 1 pt stroke like the frame's, drawn inside the edge so the photo stays exactly 3.5 × 4.5 cm. */
@@ -236,6 +269,13 @@ const print = () => window.print();
 }
 .pds-toolbar .hint { opacity: 0.9; }
 .pds-toolbar .actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+.pds-toolbar .signing { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; }
+.pds-toolbar .signing-label { font-weight: 600; }
+.pds-toolbar .signing-option { border: 1px solid #fff; border-radius: 9999px; padding: 0.2rem 0.8rem; color: #fff; text-decoration: none; }
+.pds-toolbar .signing-option:hover { background: rgb(255 255 255 / 0.15); }
+.pds-toolbar .signing-option:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.pds-toolbar .signing-option.active { background: #fff; color: var(--color-csc-blue); font-weight: 600; }
+.pds-toolbar .signing-note { flex-basis: 100%; opacity: 0.9; font-size: 0.8rem; }
 .pds-toolbar button, .pds-toolbar .secondary { border-radius: 0.375rem; padding: 0.35rem 1rem; font-weight: 600; white-space: nowrap; }
 .pds-toolbar button { background: #fff; color: var(--color-csc-blue); }
 .pds-toolbar .secondary { border: 1px solid #fff; color: #fff; }

@@ -91,16 +91,43 @@ class PdsFormTest extends TestCase
         $this->assertSame('CLERK', $c2['D19:F19']);
     }
 
-    public function test_a_signed_pds_carries_the_signature_on_every_page(): void
+    public function test_each_way_of_signing_fills_the_signature_boxes_on_every_page(): void
     {
-        $pages = app(PdsForm::class)->pages($this->pds(), ['name' => 'Juan Dela Cruz', 'signed_at' => '2026-11-20T09:00:00+08:00']);
-
-        foreach ($pages as $page) {
+        $signed = ['name' => 'Juan Dela Cruz', 'signed_at' => '2026-11-20T09:00:00+08:00'];
+        $boxes = fn (array $pages) => collect($pages)->map(function (array $page) {
             [$sign, $date] = PdsForm::SIGNATURE[$page['sheet']];
-            $cells = collect($page['cells'])->pluck('text', 'at');
-            $this->assertSame('Electronically signed through IMIS by Juan Dela Cruz', $cells[$sign], $page['sheet']);
-            $this->assertSame('20/11/2026', $cells[$date], $page['sheet']);
+            $cells = collect($page['cells'])->keyBy('at');
+
+            return ['sign' => $cells[$sign] ?? null, 'date' => $cells[$date] ?? null];
+        });
+
+        // E-signature: the image when one was kept, else a note; and the date signed.
+        foreach ($boxes(app(PdsForm::class)->pages($this->pds(), [...$signed, 'image_url' => '/sig'], PdsForm::ESIGN)) as $box) {
+            $this->assertSame('signature-image', $box['sign']['kind']);
+            $this->assertSame('20/11/2026', $box['date']['text']);
         }
+        foreach ($boxes(app(PdsForm::class)->pages($this->pds(), $signed, PdsForm::ESIGN)) as $box) {
+            $this->assertSame('Electronically signed through IMIS by Juan Dela Cruz', $box['sign']['text']);
+        }
+
+        // By hand: the box left clean (its hint covered) and no date.
+        foreach ($boxes(app(PdsForm::class)->pages($this->pds(), $signed, PdsForm::HAND)) as $box) {
+            $this->assertSame('blank', $box['sign']['kind']);
+            $this->assertNull($box['date']);
+        }
+
+        // PNPKI: the box clean for the digital signature, and the date.
+        foreach ($boxes(app(PdsForm::class)->pages($this->pds(), $signed, PdsForm::PNPKI)) as $box) {
+            $this->assertSame('blank', $box['sign']['kind']);
+            $this->assertSame('20/11/2026', $box['date']['text']);
+        }
+    }
+
+    public function test_the_oath_box_never_shows_its_e_signature_hint(): void
+    {
+        $c4 = collect(app(PdsForm::class)->pages($this->pds(), null)[3]['cells'])->keyBy('at');
+
+        $this->assertSame('blank', $c4['F68:J68']['kind']);
     }
 
     public function test_the_excel_copy_reads_back_as_the_same_pds(): void
@@ -151,7 +178,11 @@ class PdsFormTest extends TestCase
         $employee = Employee::factory()->for(User::factory())->create();
 
         $this->actingAs($employee->user)->get('/my/pds/print')
-            ->assertInertia(fn (Assert $page) => $page->component('HR/PdsPrint')->where('pages.0.sheet', 'C1')->where('excelUrl', '/my/pds/print.xlsx'));
+            ->assertInertia(fn (Assert $page) => $page->component('HR/PdsPrint')->where('pages.0.sheet', 'C1')->where('mode', 'hand')->where('excelUrl', '/my/pds/print.xlsx?signature=hand'));
+        // An unsigned PDS can't carry an e-signature; asking for one falls back to signing by hand.
+        $this->actingAs($employee->user)->get('/my/pds/print?signature=esign')
+            ->assertInertia(fn (Assert $page) => $page->where('mode', 'hand')->where('modes', fn ($modes) => collect($modes)->pluck('value')->all() === ['hand', 'pnpki']));
+        $this->actingAs($employee->user)->get('/my/pds/print?signature=pnpki')->assertInertia(fn (Assert $page) => $page->where('mode', 'pnpki'));
         $this->actingAs($employee->user)->get('/my/pds/print.xlsx')
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

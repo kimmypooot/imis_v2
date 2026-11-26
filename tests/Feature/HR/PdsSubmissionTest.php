@@ -229,6 +229,44 @@ class PdsSubmissionTest extends TestCase
         $this->assertSame(2, DB::table('audit_logs')->where('event', 'pds.printed')->where('actor_id', $hr->id)->count());
     }
 
+    public function test_the_signed_copy_keeps_the_signers_e_signature_and_prints_it(): void
+    {
+        $employee = $this->employee();
+        $image = imagecreatetruecolor(300, 100);
+        ob_start();
+        imagepng($image);
+        Storage::disk('local')->put('signatures/live.png', (string) ob_get_clean());
+        $employee->user->forceFill(['signature_path' => 'signatures/live.png'])->save();
+
+        $submission = $this->sign($employee);
+
+        // A copy of their e-signature as it was, so later changes don't alter what was signed.
+        $this->assertStringStartsWith('signatures/snapshots/', $submission->signature_path);
+        Storage::disk('local')->delete('signatures/live.png');
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/signature")->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->actingAs($this->employee()->user)->get("/pds/submissions/{$submission->id}/signature")->assertForbidden();
+
+        // It prints with the e-signature unless another way of signing is chosen.
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print")
+            ->assertInertia(fn (Assert $page) => $page->where('mode', 'esign')
+                ->where('signature.image_url', "/pds/submissions/{$submission->id}/signature")
+                ->missing('signature.image_file')
+                ->where('pages.0.cells', fn ($cells) => collect($cells)->contains('kind', 'signature-image')));
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print?signature=hand")
+            ->assertInertia(fn (Assert $page) => $page->where('mode', 'hand')->where('pages.0.cells', fn ($cells) => ! collect($cells)->contains('kind', 'signature-image')));
+
+        // The Excel copy carries it too, on every sheet, including those without a drawing of their own.
+        $file = tempnam(sys_get_temp_dir(), 'pds');
+        file_put_contents($file, $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print.xlsx")->assertOk()->getContent());
+        $zip = new \ZipArchive;
+        $zip->open($file);
+        $this->assertNotFalse($zip->locateName('xl/media/pds-signature.png'));
+        $this->assertStringContainsString('PDS E-signature', (string) $zip->getFromName('xl/drawings/pds-drawing2.xml'));
+        $this->assertStringContainsString('PDS E-signature', (string) $zip->getFromName('xl/drawings/drawing1.xml'));
+        $zip->close();
+        @unlink($file);
+    }
+
     // ── Photo ────────────────────────────────────────────────────────
 
     public function test_the_photo_is_private_and_frozen_with_each_submission(): void

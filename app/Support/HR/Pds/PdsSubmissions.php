@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Pds\PdsSubmission;
 use App\Models\User;
 use App\Support\ApprovalTrail;
+use App\Support\HR\Signatures;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -22,7 +23,7 @@ class PdsSubmissions
 {
     public const FORM = 'CS Form No. 212 (Revised 2026)';
 
-    public function __construct(private readonly PdsReader $reader, private readonly PdsPhotos $photos) {}
+    public function __construct(private readonly PdsReader $reader, private readonly PdsPhotos $photos, private readonly Signatures $signatures) {}
 
     /**
      * E-signs and submits the live PDS. An earlier submission still
@@ -48,6 +49,8 @@ class PdsSubmissions
                 'signed_by' => $signer->id,
                 'signed_at' => now(),
                 'signed_ip' => $ip,
+                // Their e-signature as it is now, printed on every page of this copy.
+                'signature_path' => $this->signatures->snapshot($signer->signature_path),
             ])->save();
 
             return $submission;

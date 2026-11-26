@@ -228,6 +228,7 @@ Route::middleware('auth')->group(function () {
     Route::get('pds/submissions/{submission}/print', PdsSubmissionPrintController::class)->name('pds.submissions.print');
     Route::get('pds/submissions/{submission}/print.xlsx', [PdsSubmissionPrintController::class, 'workbook'])->middleware('throttle:30,1')->name('pds.submissions.print.xlsx');
     Route::get('pds/submissions/{submission}/photo', [PdsPhotoController::class, 'showSubmission'])->name('pds.submissions.photo');
+    Route::get('pds/submissions/{submission}/signature', [PdsSubmissionPrintController::class, 'signatureImage'])->name('pds.submissions.signature');
 
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('announcements/{announcement:slug}', [AnnouncementController::class, 'show'])->name('announcements.show');

@@ -3333,10 +3333,24 @@ saving without changes doesn't count.
   continuation sheets printed only when used. The PDS editor shows the
   guide's filling-in rules as field hints (e.g. PRIMARY EDUCATION, HIGH
   SCHOOL / JUNIOR or SENIOR HIGH SCHOOL, names and agencies in full).
-- **Signature:** on a signed copy, "Electronically signed through IMIS by
-  {name}" in each page's signature box (over its "(e-signature/digital
-  certificate)" hint) and the signing date in its date box. On the current
-  PDS both are left blank.
+- **Signature:** each print and Excel copy is for one way of signing,
+  chosen in the print page's toolbar (`?signature=`, `PdsPrintout::mode`):
+  - **By hand** (`hand`): every signature box and its date blank.
+  - **PNPKI** (`pnpki`): the boxes blank, the dates filled (when signed, or
+    today); the PDF is saved and signed with the employee's own PNPKI
+    certificate outside IMIS. No certificate ever touches IMIS.
+  - **E-signature** (`esign`, signed copies only, and their default): the
+    signer's e-signature image in every box, with the date signed. Signing a
+    PDS keeps a copy of the signer's e-signature
+    (`pds_submissions.signature_path`, `Signatures::snapshot`), served at
+    `/pds/submissions/{id}/signature` to whoever may view the submission.
+    Without a saved image, each box notes "Electronically signed through
+    IMIS by {name}".
+  The boxes' "(e-signature/digital certificate)" hint is always removed, and
+  so is the oath box's "(e-signature/digital certificate except for notary
+  public)". In the Excel copy, pictures go on each sheet's drawing (one is
+  made for sheets that have none), and changed parts are written once
+  (libzip can't read back an entry replaced in an open archive).
 - The right thumbmark and the oath block print blank, for wet completion.
 - **Printing:** 8.5 × 13 in paper, Margins None, Scale 100%.
 - **Routes:**

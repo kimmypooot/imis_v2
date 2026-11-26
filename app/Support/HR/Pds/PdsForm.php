@@ -48,6 +48,13 @@ class PdsForm
     /** Lists whose entries are centred in their cells (here and on their continuation sheets). */
     private const CENTRED = ['education', 'eligibility', 'work_experience', 'other_information'];
 
+    /** How a printed PDS is signed: by hand, with a PNPKI digital signature on the saved PDF, or with the IMIS e-signature. */
+    public const HAND = 'hand';
+
+    public const PNPKI = 'pnpki';
+
+    public const ESIGN = 'esign';
+
     /** The order continuation sheets come in. */
     private const CONTINUATION_ORDER = ['C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11'];
 
@@ -64,10 +71,11 @@ class PdsForm
 
     /**
      * @param  array{identity: array<string, mixed>, sections: array<string, mixed>}  $pds  PdsReader::read() or a submission's snapshot
-     * @param  array{name: string, signed_at: string}|null  $signature  who e-signed it and when; null for the current (unsigned) PDS
+     * @param  array{name: string, signed_at: string, image_url?: ?string, image_file?: ?string}|null  $signature  who e-signed it and when, and their e-signature image if any; null for the current (unsigned) PDS
+     * @param  string  $mode  how it is signed on paper: HAND, PNPKI or ESIGN (see signatureCells)
      * @return array<int, array{sheet: string, cells: array<int, array{at: string, text: string, align?: string, kind?: string}>, checks: array<int, string>}>
      */
-    public function pages(array $pds, ?array $signature = null): array
+    public function pages(array $pds, ?array $signature = null, string $mode = self::HAND): array
     {
         $this->identity = $pds['identity'] ?? [];
         $this->sections = $pds['sections'] ?? [];
@@ -96,8 +104,8 @@ class PdsForm
         return array_map(fn (array $page) => [
             ...$page,
             'cells' => array_values(array_filter(
-                [...$page['cells'], ...$this->signatureCells($page['sheet'], $signature)],
-                fn (array $cell) => $cell['text'] !== '',
+                [...$page['cells'], ...$this->signatureCells($page['sheet'], $signature, $mode), ...$this->oath($page['sheet'])],
+                fn (array $cell) => $cell['text'] !== '' || ($cell['kind'] ?? null) === 'blank',
             )),
         ], $all);
     }
@@ -469,19 +477,51 @@ class PdsForm
     // ── Signature and helpers ──────────────────────────────────────────
 
     /**
-     * @param  array{name: string, signed_at: string}|null  $signature
+     * The oath box on C4 (Person Administering Oath) without its
+     * "(e-signature/digital certificate except for notary public)" hint:
+     * the oath is taken in person.
+     *
      * @return array<int, array<string, string>>
      */
-    private function signatureCells(string $sheet, ?array $signature): array
+    private function oath(string $sheet): array
     {
-        if ($signature === null) {
-            return [];
-        }
+        return $sheet === 'C4' ? [['at' => 'F68:J68', 'text' => '', 'kind' => 'blank']] : [];
+    }
+
+    /**
+     * Each page's signature box and the date beside it, by how it is signed:
+     * - `hand`: both blank, to sign and date by hand;
+     * - `pnpki`: the box blank for a PNPKI digital signature, applied to the
+     *   saved PDF; the date filled in (when signed, or today);
+     * - `esign`: the signer's e-signature image (`signature-image`; its text
+     *   is a description), or a note that it was signed through IMIS when
+     *   they had no image saved, and the date signed.
+     * The box's "(e-signature/digital certificate)" hint is always covered
+     * (`blank`), so a box to be signed is clean.
+     *
+     * @param  array{name: string, signed_at: string, image_url?: ?string, image_file?: ?string}|null  $signature
+     * @return array<int, array<string, string>>
+     */
+    private function signatureCells(string $sheet, ?array $signature, string $mode): array
+    {
         [$sign, $date] = self::SIGNATURE[$sheet];
+        $blank = ['at' => $sign, 'text' => '', 'kind' => 'blank'];
+        $dated = fn (string $value) => ['at' => $date, 'text' => $this->dmy($value), 'align' => 'center', 'kind' => 'signature-date'];
+
+        if ($mode === self::PNPKI) {
+            return [$blank, $dated($signature['signed_at'] ?? now()->toDateString())];
+        }
+        if ($mode !== self::ESIGN || $signature === null) {
+            return [$blank];
+        }
+
+        $image = ! empty($signature['image_url']) || ! empty($signature['image_file']);
 
         return [
-            ['at' => $sign, 'text' => "Electronically signed through IMIS by {$signature['name']}", 'align' => 'center', 'kind' => 'signature'],
-            $this->cell($date, $this->dmy($signature['signed_at']), 'center'),
+            $image
+                ? ['at' => $sign, 'text' => "E-signature of {$signature['name']}", 'align' => 'center', 'kind' => 'signature-image']
+                : ['at' => $sign, 'text' => "Electronically signed through IMIS by {$signature['name']}", 'align' => 'center', 'kind' => 'signature'],
+            $dated($signature['signed_at']),
         ];
     }
 

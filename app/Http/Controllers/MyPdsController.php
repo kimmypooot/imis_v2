@@ -99,7 +99,14 @@ class MyPdsController extends Controller
     {
         $employee = $this->requireEmployee($request);
 
-        return Inertia::render('HR/PdsPrint', $printout->page($reader->read($employee), $this->photoUrl($employee), null, route('my.pds.print.xlsx', [], false)));
+        return Inertia::render('HR/PdsPrint', $printout->page(
+            $reader->read($employee),
+            $this->photoUrl($employee),
+            null,
+            route('my.pds.print', [], false),
+            route('my.pds.print.xlsx', [], false),
+            $printout->mode($request, null),
+        ));
     }
 
     /** Your current PDS on CSC's own workbook (CS Form No. 212). */
@@ -107,7 +114,7 @@ class MyPdsController extends Controller
     {
         $employee = $this->requireEmployee($request);
 
-        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null);
+        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null, $printout->mode($request, null));
     }
 
     private function employee(Request $request): ?Employee
