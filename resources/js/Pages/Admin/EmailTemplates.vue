@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
@@ -32,6 +33,7 @@ const selectedKey = ref(props.templates[0]?.key);
 const selected = computed(() => props.templates.find((template) => template.key === selectedKey.value));
 
 const form = useForm({ subject: '', intro: '', button: '', outro: '' });
+useUnsavedChanges(form, { message: 'Your changes to this email template are not saved yet. If you leave now, they will be lost.' });
 const load = () => {
     const current = selected.value.current;
     form.defaults({ subject: current.subject, intro: current.intro ?? '', button: current.button ?? '', outro: current.outro ?? '' });

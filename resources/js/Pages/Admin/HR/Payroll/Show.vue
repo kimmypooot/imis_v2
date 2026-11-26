@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
@@ -96,6 +97,7 @@ const taxForm = useForm({ taxes: Object.fromEntries(taxRows.value.map((item) => 
 const taxNet = (row) => row.net_pay + row.withholding_tax - Number(taxForm.taxes[row.id] || 0);
 const taxTotal = computed(() => taxRows.value.reduce((total, row) => total + Number(taxForm.taxes[row.id] || 0), 0));
 const saveTaxes = () => taxForm.put(`${base}/withholding-tax`, { preserveScroll: true, onSuccess: () => taxForm.defaults() });
+useUnsavedChanges(taxForm, { message: 'The withholding taxes you entered are not saved yet. If you leave now, they will be lost.' });
 const returnDialog = ref(false);
 const returnForm = useForm({ note: '' });
 const missingTax = computed(() => taxRows.value.filter((row) => !row.own && !Number(taxForm.taxes[row.id] || 0)).length);

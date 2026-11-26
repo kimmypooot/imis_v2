@@ -12,6 +12,7 @@ import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 
 defineOptions({ layout: PortalLayout });
 
@@ -62,6 +63,8 @@ const form = useForm({
     sign: false,
     password: '',
 });
+
+useUnsavedChanges(form, { message: "Your leave application hasn't been submitted. If you leave now, what you entered will be lost." });
 
 const type = computed(() => props.types.find((option) => option.id === Number(form.leave_type_id)) ?? null);
 // Types you can file first; the ones you can't yet are greyed out in their own group, each with a short reason.

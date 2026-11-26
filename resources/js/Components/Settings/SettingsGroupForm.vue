@@ -1,5 +1,6 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
@@ -30,6 +31,8 @@ const form = useForm({
         props.group.settings.filter((setting) => setting.editable).map((setting) => [setting.key, toInput(setting)]),
     ),
 });
+
+useUnsavedChanges(form, { message: `Your changes to ${props.group.label} are not saved yet. If you leave now, they will be lost.` });
 
 const inputTypes = { string: 'text', integer: 'number', url: 'url', email: 'email', date: 'date' };
 

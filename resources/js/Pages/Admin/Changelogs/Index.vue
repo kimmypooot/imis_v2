@@ -2,6 +2,7 @@
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
@@ -38,6 +39,7 @@ const blank = () => ({ version: '', title: '', release_date: '', items: [{ type:
 const current = ref(null);
 const form = useForm(blank());
 const isEditing = computed(() => current.value !== null);
+useUnsavedChanges(form, { message: 'This release note is not saved yet. If you leave now, what you wrote will be lost.' });
 const showPreview = ref(false);
 
 const startEdit = (changelog) => {

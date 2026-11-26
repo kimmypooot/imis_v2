@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
 import PdsSectionForm from './PdsSectionForm.vue';
@@ -54,27 +54,7 @@ const identity = computed(() => [
 ]);
 
 // Don't lose unsaved work: warn on leaving the page or navigating away.
-const onBeforeUnload = (event) => {
-    if (!anyDirty.value) return;
-    event.preventDefault();
-    event.returnValue = '';
-};
-
-let removeBeforeListener;
-
-onMounted(() => {
-    window.addEventListener('beforeunload', onBeforeUnload);
-    removeBeforeListener = router.on('before', (event) => {
-        if (event.detail.visit.method === 'get' && anyDirty.value && !window.confirm('You have unsaved PDS changes. Leave without saving?')) {
-            event.preventDefault();
-        }
-    });
-});
-
-onBeforeUnmount(() => {
-    window.removeEventListener('beforeunload', onBeforeUnload);
-    removeBeforeListener?.();
-});
+useUnsavedChanges(anyDirty, { message: 'You have unsaved PDS changes. If you leave now, they will be lost.' });
 </script>
 
 <template>

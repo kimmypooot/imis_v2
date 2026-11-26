@@ -9,6 +9,7 @@ import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
 import Radio from '@cscro8/ui/Components/Forms/Radio.vue';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import { formatPeso } from '../../../Utils/money';
 
 /**
@@ -96,6 +97,9 @@ const form = useForm({
     officer_title: props.saln.officer_title ?? '',
 });
 const s = form.statement;
+
+// A statement takes a while to encode: don't lose it to a stray click.
+useUnsavedChanges(form, { message: 'Your SALN has changes that are not saved yet. Choose Stay, then Save draft, to keep them.' });
 const locked = computed(() => !props.saln.editable);
 const err = (path) => form.errors[`statement.${path}`];
 const errorList = computed(() => Object.values(form.errors));

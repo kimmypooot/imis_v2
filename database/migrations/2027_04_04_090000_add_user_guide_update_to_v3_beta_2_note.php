@@ -52,6 +52,7 @@ return new class extends Migration
     private static function items(): array
     {
         return [
+            ['improvement', 'IMIS asks before you lose unsaved work. Leaving a leave application, your PDS or SALN, System Settings, an email template, payroll withholding taxes or a release note with changes not yet saved asks "Leave without saving?" first; Stay (or Enter) keeps you on the page with everything you typed.'],
             ['improvement', 'Notices that close on their own (Done, Notice, Heads up) show a thin bar that empties as their time runs out. Point at one to hold it open: the bar pauses and starts over when you move away. Errors still stay until you close them.'],
             ['feature', 'Preview a biometric log before uploading it: Preview, beside Replace, shows what the upload would add (new punches against those already on file, month by month), what it would skip, each Biometric ID with the employee it belongs to, and the file\'s first lines. Nothing is saved until you upload.'],
             ['improvement', 'Biometric logs puts the upload first, with Who has submitted, Employees, IDs not on any employee and Recent uploads in tabs below. Each employee counts once, in the office they ended the month in, and Contract of Service personnel aren\'t counted.'],
