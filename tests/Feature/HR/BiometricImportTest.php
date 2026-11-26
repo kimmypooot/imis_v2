@@ -182,7 +182,28 @@ class BiometricImportTest extends TestCase
                     'CSC Field Office - Leyte I' => 'received',
                     'CSC Field Office - Samar' => 'missing',
                 ])
-                ->where('monitor.0.people.0.reason', 'No punches'));
+                // Each office lists its staff, missing first: the Regional Office's second employee has no punches.
+                ->where('monitor.0.staff.0.status', 'no_punches')
+                ->where('monitor.0.staff.0.biometric_id', '2')
+                ->where('monitor.0.staff.1.status', 'in')
+                ->where('monitor.0.staff.1.days', 1)
+                ->where('monitor.0.staff.1.last_punch', '2026-03-02'));
+    }
+
+    public function test_someone_without_a_biometric_id_is_listed_first_as_missing(): void
+    {
+        $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
+        Employee::factory()->create(['biometric_id' => '5', 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Ana Punched'])]);
+        Employee::factory()->create(['biometric_id' => null, 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Zed NoId'])]);
+
+        $hrd = $this->userWith(['dtr.manage']);
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => UploadedFile::fake()->createWithContent('all.dat', "5\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n5\t2026-03-03 08:00:00\t1\t0\t0\t0\r\n")]);
+
+        $samar = collect($this->actingAs($hrd)->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Samar');
+
+        $this->assertSame(['Zed NoId', 'Ana Punched'], array_column($samar['staff'], 'name'));
+        $this->assertSame(['no_id', 'in'], array_column($samar['staff'], 'status'));
+        $this->assertSame(2, $samar['staff'][1]['days']);
     }
 
     public function test_a_transferee_counts_in_the_office_they_worked_in_that_month(): void

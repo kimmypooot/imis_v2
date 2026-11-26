@@ -12,6 +12,8 @@ import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import ProgressBar from '@cscro8/ui/Components/UI/ProgressBar.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
 import FileInput from '@cscro8/ui/Components/Forms/FileInput.vue';
@@ -72,10 +74,9 @@ const clearSelected = async () => {
     });
 };
 
-const open = ref(null);
 // The office whose "Excel" is open, to choose a single or double layout.
 const exporting = ref(null);
-const goToMonth =(value) => router.get('/admin/hr/dtr/import', { month: value }, { preserveScroll: true, preserveState: true, only: ['month', 'monthLabel', 'monitor'], onSuccess: () => (open.value = null) });
+const goToMonth = (value) => router.get('/admin/hr/dtr/import', { month: value }, { preserveScroll: true, preserveState: true, only: ['month', 'monthLabel', 'monitor'] });
 const shiftMonth = (step) => {
     const [year, mon] = props.month.split('-').map(Number);
     const date = new Date(year, mon - 1 + step, 1);
@@ -86,6 +87,34 @@ const statusLabel = { received: 'Complete', partial: 'Partial', missing: 'Not ye
 const statusTone = { received: 'success', partial: 'warning', missing: 'danger' };
 
 const number = (value) => Number(value).toLocaleString();
+
+// Everyone, office by office, so HRD sees exactly who is missing: no Biometric ID or no punches this month.
+const missingIn = (row) => row.staff.filter((person) => person.status !== 'in').length;
+const staffRows = computed(() => props.monitor.flatMap((row) => row.staff.map((person) => ({ ...person, office: row.office, office_key: row.key, row_key: `${row.key}-${person.employee_id}` }))));
+const staffOffice = ref('');
+const staffShow = ref('missing');
+const officeStaff = computed(() => staffRows.value.filter((person) => !staffOffice.value || person.office_key === staffOffice.value));
+const shownStaff = computed(() => (staffShow.value === 'missing' ? officeStaff.value.filter((person) => person.status !== 'in') : officeStaff.value));
+const missingTotal = computed(() => staffRows.value.filter((person) => person.status !== 'in').length);
+const showMissing = (row) => {
+    staffOffice.value = row.key;
+    staffShow.value = 'missing';
+    document.getElementById('dtr-staff')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+const personStatus = {
+    no_id: { label: 'No Biometric ID', tone: 'danger' },
+    no_punches: { label: 'No punches', tone: 'warning' },
+    in: { label: 'Punches in', tone: 'success' },
+};
+const staffColumns = [
+    { key: 'name', label: 'Employee', value: (row) => `${row.name} ${row.position ?? ''}` },
+    { key: 'office', label: 'Office' },
+    { key: 'punches', label: 'This month', sortable: false, export: false },
+    { key: 'status', label: 'Status', value: (row) => personStatus[row.status].label },
+    { key: 'biometric_id', label: 'Biometric ID', hidden: true, value: (row) => row.biometric_id ?? '' },
+    { key: 'days', label: 'Days punched', hidden: true, value: (row) => String(row.days) },
+    { key: 'last_punch', label: 'Last punch', hidden: true, value: (row) => row.last_punch ?? '' },
+];
 
 // Folded figures keep their own hidden columns, so the export still has each one.
 const monitorColumns = [
@@ -145,18 +174,9 @@ const importColumns = [
             </div>
             <DataTable :columns="monitorColumns" :rows="monitor" row-key="key" :caption="`Offices whose biometric logs are on file for ${monthLabel}`" :export-name="`imis-dtr-submissions-${month}`" :numbered="false" :searchable="false" :default-page-size="50">
                 <template #cell-office="{ row }">
-                    <button v-if="row.people.length" type="button" class="inline-flex items-center gap-1 text-left font-medium text-text hover:text-link" :aria-expanded="open === row.key" :aria-controls="`monitor-${row.key}`" @click="open = open === row.key ? null : row.key">
-                        <Icon :name="open === row.key ? 'chevronDown' : 'chevronRight'" size="sm" />{{ row.office }}
-                    </button>
-                    <span v-else class="font-medium text-text">{{ row.office }}</span>
-                    <div v-if="open === row.key" :id="`monitor-${row.key}`" class="mt-2 rounded-md bg-surface-muted px-3 py-2">
-                        <p class="text-xs font-medium text-text-muted">{{ row.people.length }} {{ row.people.length === 1 ? 'employee has' : 'employees have' }} no punches for {{ monthLabel }}:</p>
-                        <ul class="mt-1 space-y-0.5 text-sm">
-                            <li v-for="person in row.people" :key="person.name" class="flex items-center justify-between gap-3">
-                                <span class="truncate">{{ person.name }}</span>
-                                <span class="shrink-0 text-xs" :class="person.reason === 'No Biometric ID' ? 'text-warning-fg' : 'text-text-muted'">{{ person.reason }}</span>
-                            </li>
-                        </ul>
+                    <span class="font-medium text-text">{{ row.office }}</span>
+                    <div v-if="missingIn(row)">
+                        <Button size="sm" variant="link" :aria-label="`See who is missing in ${row.office}`" @click="showMissing(row)">{{ missingIn(row) }} missing: see who</Button>
                     </div>
                 </template>
                 <template #cell-status="{ row }">
@@ -169,6 +189,40 @@ const importColumns = [
                 <template #cell-export="{ row }">
                     <span v-if="!row.employees" />
                     <Button v-else size="sm" variant="secondary" icon="download" :aria-label="`Export ${row.office} DTRs for ${monthLabel} to Excel`" @click="exporting = row">Excel</Button>
+                </template>
+            </DataTable>
+        </Card>
+
+        <Card id="dtr-staff" :title="`Employees, office by office: ${monthLabel}`" icon="users" :description="missingTotal ? `${missingTotal} ${missingTotal === 1 ? 'employee has' : 'employees have'} no punches yet this month, or no Biometric ID.` : 'Everyone has punches on file this month.'">
+            <DataTable
+                :columns="staffColumns"
+                :rows="shownStaff"
+                row-key="row_key"
+                :caption="`Employees and their punches for ${monthLabel}`"
+                :export-name="`imis-dtr-employees-${month}`"
+                :numbered="false"
+                :empty-text="staffShow === 'missing' ? 'No one is missing here.' : 'No employees here.'"
+            >
+                <template #toolbar>
+                    <FilterButtons
+                        v-model="staffShow"
+                        variant="pills"
+                        label="Show"
+                        :options="[{ value: 'missing', label: 'Missing', count: officeStaff.filter((person) => person.status !== 'in').length }, { value: 'all', label: 'Everyone', count: officeStaff.length }]"
+                    />
+                    <select v-model="staffOffice" class="filter-control" aria-label="Office">
+                        <option value="">All offices</option>
+                        <option v-for="row in monitor" :key="row.key" :value="row.key">{{ row.office }}</option>
+                    </select>
+                </template>
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}/dtr?month=${month}`" :subtitle="row.position" />
+                </template>
+                <template #cell-punches="{ row }">
+                    <CellFacts :facts="[{ label: 'Biometric ID', value: row.biometric_id ?? '—' }, { label: 'Days punched', value: String(row.days) }, { label: 'Last punch', value: row.last_punch ? formatCalendarDate(row.last_punch) : null }]" />
+                </template>
+                <template #cell-status="{ row }">
+                    <Badge :tone="personStatus[row.status].tone">{{ personStatus[row.status].label }}</Badge>
                 </template>
             </DataTable>
         </Card>

@@ -526,7 +526,7 @@ return [
                     'summary' => 'Bring in the biometric punches, give everyone a work schedule, and keep each month\'s Daily Time Records in order.',
                     'steps' => [
                         'Open Biometric logs and upload the attendance log (.dat) under "Upload the consolidated log". Punches already on file are skipped, and everyone in service is told under the bell that the logs are in.',
-                        'Check "Who has submitted" for the month. Click an office to see who has no punches, or choose Excel to export its DTRs.',
+                        'Check "Who has submitted" for the month. Choose "missing: see who" on an office to list just its missing people (no punches or no Biometric ID) under "Employees, office by office", or choose Excel to export its DTRs.',
                         'Open Work schedules. Under Assign, tick the employees, pick a schedule and the dates, and apply it to all of them at once.',
                         'Open DTR Management, pick the month and office, and use the buttons (No biometric ID, No work schedule, Entries to verify…) to find what needs attention. Open someone\'s DTR to adjust a day or fix a raw punch.',
                         'After the month ends, open Tardiness & undertime and choose "Sync with DTR" to charge late and undertime minutes to leave credits.',

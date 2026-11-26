@@ -20,7 +20,11 @@ class UploadMonitor
     public const REGIONAL = 'regional';
 
     /**
-     * @return list<array{key: string, office: string, employees: int, with_id: int, with_punches: int, last_punch: ?string, people: list<array{name: string, reason: string}>, status: string}>
+     * Each office lists all its staff for the month (`staff`): missing ones
+     * first (no Biometric ID, then no punches), each with the days they
+     * punched and their last punch, so HRD sees exactly who is missing.
+     *
+     * @return list<array{key: string, office: string, employees: int, with_id: int, with_punches: int, last_punch: ?string, staff: list<array{employee_id: int, name: string, photo_url: ?string, position: ?string, biometric_id: ?string, days: int, last_punch: ?string, status: string}>, status: string}>
      */
     public function forMonth(Carbon $month): array
     {
@@ -31,23 +35,36 @@ class UploadMonitor
             ->whereNull('voided_at')
             ->whereBetween('punched_at', [$from, $to])
             ->groupBy('biometric_id')
-            ->selectRaw('biometric_id, max(punched_at) as last_at')
-            ->pluck('last_at', 'biometric_id');
+            ->selectRaw('biometric_id, max(punched_at) as last_at, count(distinct date(punched_at)) as days')
+            ->get()
+            ->keyBy('biometric_id');
 
         $units = OrganizationalUnit::query()->active()->workingOffices()->get(['id', 'unit_type', 'name', 'short_name'])->keyBy('id');
 
-        $groups = [self::REGIONAL => ['office' => 'Regional Office', 'sort' => '', 'employees' => 0, 'with_id' => 0, 'with_punches' => 0, 'last' => null, 'people' => []]];
+        $groups = [self::REGIONAL => ['office' => 'Regional Office', 'sort' => '', 'employees' => 0, 'with_id' => 0, 'with_punches' => 0, 'last' => null, 'staff' => []]];
         foreach ($units as $unit) {
             if ($unit->unit_type !== UnitType::RegionalSupportUnit) {
-                $groups[(string) $unit->id] = ['office' => $unit->name, 'sort' => $unit->name, 'employees' => 0, 'with_id' => 0, 'with_punches' => 0, 'last' => null, 'people' => []];
+                $groups[(string) $unit->id] = ['office' => $unit->name, 'sort' => $unit->name, 'employees' => 0, 'with_id' => 0, 'with_punches' => 0, 'last' => null, 'staff' => []];
             }
         }
 
-        Employee::query()->with(['user:id,name,organizational_unit_id', 'assignments' => fn ($query) => $query->reassignments()->orderBy('effective_date')->orderBy('id')])
+        Employee::query()->with(['user:id,name,position,organizational_unit_id,profile_photo_path', 'assignments' => fn ($query) => $query->reassignments()->orderBy('effective_date')->orderBy('id')])
             ->whereNull('separation_date')
             ->get(['id', 'user_id', 'biometric_id'])
             ->each(function (Employee $employee) use (&$groups, $units, $punched, $from, $to) {
-                $last = $employee->biometric_id !== null && $employee->biometric_id !== '' ? $punched->get($employee->biometric_id) : null;
+                $hasId = $employee->biometric_id !== null && $employee->biometric_id !== '';
+                $punches = $hasId ? $punched->get($employee->biometric_id) : null;
+                $last = $punches?->last_at;
+                $person = [
+                    'employee_id' => $employee->id,
+                    'name' => $employee->user?->name ?? '—',
+                    'photo_url' => $employee->user?->profile_photo_url,
+                    'position' => $employee->user?->position,
+                    'biometric_id' => $hasId ? (string) $employee->biometric_id : null,
+                    'days' => (int) ($punches?->days ?? 0),
+                    'last_punch' => $last ? substr((string) $last, 0, 10) : null,
+                    'status' => ! $hasId ? 'no_id' : ($last === null ? 'no_punches' : 'in'),
+                ];
 
                 // A transferee counts where they worked that month, so each office is judged on its own staff.
                 foreach ($this->unitsDuring($employee, $from, $to) as $unitId) {
@@ -55,12 +72,9 @@ class UploadMonitor
                     $key = $unit && $unit->unit_type !== UnitType::RegionalSupportUnit ? (string) $unit->id : self::REGIONAL;
 
                     $groups[$key]['employees']++;
-                    $hasId = $employee->biometric_id !== null && $employee->biometric_id !== '';
+                    $groups[$key]['staff'][] = $person;
                     if ($hasId) {
                         $groups[$key]['with_id']++;
-                    }
-                    if ($last === null) {
-                        $groups[$key]['people'][] = ['name' => $employee->user?->name ?? '—', 'reason' => $hasId ? 'No punches' : 'No Biometric ID'];
                     }
                     if ($last !== null) {
                         $groups[$key]['with_punches']++;
@@ -76,7 +90,11 @@ class UploadMonitor
             'with_id' => $group['with_id'],
             'with_punches' => $group['with_punches'],
             'last_punch' => $group['last'] ? substr($group['last'], 0, 10) : null,
-            'people' => collect($group['people'])->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values()->all(),
+            // Missing first (no ID, then no punches), then by name.
+            'staff' => collect($group['staff'])->sortBy([
+                fn (array $a, array $b) => ['no_id' => 0, 'no_punches' => 1, 'in' => 2][$a['status']] <=> ['no_id' => 0, 'no_punches' => 1, 'in' => 2][$b['status']],
+                fn (array $a, array $b) => strnatcasecmp($a['name'], $b['name']),
+            ])->values()->all(),
             'status' => match (true) {
                 $group['with_punches'] === 0 => 'missing',
                 $group['with_punches'] < $group['with_id'] => 'partial',
