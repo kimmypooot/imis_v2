@@ -225,6 +225,29 @@ class ActivityHttpTest extends TestCase
         $this->assertSame(5, Activity::query()->whereNotNull('series_id')->count());
     }
 
+    public function test_following_edit_can_switch_a_monthly_series_from_day_of_month_to_nth_weekday(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+        $this->actingAs($poster)->post('/activities', $this->form($office, [
+            'starts_on' => '2027-03-01',
+            'ends_on' => null,
+            'repeat' => ['frequency' => 'monthly', 'day_of_month' => 5, 'until' => '2027-08-31', 'skip_holidays' => false],
+        ]))->assertSessionHasNoErrors();
+        $may = Activity::query()->whereDate('starts_on', '2027-05-05')->firstOrFail();
+
+        $this->actingAs($poster)->put("/activities/{$may->id}", [
+            'scope' => 'following',
+            'repeat' => ['frequency' => 'monthly', 'nth_weekday' => 1, 'weekday' => 2],
+        ])->assertSessionHasNoErrors();
+
+        // Kept before 5 May; from then on, the 1st Tuesday (4 May is before the edited date).
+        $this->assertSame(
+            ['2027-03-05', '2027-04-05', '2027-06-01', '2027-07-06', '2027-08-03'],
+            Activity::query()->orderBy('starts_on')->get()->map(fn (Activity $activity) => $activity->starts_on->toDateString())->all(),
+        );
+    }
+
     public function test_each_action_is_audited(): void
     {
         Notification::fake();

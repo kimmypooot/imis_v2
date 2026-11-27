@@ -44,8 +44,8 @@ class ActivityController extends Controller
     /** The fields a series' template keeps for each occurrence. */
     private const SERIES_TEMPLATE = ['title', 'responsible', 'participants', 'venue', 'mode', 'remarks', 'starts_at', 'ends_at', 'all_day', 'unplanned'];
 
-    /** The fields of a series' rule. */
-    private const SERIES_RULE = ['frequency', 'interval', 'weekday', 'day_of_month', 'nth_weekday', 'starts_on', 'until', 'skip_holidays'];
+    /** The fields of a series' rule that say how it repeats; a new repeat block replaces them together. */
+    private const SERIES_PATTERN = ['frequency', 'interval', 'weekday', 'day_of_month', 'nth_weekday'];
 
     public function index(Request $request): Response
     {
@@ -154,10 +154,7 @@ class ActivityController extends Controller
         if ($request->validated('scope') === 'following' && $activity->series_id !== null && $activity->starts_on !== null) {
             /** @var ActivitySeries $series */
             $series = $activity->series;
-            $rule = [
-                ...$this->seriesRule($series),
-                ...Arr::only($request->repeat() ?? [], self::SERIES_RULE),
-            ];
+            $rule = $this->followingRule($series, $request->repeat());
             $template = [
                 ...Arr::only($series->template ?? [], self::SERIES_TEMPLATE),
                 ...Arr::only($data, self::SERIES_TEMPLATE),
@@ -360,6 +357,30 @@ class ActivityController extends Controller
             'all_day' => $activity->all_day,
             'venue' => $activity->venue,
         ];
+    }
+
+    /**
+     * The rule for a "this and the following" edit. A repeat block in the
+     * request replaces the whole pattern (pattern fields it leaves out are
+     * cleared, so an old day of the month can't outrank a new weekday);
+     * only the dates and holiday choice fall back to the series.
+     *
+     * @param  array<string, mixed>|null  $repeat
+     * @return array<string, mixed>
+     */
+    private function followingRule(ActivitySeries $series, ?array $repeat): array
+    {
+        $rule = $this->seriesRule($series);
+
+        if ($repeat === null) {
+            return $rule;
+        }
+
+        foreach (self::SERIES_PATTERN as $field) {
+            $rule[$field] = $repeat[$field] ?? null;
+        }
+
+        return [...$rule, ...Arr::only($repeat, ['starts_on', 'until', 'skip_holidays'])];
     }
 
     /**
