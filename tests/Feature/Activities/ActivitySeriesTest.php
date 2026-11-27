@@ -190,4 +190,40 @@ class ActivitySeriesTest extends TestCase
         $this->assertSame('2026-01-27', $moved->fresh()->starts_on->toDateString());
         $this->assertSame(9, Activity::withTrashed()->count());
     }
+
+    public function test_update_following_does_not_bring_back_a_removed_occurrence(): void
+    {
+        $series = $this->builder->create($this->rule(), $this->template(), $this->office->id, $this->poster);
+        $removed = $series->activities()->whereDate('starts_on', '2026-01-19')->sole();
+        app(Activities::class)->remove($removed, 'Duplicate entry', $this->poster);
+
+        $series = $this->builder->updateFollowing($series, Carbon::parse('2026-01-12'), $this->rule(), $this->template(['venue' => 'Board Room']), $this->poster);
+
+        $this->assertSame(['2026-01-05', '2026-01-12', '2026-01-26'], $this->dates($series));
+        $this->assertSame(1, Activity::withTrashed()->whereDate('starts_on', '2026-01-19')->count());
+    }
+
+    public function test_rescheduling_a_planned_series_after_the_cutoff_keeps_occurrences_planned(): void
+    {
+        $this->travelTo('2026-01-10');
+        $series = $this->builder->create($this->rule(['starts_on' => '2026-03-02', 'until' => '2026-03-30']), $this->template(), $this->office->id, $this->poster);
+        $this->assertFalse($series->activities()->get()->contains('unplanned', true));
+
+        $this->travelTo('2026-03-10');
+        $series = $this->builder->updateFollowing($series, Carbon::parse('2026-03-10'), $this->rule(['weekday' => 3, 'starts_on' => '2026-03-02', 'until' => '2026-03-30']), $this->template(), $this->poster);
+
+        $regenerated = $series->activities()->whereDate('starts_on', '>=', '2026-03-10')->get();
+        $this->assertCount(3, $regenerated);
+        $this->assertFalse($regenerated->contains('unplanned', true));
+    }
+
+    public function test_series_created_after_the_cutoff_is_unplanned(): void
+    {
+        $this->travelTo('2026-03-10');
+        $series = $this->builder->create($this->rule(['starts_on' => '2026-03-16', 'until' => '2026-03-30']), $this->template(), $this->office->id, $this->poster);
+
+        $occurrences = $series->activities()->get();
+        $this->assertCount(3, $occurrences);
+        $this->assertTrue($occurrences->every(fn (Activity $activity) => $activity->unplanned));
+    }
 }

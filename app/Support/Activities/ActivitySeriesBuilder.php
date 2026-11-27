@@ -5,6 +5,7 @@ namespace App\Support\Activities;
 use App\Enums\ActivityStatus;
 use App\Enums\SeriesFrequency;
 use App\Models\Activity;
+use App\Models\ActivityPlanCutoff;
 use App\Models\ActivitySeries;
 use App\Models\Holiday;
 use App\Models\User;
@@ -27,11 +28,15 @@ use InvalidArgumentException;
  * 5th Monday) is skipped, never moved. With `skip_holidays`, dates that
  * are a day-off holiday are dropped. A series never runs past 31 December
  * of the year it starts in.
+ *
+ * An occurrence is unplanned when the template says so or when the series
+ * itself was created after the occurrence year's plan cut-off, so
+ * regenerating a planned series later keeps its occurrences planned.
  */
 class ActivitySeriesBuilder
 {
     /** The fields of an occurrence a series template may set. */
-    private const TEMPLATE = ['title', 'responsible', 'participants', 'venue', 'mode', 'remarks', 'starts_at', 'ends_at', 'all_day'];
+    private const TEMPLATE = ['title', 'responsible', 'participants', 'venue', 'mode', 'remarks', 'starts_at', 'ends_at', 'all_day', 'unplanned'];
 
     public function __construct(private Activities $activities, private HolidayCalendar $holidays) {}
 
@@ -39,7 +44,7 @@ class ActivitySeriesBuilder
      * Save a series and create each of its occurrences.
      *
      * @param  array{frequency: SeriesFrequency|string, interval?: ?int, weekday?: ?int, day_of_month?: ?int, nth_weekday?: ?int, starts_on: string, until?: ?string, skip_holidays?: bool}  $rule
-     * @param  array{title?: string, responsible?: ?string, participants?: ?string, venue?: ?string, mode?: string, remarks?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool}  $template
+     * @param  array{title?: string, responsible?: ?string, participants?: ?string, venue?: ?string, mode?: string, remarks?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool, unplanned?: bool}  $template
      *
      * @throws InvalidArgumentException when the rule is incomplete or its dates are out of order
      */
@@ -96,12 +101,12 @@ class ActivitySeriesBuilder
      * "This and the following ones": change the series' rule and template,
      * then replace its occurrences dated on or after `$from` that are still
      * untouched (attached, scheduled, never moved, never returned). Done
-     * and cancelled occurrences keep their place; one already on a date
-     * the new rule gives is not doubled. Occurrences moved, returned or
+     * and cancelled occurrences keep their place, and occurrences PALD
+     * removed stay removed; a date one of them holds is not filled again. Occurrences moved, returned or
      * edited on their own were detached already and are left alone.
      *
      * @param  array{frequency: SeriesFrequency|string, interval?: ?int, weekday?: ?int, day_of_month?: ?int, nth_weekday?: ?int, starts_on: string, until?: ?string, skip_holidays?: bool}  $rule
-     * @param  array{title?: string, responsible?: ?string, participants?: ?string, venue?: ?string, mode?: string, remarks?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool}  $template
+     * @param  array{title?: string, responsible?: ?string, participants?: ?string, venue?: ?string, mode?: string, remarks?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool, unplanned?: bool}  $template
      *
      * @throws InvalidArgumentException when the rule is incomplete or its dates are out of order
      */
@@ -124,7 +129,7 @@ class ActivitySeriesBuilder
                 ->get()
                 ->each(fn (Activity $activity) => $activity->forceDelete());
 
-            $kept = Activity::query()
+            $kept = Activity::withTrashed()
                 ->where('series_id', $series->id)
                 ->whereDate('starts_on', '>=', $from)
                 ->get()
@@ -144,18 +149,24 @@ class ActivitySeriesBuilder
 
     /**
      * Create one scheduled occurrence from the series template and attach
-     * it to the series.
+     * it to the series. Whether it is unplanned follows the series' own
+     * creation date, not today's (see the class notes).
      */
     private function createOccurrence(ActivitySeries $series, Carbon $date, User $by): Activity
     {
+        $template = $series->template ?? [];
+
         $activity = $this->activities->save([
-            ...($series->template ?? []),
+            ...Arr::except($template, ['unplanned']),
             'organizational_unit_id' => $series->organizational_unit_id,
             'starts_on' => $date->toDateString(),
             'ends_on' => $date->toDateString(),
         ], $by);
 
-        $activity->forceFill(['series_id' => $series->id])->save();
+        $unplanned = (bool) ($template['unplanned'] ?? false)
+            || $series->created_at->copy()->startOfDay()->gt(ActivityPlanCutoff::for($date->year));
+
+        $activity->forceFill(['series_id' => $series->id, 'unplanned' => $unplanned])->save();
 
         return $activity;
     }
