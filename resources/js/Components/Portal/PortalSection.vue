@@ -37,16 +37,19 @@ defineProps({
                 </h2>
                 <p v-if="description" class="mt-0.5 text-sm text-text-muted">{{ description }}</p>
             </div>
-            <Link
-                v-if="viewAllHref"
-                :href="viewAllHref"
-                class="shrink-0 text-sm font-medium text-link transition-colors hover:text-primary-hover hover:underline"
-            >
-                {{ viewAllLabel }}
-            </Link>
+            <div class="flex shrink-0 items-center gap-3">
+                <Link
+                    v-if="viewAllHref"
+                    :href="viewAllHref"
+                    class="text-sm font-medium text-link transition-colors hover:text-primary-hover hover:underline"
+                >
+                    {{ viewAllLabel }}
+                </Link>
+                <slot name="actions" />
+            </div>
         </div>
 
-        <div class="mt-3">
+        <div v-if="$slots.default" class="mt-3">
             <slot />
         </div>
     </section>
