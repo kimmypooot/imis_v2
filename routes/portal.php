@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\PushSubscriptionController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ActivityManageController;
 use App\Http\Controllers\ActivitySheetController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
@@ -268,6 +269,9 @@ Route::middleware('auth')->group(function () {
         Route::middleware('permission:activities.manage')->group(function () {
             Route::post('activities/{activity}/return', [ActivityController::class, 'returnToOffice'])->whereNumber('activity')->name('activities.return');
             Route::delete('activities/{activity}', [ActivityController::class, 'remove'])->whereNumber('activity')->name('activities.remove');
+            // PALD's management page: what changed, clashes, plan vs actual, the plan cut-off, removed.
+            Route::get('activities/manage', [ActivityManageController::class, 'index'])->name('activities.manage');
+            Route::put('activities/cutoff', [ActivityManageController::class, 'saveCutoff'])->name('activities.cutoff');
         });
     });
 

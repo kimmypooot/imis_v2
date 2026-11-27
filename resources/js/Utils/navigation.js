@@ -69,7 +69,8 @@ export const hrAccessPermissions = [
  * Portal sidebar: Home and Announcements on their own, then headed groups
  * (Human Resources has collapsible Records, Leave and Payroll sections). The
  * Management
- * group holds only the Executive Dashboard and the two management areas
+ * group holds only the Executive Dashboard, PALD's Calendar of Activities page
+ * and the two management areas
  * (Human Resources and Administration), so it disappears for users with none
  * (SidebarNav drops empty groups).
  */
@@ -132,6 +133,7 @@ export const portalNavItems = [
         group: 'Management',
         items: [
             { label: 'Executive Dashboard', href: '/executive', icon: 'chartBar', permission: 'executive.view' },
+            { label: 'Manage Calendar of Activities', href: '/activities/manage', icon: 'clipboard', permission: 'activities.manage' },
         ],
     },
 ];
