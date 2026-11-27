@@ -2050,10 +2050,34 @@ position, and a Super Administrator.
 ### Loading states
 Placeholders and in-place updates share three pieces: `UI/Skeleton.vue` (a shimmering block built on the `skeleton` utility in `app.css`, still under reduced motion), `UI/BusyRegion.vue` (dims a list and shows a spinner after 150 ms while a search, filter or month change loads) with the `useBusy` composable that feeds it, and the Inertia progress bar, shown for visits slower than 100 ms (`app.js`). The dashboard "At a glance" row and the notification bell use skeletons.
 
+### Dashboard layout (command center)
+`Portal/Dashboard.vue`, top to bottom: the welcome banner with its quick
+access shortcuts; the install offer and "Get set up" checklist when they
+apply; the **At a glance** stat strip; then two columns. The wide one has
+**Needs your attention** and the **Systems Directory** card (three across);
+the side column has **Coming up** (a month calendar,
+`Components/Portal/MiniCalendar.vue`, over the next 7 days from
+`UpcomingActivities`, hidden without calendar access), **Announcements**,
+**System status** (maintenance notices, or "All systems are running
+normally") and **Services** when any exist. It replaced the legacy-style
+stack (banner, full-width calendar section, directory) in November 2026.
+
 ### Dashboard "At a glance"
-`Support/Portal/AtAGlance` builds the row (leave balances, leave in
-progress, approvals waiting, unread notifications) as a deferred prop of
-`PortalController`.
+`Support/Portal/AtAGlance` builds the tiles (leave balances, leave in
+progress, approvals waiting, late and undertime, activities this week) as
+a deferred prop of `PortalController`. They show as one stat strip: a
+single card split by hairline dividers, each tile an icon beside two lines
+(the label, then the figure with its hint).
+
+### Dashboard "Needs your attention"
+`Support/Portal/NeedsAttention` lists what is waiting on the person, each
+item with the page that settles it: leave applications to approve
+(`LeaveApplications::queueFor`), payslip requests to approve
+(`PayslipRequests::queueFor`), payrolls waiting for withholding tax (for
+`enterTax` holders), and their own last-month DTR to sign or a leave
+application, SALN (with the Committee's remarks) or PDS returned for
+correction. A deferred `attention` prop; "You're all caught up" when empty.
+Covered by `tests/Feature/Portal/NeedsAttentionTest.php`.
 
 ### Dashboard "Get set up" checklist
 `Support/Portal/GettingStarted` lists the one-time setup still to do, each
@@ -2155,24 +2179,28 @@ from data this platform already holds instead of the legacy
 
 ### Navigation
 The open division is the `division` query parameter
-(`/dashboard?division=unit-3`), changed with an Inertia partial reload
-(`only: ['division']`). The directory prop is a closure, so it isn't
-rebuilt when switching divisions. A division can be bookmarked, and the
-browser's Back button returns to the directory, which the legacy
-client-side view couldn't do. Focus moves to the division heading when
-opening one and back to its card when returning. Each view has its own
-client-side search (divisions and their system names; systems within a
-division).
+(`/dashboard?division=unit-3`), changed with a client-side visit
+(`router.push`, no server round trip: every division and system is
+already on the page). The server still reads `?division=` on a direct
+load. A division can be bookmarked, and the browser's Back button returns
+to the directory, which the legacy client-side view couldn't do. The two
+views slide (in to a division, back out to the directory; instant under
+reduced motion), and the division's systems rise in with `stagger`. Focus
+moves to the division heading when opening one and back to its card when
+returning, once the slide ends. Each view has its own client-side search
+(divisions and their system names; systems within a division). Cards sit
+three across at most, the icon beside the name, with the legacy full-width
+"View Systems (n)" button below.
 
 ### Launch states (`SystemLaunchCard.vue`)
 These are the legacy button states, decided entirely by server-resolved
-fields: **Access System** with the viewer's role badge ("Guest" for open
-systems), **Access [Maintenance]** for maintenance bypass, **Under
-Maintenance**, **No Access** (restricted, no role) and **Not configured
-yet**. As in the legacy cards, the button label is the only state cue;
-the Details link and explanatory note were removed. A system's
-maintenance message still shows in the dashboard's maintenance notice
-and on its details page.
+fields: **Access System** ("Guest" for open systems), **Access** for
+maintenance bypass, **Under Maintenance**, **No Access** (restricted, no
+role) and **Not configured yet**. The button is slim (36px) and one line;
+the viewer's role (or "Maintenance access" for a bypass) is a badge under
+the system name rather than inside the button. The Details link and
+explanatory note were removed. A system's maintenance message still shows
+in the dashboard's System status card and on its details page.
 
 ### Card styling
 Division and system cards keep the legacy layout (icon beside the
@@ -5597,9 +5625,11 @@ landscape). Both follow the office and mode filters.
   File Leave, My DTR, My Payslip and My PDS for staff with an employee
   record, and the Calendar of Activities.
 - At a glance gets an **Activities** tile (this week's count).
-- A **Calendar of Activities** section (`UpcomingActivities`, deferred):
-  the next 7 days in the region with day-off holidays inline, and a mini
-  month calendar.
+- **Coming up** in the dashboard's side column (`UpcomingActivities`,
+  deferred): a mini month calendar (`Components/Portal/MiniCalendar.vue`,
+  ‹ › reloading only `activities`) over the next 7 days in the region with
+  day-off holidays inline. (Until November 2026 this was a full-width
+  "Calendar of Activities" section.)
 
 ### Deploying
 `php artisan migrate`. This adds the tables and permissions, gives
