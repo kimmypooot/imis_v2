@@ -1,17 +1,19 @@
 <script setup>
 import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
+import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import { useBranding } from '../../Composables/useBranding';
-import { imisHistory as history } from './imisHistory';
+import { imisHistory } from './imisHistory';
 
 /**
  * "About IMIS" — the legacy About pop-up, rewritten for the rebuilt
- * platform: what IMIS is, its mission, what it does today, and its story
- * from v1.0.0 to the stack it now runs on. Static copy apart from the
- * version (config) so it never claims a number the system can't back up.
+ * platform: what IMIS is, its mission, what it does today, and its story,
+ * newest version first. What changed in each build is left to What's New
+ * (linked here), so the release notes live in one place. The version
+ * shown is the latest published release note's.
  */
 defineProps({
     open: { type: Boolean, required: true },
@@ -34,6 +36,9 @@ const features = [
 ];
 
 const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
+
+// Newest first, so the version in use leads.
+const history = [...imisHistory].reverse();
 </script>
 
 <template>
@@ -88,7 +93,12 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
             </section>
 
             <section>
-                <h3 class="text-sm font-semibold text-text">Our story</h3>
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="text-sm font-semibold text-text">Our story</h3>
+                    <Link href="/whats-new" class="text-xs font-medium text-link hover:text-primary-hover" @click="$emit('close')">
+                        What changed in each release
+                    </Link>
+                </div>
                 <ol class="relative mt-4 ml-1.5 space-y-5 border-l-2 border-border pl-6">
                     <li v-for="milestone in history" :key="milestone.version" class="relative">
                         <span
@@ -98,6 +108,7 @@ const stack = ['Laravel', 'Vue 3', 'Inertia.js', 'Tailwind CSS', 'MySQL'];
                         />
                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span class="rounded-full bg-info-bg px-2.5 py-0.5 text-xs font-medium text-link">v{{ milestone.version }}</span>
+                            <Badge v-if="milestone.current && version" tone="success" pill>Current build v{{ version }}</Badge>
                             <span class="text-sm font-medium text-text">{{ milestone.title }}</span>
                             <span v-if="milestone.when" class="text-xs text-text-muted">· {{ milestone.when }}</span>
                         </div>
