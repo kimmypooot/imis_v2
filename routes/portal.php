@@ -118,6 +118,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('my.pds.submit');
     Route::get('my/pds/submissions/{submission}', [MyPdsController::class, 'submission'])->name('my.pds.submission');
+    Route::post('my/pds/submissions/{submission}/pnpki', [MyPdsController::class, 'attachPnpki'])->middleware('throttle:10,1')->name('my.pds.submission.pnpki');
 
     // SALN self-service: encode, print on the 2025 form, and file the signed
     // copy once cleared (only your own; SalnPolicy and the controller check).

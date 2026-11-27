@@ -215,4 +215,12 @@ return [
         'Zambia',
         'Zimbabwe',
     ],
+
+    /*
+     * A PEM file of the PNPKI root and intermediate certificates (from
+     * DICT). When set, a PNPKI-signed PDS attached to a submission is also
+     * checked to chain to it; when not, only that each signature is intact
+     * is checked, and HR sees "chain not checked".
+     */
+    'pnpki_ca_bundle' => env('PNPKI_CA_BUNDLE'),
 ];

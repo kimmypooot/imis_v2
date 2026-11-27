@@ -11,6 +11,7 @@ import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import PdsEditor from '../../../../Components/HR/Pds/PdsEditor.vue';
+import PdsPnpkiCopy from '../../../../Components/HR/Pds/PdsPnpkiCopy.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -27,6 +28,7 @@ const props = defineProps({
     changedSections: { type: Array, default: null },
     previousVerifiedAt: { type: String, default: null },
     canReview: { type: Boolean, required: true },
+    pnpki: { type: Object, default: null },
 });
 
 const decision = ref(null); // 'verify' | 'return'
@@ -81,6 +83,11 @@ const breadcrumbs = computed(() => [
                 <p v-else class="text-sm text-warning-fg">No photo was attached.</p>
             </Card>
         </div>
+
+        <Card title="PNPKI-signed copy" icon="documentCheck">
+            <PdsPnpkiCopy v-if="pnpki" :copy="pnpki" />
+            <p v-else class="text-sm text-text-muted">The employee hasn't attached a PNPKI-signed copy of this PDS.</p>
+        </Card>
 
         <Alert v-if="changedSections === null" tone="info">This is the employee's first PDS submission — review every section.</Alert>
         <Alert v-else-if="changedSections.length" tone="warning" title="Changed since the last verified PDS">

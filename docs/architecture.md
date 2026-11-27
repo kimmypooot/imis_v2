@@ -3351,6 +3351,20 @@ saving without changes doesn't count.
   public)". In the Excel copy, pictures go on each sheet's drawing (one is
   made for sheets that have none), and changed parts are written once
   (libzip can't read back an entry replaced in an open archive).
+- **PNPKI-signed copy** (`PdsPnpki`, `PdfSignatures`): on a submitted or
+  verified PDS, the employee attaches the PDF they signed with their PNPKI
+  certificate (`POST /my/pds/submissions/{id}/pnpki`, from the submission's
+  page). `PdfSignatures` reads every signature in it without a PDF or
+  crypto package: the covered bytes (`/ByteRange`) must hash to the CMS
+  messageDigest, and the certificate in it must verify the signature over
+  the signed attributes (`openssl_verify`); PHP's `openssl_cms_verify`
+  wasn't reliable for detached signatures. Accepted when every signature
+  is intact, nothing was added after the last, and there is one per page;
+  then filed in the 201 File as "Personal Data Sheet (signed)" (a newer one
+  archives the old) and recorded on the submission (`pnpki_document_id`,
+  `pnpki_signatures`) for HR's verification page. Whether certificates
+  chain to PNPKI is checked only when `PNPKI_CA_BUNDLE` points at DICT's
+  root/intermediate certificates.
 - The right thumbmark and the oath block print blank, for wet completion.
 - **Printing:** 8.5 × 13 in paper, Margins None, Scale 100%.
 - **Routes:**
