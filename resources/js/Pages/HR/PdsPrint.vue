@@ -232,6 +232,8 @@ const print = () => window.print();
     overflow: hidden;
     white-space: nowrap;
     font-size: 8.55pt;
+    /* Every entry in bold, so what was filled in stands out from the form's own printing. */
+    font-weight: 700;
     line-height: 1.1;
 }
 /* Middle means the letters themselves: the line box is trimmed to the

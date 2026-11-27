@@ -107,38 +107,50 @@ const remove = async () => {
 
 <template>
     <Card title="Photo" icon="camera" description="Passport size (3.5 × 4.5 cm), taken within the last 6 months.">
-        <div class="flex flex-wrap items-end gap-4">
-            <div
-                class="relative flex h-36 w-28 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 transition-colors duration-150 ease-standard motion-reduce:transition-none"
-                :class="[dragging ? 'border-primary bg-info-bg' : photoUrl ? 'border-border' : 'border-dashed border-border-strong bg-surface-muted']"
-                @dragover.prevent="!readonly && (dragging = true)"
-                @dragleave="dragging = false"
-                @drop.prevent="onDrop"
-            >
-                <img v-if="photoUrl" :src="photoUrl" alt="PDS photo" class="h-full w-full object-cover" />
-                <span v-else class="flex flex-col items-center gap-1 px-2 text-center text-xs text-text-muted">
-                    <Icon name="camera" size="lg" />
-                    {{ readonly ? 'No photo' : dragging ? 'Drop to upload' : 'Drop a photo here' }}
-                </span>
-                <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center bg-surface/80">
-                    <Spinner label="Uploading photo…" />
-                </span>
-            </div>
-            <div v-if="!readonly" class="space-y-2">
-                <!-- The input sits inside its label, so the label shows its keyboard focus. -->
-                <label
-                    class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover focus-within:ring-2 focus-within:ring-focus-ring focus-within:ring-offset-2"
-                    :class="{ 'pointer-events-none opacity-60': form.processing }"
+        <!-- Two equal halves: the photo (Remove under it) centred on the left, the guidance on the right; Replace across the card. -->
+        <div class="grid gap-4 sm:grid-cols-2 sm:items-center">
+            <div class="mx-auto w-36 space-y-2">
+                <div
+                    class="relative flex aspect-413/531 w-full items-center justify-center overflow-hidden rounded-md border-2 transition-colors duration-150 ease-standard motion-reduce:transition-none"
+                    :class="[dragging ? 'border-primary bg-info-bg' : photoUrl ? 'border-border' : 'border-dashed border-border-strong bg-surface-muted']"
+                    @dragover.prevent="!readonly && (dragging = true)"
+                    @dragleave="dragging = false"
+                    @drop.prevent="onDrop"
                 >
-                    <input ref="input" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" :disabled="form.processing" @change="upload" />
-                    <Icon name="upload" size="sm" />
-                    {{ form.processing ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo' }}
-                </label>
-                <p class="text-xs text-text-muted">Passport size: 413 × 531 pixels (3.5 × 4.5 cm). Any other size can be cropped to fit. JPG, PNG or WebP; you can also drop it on the frame.</p>
-                <Button v-if="photoUrl" variant="link" class="block text-danger-fg" @click="remove">Remove</Button>
+                    <img v-if="photoUrl" :src="photoUrl" alt="PDS photo" class="h-full w-full object-cover" />
+                    <span v-else class="flex flex-col items-center gap-1 px-2 text-center text-xs text-text-muted">
+                        <Icon name="camera" size="lg" />
+                        {{ readonly ? 'No photo' : dragging ? 'Drop to upload' : 'Drop a photo here' }}
+                    </span>
+                    <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center bg-surface/80">
+                        <Spinner label="Uploading photo…" />
+                    </span>
+                </div>
+
+                <Button v-if="!readonly && photoUrl" variant="ghost" size="sm" icon="trash" class="w-full text-danger-fg" @click="remove">Remove</Button>
+            </div>
+
+            <!-- Centred on the photo itself: with a photo, the bottom padding offsets the Remove button under it. -->
+            <div v-if="!readonly" class="min-w-0 space-y-2 text-center" :class="{ 'sm:pb-11': photoUrl }">
+                <p class="text-sm text-text-muted">
+                    <span class="block font-medium text-text">Passport size</span>
+                    <span class="block">413 × 531 pixels (3.5 × 4.5 cm).</span>
+                    <span class="mt-2 block">Any other size can be cropped to fit. JPG, PNG or WebP; you can also drop it on the frame.</span>
+                </p>
                 <InputError :message="form.errors.photo" />
             </div>
         </div>
+
+        <!-- The input sits inside its label, so the label shows its keyboard focus. -->
+        <label
+            v-if="!readonly"
+            class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover focus-within:ring-2 focus-within:ring-focus-ring focus-within:ring-offset-2"
+            :class="{ 'pointer-events-none opacity-60': form.processing }"
+        >
+            <input ref="input" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" :disabled="form.processing" @change="upload" />
+            <Icon name="upload" size="sm" />
+            {{ form.processing ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo' }}
+        </label>
 
         <PdsPhotoCropper
             :open="!!cropping"
