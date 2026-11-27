@@ -70,6 +70,19 @@ const tileTones = {
     danger: 'bg-danger-bg text-danger-fg',
 };
 
+// At a glance: columns follow the number of tiles (one to six, depending on
+// the account) so every row is full — five sit in one row, six in two rows
+// of three. On phones (two columns) an odd last tile takes the whole row.
+const glanceColumns = {
+    1: 'lg:grid-cols-1',
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+    5: 'lg:grid-cols-5',
+    6: 'lg:grid-cols-3',
+};
+const glanceGrid = computed(() => glanceColumns[Math.min(props.glance?.length ?? 4, 6)] ?? 'lg:grid-cols-4');
+
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 
@@ -133,7 +146,12 @@ const greeting = computed(() => {
                 </div>
             </template>
 
-            <section v-if="glance?.length" aria-label="At a glance" class="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <section
+                v-if="glance?.length"
+                aria-label="At a glance"
+                class="stagger grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1"
+                :class="glanceGrid"
+            >
                 <Link
                     v-for="tile in glance"
                     :key="tile.key"
