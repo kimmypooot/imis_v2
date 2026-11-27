@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import BusyRegion from '@cscro8/ui/Components/UI/BusyRegion.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
@@ -92,7 +92,10 @@ const sheetQuery = computed(() => {
 const dated = computed(() => props.activities.filter((activity) => activity.starts_on));
 const monthOnly = computed(() => props.activities.filter((activity) => !activity.starts_on));
 const activitiesOn = (iso) => dated.value.filter((activity) => activityOn(activity, iso));
-const selected = ref(props.month === today.slice(0, 7) ? today : null);
+// From the dashboard: ?day=YYYY-MM-DD opens that day and ?activity=id its details.
+const linked = new URLSearchParams(usePage().url.split('?')[1] ?? '');
+const linkedDay = /^\d{4}-\d{2}-\d{2}$/.test(linked.get('day') ?? '') && linked.get('day').startsWith(props.month) ? linked.get('day') : null;
+const selected = ref(linkedDay ?? (props.month === today.slice(0, 7) ? today : null));
 const selectedActivities = computed(() => (selected.value ? activitiesOn(selected.value) : []));
 const holidaysOn = (iso) => props.holidays.filter((holiday) => holiday.date === iso);
 const chipLabel = (activity) => [shortTime(activity), activity.title].filter(Boolean).join(' · ');
@@ -102,7 +105,7 @@ const showClashes = ref(true);
 watch(() => props.clashes, () => (showClashes.value = true));
 
 // The modals: details, then the form or action it opens.
-const detailsId = ref(null);
+const detailsId = ref(Number(linked.get('activity')) || null);
 const editing = ref(null);
 const formOpen = ref(false);
 const moving = ref(null);

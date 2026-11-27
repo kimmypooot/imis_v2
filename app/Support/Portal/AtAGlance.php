@@ -3,9 +3,11 @@
 namespace App\Support\Portal;
 
 use App\Enums\LeaveApplicationStatus;
+use App\Models\Activity;
 use App\Models\Employee;
 use App\Models\LeaveApplication;
 use App\Models\User;
+use App\Support\Activities\UpcomingActivities;
 use App\Support\HR\Dtr\DtrSheets;
 use App\Support\HR\Leave\LeaveApplications;
 use App\Support\HR\Leave\LeaveCredits;
@@ -15,7 +17,9 @@ use App\Support\HR\Leave\LeaveCredits;
  * people with an employee record, their vacation and sick leave balances,
  * the applications in progress and this month's DTR (late and undertime so
  * far, and whether last month's sheet still needs signing); and, for anyone
- * with leave applications waiting on them, how many. Unread notifications
+ * with leave applications waiting on them, how many; and, for anyone who
+ * sees the Calendar of Activities, the activities in the next 7 days.
+ * Unread notifications
  * are left to the bell in the header.
  */
 class AtAGlance
@@ -24,6 +28,7 @@ class AtAGlance
         private readonly LeaveCredits $credits,
         private readonly LeaveApplications $applications,
         private readonly DtrSheets $sheets,
+        private readonly UpcomingActivities $upcoming,
     ) {}
 
     /**
@@ -82,6 +87,18 @@ class AtAGlance
                 'href' => '/leave/approvals',
                 'icon' => 'checkCircle',
                 'tone' => 'warning',
+            ];
+        }
+
+        if ($user->can('viewAny', Activity::class)) {
+            $tiles[] = [
+                'key' => 'activities',
+                'label' => 'Activities',
+                'value' => (string) $this->upcoming->count(),
+                'hint' => 'this week',
+                'href' => '/activities',
+                'icon' => 'calendar',
+                'tone' => 'success',
             ];
         }
 

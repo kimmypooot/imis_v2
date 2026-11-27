@@ -12,6 +12,7 @@ import { greetingName } from '../../Composables/useSplash';
 import { useInstallApp } from '../../Composables/useInstallApp';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import WelcomeBanner from '../../Components/Portal/WelcomeBanner.vue';
+import UpcomingActivities from '../../Components/Portal/UpcomingActivities.vue';
 import GettingStartedCard from '../../Components/Portal/GettingStartedCard.vue';
 import PortalSection from '../../Components/Portal/PortalSection.vue';
 import PortalCard from '../../Components/Portal/PortalCard.vue';
@@ -24,6 +25,10 @@ const props = defineProps({
     whatsNew: { type: Object, default: null },
     // The personal "At a glance" tiles (a deferred prop).
     glance: { type: Array, default: null },
+    // The banner's round shortcuts (QuickAccess).
+    shortcuts: { type: Array, default: () => [] },
+    // The Calendar of Activities section (a deferred prop; null without access).
+    activities: { type: Object, default: null },
     gettingStarted: { type: Object, default: null },
     directory: { type: Object, required: true },
     division: { type: String, default: null },
@@ -89,6 +94,7 @@ const greeting = computed(() => {
             :division="userDivision"
             :version="page.props.app?.version"
             :message="welcomeMessage"
+            :shortcuts="shortcuts"
         />
 
         <!-- Once per device: offer to install IMIS as an app, where the browser can. -->
@@ -144,6 +150,9 @@ const greeting = computed(() => {
                 </Link>
             </section>
         </Deferred>
+
+        <!-- What's coming up in the region, and a month calendar (deferred too). -->
+        <UpcomingActivities :activities="activities" />
 
         <Alert v-if="maintenanceNotices.length" tone="warning" title="Systems under maintenance">
             <ul class="space-y-1">

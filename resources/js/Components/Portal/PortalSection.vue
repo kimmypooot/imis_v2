@@ -15,6 +15,11 @@ defineProps({
         type: String,
         default: null,
     },
+    // The link's text ("Open calendar ›").
+    viewAllLabel: {
+        type: String,
+        default: 'View all →',
+    },
     viewAllHref: {
         type: String,
         default: null,
@@ -37,7 +42,7 @@ defineProps({
                 :href="viewAllHref"
                 class="shrink-0 text-sm font-medium text-link transition-colors hover:text-primary-hover hover:underline"
             >
-                View all →
+                {{ viewAllLabel }}
             </Link>
         </div>
 
