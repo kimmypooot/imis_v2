@@ -6,8 +6,8 @@ import { useBranding } from '../../Composables/useBranding';
 
 /**
  * The legacy dashboard's welcome banner (old-imis .welcome-banner): the
- * greeting with the user's division badge, the system title with its
- * version badge, and the welcome message from System Settings, on flat
+ * greeting with the user's division badge and the running version (a link
+ * to What's New), the system title, and the welcome message from System Settings, on flat
  * CSC navy with the legacy's orbiting circles (OrbitCircles, shared with
  * the admin / HR dashboard banners). The office facade photo (the sign-in
  * background from Admin → Branding) shows faintly through the navy tint.
@@ -46,16 +46,18 @@ const brand = useBranding();
                     <span v-if="division" class="rounded-full bg-white/15 px-2.5 py-px text-xs font-medium whitespace-nowrap text-white/85">
                         {{ division }}
                     </span>
-                </p>
-                <h1 class="text-xl font-bold md:text-2xl">
-                    CSC RO VIII — Integrated Management Information System
-                    <span
+                    <!-- The running version, as a way into its release notes. -->
+                    <Link
                         v-if="version"
-                        class="relative -top-[0.15em] ml-1.5 inline-block rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 align-middle text-xs font-semibold tracking-wide text-white/75"
+                        href="/whats-new"
+                        class="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-2.5 py-px text-xs font-medium whitespace-nowrap text-white/85 transition-colors hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                     >
                         v{{ version }}
-                    </span>
-                </h1>
+                        <span aria-hidden="true">·</span>
+                        What's new
+                    </Link>
+                </p>
+                <h1 class="text-xl font-bold md:text-2xl">CSC RO VIII — Integrated Management Information System</h1>
                 <p class="mt-1.5 text-base text-white/90">
                     {{ message || 'Enhancing public service delivery through innovation and digital transformation.' }}
                 </p>

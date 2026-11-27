@@ -146,8 +146,6 @@ const greeting = computed(() => {
             </div>
         </div>
 
-        <GettingStartedCard v-if="gettingStarted" :checklist="gettingStarted" />
-
         <Deferred data="glance">
             <template #fallback>
                 <div class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4" role="status" aria-label="Loading your summary">
@@ -195,6 +193,9 @@ const greeting = computed(() => {
 
         <div class="grid items-start gap-6 lg:grid-cols-3">
             <div class="min-w-0 space-y-6 lg:col-span-2">
+                <!-- One-time setup still to do (signature, PDS, fingerprint); gone once done. -->
+                <GettingStartedCard v-if="gettingStarted" :checklist="gettingStarted" />
+
                 <!-- Needs your attention: what is waiting on you, each with the page that settles it. -->
                 <section aria-labelledby="attention-heading" class="rounded-lg border border-border bg-surface p-5 sm:p-6">
                     <Deferred data="attention">
