@@ -87,6 +87,33 @@ class PlantillaItem extends Model
         $query->whereNull('abolished_at');
     }
 
+    /**
+     * Plantilla order: by office (its sort order), then highest salary
+     * grade first, then item number. SQL compares item numbers as text, so
+     * use compareInPlantillaOrder() where "-2" must come before "-10".
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeInPlantillaOrder(Builder $query): void
+    {
+        $officeOrder = OrganizationalUnit::query()->select('sort_order')
+            ->whereColumn('organizational_units.id', 'plantilla_items.organizational_unit_id');
+
+        $query->orderByRaw('plantilla_items.organizational_unit_id is null')->orderBy($officeOrder)
+            ->orderBy('plantilla_items.organizational_unit_id')->orderByDesc('salary_grade')->orderBy('item_number');
+    }
+
+    /**
+     * The same plantilla order for loaded items (with organizationalUnit),
+     * comparing item numbers naturally.
+     */
+    public static function compareInPlantillaOrder(self $a, self $b): int
+    {
+        return [$a->organizationalUnit === null, $a->organizationalUnit?->sort_order, $a->organizational_unit_id, -$a->salary_grade]
+            <=> [$b->organizationalUnit === null, $b->organizationalUnit?->sort_order, $b->organizational_unit_id, -$b->salary_grade]
+            ?: strnatcasecmp((string) $a->item_number, (string) $b->item_number);
+    }
+
     protected function label(): Attribute
     {
         return Attribute::get(fn () => $this->item_number

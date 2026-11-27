@@ -9,6 +9,7 @@ use App\Enums\SalnType;
 use App\Models\Saln;
 use App\Models\SalnEvent;
 use App\Models\SalnVersion;
+use App\Support\ApprovalTrail;
 use App\Support\HR\EmployeeDocuments;
 use App\Support\Settings\Settings;
 
@@ -88,7 +89,55 @@ class SalnPresenter
                 'at' => $event->created_at?->toIso8601String(),
             ])->all(),
             'returned_remarks' => $saln->status === SalnStatus::Returned ? $saln->events->sortByDesc('id')->firstWhere('action', 'returned')?->remarks : null,
+            'trail' => $this->trail($saln),
         ];
+    }
+
+    /**
+     * Encoded → printed and signed → received by HRD → Committee review →
+     * oath → filed in the 201 File, with who did each and when (the latest
+     * event of each kind). No summary: the pages already say what to do next.
+     *
+     * @return array{summary: ?string, steps: array<int, array{label: string, state: string, detail: ?string}>}
+     */
+    public function trail(Saln $saln): array
+    {
+        $saln->loadMissing('events.user:id,name');
+        $latest = fn (string $action): ?SalnEvent => $saln->events->sortByDesc('id')->firstWhere('action', $action);
+        $by = fn (string $action): ?string => ($event = $latest($action)) ? ApprovalTrail::byOn($event->user?->name, $event->created_at) : null;
+
+        // The step each status waits at; those before it are done. A returned
+        // statement stops at the Committee's review.
+        $at = match ($saln->status) {
+            SalnStatus::Draft => 0,
+            SalnStatus::Generated => 2,
+            SalnStatus::Received, SalnStatus::Returned => 3,
+            SalnStatus::Cleared => 4,
+            SalnStatus::Filed => 6,
+        };
+        $officer = $saln->officer_name ?: $saln->oath_mode?->label();
+
+        // [label, who has it while it waits there, who did it once done]
+        $route = [
+            ['Encoded', 'You', null],
+            ['Printed and signed', null, $by('generated')],
+            ['Received by HRD', 'Hand the signed copy to HRD', $by('received')],
+            ['Committee review', 'SALN Committee', $by('cleared')],
+            ['Oath', $officer, null],
+            ['Filed in 201 File', null, $by('filed')],
+        ];
+
+        $steps = [];
+        foreach ($route as $index => [$label, $waiting, $done]) {
+            $steps[] = match (true) {
+                $index < $at => ApprovalTrail::step($label, ApprovalTrail::Done, $done),
+                $index > $at => ApprovalTrail::step($label, ApprovalTrail::Upcoming),
+                $saln->status === SalnStatus::Returned => ApprovalTrail::step($label, ApprovalTrail::Returned, $by('returned')),
+                default => ApprovalTrail::step($label, ApprovalTrail::Current, $waiting),
+            };
+        }
+
+        return ApprovalTrail::make($steps);
     }
 
     /**

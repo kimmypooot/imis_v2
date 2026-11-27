@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, usePage } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
@@ -266,21 +267,7 @@ const clearSearch = () => {
                     <Icon name="search" size="sm" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-text-muted" />
                     <input id="release-search-mobile" v-model="query" type="search" autocomplete="off" placeholder="Search release notes" class="block w-full form-control py-2 pr-3 pl-9" />
                 </div>
-                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter release notes">
-                    <button
-                        v-for="entry in filters"
-                        :key="entry.key"
-                        type="button"
-                        class="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
-                        :class="filter === entry.key ? 'border-primary bg-primary font-medium text-white' : 'border-border bg-surface text-text-muted hover:border-primary/40 hover:text-text'"
-                        :aria-pressed="filter === entry.key"
-                        :disabled="!entry.count && filter !== entry.key"
-                        @click="filter = entry.key"
-                    >
-                        {{ entry.label }}
-                        <span class="rounded-full px-1.5 text-xs tabular-nums" :class="filter === entry.key ? 'bg-white/20' : 'bg-surface-muted'">{{ entry.count }}</span>
-                    </button>
-                </div>
+                <FilterButtons v-model="filter" variant="pills" label="Filter release notes" :options="filters.map((entry) => ({ value: entry.key, label: entry.label, count: entry.count, disabled: !entry.count }))" />
             </div>
 
             <!-- On wide screens: a sticky panel of cards beside the timeline. -->

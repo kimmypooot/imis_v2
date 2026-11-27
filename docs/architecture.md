@@ -406,11 +406,17 @@ Key components:
   needs an `aria-label` on that control.
 
 ### Layouts & application shell (`resources/js/Layouts/`)
-- **`AuthLayout.vue`**: login, forgot/reset password, verify email. It is
-  the legacy IMIS split screen: on desktop, a CSC-navy brand panel over
-  the regional office facade with the CSC, Bagong Pilipinas and Lingkod
-  Bayani logos; the form card with the IMIS wordmark on a light panel.
-  On mobile the logos move into the card. Brand images live in
+- **`AuthLayout.vue`**: login, forgot/reset password, verify email. A split
+  screen with an inset brand panel (November 2026; it replaced the legacy
+  full-height split): a light page frame holds, on desktop, a rounded
+  CSC-navy panel over the regional office facade (the CSC, Bagong Pilipinas
+  and Lingkod Bayani logos, the system's name and description, "For
+  authorized CSC personnel only", vertically centred, and the running
+  version at the bottom), and beside it the page's card with the
+  "CSC RO VIII © year · Privacy Notice" footer. Each page heads its card
+  with `Components/UI/AuthHeading.vue` (the IMIS logo beside a blue title
+  and one line). On mobile the panel is left out and the logos move into
+  the card. The login page says "Sign in" throughout. Brand images live in
   `public/images/brand/` and were copied from the legacy site.
 - **`AppShell.vue`**: the reusable authenticated shell, following the
   legacy layout. A fixed top bar holds the hamburger, the CSC logo and
@@ -1575,6 +1581,50 @@ now also considers a `label` attribute (only `Setting` has one).
 - **Behavior:** the notice banner, the portal home announcement limit,
   and the welcome message actually change.
 
+### Reset test data (danger zone, development only)
+- **What it is:** a checklist modal (`TestDataResetDangerZone`) for a
+  Super Administrator to delete test activity and keep the people.
+- **Categories:** `App\Support\Admin\TestDataReset::CATEGORIES`, each with
+  its live row count and ticked by default. Untick a category to keep it
+  this time. The categories:
+  - NOSA & NOSI
+  - SALN
+  - leave applications and approvals
+  - leave cards and credits
+  - flexible work
+  - biometric punches and DTR
+  - payroll runs and payslips
+  - training records
+  - 201 File documents
+  - PDS submissions and record corrections
+  - plantilla selections
+  - announcements, feedback and notifications
+  - logs and dashboard snapshots
+  - sessions, tokens, cache and queue (you stay signed in)
+- **Never on the list:**
+  - accounts and their pictures, employee records, the PDS, service
+    history and the whole Plantilla, step increments included
+    - Step increments were a category at first. On 2026-11-26 the reset
+      removed 12 real ones, recorded from the November 2026 payroll
+      workbook; they were restored from the reset's backup.
+    - A test step increment is removed on its Plantilla item page instead.
+  - saved e-signatures, loans and pay items
+  - all setup: offices, positions, salary schedules, leave types, roles
+    and permissions, systems, settings, What's New
+- **Files:** what deleted rows pointed to is removed from the private
+  disk, except a file a kept record still uses (a profile or PDS photo, a
+  saved signature, a brand asset).
+- **Guards:**
+  - Super Administrator only.
+  - The current password and the phrase `RESET TEST DATA`.
+  - Off unless `test_data.reset_allowed` is on. It defaults to off in
+    production and on elsewhere; `IMIS_ALLOW_TEST_DATA_RESET` overrides
+    it.
+  - A database backup is taken first; if it fails, nothing is deleted.
+  - Audited as `system.test_data_reset`, with the rows per category and
+    the backup's name.
+- **Tests:** `tests/Feature/Admin/TestDataResetTest.php`.
+
 ## Global Search & UX Refinement — IMPLEMENTED (Phase 14)
 
 One search over the four portal content types, plus shell-wide
@@ -2006,10 +2056,52 @@ position, and a Super Administrator.
 ### Loading states
 Placeholders and in-place updates share three pieces: `UI/Skeleton.vue` (a shimmering block built on the `skeleton` utility in `app.css`, still under reduced motion), `UI/BusyRegion.vue` (dims a list and shows a spinner after 150 ms while a search, filter or month change loads) with the `useBusy` composable that feeds it, and the Inertia progress bar, shown for visits slower than 100 ms (`app.js`). The dashboard "At a glance" row and the notification bell use skeletons.
 
+### Dashboard layout (command center)
+`Portal/Dashboard.vue`, top to bottom: the welcome banner with its quick
+access shortcuts; the install offer and "Get set up" checklist when they
+apply; the **At a glance** stat strip; then two columns. The wide one has
+**Needs your attention** and the **Systems Directory** card (three across);
+the side column has **Coming up** (a month calendar,
+`Components/Portal/MiniCalendar.vue`, over the next 7 days from
+`UpcomingActivities`, hidden without calendar access), **Announcements**,
+**System status** (maintenance notices, or "All systems are running
+normally") and **Services** when any exist. It replaced the legacy-style
+stack (banner, full-width calendar section, directory) in November 2026.
+
 ### Dashboard "At a glance"
-`Support/Portal/AtAGlance` builds the row (leave balances, leave in
-progress, approvals waiting, unread notifications) as a deferred prop of
-`PortalController`.
+`Support/Portal/AtAGlance` builds the tiles (leave balances, leave in
+progress, approvals waiting, late and undertime, activities this week) as
+a deferred prop of `PortalController`. They show as one stat strip: a
+single card split by hairline dividers, each tile an icon beside two lines
+(the label, then the figure with its hint).
+
+### Dashboard "Needs your attention"
+`Support/Portal/NeedsAttention` lists what is waiting on the person, each
+item with the page that settles it: leave applications to approve
+(`LeaveApplications::queueFor`), payslip requests to approve
+(`PayslipRequests::queueFor`), payrolls waiting for withholding tax (for
+`enterTax` holders), and their own last-month DTR to sign or a leave
+application, SALN (with the Committee's remarks) or PDS returned for
+correction. A deferred `attention` prop; "You're all caught up" when empty.
+Covered by `tests/Feature/Portal/NeedsAttentionTest.php`.
+
+### Dashboard "Get set up" checklist
+`Support/Portal/GettingStarted` lists the one-time setup still to do, each
+worked out from data, never ticked by hand: saving an e-signature and
+submitting the PDS (Submitted or Verified; a returned one doesn't count),
+for people with an employee record, and fingerprint sign-in (a passkey),
+for everyone. It is null once all are done, so the card
+(`Components/Portal/GettingStartedCard.vue`) disappears; "Hide for now"
+puts it away on that device for 30 days. Covered by
+`tests/Feature/Portal/GettingStartedTest.php`.
+
+### Guidance on every page
+Pages explained by the User Guide get a "How does this work?" link in
+`PageHeader`: `UserGuide::articleFor` picks the article whose `link` is the
+page, or whose `pages` patterns cover it, among those the person may read,
+shared as the `help` prop. Long forms use `useUnsavedChanges` (@cscro8/ui)
+to ask before leaving with unsaved changes, and field hints are
+`HelperText for="…"`, linked to their field for screen readers.
 
 ### Tests
 `tests/Feature/Auth/UsernameLoginTest.php` covers username normalization,
@@ -2093,24 +2185,28 @@ from data this platform already holds instead of the legacy
 
 ### Navigation
 The open division is the `division` query parameter
-(`/dashboard?division=unit-3`), changed with an Inertia partial reload
-(`only: ['division']`). The directory prop is a closure, so it isn't
-rebuilt when switching divisions. A division can be bookmarked, and the
-browser's Back button returns to the directory, which the legacy
-client-side view couldn't do. Focus moves to the division heading when
-opening one and back to its card when returning. Each view has its own
-client-side search (divisions and their system names; systems within a
-division).
+(`/dashboard?division=unit-3`), changed with a client-side visit
+(`router.push`, no server round trip: every division and system is
+already on the page). The server still reads `?division=` on a direct
+load. A division can be bookmarked, and the browser's Back button returns
+to the directory, which the legacy client-side view couldn't do. The two
+views slide (in to a division, back out to the directory; instant under
+reduced motion), and the division's systems rise in with `stagger`. Focus
+moves to the division heading when opening one and back to its card when
+returning, once the slide ends. Each view has its own client-side search
+(divisions and their system names; systems within a division). Cards sit
+three across at most, the icon beside the name, with the legacy full-width
+"View Systems (n)" button below.
 
 ### Launch states (`SystemLaunchCard.vue`)
 These are the legacy button states, decided entirely by server-resolved
-fields: **Access System** with the viewer's role badge ("Guest" for open
-systems), **Access [Maintenance]** for maintenance bypass, **Under
-Maintenance**, **No Access** (restricted, no role) and **Not configured
-yet**. As in the legacy cards, the button label is the only state cue;
-the Details link and explanatory note were removed. A system's
-maintenance message still shows in the dashboard's maintenance notice
-and on its details page.
+fields: **Access System** ("Guest" for open systems), **Access** for
+maintenance bypass, **Under Maintenance**, **No Access** (restricted, no
+role) and **Not configured yet**. The button is slim (36px) and one line;
+the viewer's role (or "Maintenance access" for a bypass) is a badge under
+the system name rather than inside the button. The Details link and
+explanatory note were removed. A system's maintenance message still shows
+in the dashboard's System status card and on its details page.
 
 ### Card styling
 Division and system cards keep the legacy layout (icon beside the
@@ -2317,13 +2413,15 @@ administrators, and system administrators don't need HR's personal data.
   `adminAccessPermissions` and `hrAccessPermissions`. Either gate shows
   `administrative`-visibility directory entries
   (`HasPortalVisibility::seesAdministrative`), as before the split.
-- **Entry points:** the portal's Management group and the account menu
-  list **HR Management** and **Administration**, each only with its gate.
+- **Entry points:** a **Me · HR · Admin** switcher at the top of every
+  sidebar (`Components/Navigation/AreaSwitcher.vue`, in AppShell's
+  `sidebar-header` slot, used by both PortalLayout and AdminLayout). Me is
+  your own pages (`/dashboard`); HR and Admin show only with their gate,
+  and with neither the switcher is hidden. HR staff get Me · HR, so they
+  move between their own records and HR work in one click.
 - **Sidebar:** `AdminLayout` picks `hrNavItems` for any `/admin/hr` URL and
-  `adminNavItems` otherwise. HR URLs stayed under `/admin/hr`. People with
-  both areas (e.g. Super Administrator) get an Admin | HR switcher at the
-  top of the sidebar (AppShell's `sidebar-header` slot). HR breadcrumbs
-  start at **Human Resources** (`/admin/hr`), not `/admin`.
+  `adminNavItems` otherwise. HR URLs stayed under `/admin/hr`. HR
+  breadcrumbs start at **Human Resources** (`/admin/hr`), not `/admin`.
 - **Banner:** both dashboards share `Components/Admin/DashboardBanner.vue`.
 
 ### HR dashboard
@@ -3125,12 +3223,25 @@ makes that data unreadable. To rotate it, move the old key to
   own, with the section and what changed.
 
 ### Editor (`Components/HR/Pds`)
-- **`PdsEditor`:** a read-only identity card, then one tab per part of
-  the form. Tabs with unsaved changes get a dot. It warns before you
-  leave the page, or navigate away, with unsaved changes.
-- **`PdsSectionForm` and `PdsRowsForm`:** each section saves on its own.
-  List sections can add, remove and reorder rows, and focus moves to a
-  new row's first field.
+- **`PdsEditor`:** a read-only identity card, then the parts of the form
+  as steps in a list beside the editor (a menu on phones), each with its
+  state (Done, Started, Not started, Optional; `pdsProgress.js`), an
+  "Unsaved" mark and, for HR's review, "Changed". One part is edited at a
+  time with one **Save** for all its sections and **Save and continue**;
+  every part stays mounted, so edits survive moving between parts. It
+  warns before leaving the page with unsaved changes.
+- **Status card (`PdsStatusCard`):** on My PDS, while it can be signed, a
+  "Before you sign" list (`pdsProgress.readiness`): every part filled in, the
+  photo, items 34–40 answered, the government-issued ID and three
+  references, each with a link to its part. It guides; it doesn't block
+  signing.
+- **`PdsSectionForm` and `PdsRowsForm`:** each section still saves to its
+  own route; the editor saves the changed ones of a part in turn
+  (`save()`). Lists show one line per entry, set by the schema: `layout:
+  inline` (children, items 31–33) is typed straight in, Enter adding a
+  line; others show a `summary` line (dates in their own column) that
+  opens to the full form. `order: recent` (work experience) keeps entries
+  newest first, so it has no move buttons.
 - **`PdsField`:** decimal steps, numeric keyboards for ID numbers,
   suggestion lists, Yes/No answers, and errors tied to their inputs
   (`aria-describedby`).
@@ -3209,8 +3320,14 @@ saving without changes doesn't count.
 
 ### Photo
 - Passport size (3.5 × 4.5 cm), handled by `PdsPhotos`.
-- Re-encoded with GD as a centered 7:9 crop at 413×531, so no EXIF is
-  kept.
+- Uploads must be **exactly 413 × 531 px** (3.5 × 4.5 cm at 300 dpi),
+  checked in the browser before uploading and enforced on the server, so the
+  photo prints at its true size uncropped: laid over C4's photo frame (which
+  is a little smaller), on the print page and in the Excel copy.
+- A picture of any other size opens `PdsPhotoCropper`: a frame in the
+  photo's proportions (drag, zoom, or arrows and +/−) that saves exactly
+  413 × 531, warning when a small picture would print blurry.
+- Re-encoded with GD, so no EXIF is kept.
 - Stored on the **private** `local` disk.
 - Served only through authorized routes with `Cache-Control: private,
   no-store`:
@@ -3220,30 +3337,81 @@ saving without changes doesn't count.
 - Uploads by the employee, or by HR with `pds.update`, are audited as
   `pds.updated` (section `photo`).
 
-### Print (`Pages/HR/PdsPrint.vue`)
-- A standalone page laid out like the four official pages, using the
-  form's own row counts:
-  - children: 13
-  - education: 1 per level
-  - eligibility: 7
-  - work experience: 24
-  - L&D: 17
-  - voluntary work: 9
-  - other information: 7
-  - references: 3
-- Overflow goes onto continuation sheets C5–C11, as the form instructs.
-- Dates print as dd/mm/yyyy.
-- **Signature line:**
-  - On a signed copy: "Electronically signed through IMIS by {name}",
-    with the signing date as "Date Accomplished".
-  - On the current PDS: "Not signed — current PDS (draft)".
+### Print (`Pages/HR/PdsPrint.vue`) and the Excel copy
+- Each page **is** the official form: CSC's workbook
+  (`resources/templates/hr/cs-form-212-revised-2026.xlsx`) as Excel prints
+  it on Folio (8.5 × 13 in, 0.25 in margins, each sheet fitted to one page,
+  centred across), rendered at 300 dpi to `public/images/pds/*.png`. The
+  entries are written into the cells at the positions Excel prints them
+  (`Components/HR/Pds/pdsFormGeometry.js`: every column's and row's
+  printed edges, each check box's square and the photo frame, in points).
+  Entries shrink, then wrap, to fit their cell; nothing is cut off.
+- `PdsForm` (backend) decides what goes where: per page, the sheet (C1–C11),
+  the text for each cell or merged range and the ticked boxes (by their
+  linked cells). The print page places them; `PdsFormWorkbook` writes the
+  same entries into CSC's own workbook ("Download Excel"): inline strings,
+  check boxes (control, legacy VML and linked cell), the country drop-down,
+  the photo in C4's frame, Folio page setup on every sheet.
+- The form's own row counts (`PdsForm::LISTS`): children 13, education 1
+  per level, eligibility 7, work experience 24, L&D 17, voluntary work 9,
+  other information 7, references 3. Overflow continues on C5–C11, as many
+  pages as needed; in the Excel copy the continuation sheet gets more rows
+  instead (as people extend it by hand), which `PdsWorkbookReader` reads
+  back — a test round-trips a PDS through the workbook.
+- It follows CSC's *Guide to Filling Out the PDS (Revised 2026)*
+  (`docs/reference/pds`): dates as
+  dd/mm/yyyy; no blank entries (N/A in every empty field, every empty cell of
+  a listed row, an empty list's first line and a level with no school; the
+  "If YES" lines of questions 34–40 are filled only for a Yes); work experience from the current
+  position down; monthly salary in figures (₱21,877.00); pay grade as "00-0";
+  continuation sheets printed only when used. The PDS editor shows the
+  guide's filling-in rules as field hints (e.g. PRIMARY EDUCATION, HIGH
+  SCHOOL / JUNIOR or SENIOR HIGH SCHOOL, names and agencies in full).
+- **Signature:** each print and Excel copy is for one way of signing,
+  chosen in the print page's toolbar (`?signature=`, `PdsPrintout::mode`):
+  - **By hand** (`hand`): every signature box and its date blank.
+  - **PNPKI** (`pnpki`): the boxes blank, the dates filled (when signed, or
+    today); the PDF is saved and signed with the employee's own PNPKI
+    certificate outside IMIS. No certificate ever touches IMIS.
+  - **E-signature** (`esign`, signed copies only, and their default): the
+    signer's e-signature image in every box, with the date signed. Signing a
+    PDS keeps a copy of the signer's e-signature
+    (`pds_submissions.signature_path`, `Signatures::snapshot`), served at
+    `/pds/submissions/{id}/signature` to whoever may view the submission.
+    Without a saved image, each box notes "Electronically signed through
+    IMIS by {name}".
+  The boxes' "(e-signature/digital certificate)" hint is always removed, and
+  so is the oath box's "(e-signature/digital certificate except for notary
+  public)". In the Excel copy, pictures go on each sheet's drawing (one is
+  made for sheets that have none), and changed parts are written once
+  (libzip can't read back an entry replaced in an open archive).
+- **PNPKI-signed copy** (`PdsPnpki`, `PdfSignatures`): on a submitted or
+  verified PDS, the employee attaches the PDF they signed with their PNPKI
+  certificate (`POST /my/pds/submissions/{id}/pnpki`, from the submission's
+  page). `PdfSignatures` reads every signature in it without a PDF or
+  crypto package: the covered bytes (`/ByteRange`) must hash to the CMS
+  messageDigest, and the certificate in it must verify the signature over
+  the signed attributes (`openssl_verify`); PHP's `openssl_cms_verify`
+  wasn't reliable for detached signatures. Accepted when every signature
+  is intact, nothing was added after the last, and there is one per page;
+  then filed in the 201 File as "Personal Data Sheet (signed)" (a newer one
+  archives the old) and recorded on the submission (`pnpki_document_id`,
+  `pnpki_signatures`) for HR's verification page. Whether certificates
+  chain to PNPKI is checked only when `PNPKI_CA_BUNDLE` points at DICT's
+  root/intermediate certificates.
 - The right thumbmark and the oath block print blank, for wet completion.
-- **Paper:** printed on 8.5 × 13 in (long bond), as common in government
-  offices. The official .xlsx mixes A4 (pages 1–2) and legal (3–4).
+- **Printing:** 8.5 × 13 in paper, Margins None, Scale 100%.
 - **Routes:**
   - the current PDS: `/my/pds/print`, `/admin/hr/employees/{id}/pds/print`
   - a signed copy: `/pds/submissions/{id}/print`
-- Printing someone else's PDS is audited (`pds.printed`).
+  - each with `.xlsx` for the Excel copy
+- **If CSC revises the form:** replace the template, then with Excel on a
+  Windows machine: export each sheet to PDF on Folio (a printer driver that
+  offers Folio must be active), export a copy whose last row and last column
+  are striped in alternating colours to read each column's and row's
+  printed edges, render the pages at 300 dpi, regenerate
+  `pdsFormGeometry.js`, and adjust the cells in `PdsForm`.
+- Printing or downloading someone else's PDS is audited (`pds.printed`).
 
 ### Audit
 - `pds.submitted`, `pds.verified`, `pds.returned` and `pds.printed`.
@@ -5379,3 +5547,100 @@ The legacy IMIS had no notices.
 
 ### Tests
 `tests/Feature/HR/SalaryNoticesTest.php`.
+
+## Calendar of Activities — IMPLEMENTED
+
+The regional calendar. Every office posts its own activities; PALD (the
+process owner) keeps the calendar in order and prints the monthly sheet.
+Page: `/activities` (month calendar or the monthly sheet).
+
+### Access
+- `activities.view`: every staff account, through the default `user`
+  role. The calendar, list, details, print and Excel.
+- `activities.post`: adds, edits, moves, cancels and marks done the
+  activities of the poster's **own office**, exactly the account's
+  organizational unit (no parent or child units) (`ActivityPolicy`).
+- `activities.manage`: PALD. Everything for any office, plus returning
+  or removing activities and the management page.
+- Roles (`ActivityRoleSeeder`, created only if missing; nobody is
+  assigned at install): `activities-curator` ("Calendar of Activities —
+  PALD": view, post, manage) and `activities-poster` ("Calendar of
+  Activities — office poster": view, post).
+- **PALD staff curate without a role.** Everyone whose office is PALD
+  (code `PALD`) has view, post and manage through their office
+  (`Support/Activities/OfficePermissions`, added in `User::permissions()`,
+  so routes, policies and the sidebar all follow it), and loses them on
+  moving to another office. The curator role is for anyone else PALD
+  wants to help curate.
+- Audit events: `activity.saved`, `moved`, `cancelled`, `done`,
+  `returned`, `removed`, `series_saved`, `cutoff_saved`.
+
+### Data
+- `activities`: one row per occurrence (office, title, responsible,
+  participants, venue, mode, remarks, year and month, optional dates and
+  times, status, unplanned flag, return and removal notes; soft deletes).
+- `activity_moves`: the history of date changes, each with its reason.
+- `activity_series`: a repeating activity's rule; its occurrences are
+  real rows in `activities`.
+- `activity_plan_cutoffs`: PALD's plan cut-off per year.
+
+### Rules (`Support/Activities`)
+- **Planned vs scheduled:** an activity always has a year and month. Without
+  a date it is `planned`; its first date makes it `scheduled` (not a move).
+  Later statuses are `cancelled` (with a reason) and `done`.
+- **Moves:** changing the date or time of an activity that already had one
+  records an `ActivityMove` and needs a reason (`MoveReasonRequired`).
+  "Moved" is derived from that history, never stored.
+- **Unplanned:** activities added after the year's cut-off (31 January
+  when PALD sets none), or when ticked, are flagged unplanned; the flag is
+  never cleared (the form locks the box once it is set).
+- **Repeating** (`ActivitySeriesBuilder`): daily (weekdays), weekly or
+  monthly (a day of the month or the nth weekday), every N, skipping
+  day-off holidays if asked, never past 31 December. Editing, moving or
+  returning an occurrence detaches it from its series; it keeps the series
+  in `detached_from_series_id`, and a "this and the following" edit never
+  fills the date it was made for (before its first move) again. Such an
+  edit keeps the series' office. Cancelled and done activities can't be
+  moved, through Move or the edit form (their date and time are locked).
+- **Clashes** (`ActivityClashes`): overlapping dates and times at the same
+  venue or for the same office. They warn, never block.
+- `Activities` is the only writer of activities and moves. A date change
+  made through the edit form is audited once, as `activity.moved` (with the
+  reason, when one was needed), not also as `activity.saved`.
+
+### PALD's page (`/activities/manage`)
+What changed in the last 7 or 30 days (`ActivityChanges`, from the audit
+log), a month's clashes, plan versus actual per office for a year
+(`PlanVersusActual`), the year's cut-off, and removed activities.
+Returning or removing an activity bells the office's posters and its
+creator (`ActivityUpdate`, kind `activities`, in Notification settings).
+The calendar page shows a **Removed** card for the month (title, date,
+reason, when): a poster sees their own office's, PALD every office's
+within the office filter.
+
+### Monthly sheet (`MonthSheet`, `ActivityWorkbook`)
+Titled "CSC RO VIII CALENDAR OF ACTIVITIES for {MONTH} {YEAR}": a date
+row per day with activities or a day-off holiday, that day's activities,
+then "Dates to be announced" for month-only ones; cancelled ones stay,
+flagged. Printed from `Pages/Activities/SheetPrint.vue` and downloaded as
+Excel through PhpSpreadsheet (one worksheet per month, Poppins,
+landscape). Both follow the office and mode filters.
+
+### Dashboard
+- The welcome banner has a quick-access dock (`Support/Portal/QuickAccess`):
+  File Leave, My DTR, My Payslip and My PDS for staff with an employee
+  record, and the Calendar of Activities.
+- At a glance gets an **Activities** tile (this week's count).
+- **Coming up** in the dashboard's side column (`UpcomingActivities`,
+  deferred): a mini month calendar (`Components/Portal/MiniCalendar.vue`,
+  ‹ › reloading only `activities`) over the next 7 days in the region with
+  day-off holidays inline. (Until November 2026 this was a full-width
+  "Calendar of Activities" section.)
+
+### Deploying
+`php artisan migrate`. This adds the tables and permissions, gives
+`activities.view` to the `user` role, creates the two roles, and adds the
+What's New items. Then assign PALD and each office's posters.
+
+### Tests
+`tests/Feature/Activities/`, `tests/Feature/Portal/DashboardActivitiesTest.php`.

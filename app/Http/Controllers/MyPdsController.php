@@ -6,12 +6,16 @@ use App\Enums\AuditEvent;
 use App\Http\Controllers\Concerns\SavesPdsSections;
 use App\Models\Employee;
 use App\Models\Pds\PdsSubmission;
+use App\Support\HR\Pds\PdsForm;
+use App\Support\HR\Pds\PdsPnpki;
+use App\Support\HR\Pds\PdsPrintout;
 use App\Support\HR\Pds\PdsReader;
 use App\Support\HR\Pds\PdsSchema;
 use App\Support\HR\Pds\PdsSubmissions;
 use App\Support\HR\Pds\PdsWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -79,7 +83,7 @@ class MyPdsController extends Controller
     /**
      * A past submission of your own, read-only.
      */
-    public function submission(Request $request, PdsSubmission $submission, PdsSubmissions $submissions): Response
+    public function submission(Request $request, PdsSubmission $submission, PdsSubmissions $submissions, PdsPnpki $pnpki): Response
     {
         abort_unless($submission->employee_id === $this->employee($request)?->id, 404);
 
@@ -90,19 +94,56 @@ class MyPdsController extends Controller
                 'pds' => $submission->snapshot,
                 'photo_url' => $submission->photo_path ? "/pds/submissions/{$submission->id}/photo" : null,
             ],
+            'pnpki' => [
+                'copy' => $pnpki->present($submission),
+                'can_attach' => $pnpki->canAttach($submission),
+                'pages' => $pnpki->pagesOf($submission),
+                'print_url' => route('pds.submissions.print', $submission, false).'?signature='.PdsForm::PNPKI,
+            ],
         ]);
     }
 
-    public function print(Request $request, PdsReader $reader): Response
+    /**
+     * Attaches the PNPKI-signed PDF of one of your signed PDS: checked, then
+     * filed in your 201 File (PdsPnpki).
+     */
+    public function attachPnpki(Request $request, PdsSubmission $submission, PdsPnpki $pnpki): RedirectResponse
+    {
+        abort_unless($submission->employee_id === $this->employee($request)?->id, 404);
+        abort_unless($pnpki->canAttach($submission), 403, 'Only a submitted or verified PDS can have its PNPKI-signed copy attached.');
+
+        $request->validate(['file' => ['required', 'file', 'mimes:pdf', 'max:20480']]);
+        $document = $pnpki->attach($submission->load('employee', 'pnpkiDocument'), $request->file('file'), $request->user());
+
+        $this->audit()->record(AuditEvent::EmployeeDocumentUploaded, "Attached the PNPKI-signed PDS ({$document->label})", $document, [
+            'type' => $document->document_type->value,
+            'size' => $document->size,
+            'pds_submission' => $submission->id,
+        ]);
+
+        return back()->with('status', 'Your PNPKI-signed PDS was checked and filed in your 201 File.');
+    }
+
+    public function print(Request $request, PdsReader $reader, PdsPrintout $printout): Response
     {
         $employee = $this->requireEmployee($request);
 
-        return Inertia::render('HR/PdsPrint', [
-            'schema' => PdsSchema::forEditor(),
-            'pds' => $reader->read($employee),
-            'photoUrl' => $this->photoUrl($employee),
-            'signature' => null,
-        ]);
+        return Inertia::render('HR/PdsPrint', $printout->page(
+            $reader->read($employee),
+            $this->photoUrl($employee),
+            null,
+            route('my.pds.print', [], false),
+            route('my.pds.print.xlsx', [], false),
+            $printout->mode($request, null),
+        ));
+    }
+
+    /** Your current PDS on CSC's own workbook (CS Form No. 212). */
+    public function workbook(Request $request, PdsReader $reader, PdsPrintout $printout): HttpResponse
+    {
+        $employee = $this->requireEmployee($request);
+
+        return $printout->download($reader->read($employee), $employee->pdsProfile?->photo_path, null, $printout->mode($request, null));
     }
 
     private function employee(Request $request): ?Employee

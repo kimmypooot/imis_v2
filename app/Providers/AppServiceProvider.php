@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\RoleName;
+use App\Models\Activity;
 use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\ApprovalDelegation;
@@ -207,6 +208,7 @@ class AppServiceProvider extends ServiceProvider
             'payroll_entry' => PayrollEntry::class,
             'payslip_request' => PayslipRequest::class,
             'data_correction_request' => DataCorrectionRequest::class,
+            'activity' => Activity::class,
         ]);
 
         Event::subscribe(AuthenticationAuditSubscriber::class);

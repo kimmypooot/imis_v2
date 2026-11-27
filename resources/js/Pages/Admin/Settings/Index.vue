@@ -6,6 +6,7 @@ import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import SettingsGroupForm from '../../../Components/Settings/SettingsGroupForm.vue';
 import LeaveCreditsDangerZone from '../../../Components/Settings/LeaveCreditsDangerZone.vue';
+import TestDataResetDangerZone from '../../../Components/Settings/TestDataResetDangerZone.vue';
 
 defineOptions({ layout: AdminLayout });
 
@@ -13,6 +14,7 @@ defineProps({
     groups: { type: Array, required: true },
     canUpdate: { type: Boolean, default: false },
     leaveCreditsPurge: { type: Object, default: null },
+    testDataReset: { type: Object, default: null },
 });
 </script>
 
@@ -38,5 +40,6 @@ defineProps({
         />
 
         <LeaveCreditsDangerZone v-if="leaveCreditsPurge" :entries="leaveCreditsPurge.entries" :phrase="leaveCreditsPurge.phrase" />
+        <TestDataResetDangerZone v-if="testDataReset" :categories="testDataReset.categories" :phrase="testDataReset.phrase" />
     </div>
 </template>

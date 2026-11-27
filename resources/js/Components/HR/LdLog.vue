@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
@@ -77,28 +78,7 @@ const columns = [
         </p>
 
         <Card :title="`Training records — ${year}`" icon="clipboard">
-            <div class="mb-4 flex flex-wrap gap-1" role="group" aria-label="Filter by month">
-                <button
-                    type="button"
-                    class="rounded-full px-3 py-1 text-xs font-medium"
-                    :class="month === null ? 'bg-primary text-white' : 'bg-surface-muted text-text hover:bg-info-bg'"
-                    :aria-pressed="month === null"
-                    @click="month = null"
-                >
-                    All ({{ records.length }})
-                </button>
-                <button
-                    v-for="(name, index) in MONTHS"
-                    :key="name"
-                    type="button"
-                    class="rounded-full px-3 py-1 text-xs font-medium"
-                    :class="month === index ? 'bg-primary text-white' : monthCounts[index] ? 'bg-surface-muted text-text hover:bg-info-bg' : 'bg-surface-muted text-text-muted/70 hover:bg-info-bg'"
-                    :aria-pressed="month === index"
-                    @click="month = index"
-                >
-                    {{ name.slice(0, 3) }}<span v-if="monthCounts[index]"> ({{ monthCounts[index] }})</span>
-                </button>
-            </div>
+            <FilterButtons v-model="month" class="mb-4" variant="pills" label="Filter by month" :options="[{ value: null, label: 'All', count: records.length }, ...MONTHS.map((name, index) => ({ value: index, label: name.slice(0, 3), count: monthCounts[index] || null }))]" />
 
             <div class="mb-4 flex flex-wrap gap-3">
                 <div>

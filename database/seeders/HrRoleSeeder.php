@@ -31,7 +31,7 @@ class HrRoleSeeder extends Seeder
         return [
             'hr-officer' => [
                 'display_name' => 'HR Staff',
-                'description' => 'Human Resource staff: employee records, PDS verification, 201 files, L&D, plantilla, Service Records, leave (including certifying credits), DTR, payroll, and reviewing data-correction requests.',
+                'description' => 'Human Resource staff: employee records, PDS verification, 201 files, L&D, plantilla, Service Records, leave (including certifying credits), DTR, payroll, reviewing data-correction requests, and granting roles in the systems HRD manages (ORS, OTRS).',
                 'permissions' => [
                     P::EmployeesView, P::EmployeesCreate, P::EmployeesUpdate, P::EmployeesReassign,
                     P::PdsView, P::PdsUpdate, P::PdsVerify,
@@ -42,6 +42,7 @@ class HrRoleSeeder extends Seeder
                     P::LeaveView, P::LeaveManage, P::LeaveCertify,
                     P::DtrView, P::DtrManage,
                     P::PayrollView, P::PayrollManage, P::DataCorrectionsReview,
+                    P::ApplicationsManageOfficeAccess,
                 ],
             ],
             // Director IV and III: read-only oversight for management

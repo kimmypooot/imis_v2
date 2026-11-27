@@ -10,6 +10,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
@@ -244,12 +245,7 @@ const cellClass = 'w-28 rounded-sm border border-border bg-surface px-2 py-1 tex
             Check the amounts against the issuance before saving.
         </p>
         <label for="paste-table" class="sr-only">Salary table</label>
-        <textarea
-            id="paste-table"
-            v-model="pasted"
-            rows="12"
-            class="block w-full rounded-md border border-border-strong bg-surface px-3 py-2 font-mono text-xs text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-        />
+        <Textarea id="paste-table" v-model="pasted" :rows="12" class="font-mono text-xs" />
         <InputError :message="pasteError" />
         <template #footer>
             <Button variant="secondary" @click="pasteOpen = false" icon="close">Cancel</Button>

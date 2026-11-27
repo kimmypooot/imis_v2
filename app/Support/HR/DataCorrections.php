@@ -171,6 +171,8 @@ class DataCorrections
             'id' => $request->id,
             'reference_number' => $request->reference_number,
             'employee' => $request->employee->user->name,
+            'employee_id' => $request->employee_id,
+            'photo_url' => $request->employee->user->profile_photo_url,
             'field' => $request->field,
             'field_label' => self::fields()[$request->field]['label'] ?? $request->field,
             'current_value' => $request->current_value,

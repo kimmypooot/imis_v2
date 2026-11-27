@@ -17,6 +17,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // A fresh database gets its roles and permissions from db:seed; this only updates a seeded install.
+        if (! Role::query()->where('name', 'super-admin')->exists()) {
+            return;
+        }
+
         // Creates any permission rows not in the database yet.
         (new RolePermissionSeeder)->run();
 

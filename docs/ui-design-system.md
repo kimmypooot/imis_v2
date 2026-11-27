@@ -79,6 +79,18 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   (in-panel spinner + line), `ErrorPage` (403/404/419/429/500/503).
 - **Forms:** `TextInput`, `PasswordInput`, `Select`, `Textarea`, `Checkbox`,
   `CheckboxGroup`, `Radio`, `Switch`, `FileInput`, `FormGroup`, `InputError`.
+  For several files at once, IMIS's own `Components/Forms/MultiFileInput`
+  (the same drop zone, then a removable list of the chosen files).
+  A hint under a field is `<HelperText for="field-id">` (or the
+  `helperText` prop on `TextInput`, `PasswordInput` and `FormGroup`), never a
+  hand-written `<p>`: with `for`, `TextInput`, `Select` and `Textarea` link it
+  (and an `InputError for="field-id"`) through `aria-describedby`, so screen
+  readers read it, including hints shown only sometimes (`v-if`).
+  After any submit the server rejects, the shell moves the cursor to the
+  first field marked `:invalid` (or the field beside the first
+  `InputError`), inside an open dialog if there is one
+  (`focusFirstErrorAfterInvalidSubmits`), so mark invalid fields. Long forms
+  also put `<ErrorSummary :errors="form.errors" />` at the top.
   For a compact field in a filter bar use `class="filter-control"`; for a
   one-off raw field use `class="form-control block w-full px-3 py-2"`.
 - **Effects (in `app.css`):** `stagger` (children rise in turn, once per
@@ -88,7 +100,25 @@ All live in `resources/js/Components/`. Use these instead of raw markup.
   gradients; every motion has a reduced-motion fallback.
 - **Feedback:** `Modal` (solid brand-navy header by default; green for "Add", red for
   destructive), `ConfirmDialog`, `Alert`, and the toast/confirm
-  host (`DialogHost`, `useDialog`).
+  host (`DialogHost`, `useDialog`; `focusCancel` makes the safe choice the
+  default). Long forms call `useUnsavedChanges(form)` so leaving with unsaved
+  changes asks "Leave without saving?" first.
+- **Guidance:** `PageHeader` shows "How does this work?" when the User Guide
+  has an article for the page (the shared `help` prop, worked out by
+  `UserGuide::articleFor` from each article's `link` and optional `pages`
+  patterns in `config/user-guide.php`). Add or point an article there rather
+  than writing help into a page; `:help="false"` hides the link.
+- **Go to…:** Ctrl/⌘+K opens the kit's `CommandPalette` (the shell's
+  `#command-palette` slot); "/" still focuses the header search. IMIS fills
+  it from `Utils/navigation.js` (every sidebar area plus `accountNavItems`,
+  by the sidebar's own permission and area rules). A new page appears there
+  once it has a nav entry; give it `keywords` for words people may type
+  that aren't in its name (e.g. "salary" for My Payslips).
+- **Where a request is:** `ApprovalTrail` draws the steps a request takes
+  (done, current with who has it, returned, stopped, still to come) from a
+  `{ summary, steps }` the server builds with `App\Support\ApprovalTrail`.
+  Leave applications, the PDS status card and SALN pages use it; a new
+  approval flow should too, rather than its own list of badges.
 - **Shell:** `AppShell` with `AdminLayout`, `PortalLayout`, `AccountLayout`
   and `AuthLayout`; `SidebarNav`, `UserMenu`, `HelpMenu`, `NotificationMenu`.
 
@@ -109,6 +139,16 @@ line above its value), as on Age & Service, and drop the "#" column
 `CellFacts wrap`. Keep every folded field in the export: give it its own
 column with `hidden: true` (searched and exported, not drawn) and mark the
 folded display column `export: false`.
+
+A short list (a handful of rows) takes `:page-size-select="false"` to drop
+the "Show N entries" picker. To pick one view of a list ("Pending",
+"Approved"…), put `FilterButtons` in the Card's actions instead of
+hand-built toggle buttons; Tabs are for panels that swap whole content.
+Above a list on its own, use `variant="pills"` (chips with a count); for a
+two- or three-way switch of views, `variant="segmented"`. Summary tiles
+that also filter the list below them are `FilterTiles`.
+Number fields use `TextInput` with `step` (e.g. `step="0.01"` for pesos),
+`min` and `max`; without `step` the browser rejects decimals.
 
 ## Reusing this in other hub systems
 

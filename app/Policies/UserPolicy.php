@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
+use App\Models\Application;
 use App\Models\User;
 
 class UserPolicy
@@ -81,6 +82,21 @@ class UserPolicy
         }
 
         return ! $user->is($target) && $this->mayModifyProtectedTarget($user, $target);
+    }
+
+    /**
+     * Changing this user's role inside one system: managing access to that
+     * system (ApplicationPolicy::manageAccess, which an office access
+     * manager has for their office's systems) and the same self and
+     * protected-target rules as manageSystemAccess. manageSystemAccess
+     * itself stays with `applications.manage_access`: it also covers every
+     * system at once and office designations.
+     */
+    public function manageSystemAccessIn(User $user, User $target, Application $application): bool
+    {
+        return $user->can('manageAccess', $application)
+            && ! $user->is($target)
+            && $this->mayModifyProtectedTarget($user, $target);
     }
 
     /**

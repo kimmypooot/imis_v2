@@ -90,7 +90,14 @@ watch(activeCategory, async (id) => {
 
 watch(visible, () => nextTick(schedule));
 
+// Opened from a page's "How does this work?" link (/guide#slug): ring that
+// article for a moment, so it's clear which one explains the page.
+const arrived = ref(null);
+let arrivedTimer = null;
+
 onMounted(() => {
+    arrived.value = window.location.hash.slice(1) || null;
+    arrivedTimer = window.setTimeout(() => (arrived.value = null), 2500);
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     update();
@@ -99,6 +106,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', schedule);
     window.removeEventListener('resize', schedule);
+    window.clearTimeout(arrivedTimer);
     if (frame !== null) window.cancelAnimationFrame(frame);
 });
 
@@ -208,7 +216,8 @@ const goTo = (id) => {
                             :key="article.slug"
                             :title="article.title"
                             :description="article.summary"
-                            class="scroll-mt-20 break-inside-avoid"
+                            class="scroll-mt-20 break-inside-avoid transition-shadow duration-500"
+                            :class="{ 'ring-2 ring-focus-ring ring-offset-2 ring-offset-surface-muted': arrived === article.slug }"
                         >
                             <ol class="space-y-3.5">
                                 <li v-for="(step, index) in article.steps" :key="step" class="flex gap-3.5">

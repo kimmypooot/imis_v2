@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\HR;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\UnitType;
 use App\Models\AuditLog;
 use App\Models\BiometricImport;
@@ -10,7 +11,10 @@ use App\Models\Employee;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\User;
+use App\Support\Settings\SettingRegistry;
+use App\Support\Settings\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -140,10 +144,11 @@ class BiometricImportTest extends TestCase
                 ->where('unmatched.0.punches', 2));
     }
 
-    public function test_employees_in_service_are_notified_with_the_uploader_once_per_upload(): void
+    public function test_only_employees_whose_punches_the_upload_adds_are_notified_once(): void
     {
-        $staff = Employee::factory()->create();
-        $gone = Employee::factory()->create(['separation_date' => '2025-01-01']);
+        $staff = Employee::factory()->create(['biometric_id' => '906']);
+        $elsewhere = Employee::factory()->create(['biometric_id' => '907']);
+        $gone = Employee::factory()->create(['biometric_id' => '908', 'separation_date' => '2025-01-01']);
         $hrd = $this->userWith(['dtr.manage']);
 
         $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $this->log(2, '906')]);
@@ -153,10 +158,43 @@ class BiometricImportTest extends TestCase
         $this->assertStringContainsString($hrd->name, $note->data['message']);
         $this->assertSame('/my/dtr', $note->data['url']);
         $this->assertCount(0, $gone->user->notifications);
+        // Nothing of theirs was in this upload.
+        $this->assertCount(0, $elsewhere->user->notifications);
 
         // Nothing new in a repeat upload, so nobody is bothered again.
         $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $this->log(2, '906')]);
         $this->assertCount(1, $staff->user->fresh()->notifications);
+    }
+
+    public function test_the_whole_file_is_stored_and_the_new_punches_are_counted_month_by_month(): void
+    {
+        $hrd = $this->userWith(['dtr.manage']);
+        $file = UploadedFile::fake()->createWithContent('all.dat', "906\t2026-10-30 08:00:00\t1\t0\t0\t0\r\n906\t2026-11-02 08:00:00\t1\t0\t0\t0\r\n906\t2026-11-03 08:00:00\t1\t0\t0\t0\r\n");
+
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $file])
+            ->assertSessionHas('import_result', fn (array $result) => $result['new_by_month'] === ['2026-11' => 2, '2026-10' => 1]);
+
+        $this->assertSame(3, BiometricPunch::query()->count());
+        $this->assertSame(['2026-11' => 2, '2026-10' => 1], BiometricImport::query()->sole()->new_by_month);
+    }
+
+    public function test_punches_before_the_dtr_start_date_are_skipped_and_counted(): void
+    {
+        SettingRegistry::sync();
+        $setting = Setting::query()->where('key', 'dtr_punches_from')->firstOrFail();
+        $setting->value = $setting->type->serialize('2026-11-01');
+        $setting->save();
+        Settings::flush();
+        $hrd = $this->userWith(['dtr.manage']);
+        $file = UploadedFile::fake()->createWithContent('all.dat', "906\t2025-06-30 08:00:00\t1\t0\t0\t0\r\n906\t2026-10-31 17:00:00\t1\t0\t0\t0\r\n906\t2026-11-01 08:00:00\t1\t0\t0\t0\r\n");
+
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => $file]);
+
+        $import = BiometricImport::query()->sole();
+        $this->assertSame(2, $import->rows_before_start);
+        $this->assertSame(1, $import->rows_new);
+        $this->assertSame(0, $import->rows_duplicate);
+        $this->assertSame(['2026-11-01 08:00:00'], BiometricPunch::query()->pluck('punched_at')->map->toDateTimeString()->all());
     }
 
     public function test_the_monitor_groups_support_units_as_one_regional_office_and_lists_each_field_office(): void
@@ -182,10 +220,90 @@ class BiometricImportTest extends TestCase
                     'CSC Field Office - Leyte I' => 'received',
                     'CSC Field Office - Samar' => 'missing',
                 ])
-                ->where('monitor.0.people.0.reason', 'No punches'));
+                // Each office lists its staff, missing first: the Regional Office's second employee has no punches.
+                ->where('monitor.0.staff.0.status', 'no_punches')
+                ->where('monitor.0.staff.0.biometric_id', '2')
+                ->where('monitor.0.staff.1.status', 'in')
+                ->where('monitor.0.staff.1.days', 1)
+                ->where('monitor.0.staff.1.last_punch', '2026-03-02'));
     }
 
-    public function test_a_transferee_counts_in_the_office_they_worked_in_that_month(): void
+    public function test_a_move_between_two_support_units_counts_once_in_the_regional_office(): void
+    {
+        $psed = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);
+        $msd = OrganizationalUnit::factory()->create(['unit_type' => UnitType::RegionalSupportUnit]);
+        $mover = Employee::factory()->create(['biometric_id' => '7', 'user_id' => User::factory()->create(['organizational_unit_id' => $msd->id])]);
+        $mover->assignments()->create(['kind' => 'reassignment', 'from_unit_id' => $psed->id, 'to_unit_id' => $msd->id, 'effective_date' => '2026-03-10']);
+
+        $regional = collect($this->actingAs($this->userWith(['dtr.view']))->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'Regional Office');
+
+        $this->assertSame(1, $regional['employees']);
+        $this->assertCount(1, $regional['staff']);
+    }
+
+    public function test_the_preview_says_what_an_upload_would_do_and_saves_nothing(): void
+    {
+        Employee::factory()->create(['biometric_id' => '906', 'user_id' => User::factory()->create(['name' => 'Ana Cruz'])]);
+        $hrd = $this->userWith(['dtr.manage']);
+        // One punch already on file.
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => UploadedFile::fake()->createWithContent('old.dat', "906\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n")]);
+        $before = BiometricPunch::query()->count();
+
+        $file = UploadedFile::fake()->createWithContent('new.dat', "906\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n906\t2026-03-03 08:00:00\t1\t0\t0\t0\r\n555\t2026-03-03 08:00:00\t1\t0\t0\t0\r\nnot a punch\r\n");
+
+        $this->actingAs($hrd)->postJson('/admin/hr/dtr/import/preview', ['file' => $file, 'known_only' => true])
+            ->assertOk()
+            ->assertJsonPath('counts', ['read' => 3, 'unreadable' => 1, 'before_start' => 0, 'left_out' => 1, 'already' => 1, 'new' => 1])
+            ->assertJsonPath('new_by_month', ['2026-03' => 1])
+            // March: three readable punches, one already on file, one new, one skipped (ID 555 is on no profile).
+            ->assertJsonPath('months', [['month' => '2026-03', 'punches' => 3, 'already' => 1, 'new' => 1, 'skipped' => 1]])
+            ->assertJsonPath('people.0.biometric_id', '906')
+            ->assertJsonPath('people.0.name', 'Ana Cruz')
+            ->assertJsonPath('people.0.new', 1)
+            ->assertJsonPath('people.1.name', null)
+            ->assertJsonPath('sample.0.status', 'already')
+            ->assertJsonPath('sample.1.status', 'new');
+
+        $this->assertSame($before, BiometricPunch::query()->count());
+        $this->assertSame(1, BiometricImport::query()->count());
+    }
+
+    public function test_only_those_who_may_upload_can_preview(): void
+    {
+        $this->actingAs($this->userWith(['dtr.view']))
+            ->postJson('/admin/hr/dtr/import/preview', ['file' => $this->log(1)])
+            ->assertForbidden();
+    }
+
+    public function test_contract_of_service_personnel_are_not_counted(): void
+    {
+        $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
+        Employee::factory()->create(['biometric_id' => '5', 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Ana Permanent'])]);
+        Employee::factory()->create(['biometric_id' => '6', 'employment_status' => EmploymentStatus::ContractOfService, 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Cy Contract'])]);
+
+        $samar = collect($this->actingAs($this->userWith(['dtr.view']))->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Samar');
+
+        $this->assertSame(1, $samar['employees']);
+        $this->assertSame(['Ana Permanent'], array_column($samar['staff'], 'name'));
+    }
+
+    public function test_someone_without_a_biometric_id_is_listed_first_as_missing(): void
+    {
+        $office = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
+        Employee::factory()->create(['biometric_id' => '5', 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Ana Punched'])]);
+        Employee::factory()->create(['biometric_id' => null, 'user_id' => User::factory()->create(['organizational_unit_id' => $office->id, 'name' => 'Zed NoId'])]);
+
+        $hrd = $this->userWith(['dtr.manage']);
+        $this->actingAs($hrd)->post('/admin/hr/dtr/import', ['file' => UploadedFile::fake()->createWithContent('all.dat', "5\t2026-03-02 08:00:00\t1\t0\t0\t0\r\n5\t2026-03-03 08:00:00\t1\t0\t0\t0\r\n")]);
+
+        $samar = collect($this->actingAs($hrd)->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Samar');
+
+        $this->assertSame(['Zed NoId', 'Ana Punched'], array_column($samar['staff'], 'name'));
+        $this->assertSame(['no_id', 'in'], array_column($samar['staff'], 'status'));
+        $this->assertSame(2, $samar['staff'][1]['days']);
+    }
+
+    public function test_a_transferee_counts_once_in_the_office_they_ended_the_month_in(): void
     {
         $samar = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Samar']);
         $leyte = OrganizationalUnit::factory()->create(['unit_type' => UnitType::FieldOffice, 'name' => 'CSC Field Office - Leyte I']);
@@ -199,11 +317,13 @@ class BiometricImportTest extends TestCase
 
         $rows = fn (string $month) => collect($this->actingAs($hrd)->get("/admin/hr/dtr/import?month={$month}")->viewData('page')['props']['monitor'])->pluck('employees', 'office');
 
-        // February: still Samar's. March: both. April: Leyte I's only.
+        // February: still Samar's. March: Leyte I's, where the month ended, noting the move. April: Leyte I's.
         $this->assertSame(1, $rows('2026-02')['CSC Field Office - Samar']);
         $this->assertSame(0, $rows('2026-02')['CSC Field Office - Leyte I']);
-        $this->assertSame(1, $rows('2026-03')['CSC Field Office - Samar']);
+        $this->assertSame(0, $rows('2026-03')['CSC Field Office - Samar']);
         $this->assertSame(1, $rows('2026-03')['CSC Field Office - Leyte I']);
+        $march = collect($this->actingAs($hrd)->get('/admin/hr/dtr/import?month=2026-03')->viewData('page')['props']['monitor'])->firstWhere('office', 'CSC Field Office - Leyte I');
+        $this->assertSame(['CSC Field Office - Samar'], $march['staff'][0]['moved_from']);
         $this->assertSame(0, $rows('2026-04')['CSC Field Office - Samar']);
         $this->assertSame(1, $rows('2026-04')['CSC Field Office - Leyte I']);
     }

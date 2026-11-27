@@ -71,6 +71,7 @@ use App\Http\Controllers\Admin\StaffingController;
 use App\Http\Controllers\Admin\SystemAccessController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\TardinessController;
+use App\Http\Controllers\Admin\TestDataResetController;
 use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\Admin\WorkScheduleController;
 use App\Http\Controllers\AdminController;
@@ -261,10 +262,15 @@ Route::middleware('auth')->group(function () {
             ->name('admin.dashboard-layout.update');
     });
 
-    Route::middleware('permission:applications.manage_access')->group(function () {
-        // Legacy "Roles and Permissions" (per system) and "User Access" (per user).
+    // Legacy "Roles and Permissions" (per system). An office access manager
+    // reaches it too, for the systems their own office manages only.
+    Route::middleware('permission:applications.manage_access,applications.manage_office_access')->group(function () {
         Route::get('admin/system-access', [SystemAccessController::class, 'index'])->name('admin.system-access.index');
         Route::put('admin/system-access/{application}', [SystemAccessController::class, 'update'])->name('admin.system-access.update');
+    });
+
+    Route::middleware('permission:applications.manage_access')->group(function () {
+        // Legacy "User Access" (per user): every system at once.
         Route::get('admin/user-access', [UserAccessController::class, 'index'])->name('admin.user-access.index');
         Route::post('admin/applications/{application}/access', [ApplicationAccessController::class, 'store'])
             ->name('admin.applications.access.store');
@@ -385,6 +391,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:dtr.manage')->group(function () {
         Route::post('admin/hr/dtr/import', [BiometricImportController::class, 'store'])->name('admin.hr.dtr.import.store');
         Route::delete('admin/hr/dtr/import/ids', [BiometricImportController::class, 'clearIds'])->name('admin.hr.dtr.import.clear-ids');
+        Route::post('admin/hr/dtr/import/preview', [BiometricImportController::class, 'preview'])->middleware('throttle:20,1')->name('admin.hr.dtr.import.preview');
         Route::post('admin/hr/employees/{employee}/dtr/adjustments', [EmployeeDtrController::class, 'store'])->name('admin.hr.employees.dtr.adjustments.store');
         Route::delete('admin/hr/employees/{employee}/dtr/adjustments/{adjustment}', [EmployeeDtrController::class, 'destroy'])->name('admin.hr.employees.dtr.adjustments.destroy');
         Route::post('admin/hr/employees/{employee}/dtr/punches', [EmployeePunchController::class, 'store'])->middleware('throttle:60,1')->name('admin.hr.employees.dtr.punches.store');
@@ -552,6 +559,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:pds.view')->group(function () {
         Route::get('admin/hr/employees/{employee}/pds', [EmployeePdsController::class, 'show'])->name('admin.hr.employees.pds');
         Route::get('admin/hr/employees/{employee}/pds/print', [EmployeePdsController::class, 'print'])->name('admin.hr.employees.pds.print');
+        Route::get('admin/hr/employees/{employee}/pds/print.xlsx', [EmployeePdsController::class, 'workbook'])->middleware('throttle:30,1')->name('admin.hr.employees.pds.print.xlsx');
         Route::get('admin/hr/employees/{employee}/pds/photo', [PdsPhotoController::class, 'showFor'])->name('admin.hr.employees.pds.photo');
     });
 
@@ -803,5 +811,7 @@ Route::middleware('auth')->group(function () {
         Route::put('admin/settings/{group}', [SettingController::class, 'update'])->name('admin.settings.update');
         // Danger zone, Super Administrators only (see LeaveCreditsPurgeController).
         Route::delete('admin/settings/leave-credits', [LeaveCreditsPurgeController::class, 'destroy'])->middleware('throttle:3,1')->name('admin.settings.leave-credits.destroy');
+        // Development only (see TestDataResetController).
+        Route::delete('admin/settings/test-data', [TestDataResetController::class, 'destroy'])->middleware('throttle:3,1')->name('admin.settings.test-data.destroy');
     });
 });

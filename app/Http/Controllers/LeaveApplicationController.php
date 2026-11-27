@@ -38,6 +38,7 @@ class LeaveApplicationController extends Controller
         return Inertia::render('Portal/LeaveApplication', [
             'application' => $applications->present($application),
             'steps' => $applications->presentSteps($application),
+            'trail' => $applications->trail($application),
             'isOwn' => $application->employee->user_id === $viewer->id,
             'canUpdate' => $viewer->can('update', $application),
             'hasSignature' => $viewer->signature_path !== null,

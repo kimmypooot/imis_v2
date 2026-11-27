@@ -75,6 +75,11 @@ const sendFeedback = (close) => {
                     </button>
                 </li>
             </ul>
+
+            <p class="border-t border-border bg-surface-muted px-3 py-2 text-xs text-text-muted">
+                Tip: press <kbd class="rounded border border-border bg-surface px-1 font-sans font-semibold">Ctrl</kbd>
+                <kbd class="rounded border border-border bg-surface px-1 font-sans font-semibold">K</kbd> to jump to any page.
+            </p>
         </template>
     </Dropdown>
 </template>

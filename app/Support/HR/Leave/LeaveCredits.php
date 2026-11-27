@@ -664,6 +664,40 @@ class LeaveCredits
         return $reasons;
     }
 
+    /**
+     * The first reason someone may not have this kind of leave, short enough
+     * to sit beside its name in a list ("needs 24 months of service"), and
+     * whether it can never change for them (a leave for the other sex), in
+     * which case the leave is better left off their list altogether.
+     *
+     * @return array{label: string, permanent: bool}|null null when eligible
+     */
+    public function shortReason(Employee $employee, LeaveType $type, ?Carbon $on = null): ?array
+    {
+        $on ??= today();
+        $sex = $employee->user->sex;
+
+        if ($type->sex && $sex !== $type->sex) {
+            return $sex
+                ? ['label' => 'for '.($type->sex === 'female' ? 'women' : 'men').' only', 'permanent' => true]
+                : ['label' => 'your sex isn\'t on your record; ask HR', 'permanent' => false];
+        }
+        if ($type->eligible_statuses && ! in_array($employee->employment_status?->value, $type->eligible_statuses, true)) {
+            return ['label' => $employee->employment_status ? "not for {$employee->employment_status->label()} employees" : 'employment status not set; ask HR', 'permanent' => false];
+        }
+        if ($type->min_service_months > 0) {
+            $since = $employee->original_appointment_date;
+            if (! $since || $since->diffInMonths($on) < $type->min_service_months) {
+                return ['label' => "needs {$type->min_service_months} months of service", 'permanent' => false];
+            }
+        }
+        if ($type->requires_solo_parent_id && ! $employee->hasValidSoloParentId($on)) {
+            return ['label' => $employee->is_solo_parent && $employee->solo_parent_id_expiry?->lt($on->copy()->startOfDay()) ? 'Solo Parent ID expired' : 'needs a Solo Parent ID on file', 'permanent' => false];
+        }
+
+        return null;
+    }
+
     // ── Leave settings ───────────────────────────────────────────────
 
     /**

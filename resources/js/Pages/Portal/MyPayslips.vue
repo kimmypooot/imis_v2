@@ -11,6 +11,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatDateTime } from '../../Utils/datetime';
 
@@ -143,18 +144,7 @@ const columns = [
                     <Select id="payslip-month" v-model="form.payroll_entry_id" class="mt-1" :options="requestable" placeholder="— Select —" required />
                     <InputError :message="form.errors.payroll_entry_id" />
                 </div>
-                <div>
-                    <InputLabel for="payslip-purpose">Purpose (optional)</InputLabel>
-                    <input
-                        id="payslip-purpose"
-                        v-model="form.purpose"
-                        type="text"
-                        maxlength="255"
-                        placeholder="e.g. Bank loan application"
-                        class="block w-full mt-1 form-control px-3 py-2 text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
-                    />
-                    <InputError :message="form.errors.purpose" />
-                </div>
+                <TextInput id="payslip-purpose" v-model="form.purpose" label="Purpose (optional)" maxlength="255" placeholder="e.g. Bank loan application" :error="form.errors.purpose" />
                 <p class="text-xs text-text-muted">
                     Goes to {{ approvers.length ? approvers.join(' or ') : 'the head of the Human Resource Division' }} for approval.
                 </p>

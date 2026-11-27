@@ -11,6 +11,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import { formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -34,14 +35,14 @@ const tabs = computed(() => [
 const rows = computed(() => (tab.value === 'pending' ? pending.value : decided.value));
 
 const tones = { pending: 'warning', approved: 'active', rejected: 'inactive', cancelled: 'logged_out' };
-// Who and when sit under the reference, the field above its change; hidden columns keep them in the CSV.
+// The reference and date sit under the person, the field above its change; hidden columns keep them in the CSV.
 const columns = [
-    { key: 'reference_number', label: 'Request' },
+    { key: 'employee', label: 'Employee' },
     { key: 'change', label: 'Change', sortable: false, value: (row) => `${row.field_label} ${row.current_value ?? ''} ${row.proposed_value}` },
     { key: 'reason', label: 'Reason' },
     { key: 'status', label: 'Status' },
     { key: 'actions', label: '', sortable: false, export: false, align: 'center' },
-    { key: 'employee', label: 'Employee', hidden: true },
+    { key: 'reference_number', label: 'Reference', hidden: true },
     { key: 'field_label', label: 'Field', hidden: true },
     { key: 'requested_at', label: 'Requested', hidden: true },
 ];
@@ -78,10 +79,8 @@ const submit = () => form.post(`/admin/hr/corrections/${deciding.value.id}`, { p
                     :numbered="false"
                     :empty-text="item.key === 'pending' ? 'Nothing waiting.' : 'No decided requests yet.'"
                 >
-                    <template #cell-reference_number="{ row }">
-                        <span class="font-medium text-text">{{ row.reference_number }}</span>
-                        <div class="text-text">{{ row.employee }}</div>
-                        <div class="text-xs whitespace-nowrap text-text-muted">{{ formatDateTime(row.requested_at) }}</div>
+                    <template #cell-employee="{ row }">
+                        <PersonCell :name="row.employee" :photo-url="row.photo_url" :href="`/admin/hr/employees/${row.employee_id}`" :subtitle="`${row.reference_number} · ${formatDateTime(row.requested_at)}`" />
                     </template>
                     <template #cell-change="{ row }">
                         <div class="text-2xs text-text-muted">{{ row.field_label }}:</div>

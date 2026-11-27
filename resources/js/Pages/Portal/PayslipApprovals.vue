@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
 import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
@@ -78,19 +79,7 @@ const submit = () => form.post(`/payslips/approvals/${deciding.value.id}`, { pre
         <EmptyState v-if="!requests.length" icon="check" title="Nothing waiting" description="New payslip requests from staff will appear here, oldest first." />
         <template v-else>
             <div class="mb-4 flex flex-wrap items-center gap-3">
-                <div class="flex flex-wrap gap-2" role="group" aria-label="Filter requests">
-                    <button
-                        v-for="item in filters"
-                        :key="item.value"
-                        type="button"
-                        class="rounded-full border px-3 py-1 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                        :class="filter === item.value ? 'border-primary bg-primary text-white' : 'border-border bg-surface text-text-muted hover:bg-surface-muted'"
-                        :aria-pressed="filter === item.value"
-                        @click="filter = item.value"
-                    >
-                        {{ item.label }} <span class="tabular-nums opacity-80">{{ filterCount(item.value) }}</span>
-                    </button>
-                </div>
+                <FilterButtons v-model="filter" variant="pills" label="Filter requests" :options="filters.map((item) => ({ value: item.value, label: item.label, count: filterCount(item.value) }))" />
                 <input
                     v-model="search"
                     type="search"
@@ -103,7 +92,7 @@ const submit = () => form.post(`/payslips/approvals/${deciding.value.id}`, { pre
             <p v-if="!visible.length" class="py-8 text-center text-sm text-text-muted">No requests match.</p>
             <ul v-else class="divide-y divide-border">
                 <li v-for="row in visible" :key="row.id" class="flex flex-wrap items-center gap-x-4 gap-y-3 py-4 first:pt-0 last:pb-0">
-                    <UserAvatar :name="row.employee" size="lg" />
+                    <UserAvatar :name="row.employee" :photo-url="row.photo_url" size="lg" />
                     <div class="min-w-0 flex-1 basis-64">
                         <p class="flex flex-wrap items-center gap-2">
                             <span class="font-medium text-text">{{ row.employee }}</span>

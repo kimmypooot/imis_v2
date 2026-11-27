@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
@@ -158,7 +159,7 @@ const toggleMembership = async (member) => {
                 </dl>
             </Card>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div class="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <StatTile label="Current members" :value="current.length" icon="users" tone="primary">serving now</StatTile>
                 <StatTile label="Former members" :value="former.length" icon="archive" tone="info">kept on record</StatTile>
             </div>
@@ -166,19 +167,7 @@ const toggleMembership = async (member) => {
 
         <Card title="Members" icon="users">
             <template v-if="members.length" #actions>
-                <div class="flex flex-wrap gap-1" role="group" aria-label="Members to show">
-                    <button
-                        v-for="tab in views"
-                        :key="tab.key"
-                        type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors motion-reduce:transition-none"
-                        :class="view === tab.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                        :aria-pressed="view === tab.key"
-                        @click="view = tab.key"
-                    >
-                        {{ tab.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="view" label="Members to show" :options="views.map((tab) => ({ value: tab.key, label: tab.label }))" />
             </template>
 
             <EmptyState v-if="!members.length" icon="users" title="No members yet" description="Add the people who sit on this committee and their positions.">

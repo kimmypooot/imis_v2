@@ -7,8 +7,7 @@ import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
-import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
-import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
 
 defineOptions({ layout: AdminLayout });
@@ -54,11 +53,7 @@ const columns = [
     <div class="space-y-6">
         <Card v-if="canManage" title="Receive a hard copy" icon="documentText" description="Type the reference printed at the foot of each page. The latest printout is received.">
             <form class="flex flex-wrap items-end gap-3" @submit.prevent="receive">
-                <div class="min-w-64">
-                    <InputLabel for="receive-reference">Reference</InputLabel>
-                    <input id="receive-reference" v-model="receiving.reference" required placeholder="SALN-2025-00042" class="form-control mt-1 block w-full px-3 py-2" />
-                    <InputError :message="receiving.errors.reference" />
-                </div>
+                <TextInput id="receive-reference" v-model="receiving.reference" label="Reference" required placeholder="SALN-2025-00042" class="min-w-64" :error="receiving.errors.reference" />
                 <Button type="submit" :loading="receiving.processing">Receive</Button>
             </form>
         </Card>

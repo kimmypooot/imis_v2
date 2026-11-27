@@ -109,6 +109,26 @@ class PdsSubmissionTest extends TestCase
 
     // ── HR review ────────────────────────────────────────────────────
 
+    public function test_the_trail_follows_the_pds_from_draft_to_verified(): void
+    {
+        $employee = $this->employee();
+        $hr = $this->userWith(['pds.verify']);
+        $trail = fn (array $states) => $this->actingAs($employee->user)->get('/my/pds')->assertInertia(fn (Assert $page) => $page
+            ->where('status.trail.steps', fn ($steps) => collect($steps)->pluck('state')->all() === $states));
+
+        $trail(['current', 'upcoming', 'upcoming', 'upcoming']);
+
+        $submission = $this->sign($employee);
+        $trail(['done', 'done', 'current', 'upcoming']);
+
+        $this->actingAs($hr)->post("/admin/hr/pds-verifications/{$submission->id}/return", ['remarks' => 'Add your eligibility.']);
+        $trail(['done', 'done', 'returned', 'upcoming']);
+
+        $resubmitted = $this->sign($employee);
+        $this->actingAs($hr)->post("/admin/hr/pds-verifications/{$resubmitted->id}/verify")->assertSessionHasNoErrors();
+        $trail(['done', 'done', 'done', 'done']);
+    }
+
     public function test_hr_returns_with_remarks_that_the_employee_sees(): void
     {
         $employee = $this->employee();
@@ -209,6 +229,44 @@ class PdsSubmissionTest extends TestCase
         $this->assertSame(2, DB::table('audit_logs')->where('event', 'pds.printed')->where('actor_id', $hr->id)->count());
     }
 
+    public function test_the_signed_copy_keeps_the_signers_e_signature_and_prints_it(): void
+    {
+        $employee = $this->employee();
+        $image = imagecreatetruecolor(300, 100);
+        ob_start();
+        imagepng($image);
+        Storage::disk('local')->put('signatures/live.png', (string) ob_get_clean());
+        $employee->user->forceFill(['signature_path' => 'signatures/live.png'])->save();
+
+        $submission = $this->sign($employee);
+
+        // A copy of their e-signature as it was, so later changes don't alter what was signed.
+        $this->assertStringStartsWith('signatures/snapshots/', $submission->signature_path);
+        Storage::disk('local')->delete('signatures/live.png');
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/signature")->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->actingAs($this->employee()->user)->get("/pds/submissions/{$submission->id}/signature")->assertForbidden();
+
+        // It prints with the e-signature unless another way of signing is chosen.
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print")
+            ->assertInertia(fn (Assert $page) => $page->where('mode', 'esign')
+                ->where('signature.image_url', "/pds/submissions/{$submission->id}/signature")
+                ->missing('signature.image_file')
+                ->where('pages.0.cells', fn ($cells) => collect($cells)->contains('kind', 'signature-image')));
+        $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print?signature=hand")
+            ->assertInertia(fn (Assert $page) => $page->where('mode', 'hand')->where('pages.0.cells', fn ($cells) => ! collect($cells)->contains('kind', 'signature-image')));
+
+        // The Excel copy carries it too, on every sheet, including those without a drawing of their own.
+        $file = tempnam(sys_get_temp_dir(), 'pds');
+        file_put_contents($file, $this->actingAs($employee->user)->get("/pds/submissions/{$submission->id}/print.xlsx")->assertOk()->getContent());
+        $zip = new \ZipArchive;
+        $zip->open($file);
+        $this->assertNotFalse($zip->locateName('xl/media/pds-signature.png'));
+        $this->assertStringContainsString('PDS E-signature', (string) $zip->getFromName('xl/drawings/pds-drawing2.xml'));
+        $this->assertStringContainsString('PDS E-signature', (string) $zip->getFromName('xl/drawings/drawing1.xml'));
+        $zip->close();
+        @unlink($file);
+    }
+
     // ── Photo ────────────────────────────────────────────────────────
 
     public function test_the_photo_is_private_and_frozen_with_each_submission(): void
@@ -216,7 +274,7 @@ class PdsSubmissionTest extends TestCase
         $employee = $this->employee();
         $user = $employee->user;
 
-        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('me.jpg', 600, 800)])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('me.jpg', 413, 531)])->assertSessionHasNoErrors();
         $livePath = $employee->pdsProfile()->value('photo_path');
         Storage::disk('local')->assertExists($livePath);
         $this->assertStringStartsWith('pds/photos/', $livePath);
@@ -229,7 +287,7 @@ class PdsSubmissionTest extends TestCase
 
         // Replacing the live photo leaves the signed copy alone, and
         // counts as a change.
-        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('new.jpg', 600, 800)])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('new.jpg', 413, 531)])->assertSessionHasNoErrors();
         Storage::disk('local')->assertMissing($livePath);
         Storage::disk('local')->assertExists($submission->photo_path);
         $this->actingAs($user)->get("/pds/submissions/{$submission->id}/photo")->assertOk();
@@ -244,6 +302,20 @@ class PdsSubmissionTest extends TestCase
             ->assertSessionHasErrors('photo');
         $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('tiny.jpg', 50, 50)])
             ->assertSessionHasErrors('photo');
+    }
+
+    public function test_photos_must_be_exactly_passport_size(): void
+    {
+        $employee = $this->employee();
+
+        // Close is not enough: it must print at exactly 3.5 × 4.5 cm.
+        $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('big.jpg', 600, 800)])
+            ->assertSessionHasErrors(['photo' => 'The photo must be exactly 413 × 531 pixels (passport size, 3.5 × 4.5 cm at 300 dpi). Resize or crop it to that size, then upload it again.']);
+        $this->assertNull($employee->pdsProfile()->value('photo_path'));
+
+        $this->actingAs($employee->user)->post('/my/pds/photo', ['photo' => UploadedFile::fake()->image('passport.jpg', 413, 531)])
+            ->assertSessionHasNoErrors();
+        $this->assertNotNull($employee->pdsProfile()->value('photo_path'));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

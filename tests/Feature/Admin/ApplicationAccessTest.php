@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\ApplicationAccess;
 use App\Models\ApplicationRole;
 use App\Models\AuditLog;
+use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -591,6 +592,65 @@ class ApplicationAccessTest extends TestCase
                 ['application_id' => $role->application_id, 'application_role_id' => $role->id],
             ]])
             ->assertForbidden();
+    }
+
+    // ── Office access managers (e.g. HRD for ORS and OTRS) ──────────
+
+    public function test_an_office_access_manager_sees_and_manages_only_their_offices_systems(): void
+    {
+        $hrd = OrganizationalUnit::factory()->create();
+        $manager = $this->userWithPermissions('applications.manage_office_access');
+        $manager->forceFill(['organizational_unit_id' => $hrd->id])->save();
+        $otrs = ApplicationRole::factory()->create(['application_id' => Application::factory()->create(['organizational_unit_id' => $hrd->id])->id]);
+        $other = ApplicationRole::factory()->create();
+        $fieldStaff = User::factory()->create();
+
+        $this->actingAs($manager)->get('/admin/system-access')->assertInertia(fn (Assert $page) => $page
+            ->has('systems', 1)
+            ->where('systems.0.id', $otrs->application_id));
+        $this->actingAs($manager)->get("/admin/system-access?system={$other->application_id}")
+            ->assertInertia(fn (Assert $page) => $page->reloadOnly('access', fn (Assert $reload) => $reload->where('access', null)));
+
+        $this->actingAs($manager)->put("/admin/system-access/{$otrs->application_id}", ['entries' => [
+            ['user_id' => $fieldStaff->id, 'application_role_id' => $otrs->id],
+        ]])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('application_access', ['user_id' => $fieldStaff->id, 'application_role_id' => $otrs->id]);
+
+        $this->actingAs($manager)->put("/admin/system-access/{$other->application_id}", ['entries' => [
+            ['user_id' => $fieldStaff->id, 'application_role_id' => $other->id],
+        ]])->assertForbidden();
+        $this->actingAs($manager)->get('/admin/user-access')->assertForbidden();
+        $this->actingAs($manager)->put("/users/{$fieldStaff->id}/system-access", ['access' => [
+            ['application_id' => $otrs->application_id, 'application_role_id' => $otrs->id],
+        ]])->assertForbidden();
+    }
+
+    public function test_an_office_access_manager_never_changes_their_own_access_or_a_super_admins(): void
+    {
+        $hrd = OrganizationalUnit::factory()->create();
+        $manager = $this->userWithPermissions('applications.manage_office_access');
+        $manager->forceFill(['organizational_unit_id' => $hrd->id])->save();
+        $role = ApplicationRole::factory()->create(['application_id' => Application::factory()->create(['organizational_unit_id' => $hrd->id])->id]);
+
+        foreach ([$manager, $this->superAdmin()] as $target) {
+            $this->actingAs($manager)->put("/admin/system-access/{$role->application_id}", ['entries' => [
+                ['user_id' => $target->id, 'application_role_id' => $role->id],
+            ]])->assertSessionHasErrors('entries.0.application_role_id');
+        }
+
+        $this->assertDatabaseCount('application_access', 0);
+    }
+
+    public function test_an_office_access_manager_without_an_office_manages_nothing(): void
+    {
+        $manager = $this->userWithPermissions('applications.manage_office_access');
+        $manager->forceFill(['organizational_unit_id' => null])->save();
+        $role = ApplicationRole::factory()->create(['application_id' => Application::factory()->create(['organizational_unit_id' => null])->id]);
+
+        $this->actingAs($manager)->get('/admin/system-access')->assertInertia(fn (Assert $page) => $page->has('systems', 0));
+        $this->actingAs($manager)->put("/admin/system-access/{$role->application_id}", ['entries' => [
+            ['user_id' => User::factory()->create()->id, 'application_role_id' => $role->id],
+        ]])->assertForbidden();
     }
 
     private function userWithPermissions(string ...$permissions): User

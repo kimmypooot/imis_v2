@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import KitAppShell from '@cscro8/ui/Layouts/AppShell.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
@@ -11,6 +11,9 @@ import PortalSearch from '../Components/Portal/PortalSearch.vue';
 import AboutDialog from '../Components/Portal/AboutDialog.vue';
 import FeedbackDialog from '../Components/Portal/FeedbackDialog.vue';
 import SessionTimeoutDialog from '../Components/Feedback/SessionTimeoutDialog.vue';
+import CommandPalette from '@cscro8/ui/Components/Navigation/CommandPalette.vue';
+import { focusFirstErrorAfterInvalidSubmits } from '@cscro8/ui/Utils/focusFirstError.js';
+import { accountNavItems, adminAccessPermissions, adminNavItems, flattenNav, hrAccessPermissions, hrNavItems, portalNavItems } from '../Utils/navigation';
 import { greetingName, useSplash } from '../Composables/useSplash';
 import { useBranding } from '../Composables/useBranding';
 import { useAuthorization } from '../Composables/useAuthorization';
@@ -81,6 +84,23 @@ const isPermitted = (item) => {
     return Array.isArray(item.permission) ? canAny(item.permission) : can(item.permission);
 };
 
+// "Go to…" (Ctrl/⌘+K): every page this person may open, from all three
+// areas, by the same rules as the sidebar. HR and Admin pages need access
+// to that area first, as the area switcher does.
+const paletteItems = computed(() => {
+    if (!page.props.auth.user) return [];
+
+    const pages = [
+        ...flattenNav(portalNavItems, 'My pages'),
+        ...flattenNav(accountNavItems, 'Account'),
+        ...(canAny(hrAccessPermissions) ? flattenNav(hrNavItems, 'Human Resources') : []),
+        ...(canAny(adminAccessPermissions) ? flattenNav(adminNavItems, 'Administration') : []),
+    ];
+    const seen = new Set();
+
+    return pages.filter((item) => isPermitted(item) && !seen.has(item.href) && seen.add(item.href));
+});
+
 const nav = computed(() => ({
     isPermitted,
     badges: page.props.badges ?? {},
@@ -89,10 +109,16 @@ const nav = computed(() => ({
     local: Boolean(page.props.app?.local),
 }));
 
+// After a submit the server rejects, take the person to the first problem field.
+let removeErrorFocus;
+
 onMounted(() => {
     // Keeps this person's saved login-page card (name, photo) current.
     refreshRememberedAccount(page.props.auth.user);
 });
+
+onMounted(() => (removeErrorFocus = focusFirstErrorAfterInvalidSubmits()));
+onBeforeUnmount(() => removeErrorFocus?.());
 </script>
 
 <template>
@@ -147,6 +173,10 @@ onMounted(() => {
                 <Icon name="info" size="sm" class="mt-0.5 shrink-0 text-warning-fg" />
                 <p class="whitespace-pre-line">{{ portalNotice }}</p>
             </div>
+        </template>
+
+        <template #command-palette="{ open, close }">
+            <CommandPalette :open="open" :items="paletteItems" :search-href="(q) => `/search?q=${encodeURIComponent(q)}`" search-label="Search the portal for" @close="close" />
         </template>
 
         <template #footer>

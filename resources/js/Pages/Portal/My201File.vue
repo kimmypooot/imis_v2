@@ -4,16 +4,19 @@ import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
-import RecordSummary from '../../Components/HR/RecordSummary.vue';
+import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import DocumentList from '../../Components/HR/DocumentList.vue';
-import { formatDateTime } from '../../Utils/datetime';
+import PdsVerifiedHistory from '../../Components/HR/Pds/PdsVerifiedHistory.vue';
+import { formatCalendarDate } from '../../Utils/datetime';
 
 defineOptions({ layout: PortalLayout });
 
 /**
  * HR-2c self-service: your own 201 file, read-only — the documents HR
- * keeps for you and your verified PDS history.
+ * keeps for you and your verified PDS history, on the shared kit (stat
+ * tiles, the DataTable with filter pills, icon row actions).
  */
 const props = defineProps({
     hasRecord: { type: Boolean, required: true },
@@ -21,15 +24,8 @@ const props = defineProps({
     pdsHistory: { type: Array, required: true },
 });
 
-const summary = computed(() => [
-    { icon: 'clipboard', label: 'Documents on file', value: String(props.documents.length) },
-    { icon: 'checkCircle', label: 'Verified PDS copies', value: String(props.pdsHistory.length) },
-    {
-        icon: 'calendar',
-        label: 'Last PDS verified',
-        value: props.pdsHistory[0]?.reviewed_at ? formatDateTime(props.pdsHistory[0].reviewed_at) : null,
-    },
-]);
+const lastVerified = computed(() => props.pdsHistory[0]?.reviewed_at ?? null);
+const groups = computed(() => new Set(props.documents.map((document) => document.group)).size);
 </script>
 
 <template>
@@ -42,27 +38,37 @@ const summary = computed(() => [
     />
 
     <div v-if="hasRecord" class="space-y-6">
-        <RecordSummary :items="summary" class="lg:grid-cols-3" />
+        <div class="stagger grid gap-4 sm:grid-cols-3">
+            <StatTile label="Documents on file" :value="documents.length" icon="clipboard" tone="primary" />
+            <StatTile label="Parts of the file" :value="groups" icon="documentText" tone="info" />
+            <StatTile
+                label="Last PDS verified"
+                :value="lastVerified ? formatCalendarDate(lastVerified.slice(0, 10)) : 'Not yet'"
+                icon="checkCircle"
+                :tone="lastVerified ? 'success' : 'warning'"
+            />
+        </div>
 
-        <Card title="Documents" icon="clipboard">
-            <DocumentList :documents="documents" empty="HR hasn't added documents to your 201 file yet." />
+        <Alert tone="info">
+            Your 201 file is personal data under the Data Privacy Act. Only you and authorized HR staff can open it, and each time someone other
+            than you opens or downloads a document, it is logged. See who did at
+            <Link href="/my/record-access" class="font-medium text-link hover:underline">Who accessed my record</Link>.
+        </Alert>
+
+        <Card title="Documents" icon="clipboard" description="Open a document to view it, or download a copy.">
+            <DocumentList :documents="documents" caption="My 201 file documents" empty="HR hasn't added documents to your 201 file yet." />
         </Card>
 
-        <Card title="Verified PDS history" icon="checkCircle">
-            <p v-if="pdsHistory.length === 0" class="text-sm text-text-muted">
-                None yet. <Link href="/my/pds" class="font-medium text-link hover:underline">Sign and submit your PDS</Link> for HR to verify.
-            </p>
-            <ul v-else class="divide-y divide-border text-sm">
-                <li v-for="item in pdsHistory" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                    <span class="text-text">Signed {{ formatDateTime(item.signed_at) }} · verified {{ formatDateTime(item.reviewed_at) }}</span>
-                    <span class="flex gap-3 font-medium">
-                        <Link :href="`/my/pds/submissions/${item.id}`" class="text-link hover:underline">View</Link>
-                        <a :href="`/pds/submissions/${item.id}/print`" target="_blank" rel="noopener" class="text-link hover:underline">
-                            Print<span class="sr-only"> (opens in a new tab)</span>
-                        </a>
-                    </span>
-                </li>
-            </ul>
+        <Card title="Verified PDS history" icon="checkCircle" description="Each Personal Data Sheet HR verified, exactly as you signed it.">
+            <PdsVerifiedHistory :items="pdsHistory" :view-url="(item) => `/my/pds/submissions/${item.id}`">
+                <template #empty>
+                    <EmptyState icon="checkCircle" title="No verified PDS yet" description="Sign and submit your PDS for HR to verify; each verified copy is kept here.">
+                        <template #action>
+                            <Link href="/my/pds" class="font-medium text-link hover:underline">Go to My Personal Data Sheet</Link>
+                        </template>
+                    </EmptyState>
+                </template>
+            </PdsVerifiedHistory>
         </Card>
     </div>
     <Card v-else>

@@ -57,7 +57,7 @@ class LeaveCalendarController extends Controller
             'filters' => $filters,
             'seesEveryone' => $everyone,
             'division' => $user->organizationalUnit?->name,
-            'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get()
+            'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->inOrder()->get()
                 ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
             'typeOptions' => LeaveType::query()->orderBy('sort_order')->orderBy('name')->get()
                 ->map(fn (LeaveType $type) => ['value' => $type->id, 'label' => $type->name, 'code' => $type->code]),

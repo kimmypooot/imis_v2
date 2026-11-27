@@ -23,14 +23,17 @@ class SystemAccessController extends Controller
 {
     public function index(Request $request): Response
     {
-        $this->authorize('manageAccess', new Application);
+        $this->authorize('viewSystemAccess', Application::class);
 
         return Inertia::render('Admin/SystemAccess/Index', [
+            // An office access manager sees only the systems their office manages.
             'systems' => Application::query()
                 ->withCount(['accessGrants', 'roles'])
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name', 'short_name', 'description', 'icon', 'status', 'requires_access', 'under_maintenance'])
+                ->get(['id', 'name', 'short_name', 'description', 'icon', 'status', 'requires_access', 'under_maintenance', 'organizational_unit_id'])
+                ->filter(fn (Application $application) => $request->user()->can('manageAccess', $application))
+                ->values()
                 ->map(fn (Application $application) => [
                     ...$application->only(['id', 'name', 'short_name', 'description', 'icon', 'requires_access', 'under_maintenance']),
                     'status' => $application->status->value,
@@ -40,7 +43,7 @@ class SystemAccessController extends Controller
             'access' => Inertia::optional(function () use ($request) {
                 $application = Application::query()->find($request->integer('system'));
 
-                return $application
+                return $application && $request->user()->can('manageAccess', $application)
                     ? ['system_id' => $application->id, ...(new AccessMatrix($request->user()))->forApplication($application)]
                     : null;
             }),

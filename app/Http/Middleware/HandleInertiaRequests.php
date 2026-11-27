@@ -8,6 +8,7 @@ use App\Enums\RoleName;
 use App\Models\Changelog;
 use App\Models\Feedback;
 use App\Support\Branding\Branding;
+use App\Support\Guide\UserGuide;
 use App\Support\HR\Dtr\DtrEntryVerification;
 use App\Support\HR\HrQueues;
 use App\Support\HR\Leave\LeaveApplications;
@@ -106,6 +107,8 @@ class HandleInertiaRequests extends Middleware
                     : 0,
                 ...HrQueues::countsFor($user),
             ] : [],
+            // The User Guide article for this page: PageHeader's "How does this work?" link.
+            'help' => fn () => $user ? app(UserGuide::class)->articleFor($user, $request->path()) : null,
             // The top-bar bell.
             'notifications' => fn () => $user ? ['unread' => $user->unreadNotifications()->count()] : null,
             // Drives the idle/absolute timeout warning; null when exempt.

@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AuthHeading from '../../Components/UI/AuthHeading.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 
@@ -26,11 +27,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
 <template>
     <Head title="Verify email" />
 
-    <h2 class="mb-1 text-lg font-semibold text-text">Verify your email address</h2>
-    <p class="mb-5 text-sm text-text-muted">
-        Thanks for signing up! Before getting started, please verify your email address by
-        clicking the link we sent you.
-    </p>
+    <AuthHeading title="Verify your email" subtitle="Click the link we sent to your email address." />
 
     <Alert v-if="verificationLinkSent" tone="success" class="mb-4">
         A new verification link has been sent to your email address.

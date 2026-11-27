@@ -1,7 +1,7 @@
 <script setup>
-import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
@@ -14,6 +14,11 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import CellFacts from '@cscro8/ui/Components/UI/CellFacts.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../../../Utils/datetime';
@@ -92,6 +97,7 @@ const taxForm = useForm({ taxes: Object.fromEntries(taxRows.value.map((item) => 
 const taxNet = (row) => row.net_pay + row.withholding_tax - Number(taxForm.taxes[row.id] || 0);
 const taxTotal = computed(() => taxRows.value.reduce((total, row) => total + Number(taxForm.taxes[row.id] || 0), 0));
 const saveTaxes = () => taxForm.put(`${base}/withholding-tax`, { preserveScroll: true, onSuccess: () => taxForm.defaults() });
+useUnsavedChanges(taxForm, { message: 'The withholding taxes you entered are not saved yet. If you leave now, they will be lost.' });
 const returnDialog = ref(false);
 const returnForm = useForm({ note: '' });
 const missingTax = computed(() => taxRows.value.filter((row) => !row.own && !Number(taxForm.taxes[row.id] || 0)).length);
@@ -140,16 +146,26 @@ const rebuild = async () => {
     }
 };
 
+// Figures fold into a cell or two so the register fits; hidden columns keep each one in the CSV.
 const columns = [
     { key: 'name', label: 'Name' },
-    { key: 'grade', label: 'SG/Step', value: (row) => (row.salary_grade ? `${row.salary_grade}-${row.step}` : '') },
-    { key: 'office', label: 'Office' },
-    { key: 'basic_salary', label: 'Basic', align: 'right' },
-    { key: 'gross_pay', label: 'Gross', align: 'right' },
-    { key: 'withholding_tax', label: 'W/Tax', align: 'right' },
-    { key: 'total_deductions', label: 'Deductions', align: 'right' },
+    { key: 'earnings', label: 'Pay', sortable: false, export: false },
+    { key: 'deductions', label: 'Deductions', sortable: false, export: false },
     { key: 'net_pay', label: 'Net pay', align: 'right' },
     { key: 'actions', label: '', sortable: false, export: false },
+    { key: 'position', label: 'Position', hidden: true, value: (row) => row.position ?? '' },
+    { key: 'grade', label: 'SG/Step', hidden: true, value: (row) => (row.salary_grade ? `${row.salary_grade}-${row.step}` : '') },
+    { key: 'office', label: 'Office', hidden: true, value: (row) => row.office ?? '' },
+    { key: 'basic_salary', label: 'Basic', hidden: true },
+    { key: 'gross_pay', label: 'Gross', hidden: true },
+    { key: 'withholding_tax', label: 'W/Tax', hidden: true },
+    { key: 'total_deductions', label: 'Deductions', hidden: true },
+];
+const taxColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'pay', label: 'Pay', sortable: false, export: false },
+    { key: 'tax', label: 'Withholding tax', sortable: false, export: false, align: 'right' },
+    { key: 'net', label: 'Net pay', align: 'right', value: (row) => String(taxNet(row)) },
 ];
 </script>
 
@@ -218,54 +234,37 @@ const columns = [
 
     <Card v-if="canEnterTax && withAccounting" title="Withholding tax" icon="clipboard" class="mb-6" description="Leave blank or 0 for no tax. Last month’s tax is shown as a guide.">
         <form id="tax-form" @submit.prevent="saveTaxes">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <caption class="sr-only">Withholding tax for {{ run.period }}</caption>
-                    <thead>
-                        <tr class="border-b border-border text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
-                            <th scope="col" class="py-2 pr-3">Name</th>
-                            <th scope="col" class="py-2 pr-3 text-right">Gross</th>
-                            <th scope="col" class="py-2 pr-3 text-right">Other deductions</th>
-                            <th scope="col" class="py-2 pr-3 text-right">Last month</th>
-                            <th scope="col" class="py-2 pr-3 text-right">Withholding tax</th>
-                            <th scope="col" class="py-2 text-right">Net pay</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="row in taxRows" :key="row.id" class="border-b border-border last:border-0">
-                            <td class="py-1.5 pr-3">
-                                <span class="font-medium text-text">{{ row.name }}</span>
-                                <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.office"> · {{ row.office }}</template></div>
-                            </td>
-                            <td class="py-1.5 pr-3 text-right tabular-nums">{{ formatPeso(row.gross_pay) }}</td>
-                            <td class="py-1.5 pr-3 text-right tabular-nums">{{ formatPeso(row.total_deductions - row.withholding_tax) }}</td>
-                            <td class="py-1.5 pr-3 text-right text-text-muted tabular-nums">{{ previousTax[row.employee_id] != null ? formatPeso(previousTax[row.employee_id]) : '—' }}</td>
-                            <td class="py-1.5 pr-3 text-right">
-                                <label :for="`tax-${row.id}`" class="sr-only">Withholding tax of {{ row.name }}</label>
-                                <input
-                                    :id="`tax-${row.id}`"
-                                    v-model="taxForm.taxes[row.id]"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    :disabled="row.own"
-                                    :title="row.own ? 'Your own: someone else enters it' : null"
-                                    class="form-control w-32 px-2 py-1 text-right"
-                                />
-                                <InputError :message="taxForm.errors[`taxes.${row.id}`]" />
-                            </td>
-                            <td class="py-1.5 text-right font-medium tabular-nums">{{ formatPeso(taxNet(row)) }}</td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="border-t-2 border-border">
-                            <th scope="row" colspan="4" class="pt-2 text-left font-semibold text-text">Total withholding tax</th>
-                            <td class="pt-2 pr-3 text-right font-semibold tabular-nums">{{ formatPeso(taxTotal) }}</td>
-                            <td />
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+            <DataTable :columns="taxColumns" :rows="taxRows" :caption="`Withholding tax for ${run.period}`" :export-name="`imis-withholding-tax-${run.month}`" :numbered="false" :default-page-size="100">
+                <template #cell-name="{ row }">
+                    <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="[row.position, row.office].filter(Boolean).join(' · ')" />
+                </template>
+                <template #cell-pay="{ row }">
+                    <CellFacts
+                        class="tabular-nums"
+                        :facts="[
+                            { label: 'Gross', value: formatPeso(row.gross_pay) },
+                            { label: 'Other deductions', value: formatPeso(row.total_deductions - row.withholding_tax) },
+                            { label: 'Last month’s tax', value: previousTax[row.employee_id] != null ? formatPeso(previousTax[row.employee_id]) : '—' },
+                        ]"
+                    />
+                </template>
+                <template #cell-tax="{ row }">
+                    <label :for="`tax-${row.id}`" class="sr-only">Withholding tax of {{ row.name }}</label>
+                    <input
+                        :id="`tax-${row.id}`"
+                        v-model="taxForm.taxes[row.id]"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        :disabled="row.own"
+                        :title="row.own ? 'Your own: someone else enters it' : null"
+                        class="form-control w-32 px-2 py-1 text-right"
+                    />
+                    <InputError :message="taxForm.errors[`taxes.${row.id}`]" />
+                </template>
+                <template #cell-net="{ row }"><span class="font-medium tabular-nums">{{ formatPeso(taxNet(row)) }}</span></template>
+            </DataTable>
+            <p class="mt-3 text-right text-sm font-semibold text-text">Total withholding tax: <span class="tabular-nums">{{ formatPeso(taxTotal) }}</span></p>
             <InputError :message="taxForm.errors.taxes || taxForm.errors.run" />
         </form>
         <template #footer>
@@ -281,19 +280,33 @@ const columns = [
     <Card title="Payroll register" icon="users" :description="editable ? 'Open a row to see and adjust that person’s pay.' : isFinalized ? 'Open a row to see that person’s pay, or their payslip.' : 'Open a row to see that person’s pay.'">
         <DataTable :columns="columns" :rows="entries" :caption="`Payroll register, ${run.period}`" :export-name="`imis-payroll-${run.month}`" numbered>
             <template #cell-name="{ row }">
-                <button type="button" class="text-left font-medium text-text hover:text-link" @click="openId = row.id">{{ row.name }}</button>
-                <div class="text-xs text-text-muted">{{ row.position }}<template v-if="row.item_number"> · {{ row.item_number }}</template></div>
-                <div class="mt-0.5 flex flex-wrap gap-1">
-                    <Badge v-if="row.cancelled" tone="danger">Cancelled</Badge>
-                    <Badge v-if="row.adjusted" tone="info">Adjusted</Badge>
-                    <Badge v-if="row.below_minimum" tone="warning">Below {{ formatPeso(minimumNet) }}</Badge>
-                </div>
+                <PersonCell :name="row.name" :photo-url="row.photo_url" :subtitle="[row.position, row.item_number, row.office].filter(Boolean).join(' · ')">
+                    <div class="mt-0.5 flex flex-wrap gap-1">
+                        <Badge v-if="row.cancelled" tone="danger">Cancelled</Badge>
+                        <Badge v-if="row.adjusted" tone="info">Adjusted</Badge>
+                        <Badge v-if="row.below_minimum" tone="warning">Below {{ formatPeso(minimumNet) }}</Badge>
+                    </div>
+                </PersonCell>
             </template>
-            <template #cell-office="{ row }">{{ row.office || '—' }}</template>
-            <template #cell-basic_salary="{ row }"><span class="tabular-nums">{{ formatPeso(row.basic_salary) }}</span></template>
-            <template #cell-gross_pay="{ row }"><span class="tabular-nums">{{ formatPeso(row.gross_pay) }}</span></template>
-            <template #cell-withholding_tax="{ row }"><span class="tabular-nums" :class="row.withholding_tax ? '' : 'text-text-muted'">{{ row.withholding_tax ? formatPeso(row.withholding_tax) : '—' }}</span></template>
-            <template #cell-total_deductions="{ row }"><span class="tabular-nums">{{ formatPeso(row.total_deductions) }}</span></template>
+            <template #cell-earnings="{ row }">
+                <CellFacts
+                    class="tabular-nums"
+                    :facts="[
+                        { label: 'SG/Step', value: row.salary_grade ? `${row.salary_grade}-${row.step}` : null },
+                        { label: 'Basic', value: formatPeso(row.basic_salary) },
+                        { label: 'Gross', value: formatPeso(row.gross_pay) },
+                    ]"
+                />
+            </template>
+            <template #cell-deductions="{ row }">
+                <CellFacts
+                    class="tabular-nums"
+                    :facts="[
+                        { label: 'W/Tax', value: row.withholding_tax ? formatPeso(row.withholding_tax) : '—' },
+                        { label: 'Total', value: formatPeso(row.total_deductions) },
+                    ]"
+                />
+            </template>
             <template #cell-net_pay="{ row }"><span class="font-semibold tabular-nums">{{ formatPeso(row.net_pay) }}</span></template>
             <template #cell-actions="{ row }">
                 <div class="flex justify-end gap-1">
@@ -386,28 +399,15 @@ const columns = [
 
             <form v-if="canAdjust" class="mt-5 grid gap-3 rounded-md border border-border bg-surface-muted p-3 sm:grid-cols-6" @submit.prevent="addLine">
                 <p class="text-sm font-medium text-text sm:col-span-6">Add a line for this month</p>
-                <div class="sm:col-span-3">
-                    <label for="add-component" class="block text-xs font-medium text-text-muted">Item</label>
-                    <Select id="add-component" v-model="addForm.pay_component_id" class="mt-1" :options="componentOptions" />
-                </div>
-                <div v-if="!addForm.pay_component_id" class="sm:col-span-3">
-                    <label for="add-kind" class="block text-xs font-medium text-text-muted">Kind</label>
-                    <Select id="add-kind" v-model="addForm.kind" class="mt-1" :options="[{ value: 'earning', label: 'Earning' }, { value: 'deduction', label: 'Deduction' }]" />
-                </div>
-                <div v-if="!addForm.pay_component_id" class="sm:col-span-4">
-                    <label for="add-label" class="block text-xs font-medium text-text-muted">Label</label>
-                    <input id="add-label" v-model="addForm.label" type="text" maxlength="120" placeholder="e.g. Absences (2 days)" class="block w-full form-control mt-1 px-3 py-2" />
-                    <InputError :message="addForm.errors.label" />
-                </div>
-                <div class="sm:col-span-2">
-                    <label for="add-amount" class="block text-xs font-medium text-text-muted">Amount</label>
-                    <input id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" required class="block w-full form-control mt-1 px-3 py-2 text-right" />
-                    <InputError :message="addForm.errors.amount || addForm.errors.run" />
-                </div>
-                <div class="sm:col-span-6">
-                    <label for="add-reason" class="block text-xs font-medium text-text-muted">Reason (optional)</label>
-                    <input id="add-reason" v-model="addForm.reason" type="text" maxlength="500" class="block w-full form-control mt-1 px-3 py-2" />
-                </div>
+                <FormGroup id="add-component" label="Item" class="sm:col-span-3">
+                    <Select id="add-component" v-model="addForm.pay_component_id" :options="componentOptions" />
+                </FormGroup>
+                <FormGroup v-if="!addForm.pay_component_id" id="add-kind" label="Kind" class="sm:col-span-3">
+                    <Select id="add-kind" v-model="addForm.kind" :options="[{ value: 'earning', label: 'Earning' }, { value: 'deduction', label: 'Deduction' }]" />
+                </FormGroup>
+                <TextInput v-if="!addForm.pay_component_id" id="add-label" v-model="addForm.label" label="Label" maxlength="120" placeholder="e.g. Absences (2 days)" :error="addForm.errors.label" class="sm:col-span-4" />
+                <TextInput id="add-amount" v-model="addForm.amount" type="number" step="0.01" min="0.01" label="Amount" required :error="addForm.errors.amount || addForm.errors.run" class="sm:col-span-2" />
+                <TextInput id="add-reason" v-model="addForm.reason" label="Reason (optional)" maxlength="500" :error="addForm.errors.reason" class="sm:col-span-6" />
                 <div class="flex items-end sm:col-span-6">
                     <Button type="submit" size="sm" variant="success" :loading="addForm.processing"><Icon name="plus" size="sm" />Add line</Button>
                 </div>
@@ -429,9 +429,9 @@ const columns = [
                 <template v-if="reasonDialog === 'reopen'">The payroll goes back to HRD, with the withholding tax kept, and its loan payments stop counting until it is finalized again. The reason is kept in the audit trail.</template>
                 <template v-else>The payslip stays on the payroll for the record but counts toward no total or loan balance, and any payslip request for it is closed.</template>
             </p>
-            <InputLabel for="reason">Reason</InputLabel>
-            <textarea id="reason" v-model="reasonForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
-            <InputError :message="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry" />
+            <FormGroup id="reason" label="Reason" required :error="reasonForm.errors.reason || reasonForm.errors.run || reasonForm.errors.entry">
+                <Textarea id="reason" v-model="reasonForm.reason" :maxlength="500" required :invalid="!!reasonForm.errors.reason" />
+            </FormGroup>
         </form>
         <template #footer>
             <Button variant="ghost" @click="reasonDialog = null" icon="arrowLeft">Back</Button>
@@ -445,9 +445,9 @@ const columns = [
                 HRD finalizes the payroll with the withholding tax saved above. Save any changes first.
                 <template v-if="missingTax"> {{ missingTax }} {{ missingTax === 1 ? 'person has' : 'people have' }} no withholding tax.</template>
             </p>
-            <InputLabel for="return-note">Note to HRD (optional)</InputLabel>
-            <textarea id="return-note" v-model="returnForm.note" rows="3" maxlength="1000" class="block w-full form-control mt-1 px-3 py-2" />
-            <InputError :message="returnForm.errors.note || returnForm.errors.run" />
+            <FormGroup id="return-note" label="Note to HRD (optional)" :error="returnForm.errors.note || returnForm.errors.run">
+                <Textarea id="return-note" v-model="returnForm.note" :maxlength="1000" :invalid="!!returnForm.errors.note" />
+            </FormGroup>
         </form>
         <template #footer>
             <Button variant="ghost" @click="returnDialog = false" icon="arrowLeft">Back</Button>

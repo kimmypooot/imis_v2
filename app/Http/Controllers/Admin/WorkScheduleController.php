@@ -45,6 +45,8 @@ class WorkScheduleController extends Controller
                 ->orderByDesc('valid_from')->get()->map(fn (EmployeeWorkSchedule $assignment) => [
                     'id' => $assignment->id,
                     'employee' => $assignment->employee->user->name,
+                    'employee_id' => $assignment->employee_id,
+                    'photo_url' => $assignment->employee->user->profile_photo_url,
                     'office' => $assignment->employee->user->organizationalUnit?->short_name ?: $assignment->employee->user->organizationalUnit?->name,
                     'schedule' => $assignment->schedule->name,
                     'valid_from' => $assignment->valid_from->toDateString(),

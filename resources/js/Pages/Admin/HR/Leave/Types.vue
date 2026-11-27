@@ -13,6 +13,8 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Checkbox from '@cscro8/ui/Components/Forms/Checkbox.vue';
+import CheckboxGroup from '@cscro8/ui/Components/Forms/CheckboxGroup.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 
 defineOptions({ layout: AdminLayout });
@@ -94,7 +96,6 @@ const columns = [
 ];
 
 const field = 'mt-1 block w-full';
-const number = 'mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus-ring';
 const checks = [
     ['requires_balance', 'Needs a balance (credits) to file'],
     ['lapses_yearly', 'Unused credits lapse at year end'],
@@ -165,39 +166,38 @@ const checks = [
                 <TextInput id="type-event" v-model="form.event_label" label="Date it depends on (label)" :error="form.errors.event_label" helper-text="E.g. the date of the calamity. Leave empty if none." />
             </div>
 
-            <div v-for="[key, label] in [['monthly_accrual', 'Earned per month'], ['annual_grant', 'Granted each year'], ['max_days_per_year', 'Max days a year'], ['max_days_per_filing', 'Max days per filing'], ['solo_parent_extra_days', 'Extra days, solo parent'], ['unpaid_extension_days', 'Extension without pay (days)']]" :key="key">
-                <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
-                <input :id="`type-${key}`" v-model="form[key]" type="number" step="0.001" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
-                <InputError :message="form.errors[key]" />
-            </div>
-            <div v-for="[key, label] in [['advance_filing_days', 'File days in advance'], ['max_consecutive_days', 'Max days in a row'], ['medical_certificate_after_days', 'Medical cert. after (days)'], ['min_service_months', 'Min. service (months)'], ['max_filings', 'Most times ever taken'], ['event_window_days', 'Days after that date'], ['sort_order', 'Order']]" :key="key">
-                <InputLabel :for="`type-${key}`">{{ label }}</InputLabel>
-                <input :id="`type-${key}`" v-model="form[key]" type="number" min="0" :class="number" :aria-invalid="!!form.errors[key]" />
-                <InputError :message="form.errors[key]" />
-            </div>
+            <TextInput
+                v-for="[key, label] in [['monthly_accrual', 'Earned per month'], ['annual_grant', 'Granted each year'], ['max_days_per_year', 'Max days a year'], ['max_days_per_filing', 'Max days per filing'], ['solo_parent_extra_days', 'Extra days, solo parent'], ['unpaid_extension_days', 'Extension without pay (days)']]"
+                :id="`type-${key}`"
+                :key="key"
+                v-model="form[key]"
+                type="number"
+                step="0.001"
+                min="0"
+                :label="label"
+                :error="form.errors[key]"
+            />
+            <TextInput
+                v-for="[key, label] in [['advance_filing_days', 'File days in advance'], ['max_consecutive_days', 'Max days in a row'], ['medical_certificate_after_days', 'Medical cert. after (days)'], ['min_service_months', 'Min. service (months)'], ['max_filings', 'Most times ever taken'], ['event_window_days', 'Days after that date'], ['sort_order', 'Order']]"
+                :id="`type-${key}`"
+                :key="key"
+                v-model="form[key]"
+                type="number"
+                min="0"
+                :label="label"
+                :error="form.errors[key]"
+            />
 
             <div>
                 <InputLabel for="type-sex">For</InputLabel>
                 <Select id="type-sex" v-model="form.sex" :class="field" :options="[{ value: '', label: 'Everyone' }, { value: 'female', label: 'Women' }, { value: 'male', label: 'Men' }]" />
             </div>
-            <fieldset class="sm:col-span-3">
-                <legend class="block text-sm font-medium text-text">Employment statuses (none ticked = everyone)</legend>
-                <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                    <label v-for="option in statusOptions" :key="option.value" class="inline-flex items-center gap-1.5 text-sm text-text">
-                        <input v-model="form.eligible_statuses" type="checkbox" :value="option.value" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
-                        {{ option.label }}
-                    </label>
-                </div>
-                <InputError :message="form.errors.eligible_statuses" />
-            </fieldset>
+            <CheckboxGroup id="type-statuses" v-model="form.eligible_statuses" class="sm:col-span-3" legend="Employment statuses (none ticked = everyone)" :options="statusOptions" :error="form.errors.eligible_statuses" />
 
             <fieldset class="sm:col-span-4">
                 <legend class="sr-only">Rules</legend>
                 <div class="grid gap-2 sm:grid-cols-2">
-                    <label v-for="[key, label] in checks" :key="key" class="inline-flex items-center gap-2 text-sm text-text">
-                        <input v-model="form[key]" type="checkbox" class="h-4 w-4 rounded-sm border-border-strong text-link focus:ring-2 focus:ring-focus-ring" />
-                        {{ label }}
-                    </label>
+                    <Checkbox v-for="[key, label] in checks" :id="`type-${key}`" :key="key" v-model="form[key]" :label="label" />
                 </div>
             </fieldset>
 

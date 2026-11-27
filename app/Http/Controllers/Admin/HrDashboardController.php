@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\HR\CutoverReadiness;
 use App\Support\HR\HrDashboard;
+use App\Support\HR\HrMonth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -29,6 +30,8 @@ class HrDashboardController extends Controller
         return Inertia::render('Admin/HR/Dashboard', [
             'hr' => fn () => $this->analytics($user),
             'readiness' => fn () => $this->readiness($user),
+            // The banner: what is waiting on HR and this month's steps, loaded just after the page appears.
+            'month' => Inertia::defer(fn () => app(HrMonth::class)->for($user)),
             'generatedAt' => now()->toIso8601String(),
         ]);
     }

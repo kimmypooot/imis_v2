@@ -99,7 +99,7 @@ class Staffing
 
         $designations = $this->headDesignations($items);
 
-        $offices = OrganizationalUnit::query()->orderBy('name')->get()
+        $offices = OrganizationalUnit::query()->inOrder()->get()
             ->map(function (OrganizationalUnit $unit) use ($items, $serving, $unlinkedAt, $designations) {
                 $own = $items->where('organizational_unit_id', $unit->id);
                 $filled = $own->filter(fn (PlantillaItem $item) => $item->incumbency !== null);

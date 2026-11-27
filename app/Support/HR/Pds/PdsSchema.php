@@ -141,8 +141,9 @@ final class PdsSchema
                 'label' => '23. Children',
                 'model' => PdsChild::class,
                 'noun' => 'child',
+                'layout' => 'inline',
                 'fields' => [
-                    self::field('full_name', 'Full name', required: true, width: 'xl'),
+                    self::field('full_name', 'Full name', required: true, width: 'xl', help: 'First name and surname. List all your children.'),
                     self::field('date_of_birth', 'Date of birth', 'date', past: true, width: 'md'),
                 ],
             ],
@@ -152,18 +153,20 @@ final class PdsSchema
                 'label' => '26. Educational background',
                 'model' => PdsEducation::class,
                 'noun' => 'school',
+                'summary' => ['level', 'school', 'degree', 'year_graduated'],
                 'fields' => [
                     self::field('level', 'Level', 'select', required: true, width: 'md', options: self::options([
                         'elementary' => 'Elementary', 'secondary' => 'Secondary', 'vocational' => 'Vocational / Trade Course',
                         'college' => 'College', 'graduate' => 'Graduate Studies',
                     ])),
-                    self::field('school', 'Name of school (write in full)', required: true, width: 'xl'),
-                    self::field('degree', 'Basic education/degree/course (write in full)', span: 'full'),
+                    self::field('school', 'Name of school (write in full)', required: true, width: 'xl', help: 'The school\x27s full name. Do not abbreviate.'),
+                    self::field('degree', 'Basic education/degree/course (write in full)', span: 'full',
+                        help: 'Elementary: PRIMARY EDUCATION. Secondary: HIGH SCHOOL (old curriculum), or JUNIOR HIGH SCHOOL or SENIOR HIGH SCHOOL (K-12). College and graduate studies: the course in full, e.g. BS PSYCHOLOGY, MA IN HISTORY.'),
                     self::field('attendance_from', 'Attended from (year)', 'year', placeholder: 'YYYY'),
                     self::field('attendance_to', 'Attended to (year)', 'year', placeholder: 'YYYY'),
-                    self::field('highest_level_units', 'Highest level/units earned (if not graduated)', max: 100, width: 'lg'),
+                    self::field('highest_level_units', 'Highest level/units earned (if not graduated)', max: 100, width: 'lg', help: 'The highest grade, level or units earned. Leave blank if you graduated.'),
                     self::field('year_graduated', 'Year graduated', 'year', placeholder: 'YYYY'),
-                    self::field('honors', 'Scholarship/academic honors received', width: 'full'),
+                    self::field('honors', 'Scholarship/academic honors received', width: 'full', help: 'Any scholarship or academic honors received at this level.'),
                 ],
             ],
 
@@ -173,13 +176,14 @@ final class PdsSchema
                 'label' => '27. Civil service eligibility',
                 'model' => PdsEligibility::class,
                 'noun' => 'eligibility',
+                'summary' => ['eligibility', 'rating', 'exam_date', 'exam_place'],
                 'fields' => [
                     self::field('eligibility', 'Eligibility', required: true, span: 'full',
                         help: 'Career Service, RA 1080 (Board/Bar), under special laws, CES/CSEE, Category II/IV, uniformed personnel, barangay eligibility, driver\'s license…'),
                     self::field('rating', 'Rating (if applicable)', max: 20, width: 'sm'),
                     self::field('exam_date', 'Date of examination/conferment', 'date', past: true, width: 'sm'),
                     self::field('exam_place', 'Place of examination/conferment', width: 'lg'),
-                    self::field('license_number', 'License number (if applicable)', max: 50, width: 'md'),
+                    self::field('license_number', 'License number (if applicable)', max: 50, width: 'md', help: 'For an eligibility that comes with a license (RA 1080), its number and, below, its expiry.'),
                     self::field('license_valid_until', 'License valid until', 'date', width: 'sm'),
                 ],
             ],
@@ -190,11 +194,14 @@ final class PdsSchema
                 'help' => 'Include private employment. Start from your most recent work.',
                 'model' => PdsWorkExperience::class,
                 'noun' => 'position',
+                'summary' => [['date_from', 'date_to'], 'position_title', 'agency', 'monthly_salary', 'salary_grade', 'appointment_status'],
+                // Starting from the current position (CSC's guide to the PDS).
+                'order' => 'recent',
                 'fields' => [
                     self::field('date_from', 'From', 'date', required: true, past: true),
                     self::field('date_to', 'To (leave blank if present)', 'date'),
-                    self::field('position_title', 'Position title (write in full)', required: true, width: 'lg'),
-                    self::field('agency', 'Department/agency/office/company (write in full)', required: true, span: 'full'),
+                    self::field('position_title', 'Position title (write in full)', required: true, width: 'lg', help: 'The full position title. Do not abbreviate.'),
+                    self::field('agency', 'Department/agency/office/company (write in full)', required: true, span: 'full', help: 'The complete name, e.g. Civil Service Commission, not CSC.'),
                     self::field('monthly_salary', 'Monthly salary', 'number', min: 0, max: 9999999, step: '0.01', prefix: '₱', placeholder: '0.00', width: 'sm'),
                     self::field('salary_grade', 'Salary/job/pay grade & step (format "00-0")', max: 10, pattern: '/^\d{1,2}-\d{1,2}$/', placeholder: '00-0', width: 'sm'),
                     self::field('appointment_status', 'Status of appointment', max: 50, width: 'lg',
@@ -229,8 +236,9 @@ final class PdsSchema
                 'label' => '30. Voluntary work or involvement in civic/non-government/people/voluntary organizations',
                 'model' => PdsVoluntaryWork::class,
                 'noun' => 'organization',
+                'summary' => [['date_from', 'date_to'], 'organization', 'position', 'hours'],
                 'fields' => [
-                    self::field('organization', 'Name & address of organization (write in full)', required: true, max: 512, span: 'full'),
+                    self::field('organization', 'Name & address of organization (write in full)', required: true, max: 512, span: 'full', help: 'The organization\x27s full name and address, where you served as a volunteer.'),
                     self::field('date_from', 'From', 'date'),
                     self::field('date_to', 'To', 'date'),
                     self::field('hours', 'Number of hours', 'number', min: 0, max: 99999, step: '0.5', unit: 'hrs', width: 'sm'),
@@ -280,9 +288,10 @@ final class PdsSchema
                 'label' => '41. References (persons not related by consanguinity or affinity to you)',
                 'model' => PdsReference::class,
                 'noun' => 'reference',
+                'summary' => ['name', 'contact', 'address'],
                 'max_rows' => 3,
                 'fields' => [
-                    self::field('name', 'Name', required: true, width: 'md'),
+                    self::field('name', 'Name', required: true, width: 'md', help: 'Full name: first name, middle initial, surname. Not a relative.'),
                     self::field('contact', 'Contact no. and/or email', width: 'md'),
                     self::field('address', 'Office/residential address', span: 'full'),
                 ],
@@ -346,6 +355,12 @@ final class PdsSchema
             'optional' => $section['optional'] ?? false,
             'noun' => $section['noun'] ?? null,
             'max_rows' => $section['max_rows'] ?? null,
+            // How the editor lists entries: one line each (`inline`), or a one-line
+            // `summary` of the given fields that opens to the full form; `order`
+            // `recent` keeps them newest first.
+            'layout' => $section['layout'] ?? null,
+            'summary' => $section['summary'] ?? null,
+            'order' => $section['order'] ?? null,
             'managed_by' => $section['managed_by'] ?? null,
             'fields' => array_map(fn (array $field) => collect($field)->except(['pattern', 'target'])->all(), $section['fields']),
         ]);
@@ -560,6 +575,7 @@ final class PdsSchema
             'model' => PdsOtherInformation::class,
             'scope' => ['type' => $type],
             'noun' => $noun,
+            'layout' => 'inline',
             'fields' => [self::field('detail', ucfirst($noun).' (write in full)', required: true, max: 512, span: 'full')],
         ];
     }

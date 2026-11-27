@@ -13,6 +13,8 @@ use App\Notifications\HrUpdate;
 use App\Support\HR\Dtr\BiometricImporter;
 use App\Support\HR\Dtr\DtrSheets;
 use App\Support\HR\Dtr\UploadMonitor;
+use App\Support\Settings\Settings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -48,12 +50,16 @@ class BiometricImportController extends Controller
                     'rows_duplicate' => $import->rows_duplicate,
                     'rows_skipped' => $import->rows_skipped,
                     'rows_ignored' => $import->rows_ignored,
+                    'rows_before_start' => $import->rows_before_start,
+                    'new_by_month' => $import->new_by_month ?? [],
                     'first_punch_at' => $import->first_punch_at?->toDateTimeString(),
                     'last_punch_at' => $import->last_punch_at?->toDateTimeString(),
                     'created_at' => $import->created_at->toDateTimeString(),
                 ])->values(),
             'staffCount' => Employee::query()->whereNull('separation_date')->where('employment_status', EmploymentStatus::Permanent)->count(),
             'result' => session('import_result'),
+            // Punches dated before this are skipped on upload (System Settings → Human Resources).
+            'punchesFrom' => Settings::get('dtr_punches_from'),
             'month' => $month->format('Y-m'),
             'monthLabel' => $month->format('F Y'),
             'monitor' => $monitor->forMonth($month),
@@ -61,6 +67,20 @@ class BiometricImportController extends Controller
             'punches' => BiometricPunch::query()->count(),
             'canManage' => $request->user()->can('manage', BiometricPunch::class),
         ]);
+    }
+
+    /**
+     * What uploading the chosen file would do, without saving anything:
+     * new punches against those already on file, what would be skipped,
+     * and whose punches it holds. Shown in a dialog before uploading.
+     */
+    public function preview(Request $request, BiometricImporter $importer): JsonResponse
+    {
+        $this->authorize('manage', BiometricPunch::class);
+
+        $request->validate(['file' => ['required', 'file', 'extensions:dat,txt', 'max:5120'], 'known_only' => ['sometimes', 'boolean']], [], ['file' => 'attendance log']);
+
+        return response()->json($importer->preview($request->file('file')->getRealPath(), $request->boolean('known_only')));
     }
 
     public function store(Request $request, BiometricImporter $importer): RedirectResponse
@@ -94,6 +114,8 @@ class BiometricImportController extends Controller
             'rows_skipped' => $import->rows_skipped,
             'unmatched' => $unmatched,
             'ignored' => $ignored,
+            'before_start' => $import->rows_before_start,
+            'new_by_month' => $import->new_by_month ?? [],
             'notified' => $notified,
             'first_punch_at' => $import->first_punch_at?->toDateString(),
             'last_punch_at' => $import->last_punch_at?->toDateString(),
@@ -144,7 +166,9 @@ class BiometricImportController extends Controller
         $to = $import->last_punch_at->format('M j, Y');
         $period = $from === $to ? $from : "{$from} to {$to}";
 
-        $recipients = User::query()->whereIn('id', Employee::query()->whereNull('separation_date')->where('employment_status', EmploymentStatus::Permanent)->select('user_id'))->get();
+        // Only the people this upload brought new punches for, not everyone in service.
+        $ids = BiometricPunch::query()->where('biometric_import_id', $import->id)->distinct()->pluck('biometric_id');
+        $recipients = User::query()->whereIn('id', Employee::query()->whereNull('separation_date')->where('employment_status', EmploymentStatus::Permanent)->whereIn('biometric_id', $ids)->select('user_id'))->get();
         foreach ($recipients as $user) {
             $user->notify(new HrUpdate(
                 'Biometric logs uploaded',

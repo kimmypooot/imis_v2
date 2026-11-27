@@ -11,6 +11,8 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
+import ApprovalTrail from '@cscro8/ui/Components/UI/ApprovalTrail.vue';
 import { confirm } from '@cscro8/ui/Composables/useDialog.js';
 import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { leaveActionTones, leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
@@ -29,6 +31,7 @@ const props = defineProps({
     canUpdate: { type: Boolean, required: true },
     hasSignature: { type: Boolean, default: false },
     action: { type: Object, default: null },
+    trail: { type: Object, required: true },
 });
 
 const rounds = computed(() => [...new Set(props.steps.map((step) => step.round))].sort((a, b) => b - a));
@@ -67,6 +70,11 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
             <Button v-if="canUpdate" variant="danger" @click="cancel" icon="close">Cancel application</Button>
         </template>
     </PageHeader>
+
+    <!-- Where it is now: filed, each approver in turn, the decision. -->
+    <Card class="mb-6" title="Where it is" icon="activity">
+        <ApprovalTrail :trail="trail" label="Approval progress" />
+    </Card>
 
     <div class="grid gap-6 xl:grid-cols-3">
         <div class="space-y-6 xl:col-span-2">
@@ -119,6 +127,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         <InputLabel for="act-with-pay">Days with pay (optional)</InputLabel>
                         <input
                             id="act-with-pay"
+                            aria-describedby="act-with-pay-hint"
                             v-model="form.days_with_pay"
                             type="number"
                             step="0.5"
@@ -126,7 +135,7 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                             :max="application.days"
                             class="form-control mt-1 block w-40 px-3 py-2"
                         />
-                        <p class="mt-1 text-xs text-text-muted">Leave empty to approve as many days with pay as the credits allow; the rest is without pay.</p>
+                        <HelperText id="act-with-pay-hint">Leave empty to approve as many days with pay as the credits allow; the rest is without pay.</HelperText>
                         <InputError :message="form.errors.days_with_pay" />
                     </div>
                     <div>
@@ -141,11 +150,11 @@ const days = (value) => Number(value ?? 0).toLocaleString(undefined, { maximumFr
                         </label>
                         <template v-if="form.sign">
                             <p v-if="hasSignature" class="mt-1 pl-6 text-xs text-success-fg">Your saved signature will be placed on the form.</p>
-                            <p v-else class="mt-1 pl-6 text-xs text-text-muted">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</p>
+                            <HelperText v-else class="pl-6">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</HelperText>
                         </template>
                         <div v-if="form.sign" class="mt-3">
                             <PasswordInput id="act-sign-password" v-model="form.password" label="Your IMIS password" autocomplete="current-password" required :invalid="!!form.errors.password" />
-                            <p class="mt-1 text-xs text-text-muted">Re-entering your password is your electronic signature. It is recorded with the date and time.</p>
+                            <HelperText for="act-sign-password">Re-entering your password is your electronic signature. It is recorded with the date and time.</HelperText>
                             <InputError :message="form.errors.password" />
                         </div>
                     </div>

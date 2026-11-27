@@ -59,6 +59,37 @@ enum EmployeeDocumentType: string
         };
     }
 
+    /** The part of the 201 file it belongs to, for filtering the list. */
+    public function group(): string
+    {
+        return match ($this) {
+            self::Appointment, self::OathOfOffice, self::AssumptionToDuty, self::PositionDescription,
+            self::OfficeOrder, self::SalaryAdjustment => 'appointment',
+            self::PersonalDataSheet, self::WorkExperienceSheet, self::BirthCertificate, self::MarriageCertificate,
+            self::NbiClearance, self::MedicalCertificate, self::Saln => 'personal',
+            self::Diploma, self::TranscriptOfRecords, self::Eligibility, self::ProfessionalLicense,
+            self::TrainingCertificate => 'qualifications',
+            self::PerformanceRating, self::ServiceRecord, self::Clearance => 'service',
+            self::Other => 'other',
+        };
+    }
+
+    /**
+     * The groups, in the order they're listed.
+     *
+     * @return array<string, string> key => label
+     */
+    public static function groups(): array
+    {
+        return [
+            'appointment' => 'Appointment & assignment',
+            'personal' => 'Personal records',
+            'qualifications' => 'Education & eligibility',
+            'service' => 'Service & performance',
+            'other' => 'Other',
+        ];
+    }
+
     /**
      * @return array<int, array{value: string, label: string}>
      */

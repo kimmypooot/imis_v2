@@ -4,6 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
@@ -110,19 +111,7 @@ const columns = [
 
         <Card title="Items" icon="grid">
             <template #actions>
-                <div class="flex flex-wrap gap-1" role="group" aria-label="Show">
-                    <button
-                        v-for="option in views"
-                        :key="option.key"
-                        type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium"
-                        :class="view === option.key ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'"
-                        :aria-pressed="view === option.key"
-                        @click="view = option.key"
-                    >
-                        {{ option.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="view" label="Show" :options="views.map((option) => ({ value: option.key, label: option.label }))" />
             </template>
 
             <DataTable :columns="columns" :rows="shown" caption="Plantilla of positions" :export-name="`imis-plantilla-${view}`" :numbered="false" empty-text="No items here.">

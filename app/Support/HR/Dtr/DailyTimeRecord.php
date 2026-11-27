@@ -9,6 +9,7 @@ use App\Models\EmployeeWorkSchedule;
 use App\Models\Holiday;
 use App\Models\LeaveApplication;
 use App\Models\WorkSchedule;
+use App\Support\HR\Leave\HolidayCalendar;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -48,7 +49,7 @@ class DailyTimeRecord
         $to = $to->copy()->startOfDay();
 
         $punches = $this->punches->byDay($employee, $from, $to);
-        $holidays = Holiday::query()->whereBetween('date', [$from->toDateString(), $to->toDateString()])->get()
+        $holidays = (new HolidayCalendar)->between($from, $to)
             ->keyBy(fn (Holiday $holiday) => $holiday->date->toDateString());
         $adjustments = DtrAdjustment::query()->where('employee_id', $employee->id)
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])->get()

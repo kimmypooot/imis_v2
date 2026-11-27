@@ -1,5 +1,7 @@
 <script setup>
-import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
@@ -101,6 +103,12 @@ const cancelLoan = () => cancelForm.post(`${base}/loans/${cancelling.value.id}/c
 const scheduleId = ref(null);
 const scheduled = computed(() => props.loans.find((loan) => loan.id === scheduleId.value) ?? null);
 const scheduleTones = { scheduled: 'draft', reflected: 'info', confirmed: 'pending', paid: 'active', overdue: 'inactive' };
+const scheduleColumns = computed(() => [
+    { key: 'month', label: 'Month' },
+    { key: 'amount', label: 'Amount', align: 'right' },
+    { key: 'status', label: 'Status', value: (row) => row.status_label },
+    ...(props.canManage ? [{ key: 'actions', label: '', sortable: false, export: false, align: 'right' }] : []),
+]);
 const markPaid = (loan, row, paid) =>
     router.post(`${base}/loans/${loan.id}/lines/${row.line_id}/remit`, { paid }, { preserveScroll: true });
 
@@ -257,15 +265,8 @@ const recentColumns = [
             <p v-if="stopping" class="text-sm text-text">
                 No more {{ stopping.type }} deductions after this date. The balance ({{ formatPeso(stopping.balance) }}) stays on record, and the loan can be resumed.
             </p>
-            <div>
-                <InputLabel for="loan-stopped-on">Last day deducted</InputLabel>
-                <input id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" required class="block w-full form-control mt-1 px-3 py-2" />
-                <InputError :message="stopForm.errors.stopped_on" />
-            </div>
-            <div>
-                <InputLabel for="loan-stop-reason">Reason (optional)</InputLabel>
-                <input id="loan-stop-reason" v-model="stopForm.reason" type="text" maxlength="500" class="block w-full form-control mt-1 px-3 py-2" />
-            </div>
+            <TextInput id="loan-stopped-on" v-model="stopForm.stopped_on" type="date" label="Last day deducted" required :error="stopForm.errors.stopped_on" />
+            <TextInput id="loan-stop-reason" v-model="stopForm.reason" label="Reason (optional)" maxlength="500" :error="stopForm.errors.reason" />
         </form>
         <template #footer>
             <Button variant="secondary" @click="stopping = null" icon="close">Cancel</Button>
@@ -278,11 +279,9 @@ const recentColumns = [
             <p v-if="cancelling" class="text-sm text-text">
                 The {{ cancelling.type }} is ended for good: nothing more is deducted and it cannot be resumed. What was already deducted stays on record.
             </p>
-            <div>
-                <InputLabel for="loan-cancel-reason">Reason</InputLabel>
-                <textarea id="loan-cancel-reason" v-model="cancelForm.reason" rows="3" maxlength="500" required class="block w-full form-control mt-1 px-3 py-2" />
-                <InputError :message="cancelForm.errors.reason" />
-            </div>
+            <FormGroup id="loan-cancel-reason" label="Reason" required :error="cancelForm.errors.reason">
+                <Textarea id="loan-cancel-reason" v-model="cancelForm.reason" :maxlength="500" required :invalid="!!cancelForm.errors.reason" />
+            </FormGroup>
         </form>
         <template #footer>
             <Button variant="secondary" @click="cancelling = null" icon="arrowLeft">Back</Button>
@@ -296,28 +295,20 @@ const recentColumns = [
                 IMIS records what payrolls take; it does not collect or remit anything. “Confirmed” is on a finalized payroll, “Paid” is when HR marks it remitted,
                 and “Overdue” is confirmed but not marked paid 30 days after release.
             </p>
-            <div class="table-card"><table class="data-table" data-density="compact">
-                <caption class="sr-only">Installments of {{ scheduled.type }}</caption>
-                <thead>
-                    <tr><th scope="col">Month</th><th scope="col" class="text-right">Amount</th><th scope="col">Status</th><th v-if="canManage" scope="col"  /></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="row in scheduled.schedule.rows" :key="row.month">
-                        <td class="text-text">{{ row.month }}</td>
-                        <td class="text-right tabular-nums">{{ formatPeso(row.amount) }}</td>
-                        <td>
-                            <StatusBadge :status="scheduleTones[row.status]" :label="row.status_label" />
-                            <span v-if="row.remitted_on" class="ml-1 text-xs text-text-muted">{{ formatCalendarDate(row.remitted_on) }}</span>
-                        </td>
-                        <td v-if="canManage" class="text-right whitespace-nowrap">
-                            <button v-if="row.finalized && row.status !== 'paid'" type="button" class="text-link hover:underline" @click="markPaid(scheduled, row, true)">Mark paid</button>
-                            <button v-else-if="row.status === 'paid'" type="button" class="text-text-muted hover:underline" @click="markPaid(scheduled, row, false)">Undo</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table></div>
+            <DataTable :columns="scheduleColumns" :page-size-select="false" :rows="scheduled.schedule.rows" row-key="month" :caption="`Installments of ${scheduled.type}`" :export-name="`imis-loan-schedule`" :numbered="false" :searchable="false" density="compact" empty-text="Nothing is scheduled: the loan is complete, suspended or cancelled.">
+                <template #cell-amount="{ row }"><span class="tabular-nums">{{ formatPeso(row.amount) }}</span></template>
+                <template #cell-status="{ row }">
+                    <StatusBadge :status="scheduleTones[row.status]" :label="row.status_label" />
+                    <span v-if="row.remitted_on" class="ml-1 text-xs text-text-muted">{{ formatCalendarDate(row.remitted_on) }}</span>
+                </template>
+                <template #cell-actions="{ row }">
+                    <span class="inline-flex">
+                    <Button v-if="row.finalized && row.status !== 'paid'" size="sm" variant="link" @click="markPaid(scheduled, row, true)">Mark paid</Button>
+                    <Button v-else-if="row.status === 'paid'" size="sm" variant="link" @click="markPaid(scheduled, row, false)">Undo</Button>
+                    </span>
+                </template>
+            </DataTable>
             <p v-if="scheduled.schedule.more" class="mt-2 text-xs text-text-muted">…and {{ scheduled.schedule.more }} more after these.</p>
-            <p v-if="!scheduled.schedule.rows.length" class="py-2 text-sm text-text-muted">Nothing is scheduled: the loan is complete, suspended or cancelled.</p>
             <p v-if="scheduled.schedule.expected_end" class="mt-3 text-sm text-text">Expected last deduction: <strong>{{ scheduled.schedule.expected_end }}</strong>. Balance {{ formatPeso(scheduled.balance) }}.</p>
         </template>
         <template #footer><Button @click="scheduleId = null" icon="close">Close</Button></template>

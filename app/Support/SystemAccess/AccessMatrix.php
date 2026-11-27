@@ -59,7 +59,7 @@ class AccessMatrix
                 'status' => $user->status->value,
                 'profile_photo_url' => $user->profile_photo_url,
                 'role_id' => $current[$user->id] ?? null,
-                'locked' => $this->lockReason($user),
+                'locked' => $this->lockReason($user, $application),
             ])->values()->all(),
         ];
     }
@@ -116,11 +116,16 @@ class AccessMatrix
     }
 
     /**
-     * Why the actor can't change this user's system access, or null.
+     * Why the actor can't change this user's system access (in one system,
+     * when given), or null.
      */
-    public function lockReason(User $user): ?string
+    public function lockReason(User $user, ?Application $application = null): ?string
     {
-        if ($this->actor->can('manageSystemAccess', $user)) {
+        $allowed = $application
+            ? $this->actor->can('manageSystemAccessIn', [$user, $application])
+            : $this->actor->can('manageSystemAccess', $user);
+
+        if ($allowed) {
             return $user->status === UserStatus::Inactive ? 'inactive' : null;
         }
 

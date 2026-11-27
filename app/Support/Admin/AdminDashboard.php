@@ -218,11 +218,12 @@ class AdminDashboard
                 ->with(['organizationalUnit:id,name,short_name', 'roles:id,display_name'])
                 ->orderBy('name')
                 ->limit(50)
-                ->get(['id', 'name', 'position', 'organizational_unit_id'])
+                ->get(['id', 'name', 'position', 'organizational_unit_id', 'profile_photo_path'])
                 ->map(fn (User $user) => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'position' => $user->position,
+                    'photo_url' => $user->profile_photo_url,
                     'office' => $user->organizationalUnit?->short_name ?: $user->organizationalUnit?->name,
                     'roles' => $user->roles->pluck('display_name')->all(),
                 ])

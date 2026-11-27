@@ -49,7 +49,7 @@ class AgeAndServiceController extends Controller
             'filters' => ['view' => $view, 'office' => $office],
             'asOf' => today()->toDateString(),
             'people' => $roster->view($rows, $view),
-            'officeOptions' => OrganizationalUnit::query()->workingOffices()->orderBy('name')->get()
+            'officeOptions' => OrganizationalUnit::query()->workingOffices()->inOrder()->get()
                 ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
         ]);
     }

@@ -43,6 +43,10 @@ enum PermissionName: string
     // Granting/changing/revoking a user's role inside a system. Defining a
     // system's roles is part of editing the system (`applications.update`).
     case ApplicationsManageAccess = 'applications.manage_access';
+    // The same, only in the systems your own office manages (a system's
+    // managing office), e.g. HRD for ORS and OTRS. Never your own access,
+    // and never office designations (those stay with manage_access).
+    case ApplicationsManageOfficeAccess = 'applications.manage_office_access';
     // Putting a system in/out of maintenance — and launching it while it's
     // in maintenance, so whoever does the work can verify it.
     case ApplicationsMaintenance = 'applications.maintenance';
@@ -209,4 +213,13 @@ enum PermissionName: string
     // feeds, sets targets, and runs a collection on demand.
     case ExecutiveView = 'executive.view';
     case ExecutiveManage = 'executive.manage';
+
+    // Calendar of Activities. `view` is every staff account (the default
+    // `user` role): the calendar, list and details. `post` adds, edits,
+    // cancels and marks done the activities of the poster's own office
+    // (exactly their organizational unit). `manage` is PALD: everything
+    // for any office, returning or removing activities, and what changed.
+    case ActivitiesView = 'activities.view';
+    case ActivitiesPost = 'activities.post';
+    case ActivitiesManage = 'activities.manage';
 }

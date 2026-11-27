@@ -5,6 +5,8 @@ import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
+import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import SimpleChart from '../Charts/SimpleChart.vue';
 import { useAuthorization } from '../../Composables/useAuthorization';
 import { formatDateTime } from '../../Utils/datetime';
@@ -23,6 +25,18 @@ const props = defineProps({
 const { can } = useAuthorization();
 const metrics = computed(() => props.dashboard.metrics);
 const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
+
+const topColumns = [
+    { key: 'name', label: 'System' },
+    { key: 'status', label: 'Status', align: 'center' },
+    { key: 'assigned', label: 'Assigned', align: 'right' },
+];
+const noAccessColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'roles', label: 'IMIS role', value: (row) => row.roles.join(', ') },
+    { key: 'position', label: 'Position', hidden: true, value: (row) => row.position ?? '' },
+    { key: 'office', label: 'Office', hidden: true, value: (row) => row.office ?? '' },
+];
 </script>
 
 <template>
@@ -113,31 +127,10 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
         <!-- Row 4: top systems + users without access -->
         <div class="grid gap-4 xl:grid-cols-12">
             <Card v-if="dashboard.accessBySystem" title="Top Systems" icon="grid" class="xl:col-span-5">
-                <div class="overflow-x-auto">
-                    <table class="data-table">
-                        <caption class="sr-only">Systems with the most people assigned</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">System</th>
-                                <th scope="col" class="text-center">Status</th>
-                                <th scope="col" class="text-right">Assigned</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="!dashboard.accessBySystem.top.length">
-                                <td colspan="3" class="px-3 py-6 text-center text-text-muted">No systems yet.</td>
-                            </tr>
-                            <tr v-for="(system, index) in dashboard.accessBySystem.top" :key="system.id">
-                                <td>
-                                    <span class="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-muted text-xs text-text-muted">{{ index + 1 }}</span>
-                                    {{ system.name }}
-                                </td>
-                                <td class="text-center"><StatusBadge :status="system.status" /></td>
-                                <td class="text-right tabular-nums">{{ system.assigned }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable :columns="topColumns" :page-size-select="false" :rows="dashboard.accessBySystem.top" caption="Systems with the most people assigned" export-name="imis-top-systems" :searchable="false" :exportable="false" density="compact" empty-text="No systems yet.">
+                    <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+                    <template #cell-assigned="{ row }"><span class="tabular-nums">{{ row.assigned }}</span></template>
+                </DataTable>
             </Card>
 
             <Card
@@ -150,31 +143,12 @@ const percent = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
                 <template v-if="can('applications.manage_access')" #actions>
                     <Link href="/admin/user-access" class="text-sm font-medium text-link hover:text-primary-hover">Assign access</Link>
                 </template>
-                <div class="max-h-80 overflow-auto">
-                    <table class="data-table" data-sticky>
-                        <caption class="sr-only">Active accounts with no system access</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Name / Position</th>
-                                <th scope="col">Office</th>
-                                <th scope="col" class="text-center">IMIS role</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="!dashboard.usersWithoutAccess.users.length">
-                                <td colspan="3" class="px-3 py-6 text-center text-text-muted">Everyone active has access to at least one system.</td>
-                            </tr>
-                            <tr v-for="person in dashboard.usersWithoutAccess.users" :key="person.id">
-                                <td>
-                                    <Link :href="`/admin/user-access?user=${person.id}`" class="font-medium text-text hover:text-link">{{ person.name }}</Link>
-                                    <div class="text-xs text-text-muted">{{ person.position || '—' }}</div>
-                                </td>
-                                <td class="text-text-muted">{{ person.office || '—' }}</td>
-                                <td class="text-center text-xs">{{ person.roles.join(', ') || '—' }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable :columns="noAccessColumns" :rows="dashboard.usersWithoutAccess.users" caption="Active accounts with no system access" export-name="imis-users-without-access" :numbered="false" :default-page-size="10" density="compact" empty-text="Everyone active has access to at least one system.">
+                    <template #cell-name="{ row }">
+                        <PersonCell :name="row.name" :photo-url="row.photo_url" :href="`/admin/user-access?user=${row.id}`" :subtitle="[row.position, row.office].filter(Boolean).join(' · ')" />
+                    </template>
+                    <template #cell-roles="{ row }"><span class="text-xs">{{ row.roles.join(', ') || '—' }}</span></template>
+                </DataTable>
             </Card>
         </div>
 

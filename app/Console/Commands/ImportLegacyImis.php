@@ -13,7 +13,10 @@ use SplFileObject;
  * Imports the legacy IMIS database into this platform. Either loads a
  * phpMyAdmin dump (old-imis/db_imis.sql) into a temporary schema on the
  * same MySQL server and drops it afterwards, or reads a schema where the
- * legacy tables are already loaded (--database).
+ * legacy tables are already loaded (--database), or reads the live legacy
+ * database through its own connection (--live, LEGACY_DB_*) where the
+ * hosting doesn't let IMIS create a temporary schema. It only reads the
+ * legacy tables.
  */
 class ImportLegacyImis extends Command
 {
@@ -22,6 +25,7 @@ class ImportLegacyImis extends Command
     protected $signature = 'imis:import-legacy
         {dump? : Path to the legacy SQL dump (e.g. ../old-imis/db_imis.sql)}
         {--database= : Read an existing schema holding the legacy tables instead of loading a dump}
+        {--live : Read the live legacy database set by LEGACY_DB_* instead of loading a dump}
         {--legacy-url=https://imis.cscro8.com : Base URL the legacy relative launch paths resolve against}
         {--photos= : Folder holding legacy profile pictures (default: admin/uploads next to the dump)}
         {--without-history : Skip the sign-in and system-access history}';
@@ -32,9 +36,10 @@ class ImportLegacyImis extends Command
     {
         $dump = $this->argument('dump');
         $database = $this->option('database');
+        $live = (bool) $this->option('live');
 
-        if (! $dump && ! $database) {
-            $this->error('Give the dump path, or --database for a schema that already holds the legacy tables.');
+        if (! $dump && ! $database && ! $live) {
+            $this->error('Give the dump path, --database for a schema that already holds the legacy tables, or --live for the legacy database in LEGACY_DB_*.');
 
             return self::FAILURE;
         }
@@ -45,14 +50,14 @@ class ImportLegacyImis extends Command
             return self::FAILURE;
         }
 
-        $scratch = $database ? null : DB::connection()->getDatabaseName().'_legacy_import';
+        $scratch = ($database || $live) ? null : DB::connection()->getDatabaseName().'_legacy_import';
 
         try {
             if ($scratch) {
                 $this->components->task('Loading the legacy dump', fn () => $this->load($dump, $scratch));
             }
 
-            $this->connect($database ?? $scratch);
+            $live ? $this->connectLive() : $this->connect($database ?? $scratch);
             $photos = $this->option('photos') ?? ($dump ? dirname(realpath($dump)).'/admin/uploads' : null);
 
             $counts = (new LegacyImporter(
@@ -84,6 +89,21 @@ class ImportLegacyImis extends Command
         config(['database.connections.'.self::CONNECTION => array_merge(
             config('database.connections.'.config('database.default')),
             ['database' => $database, 'timezone' => '+00:00'],
+        )]);
+        DB::purge(self::CONNECTION);
+
+        return DB::connection(self::CONNECTION);
+    }
+
+    /**
+     * The legacy connection (LEGACY_DB_*, with its own database user), read
+     * in UTC like a loaded dump.
+     */
+    private function connectLive(): ConnectionInterface
+    {
+        config(['database.connections.'.self::CONNECTION => array_merge(
+            config('database.connections.legacy'),
+            ['timezone' => '+00:00'],
         )]);
         DB::purge(self::CONNECTION);
 

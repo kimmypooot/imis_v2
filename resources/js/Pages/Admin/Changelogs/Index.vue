@@ -2,6 +2,7 @@
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
@@ -11,6 +12,7 @@ import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import Modal from '@cscro8/ui/Components/Feedback/Modal.vue';
@@ -37,6 +39,7 @@ const blank = () => ({ version: '', title: '', release_date: '', items: [{ type:
 const current = ref(null);
 const form = useForm(blank());
 const isEditing = computed(() => current.value !== null);
+useUnsavedChanges(form, { message: 'This release note is not saved yet. If you leave now, what you wrote will be lost.' });
 const showPreview = ref(false);
 
 const startEdit = (changelog) => {
@@ -157,13 +160,7 @@ const columns = [
                                 </div>
                                 <div class="flex-1">
                                     <label :for="`item-description-${index}`" class="sr-only">Entry {{ index + 1 }} description</label>
-                                    <textarea
-                                        :id="`item-description-${index}`"
-                                        v-model="item.description"
-                                        rows="2"
-                                        maxlength="500"
-                                        class="form-control block w-full px-2 py-1.5"
-                                    />
+                                    <Textarea :id="`item-description-${index}`" v-model="item.description" :rows="2" :maxlength="500" />
                                 </div>
                             </div>
                             <InputError :message="form.errors[`items.${index}.description`] || form.errors[`items.${index}.type`]" />

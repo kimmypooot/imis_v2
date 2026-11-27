@@ -413,6 +413,9 @@ the live `lms_*` tables. The original plan:
 ---
 
 ## 5. Deploying to the live server (everything so far)
+For the first install on an empty server, follow `docs/production-deployment.md`
+instead; these steps update a server that already runs IMIS.
+
 1. `php artisan migrate`
 2. `php artisan db:seed --class=RolePermissionSeeder`, and (HR-8) `php artisan db:seed --class=PayComponentSeeder`; grant `payroll.view`/`payroll.manage` to the HR Officer role under Roles (existing roles are not changed by `HrRoleSeeder`).
 3. `npm run build`, or deploy the built `public/build`.

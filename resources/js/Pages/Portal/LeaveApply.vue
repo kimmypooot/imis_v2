@@ -11,7 +11,10 @@ import Select from '@cscro8/ui/Components/Forms/Select.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import HelperText from '@cscro8/ui/Components/Forms/HelperText.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
+import ErrorSummary from '@cscro8/ui/Components/Feedback/ErrorSummary.vue';
 
 defineOptions({ layout: PortalLayout });
 
@@ -63,10 +66,18 @@ const form = useForm({
     password: '',
 });
 
+useUnsavedChanges(form, { message: "Your leave application hasn't been submitted. If you leave now, what you entered will be lost." });
+
 const type = computed(() => props.types.find((option) => option.id === Number(form.leave_type_id)) ?? null);
-const typeOptions = computed(() =>
-    props.types.map((option) => ({ value: option.id, label: option.ineligible.length ? `${option.name} — not available to you` : option.name })),
-);
+// Types you can file first; the ones you can't yet are greyed out in their own group, each with a short reason.
+const typeOptions = computed(() => {
+    const available = props.types.filter((option) => !option.ineligible.length).map((option) => ({ value: option.id, label: option.name }));
+    const unavailable = props.types
+        .filter((option) => option.ineligible.length)
+        .map((option) => ({ value: option.id, label: `${option.name} — ${option.unavailable ?? 'not available to you'}`, disabled: true }));
+
+    return unavailable.length ? [...available, { label: 'Not available to you', options: unavailable }] : available;
+});
 const details = computed(() => (type.value ? (props.detailOptions[type.value.code] ?? []) : []));
 const detail = computed(() => details.value.find((option) => option.value === form.detail) ?? null);
 
@@ -151,6 +162,7 @@ const field = 'mt-1 block w-full';
 
     <div class="grid gap-6 xl:grid-cols-3">
         <Card title="Application" icon="clipboard" class="xl:col-span-2">
+            <ErrorSummary :errors="form.errors" class="mb-4" />
             <p v-if="resubmitting?.returned_remarks" class="mb-4 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">
                 <strong>Returned for correction:</strong> {{ resubmitting.returned_remarks }}
             </p>
@@ -160,9 +172,9 @@ const field = 'mt-1 block w-full';
                     <InputLabel for="apply-type" required>6.A Type of leave</InputLabel>
                     <Select id="apply-type" v-model="form.leave_type_id" :class="field" :options="typeOptions" placeholder="— Select —" required :invalid="!!(form.errors.leave_type_id || issues.leave_type_id)" />
                     <p v-if="type?.ineligible.length" class="mt-1 text-sm text-danger-fg">{{ type.ineligible.join(' ') }}</p>
-                    <InputError :message="form.errors.leave_type_id || issues.leave_type_id" />
-                    <p v-if="type?.description" class="mt-1 text-xs text-text-muted">{{ type.description }}</p>
-                    <p v-if="type?.supporting_documents" class="mt-1 text-xs text-text-muted">Attach: {{ type.supporting_documents }}</p>
+                    <InputError :message="form.errors.leave_type_id || issues.leave_type_id" for="apply-type" />
+                    <HelperText v-if="type?.description" for="apply-type">{{ type.description }}</HelperText>
+                    <HelperText v-if="type?.supporting_documents" for="apply-type">Attach: {{ type.supporting_documents }}</HelperText>
                 </div>
 
                 <fieldset v-if="details.length" class="sm:col-span-2">
@@ -198,7 +210,7 @@ const field = 'mt-1 block w-full';
                             Pick the dates (separate days)
                         </label>
                     </div>
-                    <p v-if="type?.counts_calendar_days" class="mt-1 text-xs text-text-muted">{{ type.name }} runs on consecutive days, so it takes a start and end date.</p>
+                    <HelperText v-if="type?.counts_calendar_days">{{ type.name }} runs on consecutive days, so it takes a start and end date.</HelperText>
                 </fieldset>
 
                 <template v-if="!chosen">
@@ -253,7 +265,7 @@ const field = 'mt-1 block w-full';
                 <div v-if="preview?.needs?.late_reason" class="sm:col-span-2">
                     <InputLabel for="apply-late-reason" required>Why it's filed less than {{ type?.advance_filing_days }} days ahead</InputLabel>
                     <Textarea id="apply-late-reason" v-model="form.late_reason" class="mt-1" :invalid="!!(form.errors.late_reason || issues.late_reason)" />
-                    <p class="mt-1 text-xs text-text-muted">{{ type?.name }} is filed {{ type?.advance_filing_days }} days ahead whenever possible. Your approvers see this reason.</p>
+                    <HelperText for="apply-late-reason">{{ type?.name }} is filed {{ type?.advance_filing_days }} days ahead whenever possible. Your approvers see this reason.</HelperText>
                     <InputError :message="form.errors.late_reason || issues.late_reason" />
                 </div>
 
@@ -334,11 +346,11 @@ const field = 'mt-1 block w-full';
                     </label>
                     <template v-if="form.sign">
                         <p v-if="hasSignature" class="mt-1 pl-6 text-xs text-success-fg">Your saved signature will be placed on the form.</p>
-                        <p v-else class="mt-1 pl-6 text-xs text-text-muted">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</p>
+                        <HelperText v-else class="pl-6">No saved signature yet. <a href="/my/employee-record" class="text-link hover:underline">Add one</a> to have it appear on the printed form.</HelperText>
                     </template>
                     <div v-if="form.sign" class="mt-3 max-w-sm">
                         <PasswordInput id="apply-sign-password" v-model="form.password" label="Your IMIS password" autocomplete="current-password" required :invalid="!!form.errors.password" />
-                        <p class="mt-1 text-xs text-text-muted">Re-entering your password is your electronic signature as applicant. It is recorded with the date and time.</p>
+                        <HelperText for="apply-sign-password">Re-entering your password is your electronic signature as applicant. It is recorded with the date and time.</HelperText>
                         <InputError :message="form.errors.password" />
                     </div>
                 </div>

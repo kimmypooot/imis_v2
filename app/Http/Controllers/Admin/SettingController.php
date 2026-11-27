@@ -8,6 +8,7 @@ use App\Enums\SettingGroup;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Support\Admin\TestDataReset;
 use App\Support\HR\CertifyingOfficer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,10 @@ class SettingController extends Controller
             'canUpdate' => $request->user()->can('update', Setting::class),
             'leaveCreditsPurge' => $request->user()->hasRole(RoleName::SuperAdmin) && $request->user()->can('update', Setting::class)
                 ? ['entries' => DB::table('leave_ledger_entries')->count(), 'phrase' => LeaveCreditsPurgeController::PHRASE]
+                : null,
+            // Development only: the checklist of test data that can be deleted.
+            'testDataReset' => $request->user()->hasRole(RoleName::SuperAdmin) && $request->user()->can('update', Setting::class) && config('test_data.reset_allowed')
+                ? ['categories' => app(TestDataReset::class)->checklist(), 'phrase' => TestDataResetController::PHRASE]
                 : null,
         ]);
     }

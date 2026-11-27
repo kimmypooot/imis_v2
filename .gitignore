@@ -43,3 +43,6 @@ error_log
 /NOSI_*.pdf
 /NOSA_Template_*.docx
 /NOSI_Template_*.docx
+
+/.superpowers/
+/.claude/worktrees/

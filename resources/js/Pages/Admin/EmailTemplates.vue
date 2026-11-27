@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useUnsavedChanges } from '@cscro8/ui/Composables/useUnsavedChanges.js';
 import AdminLayout from '../../Layouts/AdminLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
@@ -31,6 +33,7 @@ const selectedKey = ref(props.templates[0]?.key);
 const selected = computed(() => props.templates.find((template) => template.key === selectedKey.value));
 
 const form = useForm({ subject: '', intro: '', button: '', outro: '' });
+useUnsavedChanges(form, { message: 'Your changes to this email template are not saved yet. If you leave now, they will be lost.' });
 const load = () => {
     const current = selected.value.current;
     form.defaults({ subject: current.subject, intro: current.intro ?? '', button: current.button ?? '', outro: current.outro ?? '' });
@@ -234,19 +237,7 @@ const insert = (placeholder) => {
                     <Icon name="refresh" size="sm" class="animate-spin" />
                     Updating
                 </span>
-                <div class="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Preview width">
-                    <button
-                        v-for="option in deviceOptions"
-                        :key="option.key"
-                        type="button"
-                        class="flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                        :class="device === option.key ? 'bg-primary text-white' : 'text-text-muted hover:bg-surface-muted'"
-                        :aria-pressed="device === option.key"
-                        @click="device = option.key"
-                    >
-                        {{ option.label }}
-                    </button>
-                </div>
+                <FilterButtons v-model="device" variant="segmented" label="Preview width" :options="deviceOptions.map((option) => ({ value: option.key, label: option.label }))" />
             </template>
 
             <p v-if="previewFailed" class="mb-3 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-fg">

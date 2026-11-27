@@ -5,6 +5,7 @@ import PortalLayout from '../../Layouts/PortalLayout.vue';
 import AccountLayout from '../../Layouts/AccountLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterTiles from '@cscro8/ui/Components/UI/FilterTiles.vue';
 import Badge from '@cscro8/ui/Components/UI/Badge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
@@ -26,10 +27,10 @@ const filter = ref('all');
 
 const count = (predicate) => props.feedback.filter(predicate).length;
 const stats = computed(() => [
-    { key: 'all', label: 'Sent', value: props.feedback.length, icon: 'chat', tile: 'bg-info-bg text-link' },
-    { key: 'open', label: 'Open', value: count((item) => ['new', 'in_review'].includes(item.status)), icon: 'clock', tile: 'bg-warning-bg text-warning-fg' },
-    { key: 'replied', label: 'Replied', value: count((item) => item.replies.length > 0), icon: 'envelope', tile: 'bg-info-bg text-link' },
-    { key: 'done', label: 'Resolved', value: count((item) => ['applied', 'resolved', 'closed'].includes(item.status)), icon: 'check', tile: 'bg-success-bg text-success-fg' },
+    { key: 'all', label: 'Sent', value: props.feedback.length, icon: 'chat', tone: 'primary' },
+    { key: 'open', label: 'Open', value: count((item) => ['new', 'in_review'].includes(item.status)), icon: 'clock', tone: 'warning' },
+    { key: 'replied', label: 'Replied', value: count((item) => item.replies.length > 0), icon: 'envelope', tone: 'primary' },
+    { key: 'done', label: 'Resolved', value: count((item) => ['applied', 'resolved', 'closed'].includes(item.status)), icon: 'check', tone: 'success' },
 ]);
 
 const matches = {
@@ -54,25 +55,7 @@ const initial = (name) => (name || '?').trim().charAt(0).toUpperCase();
 
     <div v-if="feedback.length" class="space-y-6">
         <!-- Summary tiles double as filters. -->
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4" role="group" aria-label="Filter feedback">
-            <button
-                v-for="stat in stats"
-                :key="stat.key"
-                type="button"
-                class="group flex items-center gap-3.5 rounded-lg border bg-surface p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="filter === stat.key ? 'border-primary ring-1 ring-primary' : 'border-border'"
-                :aria-pressed="filter === stat.key"
-                @click="filter = stat.key"
-            >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-transform duration-200 group-hover:scale-105" :class="stat.tile" aria-hidden="true">
-                    <Icon :name="stat.icon" />
-                </span>
-                <span class="min-w-0">
-                    <span class="block text-xl leading-none font-semibold text-text tabular-nums">{{ stat.value }}</span>
-                    <span class="mt-1 block text-xs text-text-muted">{{ stat.label }}</span>
-                </span>
-            </button>
-        </div>
+        <FilterTiles v-model="filter" label="Filter feedback" :options="stats.map((stat) => ({ value: stat.key, label: stat.label, count: stat.value, icon: stat.icon, tone: stat.tone }))" />
 
         <TransitionGroup v-if="visible.length" tag="div" class="space-y-6" enter-active-class="transition duration-200" enter-from-class="translate-y-1 opacity-0">
             <Card

@@ -69,13 +69,15 @@ export const hrAccessPermissions = [
  * Portal sidebar: Home and Announcements on their own, then headed groups
  * (Human Resources has collapsible Records, Leave and Payroll sections). The
  * Management
- * group holds only the Executive Dashboard and the two management areas
+ * group holds only the Executive Dashboard, PALD's Calendar of Activities page
+ * and the two management areas
  * (Human Resources and Administration), so it disappears for users with none
  * (SidebarNav drops empty groups).
  */
 export const portalNavItems = [
     { label: 'Home', href: '/dashboard', icon: 'home' },
     { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
+    { label: 'Calendar of Activities', href: '/activities', icon: 'calendar', permission: 'activities.view' },
     {
         group: 'Directory',
         items: [
@@ -93,11 +95,11 @@ export const portalNavItems = [
                 items: [
                     { label: 'My Employee Record', href: '/my/employee-record', icon: 'user' },
                     { label: 'My Corrections', href: '/my/corrections', icon: 'clipboard' },
-                    { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText' },
-                    { label: 'My 201 File', href: '/my/201-file', icon: 'database' },
-                    { label: 'My SALN', href: '/my/saln', icon: 'chartBar' },
+                    { label: 'My Personal Data Sheet', href: '/my/pds', icon: 'documentText', keywords: 'pds' },
+                    { label: 'My 201 File', href: '/my/201-file', icon: 'database', keywords: 'documents files' },
+                    { label: 'My SALN', href: '/my/saln', icon: 'chartBar', keywords: 'assets liabilities net worth' },
                     { label: 'My Service Record', href: '/my/service-record', icon: 'printer' },
-                    { label: 'My DTR', href: '/my/dtr', icon: 'clock' },
+                    { label: 'My DTR', href: '/my/dtr', icon: 'clock', keywords: 'daily time record attendance biometric' },
                     { label: 'DTR Entries to Verify', href: '/dtr/entries', icon: 'checkCircle', flag: 'dtrVerifier' },
                     { label: 'My Learning & Development', href: '/my/learning-development', icon: 'activity' },
                 ],
@@ -107,7 +109,7 @@ export const portalNavItems = [
                 icon: 'calendar',
                 items: [
                     { label: 'My Leave', href: '/my/leave', icon: 'chartBar' },
-                    { label: 'File Leave', href: '/my/leave/apply', icon: 'plus' },
+                    { label: 'File Leave', href: '/my/leave/apply', icon: 'plus', keywords: 'apply application' },
                     { label: 'My Leave Applications', href: '/my/leave/applications', icon: 'clipboard' },
                     { label: 'Leave Calendar', href: '/my/leave/calendar', icon: 'calendar' },
                     { label: 'Leave Monetization', href: '/my/leave/monetization', icon: 'tag' },
@@ -119,8 +121,8 @@ export const portalNavItems = [
                 section: 'Payroll',
                 icon: 'database',
                 items: [
-                    { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar' },
-                    { label: 'My Payslips', href: '/my/payslips', icon: 'documentText' },
+                    { label: 'My Earnings & Deductions', href: '/my/earnings', icon: 'chartBar', keywords: 'salary pay' },
+                    { label: 'My Payslips', href: '/my/payslips', icon: 'documentText', keywords: 'salary pay' },
                     { label: 'Payslip Approvals', href: '/payslips/approvals', icon: 'checkCircle', flag: 'payslipApprover' },
                     { label: 'Payroll Tax Review', href: '/payroll/tax-review', icon: 'checkCircle', flag: 'payrollTaxReviewer', badge: 'payrollTaxReviews' },
                 ],
@@ -131,8 +133,7 @@ export const portalNavItems = [
         group: 'Management',
         items: [
             { label: 'Executive Dashboard', href: '/executive', icon: 'chartBar', permission: 'executive.view' },
-            { label: 'HR Management', href: '/admin/hr', icon: 'clipboard', permission: hrAccessPermissions },
-            { label: 'Administration', href: '/admin', icon: 'shield', permission: adminAccessPermissions },
+            { label: 'Manage Calendar of Activities', href: '/activities/manage', icon: 'clipboard', permission: 'activities.manage' },
         ],
     },
 ];
@@ -158,7 +159,7 @@ export const adminModuleGroups = [
             { label: 'Manage Dashboard', href: '/admin/dashboard-layout', icon: 'grid', permission: 'applications.update' },
             { label: 'Manage Users', href: '/users', icon: 'user', permission: 'users.view' },
             { label: 'Manage Systems', href: '/admin/applications', icon: 'grid', permission: 'applications.view' },
-            { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: 'applications.manage_access' },
+            { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: ['applications.manage_access', 'applications.manage_office_access'] },
             { label: 'User Access', href: '/admin/user-access', icon: 'key', permission: 'applications.manage_access' },
             { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
             { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },
@@ -310,3 +311,40 @@ export const hrNavItems = [
     },
     { label: 'Cutover Readiness', href: '/admin/hr/readiness', icon: 'checkCircle', permission: 'leave.manage' },
 ];
+
+/**
+ * Pages reached from the account menu rather than the sidebar, offered by the
+ * "Go to…" palette (Ctrl/⌘+K) alongside every sidebar page.
+ */
+export const accountNavItems = [
+    { label: 'Change password', href: '/account/password', icon: 'key', keywords: 'account security' },
+    { label: 'Fingerprint sign-in', href: '/account/passkeys', icon: 'key', keywords: 'passkey face account security' },
+    { label: 'Notification settings', href: '/account/notifications', icon: 'bell', keywords: 'email account' },
+    { label: 'Notifications', href: '/notifications', icon: 'bell' },
+    { label: 'User Guide', href: '/guide', icon: 'help', keywords: 'help how' },
+    { label: "What's New", href: '/whats-new', icon: 'megaphone', keywords: 'release changes' },
+    { label: 'Who accessed my record', href: '/my/record-access', icon: 'eye', keywords: 'privacy audit' },
+    { label: 'Download my data', href: '/my/data-export', icon: 'download', keywords: 'privacy export' },
+    { label: 'My Feedback', href: '/my/feedback', icon: 'chat' },
+];
+
+/**
+ * Every page in a navigation tree, flattened for the "Go to…" palette: each
+ * keeps where it lives (`context`, e.g. "My pages · Leave") and the rules the
+ * sidebar shows it by (`permission`, `flag`). Groups and sections only add
+ * to the context.
+ *
+ * @param {Array} items
+ * @param {string} area
+ * @returns {Array<{ label: string, href: string, icon?: string, context: string, keywords?: string, permission?: string|string[], flag?: string }>}
+ */
+export const flattenNav = (items, area, trail = []) =>
+    items.flatMap((item) => {
+        if (item.items) {
+            return flattenNav(item.items, area, [...trail, item.group ?? item.section].filter(Boolean));
+        }
+
+        return item.href
+            ? [{ label: item.label, href: item.href, icon: item.icon, keywords: item.keywords, permission: item.permission, flag: item.flag, context: [area, ...trail].join(' · ') }]
+            : [];
+    });

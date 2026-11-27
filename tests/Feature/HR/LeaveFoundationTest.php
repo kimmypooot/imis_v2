@@ -230,6 +230,22 @@ class LeaveFoundationTest extends TestCase
         $this->assertSame($solo->id, LeaveLedgerEntry::query()->value('leave_type_id'));
     }
 
+    public function test_the_apply_form_drops_leave_for_the_other_sex_and_says_briefly_why_others_are_unavailable(): void
+    {
+        $employee = $this->employee();
+        $employee->user->forceFill(['sex' => 'male'])->save();
+        $this->type('VL')->update(['min_service_months' => 999]);
+
+        $offered = collect($this->actingAs($employee->user)->get('/my/leave/apply')->viewData('page')['props']['types'])->keyBy('code');
+
+        // Maternity Leave can never apply to him, so it isn't listed; Paternity Leave is, and is available.
+        $this->assertFalse($offered->has('ML'));
+        $this->assertNull($offered['PL']['unavailable']);
+        // Vacation Leave is listed but unavailable, with a short reason beside the full one.
+        $this->assertSame('needs 999 months of service', $offered['VL']['unavailable']);
+        $this->assertNotEmpty($offered['VL']['ineligible']);
+    }
+
     public function test_hr_is_prompted_when_the_pds_says_solo_parent_but_leave_settings_do_not(): void
     {
         $employee = $this->employee();

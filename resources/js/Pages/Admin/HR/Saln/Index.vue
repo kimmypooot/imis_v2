@@ -10,8 +10,7 @@ import StatTile from '@cscro8/ui/Components/UI/StatTile.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import PersonCell from '@cscro8/ui/Components/UI/PersonCell.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
-import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
-import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
 import { formatCalendarDate } from '../../../../Utils/datetime';
 
@@ -80,7 +79,7 @@ const columns = [
         <template #actions>
             <Link href="/admin/hr/saln/queue" class="text-sm text-link hover:underline">Review queue</Link>
             <label class="sr-only" for="saln-year">Year</label>
-            <select id="saln-year" :value="year" class="form-control px-3 py-2" @change="pickYear">
+            <select id="saln-year" :value="year" class="filter-control" @change="pickYear">
                 <option v-for="y in years" :key="y" :value="y">As of Dec 31, {{ y }}</option>
             </select>
         </template>
@@ -96,7 +95,7 @@ const columns = [
         />
     </Card>
 
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="stagger mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label="Required to file" :value="counts.required" icon="users" />
         <StatTile label="Filed" :value="counts.filed" icon="checkCircle" tone="success" :progress="counts.required ? Math.round((counts.filed / counts.required) * 100) : null" />
         <StatTile label="In progress" :value="counts.in_progress" icon="clock" tone="info" />
@@ -105,11 +104,7 @@ const columns = [
 
     <Card v-if="exempting" title="Exempt from filing" icon="shield" :description="`${exempting.name}, for ${exemption.year}. For example a laborer position or an honorary role.`" class="mb-6">
         <form class="flex flex-wrap items-end gap-3" @submit.prevent="saveExempt">
-            <div class="min-w-64 flex-1">
-                <InputLabel for="exempt-reason">Reason</InputLabel>
-                <input id="exempt-reason" v-model="exemption.reason" required maxlength="255" class="form-control mt-1 block w-full px-3 py-2" />
-                <InputError :message="exemption.errors.reason" />
-            </div>
+            <TextInput id="exempt-reason" v-model="exemption.reason" label="Reason" required maxlength="255" class="min-w-64 flex-1" :error="exemption.errors.reason" />
             <Button type="submit" :loading="exemption.processing">Record exemption</Button>
             <Button variant="ghost" @click="exempting = null">Cancel</Button>
         </form>

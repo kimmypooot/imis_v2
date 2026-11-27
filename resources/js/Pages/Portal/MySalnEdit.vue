@@ -3,8 +3,9 @@ import { Head } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
+import ApprovalTrail from '@cscro8/ui/Components/UI/ApprovalTrail.vue';
+import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
-import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import SalnEditor from '../../Components/HR/Saln/SalnEditor.vue';
 import SalnHistory from '../../Components/HR/Saln/SalnHistory.vue';
 import SalnFileUpload from '../../Components/HR/Saln/SalnFileUpload.vue';
@@ -56,13 +57,13 @@ const NEXT = {
         </template>
     </PageHeader>
 
-    <div class="mb-6 flex items-start gap-2 rounded-md border border-border bg-surface px-4 py-3 text-sm text-text">
-        <Icon name="info" class="mt-0.5 h-4 w-4 shrink-0 text-link" />
-        <div>
-            <p>{{ NEXT[saln.status] }}</p>
-            <p v-if="saln.returned_remarks" class="mt-1"><strong>Committee's remarks:</strong> {{ saln.returned_remarks }}</p>
-        </div>
-    </div>
+    <!-- Where it is, and what to do next. -->
+    <Card class="mb-6" title="Where it is" icon="activity" :description="NEXT[saln.status]">
+        <p v-if="saln.returned_remarks" class="mb-5 rounded-md border border-warning-border bg-warning-bg px-3 py-2 text-sm text-text">
+            <strong>Committee's remarks:</strong> {{ saln.returned_remarks }}
+        </p>
+        <ApprovalTrail :trail="saln.trail" label="SALN progress" />
+    </Card>
 
     <!-- The printouts and upload sit above; the form gets the full width. -->
     <div class="mb-6 grid gap-6" :class="{ 'lg:grid-cols-2': canFile }">

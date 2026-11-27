@@ -57,7 +57,7 @@ class SyncApplicationAccessRequest extends FormRequest
                 $roleId = $entry['application_role_id'] ?? null;
                 $field = "entries.{$index}.application_role_id";
 
-                if (! $this->user()->can('manageSystemAccess', $user)) {
+                if (! $this->user()->can('manageSystemAccessIn', [$user, $application])) {
                     $validator->errors()->add($field, "You can't change {$user->name}'s system access.");
 
                     continue;

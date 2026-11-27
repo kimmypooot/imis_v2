@@ -1,6 +1,7 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AuthHeading from '../../Components/UI/AuthHeading.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import PasswordInput from '@cscro8/ui/Components/Forms/PasswordInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
@@ -41,8 +42,7 @@ const submit = () => {
 <template>
     <Head title="Reset password" />
 
-    <h2 class="mb-1 text-lg font-semibold text-text">Reset your password</h2>
-    <p class="mb-5 text-sm text-text-muted">Choose a new password for your account.</p>
+    <AuthHeading title="Reset your password" subtitle="Choose a new password for your account." />
 
     <form class="space-y-5" @submit.prevent="submit">
         <div>

@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\AnnouncementResource;
 use App\Http\Resources\ServiceResource;
+use App\Models\Activity;
 use App\Models\Announcement;
 use App\Models\Application;
 use App\Models\Changelog;
 use App\Models\Service;
+use App\Support\Activities\UpcomingActivities;
 use App\Support\Portal\AtAGlance;
+use App\Support\Portal\GettingStarted;
+use App\Support\Portal\NeedsAttention;
+use App\Support\Portal\QuickAccess;
 use App\Support\Portal\SystemDirectory;
 use App\Support\Settings\Settings;
 use Illuminate\Http\Request;
@@ -16,15 +21,15 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The portal's authenticated home, laid out like the legacy IMIS
- * dashboard: welcome banner, notices, the Systems Directory drill-down,
- * then services. Like the live legacy dashboard, there is no stats bar or
- * "Recently Accessed" strip (both are hidden there).
- * It answers "what can I access" and "where do I go" — nothing decorative.
+ * The portal's authenticated home, laid out as a command center: the
+ * welcome banner and the At a glance stat strip; "Needs your attention"
+ * and the Systems Directory drill-down; and a side column with what's
+ * coming up, announcements, system status and services. It answers "what
+ * is waiting on me", "what can I access" and "where do I go".
  */
 class PortalController extends Controller
 {
-    public function index(Request $request, AtAGlance $glance): Response
+    public function index(Request $request, AtAGlance $glance, GettingStarted $gettingStarted, QuickAccess $quickAccess, UpcomingActivities $upcoming, NeedsAttention $attention): Response
     {
         $user = $request->user();
 
@@ -58,6 +63,17 @@ class PortalController extends Controller
             'division' => $request->string('division')->limit(40, '')->value() ?: null,
             // The personal "At a glance" row, loaded after the page appears.
             'glance' => Inertia::defer(fn () => $glance->for($user)),
+            // What is waiting on this person, each with the page that settles it.
+            'attention' => Inertia::defer(fn () => $attention->for($user)),
+            // The banner's round shortcuts (only the pages the user can open).
+            'shortcuts' => fn () => $quickAccess->for($user),
+            // The Calendar of Activities section: the next 7 days and a month
+            // for the mini calendar (?month=YYYY-MM from its ‹ › partial reloads).
+            'activities' => Inertia::defer(fn () => $user->can('viewAny', Activity::class)
+                ? $upcoming->for($user, null, $request->string('month')->limit(7, '')->value() ?: null)
+                : null),
+            // One-time setup still to do (signature, PDS, fingerprint); null once done.
+            'gettingStarted' => fn () => $gettingStarted->for($user),
             'whatsNew' => $whatsNew,
             'welcomeMessage' => Settings::get('portal_welcome_message'),
             // The legacy greeting's division badge (the user's fo_rsu).

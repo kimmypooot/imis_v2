@@ -4,11 +4,12 @@ import { Head, Link } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
+import FilterTiles from '@cscro8/ui/Components/UI/FilterTiles.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
-import { formatCalendarDate } from '../../Utils/datetime';
+import { formatCalendarDate, formatDate } from '../../Utils/datetime';
 import { leaveDates, leaveStatusTones } from '../../Components/HR/leaveStatus';
 
 defineOptions({ layout: PortalLayout });
@@ -26,7 +27,12 @@ const columns = [
     { key: 'type_name', label: 'Type of leave' },
     { key: 'date_from', label: 'Dates', value: (row) => leaveDates(row, formatCalendarDate) },
     { key: 'status_label', label: 'Status' },
+    { key: 'waiting_for', label: 'Now with', value: (row) => nowWith(row) },
 ];
+
+// Who has it now: the approver it waits for (and since when), or you when it was returned.
+const nowWith = (row) =>
+    row.waiting_for ? `${row.waiting_for.holder}, since ${formatDate(row.waiting_for.since)}` : row.status === 'returned' ? 'You, to correct' : '—';
 
 const matches = {
     all: () => true,
@@ -39,10 +45,10 @@ const filter = ref('all');
 const count = (key) => props.applications.filter(matches[key]).length;
 
 const stats = computed(() => [
-    { key: 'all', label: 'Filed', icon: 'clipboard', tile: 'bg-info-bg text-link' },
-    { key: 'pending', label: 'For review', icon: 'clock', tile: 'bg-warning-bg text-warning-fg' },
-    { key: 'returned', label: 'Needs correction', icon: 'exclamation', tile: 'bg-danger-bg text-danger-fg' },
-    { key: 'approved', label: 'Approved', icon: 'check', tile: 'bg-success-bg text-success-fg' },
+    { key: 'all', label: 'Filed', icon: 'clipboard', tone: 'primary' },
+    { key: 'pending', label: 'For review', icon: 'clock', tone: 'warning' },
+    { key: 'returned', label: 'Needs correction', icon: 'exclamation', tone: 'danger' },
+    { key: 'approved', label: 'Approved', icon: 'check', tone: 'success' },
 ].map((stat) => ({ ...stat, value: count(stat.key) })));
 
 const rows = computed(() => props.applications.filter(matches[filter.value]));
@@ -62,25 +68,7 @@ const rows = computed(() => props.applications.filter(matches[filter.value]));
     </PageHeader>
 
     <div class="space-y-6">
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4" role="group" aria-label="Filter applications">
-            <button
-                v-for="stat in stats"
-                :key="stat.key"
-                type="button"
-                class="group flex items-center gap-3.5 rounded-lg border bg-surface p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="filter === stat.key ? 'border-primary ring-1 ring-primary' : 'border-border'"
-                :aria-pressed="filter === stat.key"
-                @click="filter = stat.key"
-            >
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-transform duration-200 group-hover:scale-105" :class="stat.tile" aria-hidden="true">
-                    <Icon :name="stat.icon" />
-                </span>
-                <span class="min-w-0">
-                    <span class="block text-xl leading-none font-semibold text-text tabular-nums">{{ stat.value }}</span>
-                    <span class="mt-1 block text-xs text-text-muted">{{ stat.label }}</span>
-                </span>
-            </button>
-        </div>
+        <FilterTiles v-model="filter" label="Filter applications" :options="stats.map((stat) => ({ value: stat.key, label: stat.label, count: stat.value, icon: stat.icon, tone: stat.tone }))" />
 
         <Card title="Applications" icon="clipboard">
             <DataTable :columns="columns" :rows="rows" caption="My leave applications" export-name="imis-my-leave-applications" :empty-text="applications.length ? 'None match this filter.' : 'You haven\'t filed any leave yet.'">
@@ -89,6 +77,14 @@ const rows = computed(() => props.applications.filter(matches[filter.value]));
                 </template>
                 <template #cell-date_from="{ row }">{{ leaveDates(row, formatCalendarDate) }}</template>
                 <template #cell-status_label="{ row }"><StatusBadge :status="leaveStatusTones[row.status]" :label="row.status_label" /></template>
+                <template #cell-waiting_for="{ row }">
+                    <span v-if="row.waiting_for" class="block">
+                        <span class="block font-medium text-text">{{ row.waiting_for.holder }}</span>
+                        <span class="block text-xs text-text-muted">since {{ formatDate(row.waiting_for.since) }}</span>
+                    </span>
+                    <span v-else-if="row.status === 'returned'" class="font-medium text-warning-fg">You, to correct</span>
+                    <span v-else class="text-text-muted">—</span>
+                </template>
             </DataTable>
         </Card>
     </div>

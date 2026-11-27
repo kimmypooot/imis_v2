@@ -9,8 +9,10 @@ import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
-import InputLabel from '@cscro8/ui/Components/Forms/InputLabel.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
+import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
+import Select from '@cscro8/ui/Components/Forms/Select.vue';
+import FormGroup from '@cscro8/ui/Components/Forms/FormGroup.vue';
 import Switch from '@cscro8/ui/Components/Forms/Switch.vue';
 import { formatCalendarDate } from '../../Utils/datetime';
 
@@ -92,22 +94,9 @@ const asOfLabel = computed(() => (form.type === 'entry' ? 'First day of service'
 
         <Card title="Start another SALN" icon="plus" description="For example an exit SALN, or one HRD asked for.">
             <form class="grid gap-4 sm:grid-cols-3" @submit.prevent="start()">
-                <div>
-                    <InputLabel for="saln-type">Filing</InputLabel>
-                    <select id="saln-type" v-model="form.type" class="form-control mt-1 block w-full px-3 py-2">
-                        <option v-for="option in options.types" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
-                </div>
-                <div v-if="form.type === 'annual'">
-                    <InputLabel for="saln-year">As of December 31 of</InputLabel>
-                    <input id="saln-year" v-model="form.year" type="number" min="2000" class="form-control mt-1 block w-full px-3 py-2" />
-                    <InputError :message="form.errors.year" />
-                </div>
-                <div v-else>
-                    <InputLabel for="saln-as-of">{{ asOfLabel }}</InputLabel>
-                    <input id="saln-as-of" v-model="form.as_of" type="date" class="form-control mt-1 block w-full px-3 py-2" />
-                    <InputError :message="form.errors.as_of" />
-                </div>
+                <FormGroup id="saln-type" label="Filing"><Select id="saln-type" v-model="form.type" :options="options.types" /></FormGroup>
+                <TextInput v-if="form.type === 'annual'" id="saln-year" v-model="form.year" type="number" min="2000" label="As of December 31 of" :error="form.errors.year" />
+                <TextInput v-else id="saln-as-of" v-model="form.as_of" type="date" :label="asOfLabel" :error="form.errors.as_of" />
                 <div class="flex items-end">
                     <Button type="submit" :loading="form.processing">Start</Button>
                 </div>

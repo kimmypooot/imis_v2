@@ -8,6 +8,7 @@ import Tabs from '@cscro8/ui/Components/UI/Tabs.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import StatusBadge from '@cscro8/ui/Components/UI/StatusBadge.vue';
 import ActionButton from '@cscro8/ui/Components/UI/ActionButton.vue';
+import DataTable from '@cscro8/ui/Components/UI/DataTable.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import Textarea from '@cscro8/ui/Components/Forms/Textarea.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
@@ -35,6 +36,14 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const { can } = useAuthorization();
+
+const roleColumns = computed(() => [
+    { key: 'name', label: 'Role name' },
+    { key: 'launch_url', label: 'Launch URL', value: (role) => role.launch_url || 'System URL' },
+    { key: 'users_count', label: 'People', align: 'center' },
+    { key: 'status', label: 'Status', align: 'center' },
+    ...(can('applications.update') ? [{ key: 'actions', label: '', sortable: false, export: false, align: 'right' }] : []),
+]);
 const isNew = computed(() => props.system === null);
 
 const tab = ref('details');
@@ -260,44 +269,25 @@ const canSaveDetails = computed(() => (isNew.value ? can('applications.create') 
                         or <strong>User Access</strong>. A role can have its own launch URL (e.g. an admin page).
                     </p>
 
-                    <div class="overflow-x-auto rounded-md border border-border">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Role name</th>
-                                    <th scope="col">Launch URL</th>
-                                    <th scope="col" class="text-center">People</th>
-                                    <th scope="col" class="text-center">Status</th>
-                                    <th scope="col"><span class="sr-only">Actions</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="!system.roles.length">
-                                    <td colspan="5" class="px-3 py-6 text-center text-text-muted">No roles yet — add the first one below.</td>
-                                </tr>
-                                <tr v-for="role in system.roles" :key="role.id" :class="{ 'bg-info-bg/40': editingRoleId === role.id }">
-                                    <td>
-                                        <div class="font-medium text-text">{{ role.name }}</div>
-                                        <div v-if="role.description" class="text-xs text-text-muted">{{ role.description }}</div>
-                                    </td>
-                                    <td class="max-w-56 truncate text-text-muted">{{ role.launch_url || 'System URL' }}</td>
-                                    <td class="text-center">{{ role.users_count }}</td>
-                                    <td class="text-center"><StatusBadge :status="role.status" /></td>
-                                    <td>
-                                        <div v-if="can('applications.update')" class="flex justify-end gap-1">
-                                            <ActionButton icon="pencil" :label="`Edit role ${role.name}`" @click="editRole(role)" />
-                                            <ActionButton
-                                                icon="power"
-                                                :tone="role.status === 'active' ? 'danger' : 'success'"
-                                                :label="`${role.status === 'active' ? 'Deactivate' : 'Activate'} role ${role.name}`"
-                                                @click="toggleRole(role)"
-                                            />
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable :columns="roleColumns" :page-size-select="false" :rows="system.roles" :caption="`Roles in ${system.name}`" :export-name="`imis-system-roles-${system.id}`" :numbered="false" :searchable="false" :exportable="false" density="compact" :row-class="(role) => (editingRoleId === role.id ? 'bg-info-bg/40' : undefined)" empty-text="No roles yet — add the first one below.">
+                        <template #cell-name="{ row }">
+                            <div class="font-medium text-text">{{ row.name }}</div>
+                            <div v-if="row.description" class="text-xs text-text-muted">{{ row.description }}</div>
+                        </template>
+                        <template #cell-launch_url="{ row }"><span class="block max-w-56 truncate text-text-muted">{{ row.launch_url || 'System URL' }}</span></template>
+                        <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+                        <template #cell-actions="{ row }">
+                            <div class="flex justify-end gap-1">
+                                <ActionButton icon="pencil" :label="`Edit role ${row.name}`" @click="editRole(row)" />
+                                <ActionButton
+                                    icon="power"
+                                    :tone="row.status === 'active' ? 'danger' : 'success'"
+                                    :label="`${row.status === 'active' ? 'Deactivate' : 'Activate'} role ${row.name}`"
+                                    @click="toggleRole(row)"
+                                />
+                            </div>
+                        </template>
+                    </DataTable>
 
                     <form v-if="can('applications.update')" class="rounded-md border border-dashed border-border p-4" @submit.prevent="saveRole">
                         <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-text">

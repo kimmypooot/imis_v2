@@ -4,6 +4,9 @@ use App\Http\Controllers\Account\NotificationSettingsController;
 use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\PushSubscriptionController;
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ActivityManageController;
+use App\Http\Controllers\ActivitySheetController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
@@ -111,12 +114,14 @@ Route::middleware('auth')->group(function () {
         ->whereIn('section', PdsSchema::editableSectionKeys())
         ->name('my.pds.update');
     Route::get('my/pds/print', [MyPdsController::class, 'print'])->name('my.pds.print');
+    Route::get('my/pds/print.xlsx', [MyPdsController::class, 'workbook'])->middleware('throttle:30,1')->name('my.pds.print.xlsx');
     // The e-signature re-checks the password, so it's rate-limited like
     // the password change.
     Route::post('my/pds/submit', [MyPdsController::class, 'submit'])
         ->middleware('throttle:6,1')
         ->name('my.pds.submit');
     Route::get('my/pds/submissions/{submission}', [MyPdsController::class, 'submission'])->name('my.pds.submission');
+    Route::post('my/pds/submissions/{submission}/pnpki', [MyPdsController::class, 'attachPnpki'])->middleware('throttle:10,1')->name('my.pds.submission.pnpki');
 
     // SALN self-service: encode, print on the 2025 form, and file the signed
     // copy once cleared (only your own; SalnPolicy and the controller check).
@@ -225,7 +230,9 @@ Route::middleware('auth')->group(function () {
 
     // A signed PDS copy, for its owner or HR (PdsSubmissionPolicy::view).
     Route::get('pds/submissions/{submission}/print', PdsSubmissionPrintController::class)->name('pds.submissions.print');
+    Route::get('pds/submissions/{submission}/print.xlsx', [PdsSubmissionPrintController::class, 'workbook'])->middleware('throttle:30,1')->name('pds.submissions.print.xlsx');
     Route::get('pds/submissions/{submission}/photo', [PdsPhotoController::class, 'showSubmission'])->name('pds.submissions.photo');
+    Route::get('pds/submissions/{submission}/signature', [PdsSubmissionPrintController::class, 'signatureImage'])->name('pds.submissions.signature');
 
     Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('announcements/{announcement:slug}', [AnnouncementController::class, 'show'])->name('announcements.show');
@@ -242,6 +249,31 @@ Route::middleware('auth')->group(function () {
 
     Route::get('organizational-units', [OrganizationalUnitController::class, 'index'])->name('organizational-units.index');
     Route::get('organizational-units/{organizationalUnit}', [OrganizationalUnitController::class, 'show'])->name('organizational-units.show');
+
+    // Calendar of Activities: every staff account sees it; offices' posters
+    // keep their own office's activities, PALD any office's (ActivityPolicy).
+    Route::middleware('permission:activities.view')->group(function () {
+        Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
+        Route::get('activities/sheet/print', [ActivitySheetController::class, 'print'])->name('activities.sheet.print');
+        Route::get('activities/sheet/excel', [ActivitySheetController::class, 'excel'])->middleware('throttle:30,1')->name('activities.sheet.excel');
+        Route::get('activities/{activity}', [ActivityController::class, 'show'])->whereNumber('activity')->name('activities.show');
+
+        Route::middleware('permission:activities.post,activities.manage')->group(function () {
+            Route::post('activities', [ActivityController::class, 'store'])->name('activities.store');
+            Route::put('activities/{activity}', [ActivityController::class, 'update'])->whereNumber('activity')->name('activities.update');
+            Route::post('activities/{activity}/move', [ActivityController::class, 'move'])->whereNumber('activity')->name('activities.move');
+            Route::post('activities/{activity}/cancel', [ActivityController::class, 'cancel'])->whereNumber('activity')->name('activities.cancel');
+            Route::post('activities/{activity}/done', [ActivityController::class, 'done'])->whereNumber('activity')->name('activities.done');
+        });
+
+        Route::middleware('permission:activities.manage')->group(function () {
+            Route::post('activities/{activity}/return', [ActivityController::class, 'returnToOffice'])->whereNumber('activity')->name('activities.return');
+            Route::delete('activities/{activity}', [ActivityController::class, 'remove'])->whereNumber('activity')->name('activities.remove');
+            // PALD's management page: what changed, clashes, plan vs actual, the plan cut-off, removed.
+            Route::get('activities/manage', [ActivityManageController::class, 'index'])->name('activities.manage');
+            Route::put('activities/cutoff', [ActivityManageController::class, 'saveCutoff'])->name('activities.cutoff');
+        });
+    });
 
     // Executive Dashboard: top management's view of every module and
     // connected system (Exec-1 to Exec-3), and its settings.

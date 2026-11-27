@@ -102,6 +102,17 @@ particular:
   yet: the built-in figures are starters and targets are data. JPortal
   (`../jportal`), GAD Corner, TIMS (`../csc-tims`) and PROCTAD
   (`../proctad`; both connected locally 2026-11-21) serve a feed; no other system does yet. Exec-4 (legacy PHP systems, CTS) is next.
+- The Calendar of Activities (`/activities`) is done: PALD is the process
+  owner (`activities.manage`, `/activities/manage`), each office posts its
+  own activities, the monthly sheet prints or downloads as Excel, and the
+  dashboard shows the coming week. The Portal welcome banner now has a
+  quick-access dock (File Leave, My DTR, My Payslip, My PDS, the calendar).
+- The portal dashboard is a "command center" (November 2026): an At a
+  glance stat strip, "Needs your attention" (`Support/Portal/NeedsAttention`),
+  the Systems Directory in a card three across (client-side drill-down with
+  a slide), and a side column with Coming up (mini calendar + next 7 days),
+  announcements and system status. Keep the legacy "View Systems" /
+  "Access System" buttons (slim, role badge outside the button).
 - Versions are tracked in What's New notes. IMIS 3 is in development until
   its 2027 launch as 3.0.0 (the legacy IMIS ended at 2.7.0), so 2026 work is
   one pre-release per month: 3.0.0-beta.1 (October 2026, published) and

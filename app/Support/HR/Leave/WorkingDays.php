@@ -2,7 +2,6 @@
 
 namespace App\Support\HR\Leave;
 
-use App\Enums\HolidayType;
 use App\Models\Employee;
 use App\Models\FwaArrangement;
 use App\Models\Holiday;
@@ -81,11 +80,9 @@ class WorkingDays
      */
     private function holidaysBetween(Carbon $from, Carbon $to): array
     {
-        return Holiday::query()
-            ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
-            ->whereIn('type', collect(HolidayType::cases())->filter(fn (HolidayType $type) => $type->isDayOff())->map(fn (HolidayType $type) => $type->value)->values())
-            ->pluck('date')
-            ->mapWithKeys(fn ($date) => [Carbon::parse($date)->toDateString() => true])
+        return (new HolidayCalendar)->between($from, $to)
+            ->filter(fn (Holiday $holiday) => $holiday->type->isDayOff())
+            ->mapWithKeys(fn (Holiday $holiday) => [$holiday->date->toDateString() => true])
             ->all();
     }
 }

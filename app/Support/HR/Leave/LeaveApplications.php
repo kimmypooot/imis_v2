@@ -14,6 +14,7 @@ use App\Models\LeaveDesignation;
 use App\Models\LeaveType;
 use App\Models\User;
 use App\Notifications\LeaveApplicationUpdate;
+use App\Support\ApprovalTrail;
 use App\Support\HR\Signatures;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\UploadedFile;
@@ -442,6 +443,109 @@ class LeaveApplications
                 'signed_at' => $step->signed_at?->toIso8601String(),
                 'certified_credits' => $step->certified_credits,
             ]);
+    }
+
+    /**
+     * Who a waiting step is with: its assigned approver (the supervisor),
+     * else HR or the Head of Agency (or an OIC), who act from a shared queue.
+     */
+    public function holderOf(LeaveApplicationStep $step): string
+    {
+        return $step->assignee?->name ?? match ($step->role) {
+            'hr' => 'HR',
+            'head' => 'the Head of Agency (or OIC)',
+            default => $step->roleLabel(),
+        };
+    }
+
+    /**
+     * For a list: who each application under review is waiting for, and
+     * since when (the last action in its current round, else when it was
+     * filed). One query for the whole list.
+     *
+     * @param  Collection<int, LeaveApplication>|\Illuminate\Database\Eloquent\Collection<int, LeaveApplication>  $applications
+     * @return array<int, array{holder: string, since: ?string}> keyed by application id
+     */
+    public function waitingFor(Collection $applications): array
+    {
+        $open = $applications->filter(fn (LeaveApplication $application) => $application->status === LeaveApplicationStatus::ForReview);
+
+        if ($open->isEmpty()) {
+            return [];
+        }
+
+        $steps = LeaveApplicationStep::query()
+            ->whereIn('leave_application_id', $open->map->getKey())
+            ->with('assignee:id,name')
+            ->orderBy('round')->orderBy('step')
+            ->get()
+            ->groupBy('leave_application_id');
+
+        return $open->mapWithKeys(function (LeaveApplication $application) use ($steps) {
+            $round = ($steps[$application->id] ?? collect())->where('round', ($steps[$application->id] ?? collect())->max('round'));
+            $waiting = $round->firstWhere('action', LeaveStepAction::Pending);
+
+            return $waiting ? [$application->id => [
+                'holder' => $this->holderOf($waiting),
+                'since' => ($round->whereNotNull('acted_at')->max('acted_at') ?? $application->submitted_at)?->toIso8601String(),
+            ]] : [];
+        })->all();
+    }
+
+    /**
+     * Where the application is on its way (current round): filed, each
+     * approver in turn, then the decision. The step it waits at shows who
+     * it's with: the assigned supervisor, else HR or the Head (or an OIC).
+     *
+     * @return array{summary: ?string, steps: array<int, array{label: string, state: string, detail: ?string}>}
+     */
+    public function trail(LeaveApplication $application): array
+    {
+        $steps = $application->currentSteps()->with(['assignee:id,name', 'actor:id,name'])->get();
+        $status = $application->status;
+        $waiting = $status === LeaveApplicationStatus::ForReview ? $steps->firstWhere('action', LeaveStepAction::Pending) : null;
+        $labels = ['supervisor' => 'Supervisor', 'hr' => 'HR', 'head' => 'Head of Agency'];
+        $holder = fn (LeaveApplicationStep $step): string => $this->holderOf($step);
+
+        $trail = [ApprovalTrail::step('Filed', ApprovalTrail::Done, ApprovalTrail::date($application->submitted_at))];
+        $since = $application->submitted_at;
+
+        foreach ($steps as $step) {
+            $state = match (true) {
+                $step->action === LeaveStepAction::Returned => ApprovalTrail::Returned,
+                $step->action === LeaveStepAction::Disapproved => ApprovalTrail::Declined,
+                $step->action !== LeaveStepAction::Pending => ApprovalTrail::Done,
+                $waiting?->is($step) ?? false => ApprovalTrail::Current,
+                default => ApprovalTrail::Upcoming,
+            };
+
+            if ($state === ApprovalTrail::Done) {
+                $since = $step->acted_at ?? $since;
+            }
+
+            $trail[] = ApprovalTrail::step($labels[$step->role] ?? $step->roleLabel(), $state, match ($state) {
+                ApprovalTrail::Current => $holder($step),
+                ApprovalTrail::Upcoming => null,
+                default => ApprovalTrail::byOn($step->actor?->name, $step->acted_at),
+            });
+        }
+
+        $trail[] = match ($status) {
+            LeaveApplicationStatus::Approved => ApprovalTrail::step('Approved', ApprovalTrail::Done, ApprovalTrail::date($application->decided_at)),
+            LeaveApplicationStatus::Disapproved => ApprovalTrail::step('Disapproved', ApprovalTrail::Declined, ApprovalTrail::date($application->decided_at)),
+            LeaveApplicationStatus::Cancelled => ApprovalTrail::step('Cancelled', ApprovalTrail::Declined),
+            default => ApprovalTrail::step('Decision', ApprovalTrail::Upcoming),
+        };
+
+        $summary = match ($status) {
+            LeaveApplicationStatus::ForReview => $waiting ? 'Waiting for '.$holder($waiting).' since '.ApprovalTrail::date($since).'.' : null,
+            LeaveApplicationStatus::Returned => 'Returned to the employee for correction. Once it is fixed and resubmitted, it starts again from the first step.',
+            LeaveApplicationStatus::Approved => 'Approved on '.ApprovalTrail::date($application->decided_at).'.',
+            LeaveApplicationStatus::Disapproved => 'Disapproved on '.ApprovalTrail::date($application->decided_at).'.',
+            LeaveApplicationStatus::Cancelled => 'Cancelled by the employee.',
+        };
+
+        return ApprovalTrail::make($trail, $summary);
     }
 
     // ── Internals ────────────────────────────────────────────────────

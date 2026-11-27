@@ -106,6 +106,22 @@ class PlantillaTest extends TestCase
             ->where('schedule.reference', 'NBC No. 601'));
     }
 
+    public function test_items_are_listed_in_office_order_then_highest_grade_then_item_number(): void
+    {
+        $this->hrd->update(['sort_order' => 4]);
+        $ord = OrganizationalUnit::factory()->create(['short_name' => 'ORD', 'sort_order' => 1]);
+        $this->item(['item_number' => 'HRD-AO4-2', 'salary_grade' => 15]);
+        $this->item(['item_number' => 'HRD-AO4-10', 'salary_grade' => 15]);
+        $this->item(['item_number' => 'HRD-CHIEF-1', 'salary_grade' => 24]);
+        $this->item(['item_number' => 'ORD-ADA-1', 'salary_grade' => 8, 'organizational_unit_id' => $ord->id]);
+
+        $this->actingAs($this->hr())->get('/admin/hr/plantilla')->assertInertia(fn (Assert $page) => $page
+            ->where('items.0.item_number', 'ORD-ADA-1')
+            ->where('items.1.item_number', 'HRD-CHIEF-1')
+            ->where('items.2.item_number', 'HRD-AO4-2')
+            ->where('items.3.item_number', 'HRD-AO4-10'));
+    }
+
     public function test_appointing_fills_the_item_and_the_holder_follows_it(): void
     {
         $item = $this->item();

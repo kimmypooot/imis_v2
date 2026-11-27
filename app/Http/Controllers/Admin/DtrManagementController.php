@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BiometricPunch;
 use App\Support\HR\Dtr\DtrOverview;
 use App\Support\HR\Dtr\DtrSheets;
+use App\Support\Tables\ServerTable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,7 +34,8 @@ class DtrManagementController extends Controller
         $search = $data['search'] ?? null;
         $filter = $data['filter'] ?? null;
 
-        $rows = $overview->page($month, $office, $search, $filter);
+        $perPage = in_array($request->integer('per_page'), ServerTable::PAGE_SIZES, true) ? $request->integer('per_page') : 25;
+        $rows = $overview->page($month, $office, $search, $filter, $perPage);
 
         return Inertia::render('Admin/HR/Dtr/Index', [
             'month' => $month->format('Y-m'),

@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Enums\PdsSubmissionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Pds\PdsSubmission;
+use App\Support\HR\Pds\PdsPnpki;
 use App\Support\HR\Pds\PdsSchema;
 use App\Support\HR\Pds\PdsSubmissions;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,7 @@ class PdsVerificationController extends Controller
         return Inertia::render('Admin/HR/PdsVerifications/Index', ['pending' => $pending]);
     }
 
-    public function show(Request $request, PdsSubmission $submission, PdsSubmissions $submissions): Response
+    public function show(Request $request, PdsSubmission $submission, PdsSubmissions $submissions, PdsPnpki $pnpki): Response
     {
         $this->authorize('view', $submission);
 
@@ -73,6 +74,8 @@ class PdsVerificationController extends Controller
                 'photo_url' => $submission->photo_path ? "/pds/submissions/{$submission->id}/photo" : null,
             ],
             // What to look at: sections that differ from the last verified PDS.
+            // The PNPKI-signed copy, if the employee attached one, and its signatures.
+            'pnpki' => $pnpki->present($submission),
             'changedSections' => $previous ? $submissions->changedSections($submission->snapshot, $previous->snapshot) : null,
             'previousVerifiedAt' => $previous?->reviewed_at?->toIso8601String(),
             'canReview' => $request->user()->can('review', $submission),

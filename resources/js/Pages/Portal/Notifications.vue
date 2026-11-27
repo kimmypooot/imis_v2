@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import PortalLayout from '../../Layouts/PortalLayout.vue';
 import PageHeader from '@cscro8/ui/Components/UI/PageHeader.vue';
+import FilterButtons from '@cscro8/ui/Components/UI/FilterButtons.vue';
 import Card from '@cscro8/ui/Components/UI/Card.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import EmptyState from '@cscro8/ui/Components/UI/EmptyState.vue';
@@ -52,20 +53,7 @@ const groups = computed(() =>
     </PageHeader>
 
     <div v-if="notifications.length" class="max-w-4xl space-y-6">
-        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter notifications">
-            <button
-                v-for="entry in [{ key: 'all', label: 'All', count: notifications.length }, { key: 'unread', label: 'Unread', count: unread }]"
-                :key="entry.key"
-                type="button"
-                class="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                :class="filter === entry.key ? 'border-primary bg-primary font-medium text-white' : 'border-border bg-surface text-text-muted hover:border-primary/40 hover:text-text'"
-                :aria-pressed="filter === entry.key"
-                @click="filter = entry.key"
-            >
-                {{ entry.label }}
-                <span class="rounded-full px-1.5 text-xs tabular-nums" :class="filter === entry.key ? 'bg-white/20' : 'bg-surface-muted'">{{ entry.count }}</span>
-            </button>
-        </div>
+        <FilterButtons v-model="filter" variant="pills" label="Filter notifications" :options="[{ value: 'all', label: 'All', count: notifications.length }, { value: 'unread', label: 'Unread', count: unread }]" />
 
         <section v-for="group in groups" :key="group.label" :aria-label="group.label">
             <h2 class="mb-2 px-1 text-2xs font-semibold tracking-wide text-text-muted uppercase">{{ group.label }}</h2>
