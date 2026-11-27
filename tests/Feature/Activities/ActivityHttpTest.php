@@ -378,9 +378,37 @@ class ActivityHttpTest extends TestCase
         $this->actingAs($poster)->put("/activities/{$activity->id}", ['title' => 'Renamed'])
             ->assertSessionHasNoErrors();
 
-        $this->assertSame(2, $this->auditCount('activity.saved'));
+        // One entry per edit: the date change shows once, as a move; the rename as a save.
+        $this->assertSame(1, $this->auditCount('activity.saved'));
         $this->assertSame(1, $this->auditCount('activity.moved'));
         $this->assertStringContainsString('Venue taken', DB::table('audit_logs')->where('event', 'activity.moved')->value('description'));
+    }
+
+    public function test_giving_a_month_only_activity_its_date_by_move_has_no_dangling_reason_in_the_audit(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+        $activity = Activity::factory()->create(['organizational_unit_id' => $office->id, 'year' => 2027, 'month' => 3, 'starts_on' => null, 'ends_on' => null, 'status' => 'planned', 'title' => 'Planning workshop']);
+
+        $this->actingAs($poster)->post("/activities/{$activity->id}/move", ['starts_on' => '2027-03-12'])->assertSessionHasNoErrors();
+
+        $this->assertSame('Moved the activity "Planning workshop" to 2027-03-12', DB::table('audit_logs')->where('event', 'activity.moved')->value('description'));
+    }
+
+    public function test_the_edit_form_cannot_redate_a_cancelled_or_done_activity(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+
+        foreach (['cancelled', 'done'] as $status) {
+            $activity = Activity::factory()->dated('2027-03-10')->create(['organizational_unit_id' => $office->id, 'status' => $status]);
+
+            $this->actingAs($poster)->put("/activities/{$activity->id}", ['starts_on' => '2027-03-12', 'ends_on' => '2027-03-12', 'move_reason' => 'Rescheduled'])
+                ->assertSessionHasErrors('activity');
+
+            $this->assertSame('2027-03-10', $activity->fresh()->starts_on->toDateString());
+            $this->assertSame(0, $activity->moves()->count());
+        }
     }
 
     public function test_office_sees_its_removed_activities_with_the_reason(): void

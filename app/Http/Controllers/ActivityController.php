@@ -235,14 +235,13 @@ class ActivityController extends Controller
 
         $movesBefore = $activity->moves()->count();
         $saved = $this->attempt(fn () => $activities->save($data, $user, $activity, $request->validated('move_reason')));
-        $this->audit()->record(AuditEvent::ActivitySaved, "Updated the activity \"{$saved->title}\"", $saved);
 
-        // A date or time change made through the form is a move too, so PALD's "What changed" shows it as one.
+        // A date or time change made through the form is recorded once, as a move, so PALD's "What changed" shows it as one.
         if ($saved->moves()->count() > $movesBefore) {
-            $reason = (string) $request->validated('move_reason');
-            $this->audit()->record(AuditEvent::ActivityMoved, "Moved the activity \"{$saved->title}\" to {$saved->starts_on->toDateString()}: {$reason}", $saved, [
-                'reason' => $reason,
-            ]);
+            $reason = $request->validated('move_reason');
+            $this->audit()->record(AuditEvent::ActivityMoved, $this->movedDescription($saved, $reason, 'Updated and moved'), $saved, ['reason' => $reason]);
+        } else {
+            $this->audit()->record(AuditEvent::ActivitySaved, "Updated the activity \"{$saved->title}\"", $saved);
         }
 
         return back()
@@ -264,7 +263,7 @@ class ActivityController extends Controller
         ]);
 
         $moved = $this->attempt(fn () => $activities->move($activity, Arr::except($data, ['move_reason']), (string) ($data['move_reason'] ?? ''), $request->user()));
-        $this->audit()->record(AuditEvent::ActivityMoved, "Moved the activity \"{$moved->title}\" to {$moved->starts_on->toDateString()}: ".($data['move_reason'] ?? ''), $moved, [
+        $this->audit()->record(AuditEvent::ActivityMoved, $this->movedDescription($moved, $data['move_reason'] ?? null), $moved, [
             'reason' => $data['move_reason'] ?? null,
         ]);
 
@@ -335,6 +334,17 @@ class ActivityController extends Controller
      * @param  Closure(): T  $call
      * @return T
      */
+    /**
+     * The audit description of a move; the reason is added only when one was given
+     * (giving a month-only activity its first date needs none).
+     */
+    private function movedDescription(Activity $activity, ?string $reason, string $verb = 'Moved'): string
+    {
+        $reason = trim((string) $reason);
+
+        return "{$verb} the activity \"{$activity->title}\" to {$activity->starts_on->toDateString()}".($reason === '' ? '' : ": {$reason}");
+    }
+
     private function attempt(Closure $call, string $key = 'activity'): mixed
     {
         try {

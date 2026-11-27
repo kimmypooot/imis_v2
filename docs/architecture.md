@@ -5561,11 +5561,12 @@ Page: `/activities` (month calendar or the monthly sheet).
   in `detached_from_series_id`, and a "this and the following" edit never
   fills the date it was made for (before its first move) again. Such an
   edit keeps the series' office. Cancelled and done activities can't be
-  moved.
+  moved, through Move or the edit form (their date and time are locked).
 - **Clashes** (`ActivityClashes`): overlapping dates and times at the same
   venue or for the same office. They warn, never block.
 - `Activities` is the only writer of activities and moves. A date change
-  made through the edit form is audited as `activity.moved` too.
+  made through the edit form is audited once, as `activity.moved` (with the
+  reason, when one was needed), not also as `activity.saved`.
 
 ### PALD's page (`/activities/manage`)
 What changed in the last 7 or 30 days (`ActivityChanges`, from the audit

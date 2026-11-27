@@ -285,6 +285,10 @@ class Activities
         }
 
         if ($old !== null && $old['starts_on'] !== null && $old != $new) {
+            if (in_array($activity->status, [ActivityStatus::Cancelled, ActivityStatus::Done], true)) {
+                throw new DomainException('A cancelled or done activity can\'t be moved.');
+            }
+
             $reason = trim((string) $reason);
 
             if ($reason === '') {

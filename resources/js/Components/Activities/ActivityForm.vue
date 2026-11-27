@@ -91,6 +91,8 @@ const showRepeat = computed(() => (!editing.value && form.when === 'date') || fo
 const repeating = computed(() => following.value || (!editing.value && form.when === 'date' && !!form.repeat.frequency));
 // The server keeps an activity unplanned once it is, so a saved unplanned activity can't be unticked.
 const unplannedLocked = computed(() => editing.value && !!props.activity.unplanned);
+// A cancelled or done activity keeps its date: it can't be moved (the server refuses it too).
+const dateLocked = computed(() => editing.value && ['cancelled', 'done'].includes(props.activity.status));
 
 const fill = () => {
     const activity = props.activity;
@@ -240,6 +242,8 @@ const title = computed(() => (editing.value ? `Edit â€œ${props.activity.title}â€
 
             <TextInput id="activity-title" v-model="form.title" label="Activity" required :maxlength="255" :error="form.errors.title" />
 
+            <fieldset :disabled="dateLocked" :aria-describedby="dateLocked ? 'activity-date-locked-hint' : undefined" class="space-y-4" :class="{ 'opacity-60': dateLocked }">
+            <p v-if="dateLocked" id="activity-date-locked-hint" class="text-xs text-text-muted">This activity was {{ activity.status === 'done' ? 'held' : 'cancelled' }}, so its date and time can't change.</p>
             <template v-if="!following">
                 <!-- A dated activity can't go back to month only (move it instead). -->
                 <fieldset v-if="!wasDated" class="space-y-2">
@@ -275,6 +279,7 @@ const title = computed(() => (editing.value ? `Edit â€œ${props.activity.title}â€
                     </FormGroup>
                 </div>
             </div>
+            </fieldset>
 
             <TextInput
                 v-if="moved"
