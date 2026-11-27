@@ -84,6 +84,7 @@ const modeFilterOptions = computed(() => [{ value: '', label: 'All modes' }, ...
 const sheetQuery = computed(() => {
     const query = new URLSearchParams({ month: props.month });
     if (props.officeId) query.set('office', String(props.officeId));
+    if (props.filters.mode) query.set('mode', props.filters.mode);
     return query.toString();
 });
 

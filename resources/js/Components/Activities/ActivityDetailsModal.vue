@@ -63,7 +63,7 @@ const moveWhen = (move, side) => {
     return `${formatCalendarDate(on)}${until && until !== on ? ` to ${formatCalendarDate(until)}` : ''}${time ? `, ${time}` : ''}`;
 };
 
-const open = (event) => emit(event, activity.value);
+const fire = (event) => emit(event, activity.value);
 </script>
 
 <template>
@@ -84,14 +84,14 @@ const open = (event) => emit(event, activity.value);
                 </div>
                 <div class="flex flex-wrap gap-1.5">
                     <template v-if="activity.can_update">
-                        <ActionButton icon="pencil" label="Edit" @click="open('edit')" />
-                        <ActionButton v-if="activity.status !== 'cancelled'" icon="calendar" label="Move to another date" @click="open('move')" />
-                        <ActionButton v-if="activity.starts_on && activity.status === 'scheduled'" icon="check" label="Mark done" tone="success" @click="open('done')" />
-                        <ActionButton v-if="activity.status !== 'cancelled' && activity.status !== 'done'" icon="xCircle" label="Cancel the activity" tone="warning" @click="open('cancel')" />
+                        <ActionButton icon="pencil" label="Edit" @click="fire('edit')" />
+                        <ActionButton v-if="activity.status !== 'cancelled'" icon="calendar" label="Move to another date" @click="fire('move')" />
+                        <ActionButton v-if="activity.starts_on && activity.status === 'scheduled'" icon="check" label="Mark done" tone="success" @click="fire('done')" />
+                        <ActionButton v-if="activity.status !== 'cancelled' && activity.status !== 'done'" icon="xCircle" label="Cancel the activity" tone="warning" @click="fire('cancel')" />
                     </template>
                     <template v-if="canManage">
-                        <ActionButton icon="arrowLeft" label="Return to the office" tone="warning" @click="open('return')" />
-                        <ActionButton icon="trash" label="Remove" tone="danger" @click="open('remove')" />
+                        <ActionButton icon="arrowLeft" label="Return to the office" tone="warning" @click="fire('return')" />
+                        <ActionButton icon="trash" label="Remove" tone="danger" @click="fire('remove')" />
                     </template>
                 </div>
             </div>

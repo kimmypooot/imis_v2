@@ -184,6 +184,23 @@ class MonthSheetTest extends TestCase
                 ->has('sheet.days', 1));
     }
 
+    public function test_print_and_excel_follow_the_mode_filter(): void
+    {
+        Activity::factory()->dated('2025-12-03')->create(['title' => 'In the board room', 'mode' => 'face_to_face']);
+        Activity::factory()->dated('2025-12-04')->create(['title' => 'Over Zoom', 'mode' => 'online']);
+        $viewer = $this->viewer();
+
+        $this->actingAs($viewer)->get('/activities/sheet/print?month=2025-12&mode=online')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('sheet.days', 1)->where('sheet.days.0.rows.0.activity', 'Over Zoom'));
+
+        $strings = $this->unzip($this->actingAs($viewer)->get('/activities/sheet/excel?month=2025-12&mode=online')->assertOk()->getContent())['xl/sharedStrings.xml'];
+        $this->assertStringContainsString('Over Zoom', $strings);
+        $this->assertStringNotContainsString('In the board room', $strings);
+
+        $this->actingAs($viewer)->get('/activities/sheet/print?month=2025-12&mode=carrier_pigeon')->assertSessionHasErrors('mode');
+    }
+
     public function test_sheet_needs_activities_view_and_valid_filters(): void
     {
         $outsider = User::factory()->create();
