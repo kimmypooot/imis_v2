@@ -6,6 +6,7 @@ use App\Enums\OfficeDesignation;
 use App\Enums\RoleName;
 use App\Enums\RoleStatus;
 use App\Enums\UserStatus;
+use App\Support\Activities\OfficePermissions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -33,6 +34,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasPushSubscriptions, Notifiable, PasskeyAuthenticatable;
+
+    /**
+     * The permissions that come with the account's office, remembered for the
+     * office they were looked up for ({@see permissions()}).
+     *
+     * @var array{office: int|null, permissions: Collection<int, Permission>}|null
+     */
+    private ?array $officePermissions = null;
 
     /**
      * What the phone's passkey prompt shows under the name: the IMIS username
@@ -280,11 +289,24 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      *
      * @return Collection<int, Permission>
      */
+    /**
+     * The permissions of the account's active roles, plus those that come
+     * with its office ({@see OfficePermissions}: PALD curates the Calendar of
+     * Activities). The office part is looked up once per office the account
+     * is in, so a move to another office takes effect at once.
+     */
     public function permissions(): Collection
     {
+        $office = $this->organizational_unit_id;
+
+        if ($this->officePermissions === null || $this->officePermissions['office'] !== $office) {
+            $this->officePermissions = ['office' => $office, 'permissions' => OfficePermissions::for($this)];
+        }
+
         return $this->loadMissing('activeRoles.permissions')
             ->activeRoles
             ->flatMap(fn (Role $role) => $role->permissions)
+            ->merge($this->officePermissions['permissions'])
             ->unique('id')
             ->values();
     }

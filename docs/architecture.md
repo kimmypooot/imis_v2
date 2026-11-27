@@ -5532,6 +5532,12 @@ Page: `/activities` (month calendar or the monthly sheet).
   assigned at install): `activities-curator` ("Calendar of Activities —
   PALD": view, post, manage) and `activities-poster` ("Calendar of
   Activities — office poster": view, post).
+- **PALD staff curate without a role.** Everyone whose office is PALD
+  (code `PALD`) has view, post and manage through their office
+  (`Support/Activities/OfficePermissions`, added in `User::permissions()`,
+  so routes, policies and the sidebar all follow it), and loses them on
+  moving to another office. The curator role is for anyone else PALD
+  wants to help curate.
 - Audit events: `activity.saved`, `moved`, `cancelled`, `done`,
   `returned`, `removed`, `series_saved`, `cutoff_saved`.
 
