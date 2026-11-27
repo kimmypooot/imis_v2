@@ -39,7 +39,7 @@ class NonPlantillaController extends Controller
             'canManage' => $canManage,
             'contractForm' => $canManage ? [
                 'employeeOptions' => $nonPlantilla->candidates(),
-                'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get()
+                'officeOptions' => OrganizationalUnit::query()->active()->workingOffices()->inOrder()->get()
                     ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
             ] : null,
         ]);

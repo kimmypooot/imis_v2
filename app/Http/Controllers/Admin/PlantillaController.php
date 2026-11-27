@@ -31,8 +31,9 @@ class PlantillaController extends Controller
 
         $models = PlantillaItem::query()
             ->with(['organizationalUnit', 'incumbency.employee.user'])
-            ->orderBy('item_number')
-            ->get();
+            ->get()
+            ->sort(PlantillaItem::compareInPlantillaOrder(...))
+            ->values();
         $serving = $staffing->servingOf($models);
         $items = $models->map(fn (PlantillaItem $item) => [...$plantilla->presentItem($item), 'serving' => $serving[$item->id] ?? null]);
 
@@ -145,7 +146,7 @@ class PlantillaController extends Controller
     {
         return [
             'levelOptions' => PositionLevel::options(),
-            'officeOptions' => OrganizationalUnit::query()->active()->orderBy('name')->get()
+            'officeOptions' => OrganizationalUnit::query()->active()->inOrder()->get()
                 ->map(fn (OrganizationalUnit $unit) => ['value' => $unit->id, 'label' => $unit->name]),
             'gradeOptions' => array_map(fn (int $grade) => ['value' => $grade, 'label' => "SG {$grade}"], range(1, SalarySchedules::GRADES)),
             'positionTitles' => $plantilla->positionTitles(),

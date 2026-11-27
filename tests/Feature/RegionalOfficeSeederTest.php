@@ -18,7 +18,9 @@ class RegionalOfficeSeederTest extends TestCase
 
         $this->assertSame(7, OrganizationalUnit::where('unit_type', UnitType::RegionalSupportUnit)->count());
         $this->assertSame(8, OrganizationalUnit::where('unit_type', UnitType::FieldOffice)->count());
-        $this->assertSame(2, OrganizationalUnit::whereNotNull('parent_id')->count());
+        $this->assertSame(3, OrganizationalUnit::whereNotNull('parent_id')->count());
+        $this->assertSame(OrganizationalUnit::where('code', 'BFO')->value('id'), OrganizationalUnit::where('code', 'WLSO')->value('parent_id'));
+        $this->assertSame(16, OrganizationalUnit::distinct()->count('sort_order'));
         $this->assertSame(1, OrganizationalUnit::where('unit_type', UnitType::SatelliteOffice)->count());
         $this->assertDatabaseHas('organizational_units', ['code' => 'ESD', 'name' => 'Examination Services Division']);
     }

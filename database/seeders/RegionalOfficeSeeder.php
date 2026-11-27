@@ -38,7 +38,7 @@ class RegionalOfficeSeeder extends Seeder
         ['code' => 'BFO', 'name' => 'CSC Field Office - Biliran', 'type' => UnitType::FieldOffice, 'label' => 'FO-B'],
         ['code' => 'SLFO', 'name' => 'CSC Field Office - Southern Leyte', 'type' => UnitType::FieldOffice, 'label' => 'FO-SL'],
         ['code' => 'NSFO', 'name' => 'CSC Field Office - Northern Samar', 'type' => UnitType::FieldOffice, 'label' => 'FO-NS'],
-        ['code' => 'WLSO', 'name' => 'CSC Satellite Office - Western Leyte', 'type' => UnitType::SatelliteOffice, 'label' => 'SO-WL'],
+        ['code' => 'WLSO', 'name' => 'CSC Satellite Office - Western Leyte', 'type' => UnitType::SatelliteOffice, 'parent' => 'BFO', 'label' => 'SO-WL'],
     ];
 
     public function run(): void

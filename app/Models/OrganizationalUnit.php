@@ -52,6 +52,16 @@ class OrganizationalUnit extends Model
         return $query->where('plantilla_only', false);
     }
 
+    /**
+     * The regional office's own order (Offices → Sort order), never the id.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeInOrder(Builder $query): Builder
+    {
+        return $query->orderBy('sort_order')->orderBy('name');
+    }
+
     public function scopeRoots(Builder $query): Builder
     {
         return $query->whereNull('parent_id');

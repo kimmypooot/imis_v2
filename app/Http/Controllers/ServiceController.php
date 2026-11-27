@@ -43,7 +43,7 @@ class ServiceController extends Controller
             'services' => ServiceResource::collection($services),
             'filters' => $request->only(['search', 'category_id', 'organizational_unit_id']),
             'categoryOptions' => ServiceCategory::query()->active()->ordered()->get(['id', 'name']),
-            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->workingOffices()->orderBy('name')->get(['id', 'name']),
+            'organizationalUnitOptions' => OrganizationalUnit::query()->active()->workingOffices()->inOrder()->get(['id', 'name']),
         ]);
     }
 

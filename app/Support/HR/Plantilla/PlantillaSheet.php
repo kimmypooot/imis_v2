@@ -65,7 +65,7 @@ class PlantillaSheet
     {
         $query = PlantillaItem::query()->active()
             ->with(['organizationalUnit', 'position', 'incumbency.employee.user'])
-            ->orderBy('organizational_unit_id')->orderBy('position_title')->orderBy('id');
+            ->inPlantillaOrder()->orderBy('id');
 
         return CsvExport::stream('imis-plantilla-to-complete', array_column(self::COLUMNS, 1), $query, function (PlantillaItem $item) {
             $holder = $item->incumbency;
