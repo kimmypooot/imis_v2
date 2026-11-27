@@ -249,6 +249,15 @@ enum AuditEvent: string
     case SalaryNoticeDeleted = 'salary_notice.deleted';
     case SalaryNoticeFiled = 'salary_notice.filed';
     case SalaryNoticePrinted = 'salary_notice.printed';
+    // Calendar of Activities.
+    case ActivitySaved = 'activity.saved';
+    case ActivityMoved = 'activity.moved';
+    case ActivityCancelled = 'activity.cancelled';
+    case ActivityDone = 'activity.done';
+    case ActivityReturned = 'activity.returned';
+    case ActivityRemoved = 'activity.removed';
+    case ActivitySeriesSaved = 'activity.series_saved';
+    case ActivityCutoffSaved = 'activity.cutoff_saved';
     // HR-3. `certificate_viewed` is recorded when someone other than the
     // employee opens a training certificate.
     case LdRecordCreated = 'ld_record.created';

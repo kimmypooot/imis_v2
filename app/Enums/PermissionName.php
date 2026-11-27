@@ -213,4 +213,13 @@ enum PermissionName: string
     // feeds, sets targets, and runs a collection on demand.
     case ExecutiveView = 'executive.view';
     case ExecutiveManage = 'executive.manage';
+
+    // Calendar of Activities. `view` is every staff account (the default
+    // `user` role): the calendar, list and details. `post` adds, edits,
+    // cancels and marks done the activities of the poster's own office
+    // (exactly their organizational unit). `manage` is PALD: everything
+    // for any office, returning or removing activities, and what changed.
+    case ActivitiesView = 'activities.view';
+    case ActivitiesPost = 'activities.post';
+    case ActivitiesManage = 'activities.manage';
 }
