@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AuthHeading from '../../Components/UI/AuthHeading.vue';
 import TextInput from '@cscro8/ui/Components/Forms/TextInput.vue';
 import InputError from '@cscro8/ui/Components/Forms/InputError.vue';
 import Button from '@cscro8/ui/Components/UI/Button.vue';
@@ -27,10 +28,7 @@ const submit = () => {
 <template>
     <Head title="Forgot password" />
 
-    <h2 class="mb-1 text-lg font-semibold text-text">Forgot your password?</h2>
-    <p class="mb-5 text-sm text-text-muted">
-        Enter your email address and we'll send you a link to reset your password.
-    </p>
+    <AuthHeading title="Forgot your password?" subtitle="We'll email you a link to reset it." />
 
     <Alert v-if="status" tone="success" class="mb-4">{{ status }}</Alert>
 

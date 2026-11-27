@@ -406,11 +406,17 @@ Key components:
   needs an `aria-label` on that control.
 
 ### Layouts & application shell (`resources/js/Layouts/`)
-- **`AuthLayout.vue`**: login, forgot/reset password, verify email. It is
-  the legacy IMIS split screen: on desktop, a CSC-navy brand panel over
-  the regional office facade with the CSC, Bagong Pilipinas and Lingkod
-  Bayani logos; the form card with the IMIS wordmark on a light panel.
-  On mobile the logos move into the card. Brand images live in
+- **`AuthLayout.vue`**: login, forgot/reset password, verify email. A split
+  screen with an inset brand panel (November 2026; it replaced the legacy
+  full-height split): a light page frame holds, on desktop, a rounded
+  CSC-navy panel over the regional office facade (the CSC, Bagong Pilipinas
+  and Lingkod Bayani logos, the system's name and description, "For
+  authorized CSC personnel only", vertically centred, and the running
+  version at the bottom), and beside it the page's card with the
+  "CSC RO VIII © year · Privacy Notice" footer. Each page heads its card
+  with `Components/UI/AuthHeading.vue` (the IMIS logo beside a blue title
+  and one line). On mobile the panel is left out and the logos move into
+  the card. The login page says "Sign in" throughout. Brand images live in
   `public/images/brand/` and were copied from the legacy site.
 - **`AppShell.vue`**: the reusable authenticated shell, following the
   legacy layout. A fixed top bar holds the hamburger, the CSC logo and

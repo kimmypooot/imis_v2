@@ -11,6 +11,7 @@ import Button from '@cscro8/ui/Components/UI/Button.vue';
 import Alert from '@cscro8/ui/Components/Feedback/Alert.vue';
 import Icon from '@cscro8/ui/Components/UI/Icon.vue';
 import UserAvatar from '@cscro8/ui/Components/UI/UserAvatar.vue';
+import AuthHeading from '../../Components/UI/AuthHeading.vue';
 import { greetingName } from '../../Composables/useSplash';
 import { useRememberedAccounts } from '../../Composables/useRememberedAccounts';
 
@@ -252,14 +253,10 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Sign in" />
 
-    <div class="mb-6 text-center">
-        <span class="inline-flex items-center gap-2 rounded-full bg-info-bg px-4 py-1.5 text-xs font-medium text-link">
-            <Icon name="user" size="sm" />
-            Login as CSC RO VIII Employee
-        </span>
-    </div>
+    <!-- Left-aligned with the fields. One heading per view: the account list has its own, and a picked saved account shows its own welcome card. -->
+    <AuthHeading v-if="!choosing && !selected" title="Sign in to IMIS" subtitle="Use your CSC RO VIII account." />
 
     <Alert v-if="status" tone="success" icon="checkCircle" class="mb-4">{{ status }}</Alert>
 
@@ -270,13 +267,7 @@ const submit = () => {
 
     <div ref="swapRef">
         <div v-if="choosing" ref="chooserRef">
-            <div class="mb-4 text-center">
-                <span class="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-info-bg text-link">
-                    <Icon name="users" />
-                </span>
-                <p class="text-base font-semibold">Choose an account</p>
-                <p class="text-xs text-muted">Pick who is signing in on this device.</p>
-            </div>
+            <AuthHeading title="Choose an account" subtitle="Pick who is signing in on this device." />
             <ul class="space-y-2">
                 <li
                     v-for="account in accounts"
@@ -303,7 +294,7 @@ const submit = () => {
             </ul>
             <button
                 type="button"
-                class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm font-medium text-link hover:border-primary hover:bg-info-bg"
+                class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong px-3 py-2.5 text-sm font-medium text-link hover:border-primary hover:bg-info-bg"
                 @click="useAnotherAccount"
             >
                 <Icon name="plus" size="sm" />
@@ -417,7 +408,7 @@ const submit = () => {
 
             <Button type="submit" class="w-full" :class="{ 'bg-csc-red!': form.processing }" :loading="form.processing" :disabled="form.processing || isLockedOut">
                 <Icon v-if="!form.processing" name="lock" size="sm" class="mr-2" />
-                {{ form.processing ? 'Logging in…' : 'Login' }}
+                {{ form.processing ? 'Signing in…' : 'Sign in' }}
             </Button>
         </form>
     </div>
@@ -435,7 +426,7 @@ const submit = () => {
             {{ passkeyError }}
         </Alert>
         <p class="mt-2 text-center text-xs text-muted">
-            No password needed once you turn this on in Account settings.
+            No password needed. Turn it on in Account settings.
         </p>
     </div>
 </template>
