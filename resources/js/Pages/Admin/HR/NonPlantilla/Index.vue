@@ -130,7 +130,7 @@ const remove = async (contract) => {
             <Link href="/admin/hr/plantilla" class="font-medium text-link hover:underline">Plantilla</Link>.
         </p>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Personnel" :value="rows.length" icon="users" tone="primary">in service</StatTile>
             <StatTile label="Running contracts" :value="counts.running" icon="clipboard" tone="success">as of today</StatTile>
             <StatTile label="Ending soon" :value="counts.expiring" icon="clock" tone="warning">within {{ expiringDays }} days</StatTile>

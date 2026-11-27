@@ -168,7 +168,7 @@ const greeting = computed(() => {
             <section
                 v-if="glance?.length"
                 aria-label="At a glance"
-                class="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1"
+                class="stagger grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1"
                 :class="glanceGrid"
             >
                 <Link
@@ -216,7 +216,7 @@ const greeting = computed(() => {
                             <h2 id="attention-heading" class="text-lg font-semibold text-text">Needs your attention</h2>
                             <span v-if="attention?.length" class="rounded-full bg-danger-bg px-2.5 py-0.5 text-xs font-semibold text-danger-fg">{{ attention.length }} open</span>
                         </div>
-                        <ul v-if="attention?.length" class="mt-2 divide-y divide-border">
+                        <ul v-if="attention?.length" class="stagger mt-2 divide-y divide-border">
                             <li v-for="item in attention" :key="item.key" class="flex items-center gap-4 py-3.5">
                                 <span class="w-20 shrink-0 rounded-md py-1 text-center text-xs font-semibold uppercase" :class="attentionKinds[item.kind]?.class">
                                     {{ attentionKinds[item.kind]?.label }}

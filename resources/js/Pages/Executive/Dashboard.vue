@@ -262,7 +262,7 @@ const toneChip = { danger: 'bg-danger-bg text-danger-fg', warning: 'bg-warning-b
             <!-- The viewer's own short list. -->
             <section v-if="watched.length" aria-labelledby="watch-title">
                 <h2 id="watch-title" class="mb-3 text-lg font-semibold text-text">My watch list</h2>
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <MetricTile v-for="{ metric, section } in watched" :key="metric.id" :metric="metric" :section-label="section.label" pinned featured @open="open" @toggle-pin="togglePin" />
                 </div>
             </section>

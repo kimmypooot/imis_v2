@@ -159,7 +159,7 @@ const toggleMembership = async (member) => {
                 </dl>
             </Card>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div class="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <StatTile label="Current members" :value="current.length" icon="users" tone="primary">serving now</StatTile>
                 <StatTile label="Former members" :value="former.length" icon="archive" tone="info">kept on record</StatTile>
             </div>

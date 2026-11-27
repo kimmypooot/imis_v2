@@ -78,7 +78,7 @@ const vacancyColumns = [
     <PageHeader title="Staffing" :breadcrumbs="[{ label: 'Human Resources', href: '/admin/hr' }, { label: 'Staffing' }]" />
 
     <div class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="Plantilla items" :value="totals.items" icon="grid" tone="primary">{{ totals.filled }} filled</StatTile>
             <StatTile label="Vacant" :value="totals.vacant" icon="clipboard" tone="warning">for the recruitment plan</StatTile>
             <StatTile label="Serving elsewhere" :value="totals.elsewhere" icon="refresh" tone="info">away from their place of assignment</StatTile>

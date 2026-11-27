@@ -95,7 +95,7 @@ const columns = [
         />
     </Card>
 
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="stagger mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label="Required to file" :value="counts.required" icon="users" />
         <StatTile label="Filed" :value="counts.filed" icon="checkCircle" tone="success" :progress="counts.required ? Math.round((counts.filed / counts.required) * 100) : null" />
         <StatTile label="In progress" :value="counts.in_progress" icon="clock" tone="info" />

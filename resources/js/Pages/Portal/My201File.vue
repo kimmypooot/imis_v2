@@ -38,7 +38,7 @@ const groups = computed(() => new Set(props.documents.map((document) => document
     />
 
     <div v-if="hasRecord" class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="stagger grid gap-4 sm:grid-cols-3">
             <StatTile label="Documents on file" :value="documents.length" icon="clipboard" tone="primary" />
             <StatTile label="Parts of the file" :value="groups" icon="documentText" tone="info" />
             <StatTile
