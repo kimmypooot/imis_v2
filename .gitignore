@@ -45,3 +45,4 @@ error_log
 /NOSI_Template_*.docx
 
 /.superpowers/
+/.claude/worktrees/
