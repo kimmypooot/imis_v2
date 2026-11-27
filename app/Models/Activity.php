@@ -30,7 +30,7 @@ class Activity extends Model
     protected $fillable = [
         'organizational_unit_id', 'title', 'responsible', 'participants', 'venue', 'mode', 'remarks',
         'year', 'month', 'starts_on', 'ends_on', 'starts_at', 'ends_at', 'all_day',
-        'status', 'cancel_reason', 'unplanned', 'series_id',
+        'status', 'cancel_reason', 'unplanned', 'series_id', 'detached_from_series_id',
         'returned_note', 'returned_at', 'removed_reason', 'created_by', 'updated_by',
     ];
 

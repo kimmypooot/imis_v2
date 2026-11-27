@@ -191,6 +191,42 @@ class ActivitySeriesTest extends TestCase
         $this->assertSame(9, Activity::withTrashed()->count());
     }
 
+    public function test_update_following_with_an_unchanged_pattern_does_not_duplicate_detached_occurrences(): void
+    {
+        $series = $this->builder->create($this->rule(), $this->template(), $this->office->id, $this->poster);
+        $byDate = fn (string $date) => Activity::withTrashed()->whereDate('starts_on', $date)->get();
+
+        $activities = app(Activities::class);
+        $moved = $activities->move($byDate('2026-01-26')->sole(), ['starts_on' => '2026-01-27', 'starts_at' => '08:00', 'ends_at' => '09:00'], 'Venue taken', $this->poster);
+        $edited = $activities->save(['title' => 'Staff meeting with the RD'], $this->poster, $byDate('2026-01-19')->sole());
+
+        $this->assertSame($series->id, $moved->detached_from_series_id);
+        $this->assertSame($series->id, $edited->detached_from_series_id);
+
+        $this->builder->updateFollowing($series, Carbon::parse('2026-01-12'), $this->rule(), $this->template(['venue' => 'Board Room']), $this->poster);
+
+        foreach (['2026-01-05', '2026-01-12', '2026-01-19', '2026-01-27'] as $date) {
+            $this->assertCount(1, $byDate($date), "One activity on {$date}");
+        }
+        $this->assertCount(0, $byDate('2026-01-26'), 'The moved occurrence is not recreated on its original date');
+        $this->assertSame('Staff meeting with the RD', $byDate('2026-01-19')->sole()->title);
+        $this->assertSame('Board Room', $byDate('2026-01-12')->sole()->venue);
+        $this->assertSame(4, Activity::withTrashed()->count());
+    }
+
+    public function test_returned_occurrence_keeps_its_link_to_the_series(): void
+    {
+        $series = $this->builder->create($this->rule(), $this->template(), $this->office->id, $this->poster);
+        $returned = app(Activities::class)->returnToOffice($series->activities()->whereDate('starts_on', '2026-01-12')->sole(), 'Fix the venue', $this->poster);
+
+        $this->assertNull($returned->series_id);
+        $this->assertSame($series->id, $returned->detached_from_series_id);
+
+        $this->builder->updateFollowing($series, Carbon::parse('2026-01-05'), $this->rule(), $this->template(['venue' => 'Board Room']), $this->poster);
+
+        $this->assertSame(1, Activity::query()->whereDate('starts_on', '2026-01-12')->count());
+    }
+
     public function test_update_following_does_not_bring_back_a_removed_occurrence(): void
     {
         $series = $this->builder->create($this->rule(), $this->template(), $this->office->id, $this->poster);

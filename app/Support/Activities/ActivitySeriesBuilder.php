@@ -102,8 +102,10 @@ class ActivitySeriesBuilder
      * then replace its occurrences dated on or after `$from` that are still
      * untouched (attached, scheduled, never moved, never returned). Done
      * and cancelled occurrences keep their place, and occurrences PALD
-     * removed stay removed; a date one of them holds is not filled again. Occurrences moved, returned or
-     * edited on their own were detached already and are left alone.
+     * removed stay removed; a date one of them holds is not filled again.
+     * Occurrences moved, returned or edited on their own were detached
+     * already and are left alone, and the date each was made for (before
+     * its first move) is not filled again either.
      *
      * @param  array{frequency: SeriesFrequency|string, interval?: ?int, weekday?: ?int, day_of_month?: ?int, nth_weekday?: ?int, starts_on: string, until?: ?string, skip_holidays?: bool}  $rule
      * @param  array{title?: string, responsible?: ?string, participants?: ?string, venue?: ?string, mode?: string, remarks?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool, unplanned?: bool}  $template
@@ -129,12 +131,23 @@ class ActivitySeriesBuilder
                 ->get()
                 ->each(fn (Activity $activity) => $activity->forceDelete());
 
-            $kept = Activity::withTrashed()
+            $attached = Activity::withTrashed()
                 ->where('series_id', $series->id)
                 ->whereDate('starts_on', '>=', $from)
                 ->get()
-                ->map(fn (Activity $activity) => $activity->starts_on->toDateString())
-                ->flip();
+                ->toBase()
+                ->map(fn (Activity $activity) => $activity->starts_on->toDateString());
+
+            // An occurrence that left the series still holds the date it was made for.
+            $detached = Activity::withTrashed()
+                ->with('moves')
+                ->where('detached_from_series_id', $series->id)
+                ->get()
+                ->toBase()
+                ->map(fn (Activity $activity) => ($activity->moves->last()?->from_starts_on ?? $activity->starts_on)?->toDateString())
+                ->filter();
+
+            $kept = $attached->merge($detached)->unique()->flip();
 
             foreach ($this->occurrences($series) as $date) {
                 if ($date->lt($from) || $kept->has($date->toDateString())) {

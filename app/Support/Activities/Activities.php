@@ -22,7 +22,8 @@ use InvalidArgumentException;
  * time of an activity that already had one records an `ActivityMove` and
  * needs a reason. Activities created after the year's plan cut-off are
  * flagged unplanned, and the flag is never cleared automatically. Editing,
- * moving or returning an occurrence of a series detaches it. Nothing here
+ * moving or returning an occurrence of a series detaches it (the series is
+ * kept in `detached_from_series_id`). Nothing here
  * audits; the controllers do.
  */
 class Activities
@@ -63,7 +64,7 @@ class Activities
                 : $activity->unplanned || $ticked;
 
             if (! $isNew) {
-                $activity->series_id = null;
+                $this->detach($activity);
             }
             if ($activity->returned_at !== null) {
                 $activity->returned_note = null;
@@ -98,7 +99,7 @@ class Activities
             );
             $this->applyWhen($activity, $when, $reason, $by, $activity->year, $activity->month);
 
-            $activity->series_id = null;
+            $this->detach($activity);
             $activity->updated_by = $by->id;
             $activity->save();
 
@@ -160,10 +161,10 @@ class Activities
         $note = $this->required($note, 'Say what the office should change.');
 
         return DB::transaction(function () use ($activity, $note, $by): Activity {
+            $this->detach($activity);
             $activity->forceFill([
                 'returned_note' => $note,
                 'returned_at' => now(),
-                'series_id' => null,
                 'updated_by' => $by->id,
             ])->save();
 
@@ -187,6 +188,18 @@ class Activities
 
             $activity->delete();
         });
+    }
+
+    /**
+     * Take an occurrence out of its series, remembering which series it
+     * left so a "this and the following" edit keeps its original date.
+     */
+    private function detach(Activity $activity): void
+    {
+        if ($activity->series_id !== null) {
+            $activity->detached_from_series_id = $activity->series_id;
+            $activity->series_id = null;
+        }
     }
 
     /**
