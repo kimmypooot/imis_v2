@@ -44,6 +44,12 @@ final class NotificationPreferences
             'email' => false,
             'permission' => 'feedback.view',
         ],
+        'activities' => [
+            'label' => 'Calendar of Activities',
+            'description' => 'When PALD returns or removes an activity your office posted.',
+            'email' => false,
+            'permission' => 'activities.post',
+        ],
         'executive' => [
             'label' => 'Executive Dashboard alerts',
             'description' => 'A figure falling behind its target, or a system\'s figures no longer updating.',

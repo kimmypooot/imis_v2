@@ -4,6 +4,7 @@ use App\Http\Controllers\Account\NotificationSettingsController;
 use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\PushSubscriptionController;
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
@@ -246,6 +247,26 @@ Route::middleware('auth')->group(function () {
 
     Route::get('organizational-units', [OrganizationalUnitController::class, 'index'])->name('organizational-units.index');
     Route::get('organizational-units/{organizationalUnit}', [OrganizationalUnitController::class, 'show'])->name('organizational-units.show');
+
+    // Calendar of Activities: every staff account sees it; offices' posters
+    // keep their own office's activities, PALD any office's (ActivityPolicy).
+    Route::middleware('permission:activities.view')->group(function () {
+        Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
+        Route::get('activities/{activity}', [ActivityController::class, 'show'])->whereNumber('activity')->name('activities.show');
+
+        Route::middleware('permission:activities.post,activities.manage')->group(function () {
+            Route::post('activities', [ActivityController::class, 'store'])->name('activities.store');
+            Route::put('activities/{activity}', [ActivityController::class, 'update'])->whereNumber('activity')->name('activities.update');
+            Route::post('activities/{activity}/move', [ActivityController::class, 'move'])->whereNumber('activity')->name('activities.move');
+            Route::post('activities/{activity}/cancel', [ActivityController::class, 'cancel'])->whereNumber('activity')->name('activities.cancel');
+            Route::post('activities/{activity}/done', [ActivityController::class, 'done'])->whereNumber('activity')->name('activities.done');
+        });
+
+        Route::middleware('permission:activities.manage')->group(function () {
+            Route::post('activities/{activity}/return', [ActivityController::class, 'returnToOffice'])->whereNumber('activity')->name('activities.return');
+            Route::delete('activities/{activity}', [ActivityController::class, 'remove'])->whereNumber('activity')->name('activities.remove');
+        });
+    });
 
     // Executive Dashboard: top management's view of every module and
     // connected system (Exec-1 to Exec-3), and its settings.
