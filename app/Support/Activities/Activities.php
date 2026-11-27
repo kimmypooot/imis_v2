@@ -252,7 +252,7 @@ class Activities
     private function applyWhen(Activity $activity, array $when, ?string $reason, User $by, ?int $year, ?int $month): void
     {
         $new = $this->normalizeWhen($when);
-        $old = $activity->exists ? $this->currentWhen($activity) : null;
+        $old = $activity->exists ? $this->normalizeWhen($this->currentWhen($activity), checkOrder: false) : null;
 
         if ($new['starts_on'] === null) {
             if ($old !== null && $old['starts_on'] !== null) {
@@ -277,7 +277,7 @@ class Activities
             ActivityMove::query()->create([
                 'activity_id' => $activity->id,
                 'from_starts_on' => $old['starts_on'],
-                'from_ends_on' => $old['ends_on'] ?? $old['starts_on'],
+                'from_ends_on' => $old['ends_on'],
                 'from_starts_at' => $old['starts_at'],
                 'from_ends_at' => $old['ends_at'],
                 'to_starts_on' => $new['starts_on'],
@@ -299,12 +299,13 @@ class Activities
     /**
      * Dates as Y-m-d and times as H:i:s; `ends_on` defaults to `starts_on`;
      * an all-day or month-only activity has no times. Checks the order of
-     * the dates and, on a single day, of the times.
+     * the dates and, on a single day, of the times, unless `$checkOrder` is
+     * off (the stored row, normalized only so it compares like for like).
      *
      * @param  array<string, mixed>  $when
      * @return array{starts_on: ?string, ends_on: ?string, starts_at: ?string, ends_at: ?string, all_day: bool}
      */
-    private function normalizeWhen(array $when): array
+    private function normalizeWhen(array $when, bool $checkOrder = true): array
     {
         $startsOn = blank($when['starts_on'] ?? null) ? null : Carbon::parse($when['starts_on'])->toDateString();
 
@@ -317,10 +318,10 @@ class Activities
         $startsAt = $allDay ? null : $this->time($when['starts_at'] ?? null);
         $endsAt = $allDay ? null : $this->time($when['ends_at'] ?? null);
 
-        if ($endsOn < $startsOn) {
+        if ($checkOrder && $endsOn < $startsOn) {
             throw new InvalidArgumentException('The end date can\'t be before the start date.');
         }
-        if ($startsOn === $endsOn && $startsAt !== null && $endsAt !== null && $endsAt <= $startsAt) {
+        if ($checkOrder && $startsOn === $endsOn && $startsAt !== null && $endsAt !== null && $endsAt <= $startsAt) {
             throw new InvalidArgumentException('The end time must be after the start time.');
         }
 

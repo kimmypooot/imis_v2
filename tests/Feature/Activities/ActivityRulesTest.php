@@ -138,6 +138,30 @@ class ActivityRulesTest extends TestCase
         $this->assertSame(0, $activity->moves()->count());
     }
 
+    public function test_details_only_edit_on_a_row_without_ends_on_is_not_a_move(): void
+    {
+        $activity = Activity::factory()->dated('2027-03-10')->create(['ends_on' => null]);
+
+        $edited = $this->activities->save(['venue' => 'Training Room'], $this->poster, $activity);
+
+        $this->assertSame('Training Room', $edited->venue);
+        $this->assertSame('2027-03-10', $edited->starts_on->toDateString());
+        $this->assertSame(0, $edited->moves()->count());
+    }
+
+    public function test_details_only_edit_on_an_all_day_row_with_stale_times_is_not_a_move(): void
+    {
+        $activity = Activity::factory()->dated('2027-03-10')->create([
+            'all_day' => true, 'starts_at' => '09:00:00', 'ends_at' => '12:00:00',
+        ]);
+
+        $edited = $this->activities->save(['title' => 'Renamed activity'], $this->poster, $activity);
+
+        $this->assertSame('Renamed activity', $edited->title);
+        $this->assertTrue($edited->all_day);
+        $this->assertSame(0, $edited->moves()->count());
+    }
+
     public function test_created_after_cutoff_is_unplanned(): void
     {
         $this->travelTo('2026-02-10 09:00');
