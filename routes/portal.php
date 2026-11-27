@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\PasskeyController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\PushSubscriptionController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ActivitySheetController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationLaunchController;
@@ -252,6 +253,8 @@ Route::middleware('auth')->group(function () {
     // keep their own office's activities, PALD any office's (ActivityPolicy).
     Route::middleware('permission:activities.view')->group(function () {
         Route::get('activities', [ActivityController::class, 'index'])->name('activities.index');
+        Route::get('activities/sheet/print', [ActivitySheetController::class, 'print'])->name('activities.sheet.print');
+        Route::get('activities/sheet/excel', [ActivitySheetController::class, 'excel'])->middleware('throttle:30,1')->name('activities.sheet.excel');
         Route::get('activities/{activity}', [ActivityController::class, 'show'])->whereNumber('activity')->name('activities.show');
 
         Route::middleware('permission:activities.post,activities.manage')->group(function () {
