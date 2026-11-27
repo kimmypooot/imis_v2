@@ -218,6 +218,26 @@ class LegacyImportTest extends TestCase
         $this->assertSame($counts, [User::count(), Application::count(), ApplicationAccess::count(), Announcement::count(), LoginHistory::count(), SystemAccessLog::count(), Committee::count(), OrganizationalUnit::count()]);
     }
 
+    public function test_the_command_can_read_the_live_legacy_database_without_a_dump(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'legacy');
+        config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => $file, 'prefix' => '']]);
+        $this->legacy = DB::connection('legacy');
+        $this->createLegacySchema();
+        $this->seedLegacyData();
+        DB::purge('legacy');
+
+        try {
+            $this->artisan('imis:import-legacy', ['--live' => true, '--without-history' => true])->assertSuccessful();
+
+            $this->assertSame(1, User::where('username', 'jdcruz')->value('legacy_id'));
+        } finally {
+            DB::purge('legacy');
+            DB::purge('legacy_import');
+            @unlink($file);
+        }
+    }
+
     private function import(): array
     {
         return (new LegacyImporter($this->legacy, 'https://legacy.example.test'))->run();
