@@ -2,6 +2,7 @@
 
 namespace App\Support\Activities;
 
+use App\Enums\ActivityMode;
 use App\Enums\ActivityStatus;
 use App\Models\Activity;
 use App\Models\Holiday;
@@ -23,9 +24,11 @@ use Illuminate\Support\Collection;
 class MonthSheet
 {
     /**
+     * The office and mode, when given, narrow the activities; holiday rows stay.
+     *
      * @return array{title: string, days: array<int, array{label: string, holiday: ?string, rows: array<int, Row>}>, tba: array<int, Row>}
      */
-    public static function build(int $year, int $month, ?int $officeId = null): array
+    public static function build(int $year, int $month, ?int $officeId = null, ?ActivityMode $mode = null): array
     {
         $first = Carbon::create($year, $month, 1)->startOfDay();
         $last = $first->copy()->endOfMonth()->startOfDay();
@@ -34,6 +37,7 @@ class MonthSheet
             ->with(['office', 'moves'])
             ->inMonth($year, $month)
             ->when($officeId !== null, fn ($query) => $query->where('organizational_unit_id', $officeId))
+            ->when($mode !== null, fn ($query) => $query->where('mode', $mode->value))
             ->get()
             ->sortBy(fn (Activity $activity) => [$activity->all_day ? 0 : 1, (string) $activity->starts_at, $activity->id])
             ->values();

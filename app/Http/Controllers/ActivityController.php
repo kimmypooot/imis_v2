@@ -10,13 +10,16 @@ use App\Http\Requests\Activities\SaveActivityRequest;
 use App\Models\Activity;
 use App\Models\ActivityMove;
 use App\Models\ActivitySeries;
+use App\Models\Holiday;
 use App\Models\OrganizationalUnit;
 use App\Models\User;
 use App\Notifications\ActivityUpdate;
 use App\Support\Activities\Activities;
 use App\Support\Activities\ActivityClashes;
 use App\Support\Activities\ActivitySeriesBuilder;
+use App\Support\Activities\MonthSheet;
 use App\Support\Activities\MoveReasonRequired;
+use App\Support\HR\Leave\HolidayCalendar;
 use Closure;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -54,14 +57,21 @@ class ActivityController extends Controller
         $user = $request->user();
         $month = $this->month($request->string('month')->toString());
         $view = $request->input('view') === 'list' ? 'list' : 'grid';
-        $office = $request->input('office');
         $mode = ActivityMode::tryFrom((string) $request->input('mode'));
+
+        // "mine" is the viewer's office (ignored when the account has none); a number is that office.
+        $office = $request->input('office');
+        $office = $office === 'mine' && $user->organizational_unit_id !== null ? 'mine' : (is_numeric($office) ? (string) (int) $office : null);
+        $officeId = match (true) {
+            $office === 'mine' => (int) $user->organizational_unit_id,
+            $office !== null => (int) $office,
+            default => null,
+        };
 
         $activities = Activity::query()
             ->with(['office', 'moves'])
             ->inMonth($month->year, $month->month)
-            ->when($office === 'mine', fn ($query) => $query->where('organizational_unit_id', $user->organizational_unit_id))
-            ->when(is_numeric($office), fn ($query) => $query->where('organizational_unit_id', (int) $office))
+            ->when($officeId !== null, fn ($query) => $query->where('organizational_unit_id', $officeId))
             ->when($mode !== null, fn ($query) => $query->where('mode', $mode->value))
             ->orderByRaw('starts_on is null')->orderBy('starts_on')->orderBy('starts_at')->orderBy('id')
             ->get();
@@ -70,16 +80,29 @@ class ActivityController extends Controller
             'month' => $month->format('Y-m'),
             'view' => $view,
             'filters' => ['office' => $office, 'mode' => $mode?->value],
+            'officeId' => $officeId,
+            'myOfficeId' => $user->organizational_unit_id,
             'activities' => $activities->map(fn (Activity $activity) => $this->present($activity, $user))->values(),
-            'offices' => OrganizationalUnit::query()->workingOffices()->inOrder()->get(['id', 'name', 'short_name'])
-                ->map(fn (OrganizationalUnit $unit) => ['id' => $unit->id, 'name' => $unit->name, 'short_name' => $unit->short_name]),
-            'postingOffices' => $this->postingOffices($user)->map(fn (OrganizationalUnit $unit) => ['id' => $unit->id, 'name' => $unit->name, 'short_name' => $unit->short_name])->values(),
+            'sheet' => $view === 'list' ? MonthSheet::build($month->year, $month->month, $officeId, $mode) : null,
+            'holidays' => app(HolidayCalendar::class)->between($month, $month->copy()->endOfMonth()->startOfDay())
+                ->map(fn (Holiday $holiday) => ['date' => $holiday->date->toDateString(), 'name' => $holiday->name, 'day_off' => $holiday->type->isDayOff()])
+                ->values(),
+            'offices' => $this->officeOptions(OrganizationalUnit::query()->workingOffices()->inOrder()->get(['id', 'name', 'short_name'])),
+            'postOffices' => $this->officeOptions($this->postingOffices($user)),
             'modeOptions' => ActivityMode::options(),
-            'can' => [
-                'post' => $user->can('create', Activity::class),
-                'manage' => $user->can('manage', Activity::class),
-            ],
+            'canPost' => $user->can('create', Activity::class),
+            'canManage' => $user->can('manage', Activity::class),
+            'clashes' => fn () => $request->session()->get('clashes', []),
         ]);
+    }
+
+    /**
+     * @param  EloquentCollection<int, OrganizationalUnit>  $units
+     * @return array<int, array{id: int, name: string, short_name: ?string}>
+     */
+    private function officeOptions(EloquentCollection $units): array
+    {
+        return $units->map(fn (OrganizationalUnit $unit) => ['id' => $unit->id, 'name' => $unit->name, 'short_name' => $unit->short_name])->values()->all();
     }
 
     /**
@@ -89,13 +112,15 @@ class ActivityController extends Controller
     {
         $this->authorize('view', $activity);
 
-        $activity->load(['office', 'moves', 'creator']);
+        $activity->load(['office', 'moves', 'creator', 'series']);
         $movers = User::query()->whereIn('id', $activity->moves->pluck('moved_by')->filter()->unique())->pluck('name', 'id');
 
         return response()->json([
             'activity' => [
                 ...$this->present($activity, $request->user()),
                 'created_by' => $activity->creator?->name,
+                // The series' repeat rule, so a "this and the following" edit can start from it.
+                'series' => $activity->series ? $this->seriesRule($activity->series) : null,
                 'moves' => $activity->moves->map(fn (ActivityMove $move) => [
                     'from_starts_on' => $move->from_starts_on?->toDateString(),
                     'from_ends_on' => $move->from_ends_on?->toDateString(),

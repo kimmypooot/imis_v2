@@ -76,6 +76,7 @@ export const hrAccessPermissions = [
 export const portalNavItems = [
     { label: 'Home', href: '/dashboard', icon: 'home' },
     { label: 'Announcements', href: '/announcements', icon: 'megaphone' },
+    { label: 'Calendar of Activities', href: '/activities', icon: 'calendar', permission: 'activities.view' },
     {
         group: 'Directory',
         items: [

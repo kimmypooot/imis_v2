@@ -5,6 +5,7 @@ namespace Tests\Feature\Activities;
 use App\Enums\ActivityStatus;
 use App\Models\Activity;
 use App\Models\ActivityMove;
+use App\Models\Holiday;
 use App\Models\OrganizationalUnit;
 use App\Models\Permission;
 use App\Models\Role;
@@ -41,6 +42,77 @@ class ActivityHttpTest extends TestCase
         $this->actingAs($staff)->post('/activities', $this->form($office))->assertForbidden();
         $this->actingAs($staff)->put("/activities/{$activity->id}", ['title' => 'Changed'])->assertForbidden();
         $this->assertSame(1, Activity::query()->count());
+    }
+
+    public function test_index_props_for_the_month(): void
+    {
+        Holiday::query()->firstOrCreate(['date' => '2000-12-25', 'name' => 'Christmas Day'], ['type' => 'regular', 'repeats_annually' => true]);
+        $office = OrganizationalUnit::factory()->create();
+        Activity::factory()->dated('2025-12-10')->create(['organizational_unit_id' => $office->id]);
+        Activity::factory()->dated('2025-11-28', '2025-12-02')->create(['organizational_unit_id' => $office->id]);
+        Activity::factory()->monthOnly(2025, 12)->create(['organizational_unit_id' => $office->id]);
+        Activity::factory()->dated('2026-01-05')->create(['organizational_unit_id' => $office->id]);
+        $staff = $this->userWith(['activities.view'], $office);
+
+        $this->actingAs($staff)->get('/activities?month=2025-12')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Activities/Index')
+                ->where('month', '2025-12')
+                ->where('view', 'grid')
+                ->has('activities', 3)
+                ->where('holidays', fn ($holidays) => collect($holidays)->contains(fn ($holiday) => $holiday['date'] === '2025-12-25' && $holiday['name'] === 'Christmas Day' && $holiday['day_off'] === true))
+                ->where('canPost', false)
+                ->where('canManage', false)
+                ->where('postOffices', [])
+                ->where('sheet', null));
+    }
+
+    public function test_list_view_includes_the_sheet(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        Activity::factory()->dated('2025-12-10')->create(['organizational_unit_id' => $office->id, 'title' => 'Year-end review']);
+        Activity::factory()->monthOnly(2025, 12)->create(['organizational_unit_id' => $office->id, 'title' => 'Some time in December']);
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+
+        $this->actingAs($poster)->get('/activities?month=2025-12&view=list')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Activities/Index')
+                ->where('view', 'list')
+                ->where('sheet.title', 'CSC RO VIII CALENDAR OF ACTIVITIES for DECEMBER 2025')
+                ->where('sheet.days', fn ($days) => $this->sheetActivities($days) === ['Year-end review'])
+                ->where('sheet.tba.0.activity', 'Some time in December')
+                ->where('canPost', true)
+                ->has('postOffices', 1)
+                ->where('postOffices.0.id', $office->id));
+    }
+
+    public function test_office_filter_mine(): void
+    {
+        $mine = OrganizationalUnit::factory()->create();
+        $other = OrganizationalUnit::factory()->create();
+        Activity::factory()->dated('2025-12-10')->create(['organizational_unit_id' => $mine->id, 'title' => 'Ours']);
+        Activity::factory()->dated('2025-12-11')->create(['organizational_unit_id' => $other->id, 'title' => 'Theirs']);
+        $staff = $this->userWith(['activities.view'], $mine);
+
+        $this->actingAs($staff)->get('/activities?month=2025-12&office=mine&view=list')
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.office', 'mine')
+                ->has('activities', 1)
+                ->where('activities.0.title', 'Ours')
+                ->where('sheet.days', fn ($days) => $this->sheetActivities($days) === ['Ours']));
+    }
+
+    /**
+     * The activity titles on a sheet's date rows, leaving out holiday rows.
+     *
+     * @param  iterable<int, array<string, mixed>>  $days
+     * @return array<int, string>
+     */
+    private function sheetActivities(iterable $days): array
+    {
+        return collect($days)->flatMap(fn ($day) => $day['rows'])
+            ->reject(fn ($row) => $row['time'] === 'HOLIDAY')
+            ->pluck('activity')->values()->all();
     }
 
     public function test_poster_posts_for_their_own_office_only(): void
@@ -186,6 +258,12 @@ class ActivityHttpTest extends TestCase
 
         $this->assertSame(['2027-03-01', '2027-03-08', '2027-03-15', '2027-03-22', '2027-03-29'], Activity::query()->orderBy('starts_on')->get()->map(fn (Activity $activity) => $activity->starts_on->toDateString())->all());
         $this->assertDatabaseHas('audit_logs', ['event' => 'activity.series_saved', 'actor_id' => $poster->id]);
+
+        // The details carry the repeat rule, for a "this and the following" edit.
+        $this->actingAs($poster)->getJson('/activities/'.Activity::query()->value('id'))
+            ->assertJsonPath('activity.series.frequency', 'weekly')
+            ->assertJsonPath('activity.series.weekday', 1)
+            ->assertJsonPath('activity.series.until', '2027-03-31');
     }
 
     public function test_a_monthly_repeat_takes_a_day_or_a_weekday_not_both(): void
