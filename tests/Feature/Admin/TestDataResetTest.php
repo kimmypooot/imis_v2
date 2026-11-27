@@ -74,6 +74,23 @@ class TestDataResetTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event' => 'system.test_data_reset', 'actor_id' => $admin->id]);
     }
 
+    public function test_an_emptied_table_numbers_from_one_again(): void
+    {
+        $this->backupSucceeds();
+        SalaryNotice::factory()->count(3)->create();
+        $feedback = Feedback::factory()->count(2)->create();
+
+        $this->actingAs($this->superAdmin())->delete('/admin/settings/test-data', [
+            'categories' => ['salary_notices'],
+            'password' => 'password',
+            'confirmation' => self::PHRASE,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(1, SalaryNotice::factory()->create()->id);
+        // A table that wasn't emptied keeps counting.
+        $this->assertSame($feedback->last()->id + 1, Feedback::factory()->create()->id);
+    }
+
     public function test_a_file_still_used_by_a_kept_record_is_not_deleted(): void
     {
         $this->backupSucceeds();

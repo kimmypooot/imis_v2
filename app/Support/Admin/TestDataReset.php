@@ -158,6 +158,8 @@ class TestDataReset
             }
         });
 
+        $this->restartNumbering($keys);
+
         $kept = $this->keptFiles();
         $deleted = 0;
 
@@ -197,6 +199,34 @@ class TestDataReset
         }
 
         return $deleted;
+    }
+
+    /**
+     * Every table the reset left empty numbers from 1 again, as a TRUNCATE
+     * would. TRUNCATE itself can't be used: MySQL refuses it on a table a
+     * foreign key points to, and it would end the transaction above. A
+     * table still holding rows (the current session) keeps counting.
+     *
+     * @param  array<int, string>  $keys
+     */
+    private function restartNumbering(array $keys): void
+    {
+        $driver = DB::connection()->getDriverName();
+
+        foreach (collect($keys)->flatMap(fn (string $key) => self::CATEGORIES[$key]['tables']) as $table) {
+            $numbered = Schema::hasTable($table)
+                && collect(Schema::getColumns($table))->contains(fn (array $column) => $column['auto_increment']);
+
+            if (! $numbered || DB::table($table)->exists()) {
+                continue;
+            }
+
+            match ($driver) {
+                'mysql', 'mariadb' => DB::statement("ALTER TABLE `{$table}` AUTO_INCREMENT = 1"),
+                'sqlite' => DB::table('sqlite_sequence')->where('name', $table)->delete(),
+                default => null,
+            };
+        }
     }
 
     /**
