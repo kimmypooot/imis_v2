@@ -56,6 +56,20 @@ class LegacyImporter
     public const RETIRED_SYSTEMS = ['PRISM'];
 
     /**
+     * People who had one legacy account per office they handled and have
+     * one account here (by the username they keep): `keep` is the legacy
+     * account whose id the subsystems go on using; the `fold` accounts are
+     * never created, and their roles and history follow the person. A role
+     * the kept account has in the same system wins.
+     *
+     * @var array<string, array{keep: string, fold: array<int, string>}>
+     */
+    public const MERGED_ACCOUNTS = [
+        'rbuy' => ['keep' => 'rbuy-samar', 'fold' => ['rbuy-esamar']],
+        'mmdelacruz' => ['keep' => 'mmdelacruz-biliran', 'fold' => ['mmdelacruz-wleyte']],
+    ];
+
+    /**
      * Bootstrap Icons used by the legacy systems → the closest Icon.vue name.
      */
     private const ICONS = [
@@ -76,6 +90,9 @@ class LegacyImporter
 
     /** @var array<int, OrganizationalUnit|Committee> legacy division id → office or committee */
     private array $divisions = [];
+
+    /** @var array<int, int> folded legacy user id → the kept legacy user id (MERGED_ACCOUNTS) */
+    private array $folded = [];
 
     /** @var array<string, int> */
     private array $counts = [];
@@ -245,15 +262,16 @@ class LegacyImporter
         $legacyUsers = $this->legacy->table('users_cscro8')->orderBy('id')->get();
         $units = OrganizationalUnit::query()->pluck('id', 'name');
         $superAdmin = Role::query()->where('name', RoleName::SuperAdmin->value)->value('id');
-        $emailOwners = $this->emailOwners($legacyUsers);
+        [$keptAs, $this->folded] = $this->mergedAccounts($legacyUsers);
+        $emails = $this->ownedEmails($legacyUsers);
 
-        foreach ($legacyUsers as $legacyUser) {
-            $username = Usernames::normalize($legacyUser->username);
+        // Folded accounts are never created, so the people here are numbered without gaps.
+        foreach ($legacyUsers->reject(fn ($legacyUser) => isset($this->folded[(int) $legacyUser->id])) as $legacyUser) {
+            $username = $keptAs[(int) $legacyUser->id] ?? Usernames::normalize($legacyUser->username);
             $user = User::query()->where('username', $username)->first();
-            $emailKey = Str::lower(trim($legacyUser->email));
-            $email = (int) ($emailOwners[$emailKey] ?? 0) === (int) $legacyUser->id
-                && ! User::query()->where('email', trim($legacyUser->email))->when($user, fn ($query) => $query->whereKeyNot($user->id))->exists()
-                ? trim($legacyUser->email)
+            $owned = $emails[(int) $legacyUser->id] ?? null;
+            $email = $owned !== null && ! User::query()->where('email', $owned)->when($user, fn ($query) => $query->whereKeyNot($user->id))->exists()
+                ? $owned
                 : null;
 
             // The legacy first name carries any title ("Atty. Juan"); here it's separate.
@@ -313,6 +331,70 @@ class LegacyImporter
 
             $this->users[(int) $legacyUser->id] = $user->id;
         }
+
+        foreach ($this->folded as $legacyId => $keptLegacyId) {
+            if (isset($this->users[$keptLegacyId])) {
+                $this->users[$legacyId] = $this->users[$keptLegacyId];
+                $this->count('users_merged');
+            }
+        }
+    }
+
+    /**
+     * Which legacy accounts MERGED_ACCOUNTS keeps (and the username each
+     * gets here) and which it folds into them. An account missing from the
+     * legacy data is ignored; a fold whose kept account is missing is
+     * imported as it is.
+     *
+     * @param  Collection<int, object>  $legacyUsers
+     * @return array{0: array<int, string>, 1: array<int, int>} [kept legacy id → username, folded legacy id → kept legacy id]
+     */
+    private function mergedAccounts(Collection $legacyUsers): array
+    {
+        $ids = $legacyUsers->mapWithKeys(fn ($legacyUser) => [Usernames::normalize($legacyUser->username) => (int) $legacyUser->id]);
+        $kept = [];
+        $folded = [];
+
+        foreach (self::MERGED_ACCOUNTS as $username => $merge) {
+            $keptId = $ids[$merge['keep']] ?? null;
+
+            if ($keptId === null) {
+                continue;
+            }
+
+            $kept[$keptId] = $username;
+
+            foreach ($merge['fold'] as $fold) {
+                if (isset($ids[$fold])) {
+                    $folded[$ids[$fold]] = $keptId;
+                }
+            }
+        }
+
+        return [$kept, $folded];
+    }
+
+    /**
+     * The email each imported account gets: one it owns (emailOwners),
+     * its own first, else one a folded account of the same person owns.
+     *
+     * @param  Collection<int, object>  $legacyUsers
+     * @return array<int, string> legacy user id → email
+     */
+    private function ownedEmails(Collection $legacyUsers): array
+    {
+        $owners = $this->emailOwners($legacyUsers);
+        $emails = [];
+
+        foreach ($legacyUsers->sortBy(fn ($legacyUser) => isset($this->folded[(int) $legacyUser->id])) as $legacyUser) {
+            $email = trim($legacyUser->email);
+
+            if ($email !== '' && (int) ($owners[Str::lower($email)] ?? 0) === (int) $legacyUser->id) {
+                $emails[$this->folded[(int) $legacyUser->id] ?? (int) $legacyUser->id] ??= $email;
+            }
+        }
+
+        return $emails;
     }
 
     /**
@@ -340,8 +422,13 @@ class LegacyImporter
 
     private function importAccess(): void
     {
-        foreach ($this->legacy->table('imis_system_access')->orderBy('id')->get() as $grant) {
+        // A folded account's grants come last and never replace a role the person already has.
+        $grants = $this->legacy->table('imis_system_access')->orderBy('id')->get()
+            ->sortBy(fn ($grant) => isset($this->folded[(int) $grant->user_id]))->values();
+
+        foreach ($grants as $grant) {
             $userId = $this->user($grant->user_id);
+            $folded = isset($this->folded[(int) $grant->user_id]);
             $system = $this->systems[$grant->project_id] ?? null;
             $role = $this->roles[$grant->role_id] ?? null;
 
@@ -351,7 +438,15 @@ class LegacyImporter
                 continue;
             }
 
-            $access = ApplicationAccess::query()->where('application_id', $system->id)->where('user_id', $userId)->first()
+            $existing = ApplicationAccess::query()->where('application_id', $system->id)->where('user_id', $userId)->first();
+
+            if ($folded && $existing) {
+                $this->count('access_merged');
+
+                continue;
+            }
+
+            $access = $existing
                 ?? (new ApplicationAccess)->forceFill([
                     'application_id' => $system->id,
                     'user_id' => $userId,

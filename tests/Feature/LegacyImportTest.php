@@ -170,6 +170,44 @@ class LegacyImportTest extends TestCase
         $this->assertSame('203.0.113.5', $launch->ip_address);
     }
 
+    public function test_one_account_per_office_is_merged_into_one_person_and_ids_stay_in_order(): void
+    {
+        $hash = Hash::make('legacy-secret');
+        $person = fn (array $values) => array_merge([
+            'fname' => 'Rey', 'lname' => 'Uy', 'mname' => 'Bello', 'sex' => 'Male', 'password' => $hash, 'position' => 'Director II',
+            'fo_rsu' => 'Human Resource Division', 'status' => 'Active', 'role' => 'user', 'profile' => '', 'email' => '', 'birthday' => null, 'last_login' => null,
+        ], $values);
+        $this->legacy->table('users_cscro8')->insert([
+            $person(['id' => 5, 'username' => 'rbuy-esamar', 'email' => 'rey@example.test']),
+            $person(['id' => 6, 'username' => 'rbuy-samar']),
+            $person(['id' => 7, 'fname' => 'Zoe', 'lname' => 'Lim', 'username' => 'zlim']),
+        ]);
+        $this->legacy->table('imis_system_access')->insert([
+            ['id' => 3, 'user_id' => 6, 'project_id' => 1, 'role_id' => 1, 'granted_at' => '2026-05-01 00:00:00', 'granted_by' => null],
+            ['id' => 4, 'user_id' => 5, 'project_id' => 1, 'role_id' => 2, 'granted_at' => '2026-05-01 00:00:00', 'granted_by' => null],
+            ['id' => 5, 'user_id' => 5, 'project_id' => 2, 'role_id' => 3, 'granted_at' => '2026-05-01 00:00:00', 'granted_by' => null],
+        ]);
+        $this->legacy->table('imis_history_login_logs')->insert([
+            'id' => 4, 'user_id' => 5, 'username' => 'rbuy-esamar', 'ip_address' => '203.0.113.8', 'login_time' => '2026-07-01 08:00:00', 'logout_time' => null, 'user_agent' => 'Mozilla/5.0', 'status' => 'timeout', 'session_id' => null,
+        ]);
+
+        $this->import();
+
+        // The folded account is never created, so the numbering has no gap.
+        $this->assertSame(['jdcruz', 'asantos', 'bsantos', 'mreyes', 'rbuy', 'zlim'], User::orderBy('id')->pluck('username')->all());
+        $this->assertSame(range(1, 6), User::orderBy('id')->pluck('id')->all());
+
+        $rey = User::where('username', 'rbuy')->firstOrFail();
+        $this->assertSame(6, $rey->legacy_id);
+        $this->assertSame('rey@example.test', $rey->email);
+        $this->assertFalse(User::whereIn('username', ['rbuy-esamar', 'rbuy-samar'])->exists());
+
+        // The kept account's role wins; a system only the folded account had follows the person.
+        $this->assertSame('Admin', ApplicationAccess::where('user_id', $rey->id)->whereHas('application', fn ($query) => $query->where('short_name', 'OTRS'))->firstOrFail()->role->name);
+        $this->assertTrue(ApplicationAccess::where('user_id', $rey->id)->whereHas('application', fn ($query) => $query->where('short_name', 'ERIS'))->exists());
+        $this->assertSame($rey->id, LoginHistory::where('username', 'rbuy-esamar')->value('user_id'));
+    }
+
     public function test_running_twice_creates_no_duplicates(): void
     {
         $this->import();
