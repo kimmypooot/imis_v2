@@ -5513,3 +5513,83 @@ The legacy IMIS had no notices.
 
 ### Tests
 `tests/Feature/HR/SalaryNoticesTest.php`.
+
+## Calendar of Activities — IMPLEMENTED
+
+The regional calendar. Every office posts its own activities; PALD (the
+process owner) keeps the calendar in order and prints the monthly sheet.
+Page: `/activities` (month calendar or the monthly sheet).
+
+### Access
+- `activities.view`: every staff account, through the default `user`
+  role. The calendar, list, details, print and Excel.
+- `activities.post`: adds, edits, moves, cancels and marks done the
+  activities of the poster's **own office**, exactly the account's
+  organizational unit (no parent or child units) (`ActivityPolicy`).
+- `activities.manage`: PALD. Everything for any office, plus returning
+  or removing activities and the management page.
+- Roles (`ActivityRoleSeeder`, created only if missing; nobody is
+  assigned at install): `activities-curator` ("Calendar of Activities —
+  PALD": view, post, manage) and `activities-poster` ("Calendar of
+  Activities — office poster": view, post).
+- Audit events: `activity.saved`, `moved`, `cancelled`, `done`,
+  `returned`, `removed`, `series_saved`, `cutoff_saved`.
+
+### Data
+- `activities`: one row per occurrence (office, title, responsible,
+  participants, venue, mode, remarks, year and month, optional dates and
+  times, status, unplanned flag, return and removal notes; soft deletes).
+- `activity_moves`: the history of date changes, each with its reason.
+- `activity_series`: a repeating activity's rule; its occurrences are
+  real rows in `activities`.
+- `activity_plan_cutoffs`: PALD's plan cut-off per year.
+
+### Rules (`Support/Activities`)
+- **Planned vs scheduled:** an activity always has a year and month. Without
+  a date it is `planned`; its first date makes it `scheduled` (not a move).
+  Later statuses are `cancelled` (with a reason) and `done`.
+- **Moves:** changing the date or time of an activity that already had one
+  records an `ActivityMove` and needs a reason (`MoveReasonRequired`).
+  "Moved" is derived from that history, never stored.
+- **Unplanned:** activities added after the year's cut-off (31 January
+  when PALD sets none) are flagged unplanned; the flag is never cleared
+  automatically.
+- **Repeating** (`ActivitySeriesBuilder`): daily (weekdays), weekly or
+  monthly (a day of the month or the nth weekday), every N, skipping
+  day-off holidays if asked, never past 31 December. Editing, moving or
+  returning an occurrence detaches it from its series.
+- **Clashes** (`ActivityClashes`): overlapping dates and times at the same
+  venue or for the same office. They warn, never block.
+- `Activities` is the only writer of activities and moves.
+
+### PALD's page (`/activities/manage`)
+What changed in the last 7 or 30 days (`ActivityChanges`, from the audit
+log), a month's clashes, plan versus actual per office for a year
+(`PlanVersusActual`), the year's cut-off, and removed activities.
+Returning or removing an activity bells the office's posters and its
+creator (`ActivityUpdate`, kind `activities`, in Notification settings).
+
+### Monthly sheet (`MonthSheet`, `ActivityWorkbook`)
+Titled "CSC RO VIII CALENDAR OF ACTIVITIES for {MONTH} {YEAR}": a date
+row per day with activities or a day-off holiday, that day's activities,
+then "Dates to be announced" for month-only ones; cancelled ones stay,
+flagged. Printed from `Pages/Activities/SheetPrint.vue` and downloaded as
+Excel through PhpSpreadsheet (one worksheet per month, Poppins,
+landscape). Both follow the office and mode filters.
+
+### Dashboard
+- The welcome banner has a quick-access dock (`Support/Portal/QuickAccess`):
+  File Leave, My DTR, My Payslip and My PDS for staff with an employee
+  record, and the Calendar of Activities.
+- At a glance gets an **Activities** tile (this week's count).
+- A **Calendar of Activities** section (`UpcomingActivities`, deferred):
+  the next 7 days in the region with day-off holidays inline, and a mini
+  month calendar.
+
+### Deploying
+`php artisan migrate`. This adds the tables and permissions, gives
+`activities.view` to the `user` role, creates the two roles, and adds the
+What's New items. Then assign PALD and each office's posters.
+
+### Tests
+`tests/Feature/Activities/`, `tests/Feature/Portal/DashboardActivitiesTest.php`.
