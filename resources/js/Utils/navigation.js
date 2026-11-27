@@ -156,7 +156,7 @@ export const adminModuleGroups = [
             { label: 'Manage Dashboard', href: '/admin/dashboard-layout', icon: 'grid', permission: 'applications.update' },
             { label: 'Manage Users', href: '/users', icon: 'user', permission: 'users.view' },
             { label: 'Manage Systems', href: '/admin/applications', icon: 'grid', permission: 'applications.view' },
-            { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: 'applications.manage_access' },
+            { label: 'System Access', href: '/admin/system-access', icon: 'key', permission: ['applications.manage_access', 'applications.manage_office_access'] },
             { label: 'User Access', href: '/admin/user-access', icon: 'key', permission: 'applications.manage_access' },
             { label: 'IMIS Roles', href: '/roles', icon: 'users', permission: 'roles.view' },
             { label: 'Permissions', href: '/permissions', icon: 'key', permission: 'permissions.view' },

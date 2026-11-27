@@ -73,6 +73,29 @@ class ApplicationPolicy
      */
     public function manageAccess(User $user, Application $application): bool
     {
-        return $user->hasPermission(PermissionName::ApplicationsManageAccess->value);
+        return $user->hasPermission(PermissionName::ApplicationsManageAccess->value)
+            || $this->managesForOffice($user, $application);
+    }
+
+    /**
+     * Opening System Access: everyone who manages access to some system,
+     * including an office access manager (who sees only their office's).
+     */
+    public function viewSystemAccess(User $user): bool
+    {
+        return $user->hasAnyPermission([
+            PermissionName::ApplicationsManageAccess->value,
+            PermissionName::ApplicationsManageOfficeAccess->value,
+        ]);
+    }
+
+    /**
+     * An office access manager, for a system their own office manages.
+     */
+    private function managesForOffice(User $user, Application $application): bool
+    {
+        return $application->organizational_unit_id !== null
+            && $application->organizational_unit_id === $user->organizational_unit_id
+            && $user->hasPermission(PermissionName::ApplicationsManageOfficeAccess->value);
     }
 }

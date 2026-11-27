@@ -262,10 +262,15 @@ Route::middleware('auth')->group(function () {
             ->name('admin.dashboard-layout.update');
     });
 
-    Route::middleware('permission:applications.manage_access')->group(function () {
-        // Legacy "Roles and Permissions" (per system) and "User Access" (per user).
+    // Legacy "Roles and Permissions" (per system). An office access manager
+    // reaches it too, for the systems their own office manages only.
+    Route::middleware('permission:applications.manage_access,applications.manage_office_access')->group(function () {
         Route::get('admin/system-access', [SystemAccessController::class, 'index'])->name('admin.system-access.index');
         Route::put('admin/system-access/{application}', [SystemAccessController::class, 'update'])->name('admin.system-access.update');
+    });
+
+    Route::middleware('permission:applications.manage_access')->group(function () {
+        // Legacy "User Access" (per user): every system at once.
         Route::get('admin/user-access', [UserAccessController::class, 'index'])->name('admin.user-access.index');
         Route::post('admin/applications/{application}/access', [ApplicationAccessController::class, 'store'])
             ->name('admin.applications.access.store');
