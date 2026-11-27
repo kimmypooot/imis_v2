@@ -5,6 +5,7 @@ namespace Tests\Feature\HR;
 use App\Enums\EmploymentStatus;
 use App\Enums\LeaveApplicationStatus;
 use App\Models\Employee;
+use App\Models\Holiday;
 use App\Models\LeaveApplication;
 use App\Models\LeaveApplicationStep;
 use App\Models\LeaveDesignation;
@@ -50,6 +51,8 @@ class LeaveApplicationTest extends TestCase
         Storage::fake('local');
         $this->travelTo('2026-06-01 09:00:00');
         $this->seed(LeaveTypeSeeder::class);
+        // The day counts below assume no holidays; the migrated repeating ones (June 12…) would fall in 2026.
+        Holiday::query()->delete();
 
         $this->supervisor = User::factory()->create();
         $this->hr = $this->userWith(['leave.certify', 'leave.view']);

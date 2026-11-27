@@ -26,21 +26,14 @@ class HolidayController extends Controller
         $year = $request->integer('year', (int) now()->year);
         $year = $year >= 1990 && $year <= 2100 ? $year : (int) now()->year;
 
-        $years = Holiday::query()->pluck('date')->map(fn ($date) => (int) substr((string) $date, 0, 4))
+        $years = Holiday::query()->where('repeats_annually', false)->pluck('date')->map(fn ($date) => (int) substr((string) $date, 0, 4))
             ->push((int) now()->year)->push((int) now()->year + 1)->push($year)->unique()->sortDesc()->values();
 
         return Inertia::render('Admin/HR/Leave/Holidays', [
             'year' => $year,
             'years' => $years,
-            'holidays' => Holiday::query()->whereYear('date', $year)->orderBy('date')->get()->map(fn (Holiday $holiday) => [
-                'id' => $holiday->id,
-                'date' => $holiday->date->toDateString(),
-                'name' => $holiday->name,
-                'type' => $holiday->type->value,
-                'type_label' => $holiday->type->label(),
-                'day_off' => $holiday->type->isDayOff(),
-                'proclamation' => $holiday->proclamation,
-            ]),
+            'repeating' => Holiday::query()->where('repeats_annually', true)->orderBy('date')->get()->map(fn (Holiday $holiday) => $this->row($holiday, $year)),
+            'holidays' => Holiday::query()->where('repeats_annually', false)->whereYear('date', $year)->orderBy('date')->get()->map(fn (Holiday $holiday) => $this->row($holiday, $year)),
             'typeOptions' => HolidayType::options(),
             'canManage' => $request->user()->can('manage', LeaveType::class),
         ]);
@@ -77,14 +70,46 @@ class HolidayController extends Controller
     }
 
     /**
+     * A repeating holiday is shown by month and day only; its form date is
+     * placed in the year being viewed (or the placeholder year for a
+     * February 29 the year lacks), since only the month and day are kept.
+     *
+     * @return array<string, mixed>
+     */
+    private function row(Holiday $holiday, int $year): array
+    {
+        $date = $holiday->date;
+
+        if ($holiday->repeats_annually && checkdate($date->month, $date->day, $year)) {
+            $date = $date->copy()->setYear($year);
+        }
+
+        return [
+            'id' => $holiday->id,
+            'date' => $date->toDateString(),
+            'month_day' => $holiday->date->format('F j'),
+            'name' => $holiday->name,
+            'type' => $holiday->type->value,
+            'type_label' => $holiday->type->label(),
+            'day_off' => $holiday->type->isDayOff(),
+            'repeats_annually' => $holiday->repeats_annually,
+            'proclamation' => $holiday->proclamation,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function validated(Request $request, ?Holiday $holiday = null): array
     {
+        $date = (string) $request->input('date');
+        $storedDate = $request->boolean('repeats_annually') && strlen($date) >= 10 ? Holiday::repeatingDate(substr($date, 5, 5)) : $date;
+
         return $request->validate([
             'date' => ['required', 'date', 'after:1990-01-01'],
-            'name' => ['required', 'string', 'max:255', Rule::unique('holidays', 'name')->where('date', $request->input('date'))->ignore($holiday)],
+            'name' => ['required', 'string', 'max:255', Rule::unique('holidays', 'name')->where('date', $storedDate)->ignore($holiday)],
             'type' => ['required', Rule::enum(HolidayType::class)],
+            'repeats_annually' => ['boolean'],
             'proclamation' => ['nullable', 'string', 'max:255'],
         ]);
     }

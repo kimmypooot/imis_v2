@@ -8,10 +8,10 @@ use App\Enums\PermissionName;
 use App\Enums\Status;
 use App\Models\Application;
 use App\Models\Employee;
-use App\Models\Holiday;
 use App\Models\LeaveLedgerEntry;
 use App\Models\SalarySchedule;
 use App\Models\User;
+use App\Support\HR\Leave\HolidayCalendar;
 use App\Support\HR\Leave\Supervisors;
 use Illuminate\Database\Eloquent\Builder;
 use Throwable;
@@ -73,7 +73,7 @@ class CutoverReadiness
         $imported = LeaveLedgerEntry::query()->whereNotNull('legacy_id')->exists();
         $add('Leave', 'Legacy LMS credits imported', $imported, $imported ? 'Imported' : 'Not yet — run imis:import-legacy-leave', null);
 
-        $holidays = Holiday::query()->whereYear('date', today()->year)->count();
+        $holidays = (new HolidayCalendar)->between(today()->startOfYear(), today()->endOfYear())->count();
         $add('Leave', 'This year\'s holidays are entered', $holidays > 0, $holidays ? "{$holidays} entered" : 'None for '.today()->year, '/admin/hr/leave/holidays');
 
         $supervisors = app(Supervisors::class);

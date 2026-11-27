@@ -119,7 +119,7 @@ class LegacyLeaveImportTest extends TestCase
         $this->assertTrue($this->ana->is_solo_parent);
         $this->assertSame('SP-0001', $this->ana->solo_parent_id_number);
 
-        $this->assertSame(['Christmas Day'], Holiday::query()->pluck('name')->all());
+        $this->assertSame(['Christmas Day'], Holiday::query()->whereYear('date', 2026)->pluck('name')->all());
         $this->assertSame(1, LeaveDesignation::query()->count());
 
         // VL carries over to the day: 20 + 1.25 − 2; the unknown type and
@@ -144,7 +144,7 @@ class LegacyLeaveImportTest extends TestCase
         $this->artisan('imis:import-legacy-leave')->assertSuccessful();
         $this->assertSame(4, LeaveLedgerEntry::query()->count());
         $this->assertSame(1, LeaveApplication::query()->count());
-        $this->assertSame(1, Holiday::query()->count());
+        $this->assertSame(1, Holiday::query()->whereYear('date', 2026)->count());
     }
 
     public function test_a_dry_run_saves_nothing_and_missing_tables_are_reported(): void

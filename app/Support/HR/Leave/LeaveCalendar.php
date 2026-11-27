@@ -101,7 +101,7 @@ class LeaveCalendar
      */
     public function holidays(Carbon $start, Carbon $end): Collection
     {
-        return Holiday::query()->whereDate('date', '>=', $start)->whereDate('date', '<=', $end)->orderBy('date')->get()
+        return (new HolidayCalendar)->between($start, $end)
             ->map(fn (Holiday $holiday) => ['date' => $holiday->date->toDateString(), 'name' => $holiday->name, 'day_off' => $holiday->type->isDayOff()]);
     }
 }
