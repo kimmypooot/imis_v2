@@ -5552,15 +5552,20 @@ Page: `/activities` (month calendar or the monthly sheet).
   records an `ActivityMove` and needs a reason (`MoveReasonRequired`).
   "Moved" is derived from that history, never stored.
 - **Unplanned:** activities added after the year's cut-off (31 January
-  when PALD sets none) are flagged unplanned; the flag is never cleared
-  automatically.
+  when PALD sets none), or when ticked, are flagged unplanned; the flag is
+  never cleared (the form locks the box once it is set).
 - **Repeating** (`ActivitySeriesBuilder`): daily (weekdays), weekly or
   monthly (a day of the month or the nth weekday), every N, skipping
   day-off holidays if asked, never past 31 December. Editing, moving or
-  returning an occurrence detaches it from its series.
+  returning an occurrence detaches it from its series; it keeps the series
+  in `detached_from_series_id`, and a "this and the following" edit never
+  fills the date it was made for (before its first move) again. Such an
+  edit keeps the series' office. Cancelled and done activities can't be
+  moved.
 - **Clashes** (`ActivityClashes`): overlapping dates and times at the same
   venue or for the same office. They warn, never block.
-- `Activities` is the only writer of activities and moves.
+- `Activities` is the only writer of activities and moves. A date change
+  made through the edit form is audited as `activity.moved` too.
 
 ### PALD's page (`/activities/manage`)
 What changed in the last 7 or 30 days (`ActivityChanges`, from the audit
@@ -5568,6 +5573,9 @@ log), a month's clashes, plan versus actual per office for a year
 (`PlanVersusActual`), the year's cut-off, and removed activities.
 Returning or removing an activity bells the office's posters and its
 creator (`ActivityUpdate`, kind `activities`, in Notification settings).
+The calendar page shows a **Removed** card for the month (title, date,
+reason, when): a poster sees their own office's, PALD every office's
+within the office filter.
 
 ### Monthly sheet (`MonthSheet`, `ActivityWorkbook`)
 Titled "CSC RO VIII CALENDAR OF ACTIVITIES for {MONTH} {YEAR}": a date

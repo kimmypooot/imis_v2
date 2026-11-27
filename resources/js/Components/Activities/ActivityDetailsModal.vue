@@ -85,7 +85,7 @@ const fire = (event) => emit(event, activity.value);
                 <div class="flex flex-wrap gap-1.5">
                     <template v-if="activity.can_update">
                         <ActionButton icon="pencil" label="Edit" @click="fire('edit')" />
-                        <ActionButton v-if="activity.status !== 'cancelled'" icon="calendar" label="Move to another date" @click="fire('move')" />
+                        <ActionButton v-if="activity.status !== 'cancelled' && activity.status !== 'done'" icon="calendar" label="Move to another date" @click="fire('move')" />
                         <ActionButton v-if="activity.starts_on && activity.status === 'scheduled'" icon="check" label="Mark done" tone="success" @click="fire('done')" />
                         <ActionButton v-if="activity.status !== 'cancelled' && activity.status !== 'done'" icon="xCircle" label="Cancel the activity" tone="warning" @click="fire('cancel')" />
                     </template>

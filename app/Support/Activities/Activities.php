@@ -85,9 +85,13 @@ class Activities
      * @param  array{starts_on: string, ends_on?: ?string, starts_at?: ?string, ends_at?: ?string, all_day?: bool}  $when
      *
      * @throws MoveReasonRequired when the reason is blank
+     * @throws DomainException when the activity is cancelled or done
      */
     public function move(Activity $activity, array $when, string $reason, User $by): Activity
     {
+        if (in_array($activity->status, [ActivityStatus::Cancelled, ActivityStatus::Done], true)) {
+            throw new DomainException('A cancelled or done activity can\'t be moved.');
+        }
         if (blank($when['starts_on'] ?? null)) {
             throw new InvalidArgumentException('Give the new date of the activity.');
         }

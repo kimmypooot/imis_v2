@@ -15,6 +15,7 @@ use App\Support\Activities\UpcomingActivities;
 use App\Support\Portal\AtAGlance;
 use App\Support\Portal\QuickAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -47,7 +48,9 @@ class DashboardActivitiesTest extends TestCase
 
     public function test_upcoming_lists_next_seven_days_in_manila_time(): void
     {
-        $this->travelTo(now('Asia/Manila')->setDateTime(2025, 12, 2, 23, 30));
+        // 00:30 on 2 December in Manila is still 1 December (16:30) in UTC.
+        $this->travelTo(Carbon::parse('2025-12-02 00:30', 'Asia/Manila'));
+        $this->assertSame('2025-12-01', now('UTC')->toDateString());
         $office = OrganizationalUnit::factory()->create();
         Activity::factory()->for($office, 'office')->dated('2025-12-01')->create(['title' => 'Yesterday']);
         Activity::factory()->for($office, 'office')->dated('2025-12-02')->create(['title' => 'Today']);

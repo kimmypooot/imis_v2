@@ -18,7 +18,7 @@ import ActivityForm from '../../Components/Activities/ActivityForm.vue';
 import MoveActivityModal from '../../Components/Activities/MoveActivityModal.vue';
 import ReasonModal from '../../Components/Activities/ReasonModal.vue';
 import { useBusy } from '../../Composables/useBusy';
-import { formatCalendarDate } from '../../Utils/datetime';
+import { formatCalendarDate, formatDateTime } from '../../Utils/datetime';
 import { activityChipClass, activityOn, activityStatusLabel, activityTone, shortTime, timeText } from '../../Components/Activities/activityDisplay';
 
 defineOptions({ layout: PortalLayout });
@@ -46,13 +46,15 @@ const props = defineProps({
     canPost: { type: Boolean, default: false },
     canManage: { type: Boolean, default: false },
     clashes: { type: Array, default: () => [] },
+    // Activities PALD removed this month: the poster's own office's, or PALD's within the office filter.
+    removed: { type: Array, default: () => [] },
+    // Today in Asia/Manila (YYYY-MM-DD), from the server rather than the browser's clock.
+    today: { type: String, required: true },
 });
 
 const MAX_PER_DAY = 3;
 
 const pad = (n) => String(n).padStart(2, '0');
-const todayDate = new Date();
-const today = `${todayDate.getFullYear()}-${pad(todayDate.getMonth() + 1)}-${pad(todayDate.getDate())}`;
 const [year, monthNumber] = props.month.split('-').map(Number);
 const title = new Date(year, monthNumber - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
@@ -95,7 +97,7 @@ const activitiesOn = (iso) => dated.value.filter((activity) => activityOn(activi
 // From the dashboard: ?day=YYYY-MM-DD opens that day and ?activity=id its details.
 const linked = new URLSearchParams(usePage().url.split('?')[1] ?? '');
 const linkedDay = /^\d{4}-\d{2}-\d{2}$/.test(linked.get('day') ?? '') && linked.get('day').startsWith(props.month) ? linked.get('day') : null;
-const selected = ref(linkedDay ?? (props.month === today.slice(0, 7) ? today : null));
+const selected = ref(linkedDay ?? (props.month === props.today.slice(0, 7) ? props.today : null));
 const selectedActivities = computed(() => (selected.value ? activitiesOn(selected.value) : []));
 const holidaysOn = (iso) => props.holidays.filter((holiday) => holiday.date === iso);
 const chipLabel = (activity) => [shortTime(activity), activity.title].filter(Boolean).join(' · ');
@@ -282,6 +284,18 @@ const onDetailsAction = (action, activity) => {
                 </table>
             </div>
             <p class="mt-3 text-xs text-text-muted">The same layout as the printed sheet. Switch to Calendar to open an activity.</p>
+        </Card>
+
+        <Card v-if="removed.length" class="mt-6" icon="trash" title="Removed" description="Activities PALD removed this month, with the reason.">
+            <ul class="divide-y divide-border">
+                <li v-for="item in removed" :key="item.id" class="py-2">
+                    <div class="font-medium text-text">{{ item.title }}</div>
+                    <div class="text-xs text-text-muted">
+                        {{ [item.date.length > 7 ? formatCalendarDate(item.date) : 'Date to be announced', canManage ? item.office : null, `removed ${formatDateTime(item.removed_at)}`].filter(Boolean).join(' · ') }}
+                    </div>
+                    <p v-if="item.reason" class="mt-0.5 text-sm text-text">{{ item.reason }}</p>
+                </li>
+            </ul>
         </Card>
     </BusyRegion>
 

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\ActivityUpdate;
 use Database\Seeders\RegionalOfficeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -355,6 +356,62 @@ class ActivityHttpTest extends TestCase
             $this->assertSame($count, $this->auditCount($event), $event);
         }
         $this->assertSame(ActivityStatus::Done, $activity->fresh()->status);
+    }
+
+    public function test_today_is_the_manila_date(): void
+    {
+        $this->travelTo(Carbon::parse('2025-12-01 16:30', 'UTC'));
+        $staff = $this->userWith(['activities.view'], OrganizationalUnit::factory()->create());
+
+        $this->actingAs($staff)->get('/activities?month=2025-12')
+            ->assertInertia(fn ($page) => $page->where('today', '2025-12-02'));
+    }
+
+    public function test_a_date_change_through_edit_is_audited_as_a_move(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+        $activity = Activity::factory()->dated('2027-03-10')->create(['organizational_unit_id' => $office->id]);
+
+        $this->actingAs($poster)->put("/activities/{$activity->id}", ['starts_on' => '2027-03-12', 'ends_on' => '2027-03-12', 'move_reason' => 'Venue taken'])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($poster)->put("/activities/{$activity->id}", ['title' => 'Renamed'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $this->auditCount('activity.saved'));
+        $this->assertSame(1, $this->auditCount('activity.moved'));
+        $this->assertStringContainsString('Venue taken', DB::table('audit_logs')->where('event', 'activity.moved')->value('description'));
+    }
+
+    public function test_office_sees_its_removed_activities_with_the_reason(): void
+    {
+        $office = OrganizationalUnit::factory()->create();
+        $elsewhere = OrganizationalUnit::factory()->create();
+        $poster = $this->userWith(['activities.view', 'activities.post'], $office);
+        $staff = $this->userWith(['activities.view'], $office);
+        $curator = $this->userWith(['activities.view', 'activities.manage'], null);
+
+        $ours = Activity::factory()->dated('2027-03-10')->create(['organizational_unit_id' => $office->id, 'title' => 'Our seminar']);
+        $theirs = Activity::factory()->dated('2027-03-11')->create(['organizational_unit_id' => $elsewhere->id, 'title' => 'Their seminar']);
+        Activity::factory()->dated('2027-04-02')->create(['organizational_unit_id' => $office->id])->delete();
+        $this->actingAs($curator)->delete("/activities/{$ours->id}", ['reason' => 'Duplicate entry']);
+        $this->actingAs($curator)->delete("/activities/{$theirs->id}", ['reason' => 'Wrong office']);
+
+        $this->actingAs($poster)->get('/activities?month=2027-03')
+            ->assertInertia(fn ($page) => $page
+                ->has('removed', 1)
+                ->where('removed.0.title', 'Our seminar')
+                ->where('removed.0.date', '2027-03-10')
+                ->where('removed.0.reason', 'Duplicate entry')
+                ->whereNot('removed.0.removed_at', null));
+
+        $this->actingAs($staff)->get('/activities?month=2027-03')
+            ->assertInertia(fn ($page) => $page->where('removed', []));
+
+        $this->actingAs($curator)->get('/activities?month=2027-03')
+            ->assertInertia(fn ($page) => $page->has('removed', 2));
+        $this->actingAs($curator)->get("/activities?month=2027-03&office={$elsewhere->id}")
+            ->assertInertia(fn ($page) => $page->has('removed', 1)->where('removed.0.title', 'Their seminar'));
     }
 
     /**

@@ -220,6 +220,23 @@ class ActivityRulesTest extends TestCase
         $this->assertTrue($done->hasMoved);
     }
 
+    public function test_cancelled_or_done_activity_cannot_be_moved(): void
+    {
+        $cancelled = $this->activities->cancel(Activity::factory()->dated('2027-03-10')->create(), 'No quorum', $this->poster);
+        $done = $this->activities->markDone(Activity::factory()->dated('2027-03-10')->create(), $this->poster);
+
+        foreach ([$cancelled, $done] as $activity) {
+            try {
+                $this->activities->move($activity, ['starts_on' => '2027-03-12'], 'Venue taken', $this->poster);
+                $this->fail('Moving a cancelled or done activity should be refused.');
+            } catch (\DomainException $e) {
+                $this->assertSame('A cancelled or done activity can\'t be moved.', $e->getMessage());
+            }
+            $this->assertSame('2027-03-10', $activity->fresh()->starts_on->toDateString());
+            $this->assertFalse($activity->fresh()->hasMoved);
+        }
+    }
+
     public function test_month_only_activity_cannot_be_marked_done(): void
     {
         $activity = Activity::factory()->monthOnly(2027, 3)->create();

@@ -93,7 +93,46 @@ class ActivityController extends Controller
             'canPost' => $user->can('create', Activity::class),
             'canManage' => $user->can('manage', Activity::class),
             'clashes' => fn () => $request->session()->get('clashes', []),
+            'removed' => $this->removed($user, $month, $officeId),
+            'today' => today()->toDateString(),
         ]);
+    }
+
+    /**
+     * Activities PALD removed in the month, with the reason, latest first:
+     * a poster sees their own office's, PALD every office's (within the
+     * office filter), anyone else none.
+     *
+     * @return array<int, array{id: int, title: string, office: ?string, date: string, reason: ?string, removed_at: ?string}>
+     */
+    private function removed(User $user, Carbon $month, ?int $officeId): array
+    {
+        if ($user->can('manage', Activity::class)) {
+            $scope = $officeId;
+        } elseif ($user->hasPermission(PermissionName::ActivitiesPost->value) && $user->organizational_unit_id !== null) {
+            $scope = (int) $user->organizational_unit_id;
+
+            if ($officeId !== null && $officeId !== $scope) {
+                return [];
+            }
+        } else {
+            return [];
+        }
+
+        return Activity::onlyTrashed()
+            ->with('office:id,name,short_name')
+            ->inMonth($month->year, $month->month)
+            ->when($scope !== null, fn ($query) => $query->where('organizational_unit_id', $scope))
+            ->latest('deleted_at')->latest('id')
+            ->get()
+            ->map(fn (Activity $activity) => [
+                'id' => $activity->id,
+                'title' => $activity->title,
+                'office' => $activity->office?->short_name ?: $activity->office?->name,
+                'date' => $activity->starts_on?->toDateString() ?? sprintf('%04d-%02d', $activity->year, $activity->month),
+                'reason' => $activity->removed_reason,
+                'removed_at' => $activity->deleted_at?->toIso8601String(),
+            ])->values()->all();
     }
 
     /**
@@ -194,8 +233,17 @@ class ActivityController extends Controller
                 ->with('clashes', $this->seriesClashes($series, $clashes, $activity->starts_on));
         }
 
+        $movesBefore = $activity->moves()->count();
         $saved = $this->attempt(fn () => $activities->save($data, $user, $activity, $request->validated('move_reason')));
         $this->audit()->record(AuditEvent::ActivitySaved, "Updated the activity \"{$saved->title}\"", $saved);
+
+        // A date or time change made through the form is a move too, so PALD's "What changed" shows it as one.
+        if ($saved->moves()->count() > $movesBefore) {
+            $reason = (string) $request->validated('move_reason');
+            $this->audit()->record(AuditEvent::ActivityMoved, "Moved the activity \"{$saved->title}\" to {$saved->starts_on->toDateString()}: {$reason}", $saved, [
+                'reason' => $reason,
+            ]);
+        }
 
         return back()
             ->with('status', "\"{$saved->title}\" was saved.")
@@ -216,7 +264,7 @@ class ActivityController extends Controller
         ]);
 
         $moved = $this->attempt(fn () => $activities->move($activity, Arr::except($data, ['move_reason']), (string) ($data['move_reason'] ?? ''), $request->user()));
-        $this->audit()->record(AuditEvent::ActivityMoved, "Moved the activity \"{$moved->title}\" to {$moved->starts_on->toDateString()}", $moved, [
+        $this->audit()->record(AuditEvent::ActivityMoved, "Moved the activity \"{$moved->title}\" to {$moved->starts_on->toDateString()}: ".($data['move_reason'] ?? ''), $moved, [
             'reason' => $data['move_reason'] ?? null,
         ]);
 

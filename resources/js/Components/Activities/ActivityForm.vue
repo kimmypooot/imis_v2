@@ -89,6 +89,8 @@ const following = computed(() => inSeries.value && form.scope === 'following');
 // A new activity may repeat; an occurrence edited "with the following" always does.
 const showRepeat = computed(() => (!editing.value && form.when === 'date') || following.value);
 const repeating = computed(() => following.value || (!editing.value && form.when === 'date' && !!form.repeat.frequency));
+// The server keeps an activity unplanned once it is, so a saved unplanned activity can't be unticked.
+const unplannedLocked = computed(() => editing.value && !!props.activity.unplanned);
 
 const fill = () => {
     const activity = props.activity;
@@ -128,6 +130,11 @@ const fill = () => {
     form.reset();
 };
 watch(() => [props.open, props.activity], ([open]) => open && fill(), { immediate: true });
+
+// A "following" edit keeps the series' office, so a changed office goes back.
+watch(following, (isFollowing) => {
+    if (isFollowing) form.organizational_unit_id = props.activity.office?.id ?? form.organizational_unit_id;
+});
 
 // Start a new weekly or monthly repeat on the chosen date's weekday and day.
 watch(
@@ -227,8 +234,8 @@ const title = computed(() => (editing.value ? `Edit â€œ${props.activity.title}â€
                 </div>
             </fieldset>
 
-            <FormGroup id="activity-office" label="Office" required :error="form.errors.organizational_unit_id">
-                <Select id="activity-office" v-model="form.organizational_unit_id" :options="officeOptions" :disabled="offices.length < 2" required :invalid="!!form.errors.organizational_unit_id" />
+            <FormGroup id="activity-office" label="Office" required :helper-text="following ? 'The office of a repeating activity is changed one date at a time.' : null" :error="form.errors.organizational_unit_id">
+                <Select id="activity-office" v-model="form.organizational_unit_id" :options="officeOptions" :disabled="offices.length < 2 || following" required :invalid="!!form.errors.organizational_unit_id" />
             </FormGroup>
 
             <TextInput id="activity-title" v-model="form.title" label="Activity" required :maxlength="255" :error="form.errors.title" />
@@ -293,7 +300,11 @@ const title = computed(() => (editing.value ? `Edit â€œ${props.activity.title}â€
                 <Textarea id="activity-remarks" v-model="form.remarks" :rows="2" :maxlength="2000" :invalid="!!form.errors.remarks" />
             </FormGroup>
 
-            <Checkbox id="activity-unplanned" v-model="form.unplanned" label="Unplanned (not in the office's plan for the year)" />
+            <!-- Once unplanned, always unplanned: the server never clears the flag, so the box can't be unticked. -->
+            <fieldset :disabled="unplannedLocked" :aria-describedby="unplannedLocked ? 'activity-unplanned-hint' : undefined" :class="{ 'opacity-60': unplannedLocked }">
+                <Checkbox id="activity-unplanned" v-model="form.unplanned" label="Unplanned (not in the office's plan for the year)" />
+                <p v-if="unplannedLocked" id="activity-unplanned-hint" class="mt-1 text-xs text-text-muted">Set automatically after the plan cut-off, or when ticked; it can't be cleared.</p>
+            </fieldset>
 
             <fieldset v-if="showRepeat" class="space-y-4 rounded-md border border-border p-4">
                 <legend class="px-1 text-sm font-medium text-text">Repeat</legend>
